@@ -1,0 +1,89 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+
+- task: NodeTool@0
+  displayName: "Node.js 20"
+  inputs:
+    versionSpec: "20.x"
+
+- script: npm ci
+  displayName: "Instalar dependencias"
+
+- script: npm run build
+  displayName: "Build Next.js"
+
+- bash: |
+    set -e
+
+    rm -rf deploy
+    mkdir deploy
+
+    cp -R .qmax-next/standalone/. deploy/
+
+    if [ -d "public" ]; then
+      cp -R public deploy/public
+    fi
+
+    mkdir -p deploy/.qmax-next
+
+    if [ -d ".qmax-next/static" ]; then
+      cp -R .qmax-next/static deploy/.qmax-next/static
+    fi
+
+    cd deploy
+    zip -r ../site.zip .
+  displayName: "Montar pacote standalone"
+
+- task: PowerShell@2
+  displayName: "Deploy Zip via Kudu"
+  inputs:
+    pwsh: true
+    targetType: inline
+    script: |
+      $ErrorActionPreference = "Stop"
+
+      $username = $env:AZURE_PUBLISH_USER
+      $password = $env:AZURE_PUBLISH_PASSWORD
+      $kuduUrl = $env:AZURE_KUDU_URL
+
+      if ([string]::IsNullOrWhiteSpace($username)) {
+        throw "AZURE_PUBLISH_USER nao configurado."
+      }
+
+      if ([string]::IsNullOrWhiteSpace($password)) {
+        throw "AZURE_PUBLISH_PASSWORD nao configurado."
+      }
+
+      if ([string]::IsNullOrWhiteSpace($kuduUrl)) {
+        throw "AZURE_KUDU_URL nao configurado."
+      }
+
+      $pair = "${username}:${password}"
+      $bytes = [Text.Encoding]::ASCII.GetBytes($pair)
+      $base64 = [Convert]::ToBase64String($bytes)
+
+      $headers = @{
+        Authorization = "Basic $base64"
+      }
+
+      $zip = "$(Build.SourcesDirectory)/site.zip"
+
+      Write-Host "Publicando pacote..."
+
+      Invoke-RestMethod `
+        -Uri "$kuduUrl/api/publish?type=zip" `
+        -Method Post `
+        -Headers $headers `
+        -InFile $zip `
+        -ContentType "application/zip"
+
+      Write-Host "Deploy concluido."
+  env:
+    AZURE_PUBLISH_USER: $(AZURE_PUBLISH_USER)
+    AZURE_PUBLISH_PASSWORD: $(AZURE_PUBLISH_PASSWORD)
+    AZURE_KUDU_URL: $(AZURE_KUDU_URL)
