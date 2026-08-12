@@ -37,12 +37,12 @@ export function ConversionBand() {
             <h2>
               Um ecossistema.
               <br />
-              <em>M\u00FAltiplas possibilidades.</em>
+              <em>Múltiplas possibilidades.</em>
             </h2>
 
             <p>
               {
-                "Especialidades diferentes, conectadas por uma mesma vis\u00E3o de qualidade, inova\u00E7\u00E3o e desenvolvimento empresarial."
+                "Especialidades diferentes, conectadas por uma mesma visão de qualidade, inovação e desenvolvimento empresarial."
               }
             </p>
           </div>
