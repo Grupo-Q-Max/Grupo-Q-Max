@@ -14367,3 +14367,510 @@ img[src*="lagerhaus"] {
     max-height: 105px !important;
   }
 }
+
+
+/* QMAX V32 BRAND UI POLISH */
+
+/* =========================================================
+   ECOSSISTEMA — ESCALA E RESPIRAÇÃO
+   ========================================================= */
+
+#empresas {
+  min-height: 100vh;
+}
+
+#empresas [class*="ecosystem21"] {
+  box-sizing: border-box;
+}
+
+/* Lista de empresas — mais legível e premium */
+#empresas button {
+  min-height: 108px;
+}
+
+#empresas button strong,
+#empresas button h3,
+#empresas button [class*="name"] {
+  font-size: clamp(1.25rem, 1.45vw, 1.72rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.025em !important;
+}
+
+#empresas button small,
+#empresas button [class*="eyebrow"],
+#empresas button [class*="category"] {
+  font-size: 0.72rem !important;
+  letter-spacing: 0.16em !important;
+}
+
+/* Números 01 / 02 / 03 */
+#empresas button > span:first-child {
+  font-size: 0.78rem !important;
+  opacity: 0.72;
+}
+
+/* =========================================================
+   PAINEL PRINCIPAL DA EMPRESA
+   ========================================================= */
+
+#empresas [class*="panel"],
+#empresas [class*="card"],
+#empresas [class*="detail"] {
+  border-radius: 28px;
+}
+
+/* Área da logo */
+#empresas [class*="logo"],
+#empresas [class*="brand"] {
+  overflow: hidden;
+}
+
+/* Todas as logos ficam nítidas e proporcionais */
+#empresas img {
+  object-fit: contain !important;
+  object-position: center !important;
+  height: auto !important;
+}
+
+/* Logo principal dentro do card */
+#empresas img[alt="Q-Max Auditoria"],
+#empresas img[alt="Q-Max Contábil"],
+#empresas img[alt="Q-Max Talents"],
+#empresas img[alt="Q-Max Technology"],
+#empresas img[alt="Lagerhaus"] {
+  width: auto !important;
+  max-width: 78% !important;
+  max-height: 118px !important;
+  margin: auto !important;
+}
+
+/* Contábil possui arte escura — painel claro proposital */
+#empresas img[alt="Q-Max Contábil"] {
+  max-height: 105px !important;
+}
+
+/* Lagerhaus é horizontal */
+#empresas img[alt="Lagerhaus"] {
+  max-width: 86% !important;
+  max-height: 92px !important;
+}
+
+/* Talents */
+#empresas img[alt="Q-Max Talents"] {
+  max-height: 108px !important;
+}
+
+/* Technology */
+#empresas img[alt="Q-Max Technology"] {
+  max-height: 112px !important;
+}
+
+/* Título do card */
+#empresas h3 {
+  font-size: clamp(2rem, 2.5vw, 3rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+/* Descrição do card */
+#empresas p {
+  font-size: clamp(1rem, 1.05vw, 1.18rem);
+  line-height: 1.65;
+}
+
+/* =========================================================
+   PRODUTOS — LOGOS
+   ========================================================= */
+
+#produtos img {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+#produtos img[alt="QXBACK"],
+#produtos img[alt="QXSIGN"],
+#produtos img[alt="FINORA"] {
+  width: auto !important;
+  max-width: 78% !important;
+  max-height: 130px !important;
+  margin-inline: auto !important;
+}
+
+#produtos img[alt="FINORA"] {
+  max-width: 84% !important;
+  max-height: 115px !important;
+}
+
+/* =========================================================
+   SIGNATURE RAIL — BARRA LATERAL
+   ========================================================= */
+
+.qmax-signature-rail {
+  left: 18px !important;
+  width: 72px !important;
+  min-height: 56vh !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 60 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 16px !important;
+}
+
+/* Linha lateral mais elegante */
+.qmax-signature-rail::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 5%;
+  bottom: 5%;
+  width: 1px;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      rgba(255,255,255,.12) 18%,
+      rgba(239,25,125,.48) 50%,
+      rgba(255,255,255,.12) 82%,
+      transparent
+    );
+}
+
+/* "Empresas", "Sobre", etc. */
+.qmax-signature-rail__label {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  opacity: 0.88 !important;
+  white-space: nowrap !important;
+}
+
+/* Pontos/botões da rail */
+.qmax-signature-rail a,
+.qmax-signature-rail button {
+  min-width: 14px !important;
+  min-height: 14px !important;
+}
+
+/* =========================================================
+   TIPOGRAFIA GERAL — MAIS PRESENÇA
+   ========================================================= */
+
+#empresas > div > header h2,
+#produtos > div > header h2 {
+  font-size: clamp(2.65rem, 4.2vw, 5.2rem) !important;
+  line-height: .98 !important;
+  letter-spacing: -0.05em !important;
+}
+
+#empresas > div > header p,
+#produtos > div > header p {
+  font-size: clamp(1rem, 1.15vw, 1.25rem) !important;
+  line-height: 1.6 !important;
+}
+
+/* =========================================================
+   MOBILE / NOTEBOOK
+   ========================================================= */
+
+@media (max-width: 1180px) {
+
+  #empresas button {
+    min-height: 92px;
+  }
+
+  .qmax-signature-rail {
+    left: 10px !important;
+    width: 58px !important;
+  }
+
+  #empresas h3 {
+    font-size: clamp(1.8rem, 3vw, 2.6rem) !important;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .qmax-signature-rail {
+    display: none !important;
+  }
+
+  #empresas button {
+    min-height: 82px;
+  }
+
+  #empresas button strong,
+  #empresas button h3,
+  #empresas button [class*="name"] {
+    font-size: 1.12rem !important;
+  }
+
+  #empresas img[alt="Q-Max Auditoria"],
+  #empresas img[alt="Q-Max Contábil"],
+  #empresas img[alt="Q-Max Talents"],
+  #empresas img[alt="Q-Max Technology"],
+  #empresas img[alt="Lagerhaus"] {
+    max-width: 82% !important;
+    max-height: 88px !important;
+  }
+
+  #produtos img[alt="QXBACK"],
+  #produtos img[alt="QXSIGN"],
+  #produtos img[alt="FINORA"] {
+    max-width: 82% !important;
+    max-height: 100px !important;
+  }
+}
+
+/* QMAX V33 OFFICIAL BRAND FIX */
+
+/* ---------------------------------------------------------
+   Remove fundos artificiais das áreas de marca
+   --------------------------------------------------------- */
+
+#empresas *:has(> img[alt="Q-Max Auditoria"]),
+#empresas *:has(> img[alt="Q-Max Contábil"]),
+#empresas *:has(> img[alt="Q-Max Talents"]),
+#empresas *:has(> img[alt="Q-Max Technology"]),
+#empresas *:has(> img[alt="Lagerhaus"]) {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ---------------------------------------------------------
+   Tratamento universal
+   --------------------------------------------------------- */
+
+#empresas img[alt="Q-Max Auditoria"],
+#empresas img[alt="Q-Max Contábil"],
+#empresas img[alt="Q-Max Talents"],
+#empresas img[alt="Q-Max Technology"],
+#empresas img[alt="Lagerhaus"] {
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  margin: auto !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* AUDITORIA
+   Branco + vermelho/vinho oficial
+*/
+#empresas img[alt="Q-Max Auditoria"] {
+  max-width: 78% !important;
+  max-height: 128px !important;
+}
+
+/* CONTÁBIL
+   SVG branco, sem retângulo branco
+*/
+#empresas img[alt="Q-Max Contábil"] {
+  max-width: 76% !important;
+  max-height: 118px !important;
+}
+
+/* TALENTS
+   Versão oficial para fundo escuro
+*/
+#empresas img[alt="Q-Max Talents"] {
+  max-width: 77% !important;
+  max-height: 126px !important;
+}
+
+/* TECHNOLOGY */
+#empresas img[alt="Q-Max Technology"] {
+  max-width: 78% !important;
+  max-height: 122px !important;
+}
+
+/* LAGERHAUS
+   Logo horizontal precisa de mais largura
+*/
+#empresas img[alt="Lagerhaus"] {
+  max-width: 88% !important;
+  max-height: 104px !important;
+}
+
+/* ---------------------------------------------------------
+   Área da logo do card
+   --------------------------------------------------------- */
+
+#empresas div:has(> img[alt="Q-Max Auditoria"]),
+#empresas div:has(> img[alt="Q-Max Contábil"]),
+#empresas div:has(> img[alt="Q-Max Talents"]),
+#empresas div:has(> img[alt="Q-Max Technology"]),
+#empresas div:has(> img[alt="Lagerhaus"]) {
+  min-height: 145px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 18px 24px !important;
+  border-radius: 20px !important;
+  overflow: visible !important;
+}
+
+/* ---------------------------------------------------------
+   Texto das empresas
+   --------------------------------------------------------- */
+
+#empresas h3 {
+  font-size: clamp(2.15rem, 2.5vw, 3.15rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.045em !important;
+}
+
+#empresas p {
+  font-size: clamp(1.03rem, 1.06vw, 1.2rem) !important;
+  line-height: 1.65 !important;
+}
+
+/* Lista lateral */
+#empresas button strong,
+#empresas button h3,
+#empresas button [class*="name"] {
+  font-size: clamp(1.28rem, 1.45vw, 1.72rem) !important;
+  line-height: 1.1 !important;
+}
+
+/* ---------------------------------------------------------
+   Mobile
+   --------------------------------------------------------- */
+
+@media (max-width: 768px) {
+
+  #empresas div:has(> img[alt="Q-Max Auditoria"]),
+  #empresas div:has(> img[alt="Q-Max Contábil"]),
+  #empresas div:has(> img[alt="Q-Max Talents"]),
+  #empresas div:has(> img[alt="Q-Max Technology"]),
+  #empresas div:has(> img[alt="Lagerhaus"]) {
+    min-height: 110px !important;
+    padding: 14px 18px !important;
+  }
+
+  #empresas img[alt="Q-Max Auditoria"],
+  #empresas img[alt="Q-Max Contábil"],
+  #empresas img[alt="Q-Max Talents"],
+  #empresas img[alt="Q-Max Technology"] {
+    max-width: 82% !important;
+    max-height: 92px !important;
+  }
+
+  #empresas img[alt="Lagerhaus"] {
+    max-width: 90% !important;
+    max-height: 78px !important;
+  }
+}
+
+/* QMAX V34.1 LOGOS FINAL */
+
+#empresas .ecosystem21__officialLogo {
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 auto !important;
+
+  max-width: 100% !important;
+  max-height: 125px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  background: transparent !important;
+
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  filter: none !important;
+}
+
+/* Container da marca sem retangulo branco */
+#empresas div:has(> .ecosystem21__officialLogo) {
+  width: 100% !important;
+  min-height: 145px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  padding: 14px 22px !important;
+
+  background: transparent !important;
+  background-color: transparent !important;
+
+  box-shadow: none !important;
+  border: 0 !important;
+
+  overflow: visible !important;
+}
+
+/* Auditoria */
+#empresas img[src="/brands/brand-auditoria.png"] {
+  width: min(260px, 82%) !important;
+  max-height: 125px !important;
+}
+
+/* Contabil */
+#empresas img[src="/brands/brand-contabil.svg"] {
+  width: min(290px, 86%) !important;
+  max-height: 115px !important;
+}
+
+/* Talents */
+#empresas img[src="/brands/brand-talents.png"] {
+  width: min(265px, 82%) !important;
+  max-height: 125px !important;
+}
+
+/* Technology */
+#empresas img[src="/brands/brand-technology.png"] {
+  width: min(285px, 84%) !important;
+  max-height: 120px !important;
+}
+
+/* Lagerhaus */
+#empresas img[src="/brands/brand-lagerhaus.png"] {
+  width: min(340px, 92%) !important;
+  max-height: 105px !important;
+}
+
+/* Nao permite fundo antigo envolvendo marca */
+#empresas div:has(> .ecosystem21__officialLogo)::before,
+#empresas div:has(> .ecosystem21__officialLogo)::after {
+  display: none !important;
+}
+
+/* Titulo principal */
+#empresas h3 {
+  font-size: clamp(2.15rem, 2.55vw, 3.15rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.045em !important;
+}
+
+/* Texto */
+#empresas p {
+  font-size: clamp(1.05rem, 1.08vw, 1.2rem) !important;
+  line-height: 1.65 !important;
+}
+
+@media (max-width: 768px) {
+
+  #empresas div:has(> .ecosystem21__officialLogo) {
+    min-height: 105px !important;
+    padding: 10px 14px !important;
+  }
+
+  #empresas .ecosystem21__officialLogo {
+    max-width: 86% !important;
+    max-height: 85px !important;
+  }
+
+  #empresas img[src="/brands/brand-lagerhaus.png"] {
+    max-width: 94% !important;
+    max-height: 72px !important;
+  }
+}

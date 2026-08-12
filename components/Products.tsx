@@ -191,6 +191,7 @@ export function Products() {
                   <Image
                     src={active.logo}
                     alt={active.name}
+                    unoptimized
                     width={310}
                     height={135}
                     style={{

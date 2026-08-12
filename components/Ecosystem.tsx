@@ -36,7 +36,7 @@ const companies = [
     name: "Q-Max Contábil",
     category: "CONTABILIDADE & GESTÃO",
     color: "#14d0c1",
-    logo: "/brands/qmax-contabil-dark.png",
+    logo: "/brands/brand-contabil.png",
     light: true,
     url: "https://www.grupoqmax.com.br/contabil/index.php",
     icon: Building2,
@@ -55,7 +55,7 @@ const companies = [
     name: "Q-Max Talents",
     category: "PESSOAS & RH",
     color: "#8f3aa8",
-    logo: "/brands/qmax-talents.png",
+    logo: "/brands/brand-talents.png",
     url: "https://grupoqmax.com.br/talents/",
     icon: Users2,
     description:
@@ -73,7 +73,7 @@ const companies = [
     name: "Q-Max Technology",
     category: "TECNOLOGIA & DIGITAL",
     color: "#3156ff",
-    logo: "/brands/qmax-technology-white.png",
+    logo: "/brands/brand-technology.png",
     icon: Sparkles,
     description:
       "Estratégias digitais e campanhas personalizadas para aumentar a visibilidade da sua marca.",
@@ -91,6 +91,7 @@ const companies = [
     category: "ESTRUTURA & COWORKING",
     color: "#ff8b2a",
     icon: Building2,
+    logo: "/brands/brand-lagerhaus.png",
     description:
       "Endereço fiscal, comercial e espaços de coworking modernos para apoiar a operação do seu negócio.",
     services: [
@@ -248,16 +249,13 @@ export function Ecosystem() {
                   }`}
                 >
                   {active.logo ? (
-                    <Image
-                      src={active.logo}
-                      alt={active.name}
-                      width={270}
-                      height={110}
-                      style={{
-                        width: "auto",
-                        height: "auto",
-                      }}
-                    />
+                    <img
+                    src={active.logo}
+                    alt={active.name}
+                    className="ecosystem21__officialLogo"
+                    loading="eager"
+                    decoding="async"
+                  />
                   ) : (
                     <strong>{active.name}</strong>
                   )}
