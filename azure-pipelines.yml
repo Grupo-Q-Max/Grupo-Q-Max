@@ -201,6 +201,65 @@ steps:
 # 7. FINAL
 # ============================================================
 
+
+# ============================================================
+# STARTUP NEXT.JS NO APP SERVICE LINUX
+# ============================================================
+
+- task: PowerShell@2
+  displayName: 'Configurar startup do Next.js'
+  inputs:
+    pwsh: true
+    targetType: 'inline'
+    script: |
+      $ErrorActionPreference = "Stop"
+
+      $username = $env:PUBLISH_USER
+      $password = $env:PUBLISH_PASS
+      $kuduBase = "$(KUDU_URL)"
+
+      $startupPath = "$(Build.SourcesDirectory)/startup.sh"
+
+      $startupContent = @"
+      #!/bin/sh
+      cd /home/site/wwwroot
+      exec node server.js
+      "@
+
+      [IO.File]::WriteAllText(
+          $startupPath,
+          $startupContent,
+          (New-Object Text.UTF8Encoding($false))
+      )
+
+      $pair = "${username}:${password}"
+
+      $base64 = [Convert]::ToBase64String(
+          [Text.Encoding]::ASCII.GetBytes($pair)
+      )
+
+      $headers = @{
+          Authorization = "Basic $base64"
+      }
+
+      $url = "$kuduBase/api/publish?type=startup&restart=true"
+
+      Write-Host "Configurando startup..."
+      Write-Host "Comando: node server.js"
+
+      $response = Invoke-WebRequest `
+          -Uri $url `
+          -Method Post `
+          -Headers $headers `
+          -InFile $startupPath `
+          -ContentType "application/octet-stream" `
+          -UseBasicParsing `
+          -TimeoutSec 300
+
+      Write-Host "Startup HTTP: $($response.StatusCode)"
+  env:
+    PUBLISH_USER: $(PUBLISH_USER)
+    PUBLISH_PASS: $(PUBLISH_PASS)
 - script: |
     echo "=========================================="
     echo " Q-MAX DEPLOY FINALIZADO"
