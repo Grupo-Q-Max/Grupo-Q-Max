@@ -36,7 +36,7 @@ const companies = [
     name: "Q-Max Contábil",
     category: "CONTABILIDADE & GESTÃO",
     color: "#14d0c1",
-    logo: "/brands/brand-contabil.png",
+    logo: "/brands/brand-auditoria.png",
     light: true,
     url: "https://www.grupoqmax.com.br/contabil/index.php",
     icon: Building2,
