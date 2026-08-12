@@ -19,6 +19,7 @@ const companies = [
     name: "Q-Max Auditoria",
     category: "AUDITORIA & COMPLIANCE",
     color: "#ff315f",
+    logo: "/brands/brand-auditoria.png",
     url: "https://grupoqmax.com.br/auditoria",
     icon: ShieldCheck,
     description:
@@ -36,8 +37,7 @@ const companies = [
     name: "Q-Max Contábil",
     category: "CONTABILIDADE & GESTÃO",
     color: "#14d0c1",
-    logo: "/brands/brand-auditoria.png",
-    light: true,
+    logo: "/brands/brand-contabil.png",
     url: "https://www.grupoqmax.com.br/contabil/index.php",
     icon: Building2,
     description:
@@ -244,9 +244,7 @@ export function Ecosystem() {
                 </div>
 
                 <div
-                  className={`ecosystem8__logo ${
-                    active.light ? "light" : ""
-                  }`}
+                  className="ecosystem8__logo"
                 >
                   {active.logo ? (
                     <img
