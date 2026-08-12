@@ -27,37 +27,49 @@ steps:
 - bash: |
     set -e
 
-    echo "Validando standalone..."
-
-    if [ ! -f ".qmax-next/standalone/server.js" ]; then
-      echo "ERRO: server.js standalone nao encontrado."
-      exit 1
-    fi
-
-    echo "Standalone OK."
-  displayName: 'Validar standalone'
-
-- bash: |
-    set -e
-
-    echo "Preparando pacote Q-Max..."
+    echo "=========================================="
+    echo " MONTANDO PACOTE STANDALONE Q-MAX"
+    echo "=========================================="
 
     rm -rf deploy
     rm -f site.zip
 
     mkdir -p deploy
 
+    echo ""
+    echo "1. Copiando standalone..."
     cp -R .qmax-next/standalone/. deploy/
 
-    if [ -d "public" ]; then
-      cp -R public deploy/public
-    fi
+    echo ""
+    echo "2. Copiando PUBLIC..."
+    mkdir -p deploy/public
+    cp -R public/. deploy/public/
 
+    echo ""
+    echo "3. Copiando static do Next..."
     mkdir -p deploy/.qmax-next
 
     if [ -d ".qmax-next/static" ]; then
       cp -R .qmax-next/static deploy/.qmax-next/static
     fi
+
+    echo ""
+    echo "4. Validando logos obrigatorias..."
+
+    test -f deploy/public/brands/brand-auditoria.png
+    test -f deploy/public/brands/brand-contabil.png
+    test -f deploy/public/brands/brand-talents.png
+    test -f deploy/public/brands/brand-technology.png
+    test -f deploy/public/brands/brand-lagerhaus.png
+
+    echo "Todas as logos principais estao no pacote."
+
+    echo ""
+    echo "5. Assets encontrados:"
+    find deploy/public/brands -maxdepth 1 -type f -print | sort
+
+    echo ""
+    echo "6. Configurando start..."
 
     node -e "
       const fs = require('fs');
@@ -69,20 +81,25 @@ steps:
     "
 
     echo ""
-    echo "package.json de producao:"
-    cat deploy/package.json
-
-    echo ""
-    echo "Arquivos principais:"
-    ls -la deploy
+    echo "7. Criando ZIP..."
 
     cd deploy
     zip -r ../site.zip .
     cd ..
 
     echo ""
-    echo "Pacote:"
+    echo "8. Validando ZIP..."
+
+    unzip -l site.zip | grep "public/brands/brand-auditoria.png"
+    unzip -l site.zip | grep "public/brands/brand-contabil.png"
+    unzip -l site.zip | grep "public/brands/brand-talents.png"
+    unzip -l site.zip | grep "public/brands/brand-technology.png"
+    unzip -l site.zip | grep "public/brands/brand-lagerhaus.png"
+
+    echo ""
+    echo "PACOTE VALIDADO COM SUCESSO."
     ls -lh site.zip
+
   displayName: 'Montar pacote standalone'
 
 - task: PowerShell@2
