@@ -172,7 +172,7 @@ steps:
           Authorization = "Basic $base64"
       }
 
-      $url = "$kuduBase/api/zipdeploy"
+      $url = "$kuduBase/api/publish?type=zip&clean=true"
 
       Write-Host "Iniciando deploy..."
       Write-Host "Destino: webbd01-app"
