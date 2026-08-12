@@ -15341,3 +15341,592 @@ body [class*="sectionNav"] [class*="active"] {
     overflow: visible !important;
   }
 }
+
+
+/* QMAX V37 MOBILE NAV FIX */
+
+/* ==========================================================
+   HEADER FIXO
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  header,
+  .navbar,
+  [class*="navbar"] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+
+    width: 100% !important;
+
+    z-index: 9998 !important;
+
+    background:
+      rgba(7, 7, 10, 0.88) !important;
+
+    -webkit-backdrop-filter: blur(18px) !important;
+    backdrop-filter: blur(18px) !important;
+
+    border-bottom:
+      1px solid rgba(255,255,255,.07) !important;
+  }
+
+  /* evita conteúdo entrando atrás do header */
+  #inicio {
+    padding-top: 92px !important;
+  }
+}
+
+/* ==========================================================
+   BOTAO HAMBURGUER
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  button[aria-expanded] {
+    position: relative !important;
+    z-index: 10001 !important;
+
+    width: 56px !important;
+    height: 56px !important;
+
+    flex: 0 0 56px !important;
+
+    border-radius: 50% !important;
+
+    background:
+      rgba(10,10,13,.92) !important;
+
+    border:
+      1px solid rgba(255,255,255,.14) !important;
+  }
+}
+
+/* ==========================================================
+   MENU MOBILE ABERTO
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  /* qualquer painel imediatamente associado ao menu mobile */
+  [class*="mobile"][class*="menu"],
+  [class*="mobile"][class*="nav"],
+  [class*="drawer"],
+  [class*="menuPanel"],
+  [class*="navPanel"] {
+    z-index: 9999 !important;
+  }
+
+  /* bloqueia menus ficando atrás do Hero */
+  nav[aria-label="Navegação principal"] {
+    z-index: 10000 !important;
+  }
+}
+
+/* ==========================================================
+   OVERLAY MOBILE
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  nav[aria-label="Navegação principal"] {
+    background:
+      rgba(7, 7, 10, .985) !important;
+  }
+
+  nav[aria-label="Navegação principal"] a {
+    position: relative;
+    z-index: 10002;
+  }
+}
+
+/* ==========================================================
+   LINKS MOBILE
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  nav[aria-label="Navegação principal"] a {
+    font-size: clamp(1.3rem, 6vw, 2rem) !important;
+    line-height: 1.15 !important;
+
+    min-height: 52px !important;
+
+    display: flex !important;
+    align-items: center !important;
+
+    color: #fff !important;
+  }
+
+  nav[aria-label="Navegação principal"] a:hover {
+    color: #f41883 !important;
+  }
+}
+
+/* ==========================================================
+   EVITA ELEMENTOS DO SITE SOBRE O MENU
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  .qmax-signature-rail,
+  [class*="signature-rail"],
+  [class*="floating"],
+  [class*="whatsapp"],
+  [class*="contactFloat"] {
+    z-index: 50 !important;
+  }
+}
+
+
+/* QMAX V37.1 FIXED HEADER ALL SCREENS */
+
+/* HEADER FIXO EM TODAS AS TELAS */
+header,
+.navbar,
+[class*="navbar"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+
+  width: 100% !important;
+
+  z-index: 9998 !important;
+
+  background: rgba(7, 7, 10, 0.92) !important;
+
+  -webkit-backdrop-filter: blur(18px) !important;
+  backdrop-filter: blur(18px) !important;
+
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+}
+
+/* COMPENSA O HEADER */
+main {
+  padding-top: 88px !important;
+}
+
+/* BOTAO DO MENU ACIMA DE TUDO */
+button[aria-expanded] {
+  position: relative !important;
+  z-index: 10002 !important;
+}
+
+/* MENU SEMPRE ACIMA DO HERO */
+nav[aria-label="Navegação principal"] {
+  position: relative;
+  z-index: 10001 !important;
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+
+  main {
+    padding-top: 76px !important;
+  }
+
+  header,
+  .navbar,
+  [class*="navbar"] {
+    min-height: 76px !important;
+  }
+}
+
+
+/* QMAX V37.2 NAVBAR DEFINITIVA */
+
+/* ==========================================================
+   HEADER FIXO - TODAS AS TELAS
+   ========================================================== */
+
+.nav15 {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+
+  width: 100% !important;
+
+  z-index: 10000 !important;
+
+  background: rgba(6, 6, 9, 0.92) !important;
+
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+
+  overflow: visible !important;
+}
+
+/* espaço para o header fixo */
+main {
+  padding-top: 88px !important;
+}
+
+/* ==========================================================
+   TRIGGER MOBILE
+   ========================================================== */
+
+.nav15__mobileTrigger {
+  position: relative !important;
+  z-index: 10005 !important;
+
+  cursor: pointer !important;
+
+  pointer-events: auto !important;
+}
+
+/* ==========================================================
+   MENU MOBILE
+   ========================================================== */
+
+.nav15__mobile {
+  position: fixed !important;
+
+  inset: 0 !important;
+
+  width: 100vw !important;
+  height: 100dvh !important;
+
+  z-index: 10001 !important;
+
+  background:
+    radial-gradient(
+      circle at 85% 10%,
+      rgba(244, 24, 131, .14),
+      transparent 35%
+    ),
+    rgba(5, 5, 8, .985) !important;
+
+  -webkit-backdrop-filter: blur(22px) !important;
+  backdrop-filter: blur(22px) !important;
+
+  opacity: 0 !important;
+  visibility: hidden !important;
+
+  pointer-events: none !important;
+
+  transform: translateY(-18px) !important;
+
+  transition:
+    opacity .28s ease,
+    transform .28s ease,
+    visibility .28s ease !important;
+
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+/* MENU ABERTO */
+.nav15__mobile.is-open {
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  pointer-events: auto !important;
+
+  transform: translateY(0) !important;
+}
+
+/* ==========================================================
+   CONTEUDO INTERNO
+   ========================================================== */
+
+.nav15__mobileInner {
+  width: min(100%, 720px) !important;
+  min-height: 100% !important;
+
+  margin: 0 auto !important;
+
+  padding:
+    110px
+    clamp(24px, 7vw, 56px)
+    48px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  background: transparent !important;
+}
+
+/* topo MENU / GRUPO Q-MAX */
+.nav15__mobileTop {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+
+  margin-bottom: 28px !important;
+
+  padding-bottom: 18px !important;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.10) !important;
+}
+
+.nav15__mobileTop span {
+  color: #f41883 !important;
+
+  font-size: .78rem !important;
+  font-weight: 800 !important;
+
+  letter-spacing: .18em !important;
+}
+
+.nav15__mobileTop small {
+  color: rgba(255,255,255,.42) !important;
+
+  font-size: .7rem !important;
+  letter-spacing: .14em !important;
+}
+
+/* ==========================================================
+   ITENS PRINCIPAIS
+   ========================================================== */
+
+.nav15__mobileInner > a:not(.nav15__mobileCta),
+.nav15__mobileInner > button {
+  width: 100% !important;
+
+  min-height: 74px !important;
+
+  display: grid !important;
+  grid-template-columns: 42px 1fr auto !important;
+  align-items: center !important;
+
+  gap: 12px !important;
+
+  padding: 12px 0 !important;
+
+  color: #fff !important;
+
+  background: transparent !important;
+
+  border: 0 !important;
+  border-bottom:
+    1px solid rgba(255,255,255,.09) !important;
+
+  text-align: left !important;
+
+  cursor: pointer !important;
+}
+
+.nav15__mobileInner > a span,
+.nav15__mobileInner > button span {
+  color: rgba(255,255,255,.35) !important;
+
+  font-size: .72rem !important;
+  font-weight: 700 !important;
+
+  letter-spacing: .10em !important;
+}
+
+.nav15__mobileInner > a strong,
+.nav15__mobileInner > button strong {
+  color: #fff !important;
+
+  font-size: clamp(1.55rem, 6vw, 2.15rem) !important;
+  font-weight: 750 !important;
+
+  line-height: 1 !important;
+
+  letter-spacing: -.035em !important;
+}
+
+/* seta dropdown */
+.nav15__mobileInner .rotate {
+  transform: rotate(180deg) !important;
+}
+
+/* ==========================================================
+   SUBMENUS
+   ========================================================== */
+
+.nav15__mobileSub {
+  display: grid !important;
+
+  grid-template-rows: 0fr !important;
+
+  opacity: 0 !important;
+
+  transition:
+    grid-template-rows .28s ease,
+    opacity .25s ease !important;
+
+  overflow: hidden !important;
+}
+
+.nav15__mobileSub.open {
+  grid-template-rows: 1fr !important;
+
+  opacity: 1 !important;
+
+  padding: 10px 0 16px 54px !important;
+}
+
+.nav15__mobileSub > a {
+  display: block !important;
+
+  padding: 10px 0 !important;
+
+  color: rgba(255,255,255,.65) !important;
+
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.05) !important;
+}
+
+/* ==========================================================
+   CTA MOBILE
+   ========================================================== */
+
+.nav15__mobileCta {
+  margin-top: 28px !important;
+
+  min-height: 62px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  gap: 10px !important;
+
+  border-radius: 999px !important;
+
+  background: #f41883 !important;
+
+  color: #fff !important;
+
+  font-weight: 800 !important;
+
+  border: 1px solid #f41883 !important;
+}
+
+/* ==========================================================
+   DESKTOP
+   ========================================================== */
+
+@media (min-width: 901px) {
+
+  .nav15__mobile,
+  .nav15__mobileTrigger {
+    display: none !important;
+  }
+}
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  .nav15 {
+    min-height: 76px !important;
+  }
+
+  main {
+    padding-top: 76px !important;
+  }
+
+  .nav15__mobileTrigger {
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: 56px !important;
+    height: 56px !important;
+
+    flex: 0 0 56px !important;
+
+    border-radius: 50% !important;
+
+    background: rgba(8,8,11,.96) !important;
+
+    border:
+      1px solid rgba(255,255,255,.16) !important;
+
+    color: #fff !important;
+  }
+
+  .nav15__mobileTrigger[aria-expanded="true"] {
+    border-color: #f41883 !important;
+
+    box-shadow:
+      0 0 0 1px rgba(244,24,131,.20),
+      0 0 28px rgba(244,24,131,.12) !important;
+  }
+}
+
+
+/* QMAX V37.3 MOBILE CLOSE BUTTON */
+
+@media (max-width: 900px) {
+
+  /*
+   * O botão precisa permanecer acima do overlay.
+   * Quando fechado continua dentro do header.
+   */
+  .nav15__mobileTrigger {
+    position: relative !important;
+    z-index: 20010 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  /*
+   * Quando o menu está aberto, fixa o X no viewport.
+   */
+  .nav15__mobileTrigger[aria-expanded="true"] {
+    position: fixed !important;
+
+    top: 10px !important;
+    right: 16px !important;
+    left: auto !important;
+
+    width: 56px !important;
+    height: 56px !important;
+
+    z-index: 30000 !important;
+
+    background: rgba(8, 8, 11, .98) !important;
+
+    border: 1px solid #f41883 !important;
+    border-radius: 50% !important;
+
+    color: #fff !important;
+
+    box-shadow:
+      0 0 0 1px rgba(244,24,131,.25),
+      0 8px 30px rgba(0,0,0,.45),
+      0 0 28px rgba(244,24,131,.14) !important;
+  }
+
+  /*
+   * Overlay fica abaixo do botão X.
+   */
+  .nav15__mobile {
+    z-index: 20000 !important;
+  }
+
+  .nav15__mobile.is-open {
+    z-index: 20000 !important;
+  }
+
+  /*
+   * Deixa espaço no topo do menu para o botão de fechar.
+   */
+  .nav15__mobileInner {
+    padding-top: 96px !important;
+  }
+}
