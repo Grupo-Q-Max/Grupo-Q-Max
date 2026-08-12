@@ -5,8 +5,11 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  NODE_VERSION: '20.x'
-  KUDU_URL: 'https://webbd01-app-gybye4gucffsf4fq.scm.brazilsouth-01.azurewebsites.net'
+- group: 'CI-CD credenciais'
+- name: NODE_VERSION
+  value: '20.x'
+- name: KUDU_URL
+  value: 'https://webbd01-app-gybye4gucffsf4fq.scm.brazilsouth-01.azurewebsites.net'
 
 steps:
 
