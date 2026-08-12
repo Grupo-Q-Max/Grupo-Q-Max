@@ -40,6 +40,7 @@ const products = [
     name: "QXSIGN",
     label: "DOCUMENTAÇÃO DIGITAL",
     color: "#16d2c5",
+    logo: "/products/qxsign-dashboard.png",
     icon: FileCheck2,
     headline: "Documentação digital sem complicação.",
     description:
@@ -58,6 +59,7 @@ const products = [
     name: "FINORA",
     label: "INTELIGÊNCIA FINANCEIRA",
     color: "#a45cff",
+    logo: "/products/finora-dashboard.png",
     icon: HeartPulse,
     headline: "Inteligência financeira para clínicas.",
     description:
@@ -188,16 +190,12 @@ export function Products() {
 
               <div className="products5__brand">
                 {active.logo ? (
-                  <Image
+                  <img
                     src={active.logo}
                     alt={active.name}
-                    unoptimized
-                    width={310}
-                    height={135}
-                    style={{
-                      width: "auto",
-                      height: "auto",
-                    }}
+                    className="products36__image"
+                    loading="eager"
+                    decoding="async"
                   />
                 ) : (
                   <strong>{active.name}</strong>
