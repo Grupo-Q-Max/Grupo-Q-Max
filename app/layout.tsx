@@ -1,6 +1,7 @@
 import { OrganizationJsonLd } from "@/components/OrganizationJsonLd";
 import type { Metadata, Viewport } from "next";
-import "./qmax-final.css";
+import "./qmax-base.css";
+import "./qmax-overrides.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.grupoqmax.com.br"),

@@ -1,0 +1,1561 @@
+/* QMAX V32 BRAND UI POLISH */
+
+/* =========================================================
+   ECOSSISTEMA â€” ESCALA E RESPIRAÃ‡ÃƒO
+   ========================================================= */
+
+#empresas {
+  min-height: 100vh;
+}
+
+#empresas [class*="ecosystem21"] {
+  box-sizing: border-box;
+}
+
+/* Lista de empresas â€” mais legÃ­vel e premium */
+#empresas button {
+  min-height: 108px;
+}
+
+#empresas button strong,
+#empresas button h3,
+#empresas button [class*="name"] {
+  font-size: clamp(1.25rem, 1.45vw, 1.72rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.025em !important;
+}
+
+#empresas button small,
+#empresas button [class*="eyebrow"],
+#empresas button [class*="category"] {
+  font-size: 0.72rem !important;
+  letter-spacing: 0.16em !important;
+}
+
+/* NÃºmeros 01 / 02 / 03 */
+#empresas button > span:first-child {
+  font-size: 0.78rem !important;
+  opacity: 0.72;
+}
+
+/* =========================================================
+   PAINEL PRINCIPAL DA EMPRESA
+   ========================================================= */
+
+#empresas [class*="panel"],
+#empresas [class*="card"],
+#empresas [class*="detail"] {
+  border-radius: 28px;
+}
+
+/* Ãrea da logo */
+#empresas [class*="logo"],
+#empresas [class*="brand"] {
+  overflow: hidden;
+}
+
+/* Todas as logos ficam nÃ­tidas e proporcionais */
+#empresas img {
+  object-fit: contain !important;
+  object-position: center !important;
+  height: auto !important;
+}
+
+/* Logo principal dentro do card */
+#empresas img[alt="Q-Max Auditoria"],
+#empresas img[alt="Q-Max ContÃ¡bil"],
+#empresas img[alt="Q-Max Talents"],
+#empresas img[alt="Q-Max Technology"],
+#empresas img[alt="Lagerhaus"] {
+  width: auto !important;
+  max-width: 78% !important;
+  max-height: 118px !important;
+  margin: auto !important;
+}
+
+/* ContÃ¡bil possui arte escura â€” painel claro proposital */
+#empresas img[alt="Q-Max ContÃ¡bil"] {
+  max-height: 105px !important;
+}
+
+/* Lagerhaus Ã© horizontal */
+#empresas img[alt="Lagerhaus"] {
+  max-width: 86% !important;
+  max-height: 92px !important;
+}
+
+/* Talents */
+#empresas img[alt="Q-Max Talents"] {
+  max-height: 108px !important;
+}
+
+/* Technology */
+#empresas img[alt="Q-Max Technology"] {
+  max-height: 112px !important;
+}
+
+/* TÃ­tulo do card */
+#empresas h3 {
+  font-size: clamp(2rem, 2.5vw, 3rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+/* DescriÃ§Ã£o do card */
+#empresas p {
+  font-size: clamp(1rem, 1.05vw, 1.18rem);
+  line-height: 1.65;
+}
+
+/* =========================================================
+   PRODUTOS â€” LOGOS
+   ========================================================= */
+
+#produtos img {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+#produtos img[alt="QXBACK"],
+#produtos img[alt="QXSIGN"],
+#produtos img[alt="FINORA"] {
+  width: auto !important;
+  max-width: 78% !important;
+  max-height: 130px !important;
+  margin-inline: auto !important;
+}
+
+#produtos img[alt="FINORA"] {
+  max-width: 84% !important;
+  max-height: 115px !important;
+}
+
+/* =========================================================
+   SIGNATURE RAIL â€” BARRA LATERAL
+   ========================================================= */
+
+.qmax-signature-rail {
+  left: 18px !important;
+  width: 72px !important;
+  min-height: 56vh !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 60 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 16px !important;
+}
+
+/* Linha lateral mais elegante */
+.qmax-signature-rail::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 5%;
+  bottom: 5%;
+  width: 1px;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      rgba(255,255,255,.12) 18%,
+      rgba(239,25,125,.48) 50%,
+      rgba(255,255,255,.12) 82%,
+      transparent
+    );
+}
+
+/* "Empresas", "Sobre", etc. */
+.qmax-signature-rail__label {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  opacity: 0.88 !important;
+  white-space: nowrap !important;
+}
+
+/* Pontos/botÃµes da rail */
+.qmax-signature-rail a,
+.qmax-signature-rail button {
+  min-width: 14px !important;
+  min-height: 14px !important;
+}
+
+/* =========================================================
+   TIPOGRAFIA GERAL â€” MAIS PRESENÃ‡A
+   ========================================================= */
+
+#empresas > div > header h2,
+#produtos > div > header h2 {
+  font-size: clamp(2.65rem, 4.2vw, 5.2rem) !important;
+  line-height: .98 !important;
+  letter-spacing: -0.05em !important;
+}
+
+#empresas > div > header p,
+#produtos > div > header p {
+  font-size: clamp(1rem, 1.15vw, 1.25rem) !important;
+  line-height: 1.6 !important;
+}
+
+/* =========================================================
+   MOBILE / NOTEBOOK
+   ========================================================= */
+
+@media (max-width: 1180px) {
+
+  #empresas button {
+    min-height: 92px;
+  }
+
+  .qmax-signature-rail {
+    left: 10px !important;
+    width: 58px !important;
+  }
+
+  #empresas h3 {
+    font-size: clamp(1.8rem, 3vw, 2.6rem) !important;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .qmax-signature-rail {
+    display: none !important;
+  }
+
+  #empresas button {
+    min-height: 82px;
+  }
+
+  #empresas button strong,
+  #empresas button h3,
+  #empresas button [class*="name"] {
+    font-size: 1.12rem !important;
+  }
+
+  #empresas img[alt="Q-Max Auditoria"],
+  #empresas img[alt="Q-Max ContÃ¡bil"],
+  #empresas img[alt="Q-Max Talents"],
+  #empresas img[alt="Q-Max Technology"],
+  #empresas img[alt="Lagerhaus"] {
+    max-width: 82% !important;
+    max-height: 88px !important;
+  }
+
+  #produtos img[alt="QXBACK"],
+  #produtos img[alt="QXSIGN"],
+  #produtos img[alt="FINORA"] {
+    max-width: 82% !important;
+    max-height: 100px !important;
+  }
+}
+
+/* QMAX V33 OFFICIAL BRAND FIX */
+
+/* ---------------------------------------------------------
+   Remove fundos artificiais das Ã¡reas de marca
+   --------------------------------------------------------- */
+
+#empresas *:has(> img[alt="Q-Max Auditoria"]),
+#empresas *:has(> img[alt="Q-Max ContÃ¡bil"]),
+#empresas *:has(> img[alt="Q-Max Talents"]),
+#empresas *:has(> img[alt="Q-Max Technology"]),
+#empresas *:has(> img[alt="Lagerhaus"]) {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ---------------------------------------------------------
+   Tratamento universal
+   --------------------------------------------------------- */
+
+#empresas img[alt="Q-Max Auditoria"],
+#empresas img[alt="Q-Max ContÃ¡bil"],
+#empresas img[alt="Q-Max Talents"],
+#empresas img[alt="Q-Max Technology"],
+#empresas img[alt="Lagerhaus"] {
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  margin: auto !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* AUDITORIA
+   Branco + vermelho/vinho oficial
+*/
+#empresas img[alt="Q-Max Auditoria"] {
+  max-width: 78% !important;
+  max-height: 128px !important;
+}
+
+/* CONTÃBIL
+   SVG branco, sem retÃ¢ngulo branco
+*/
+#empresas img[alt="Q-Max ContÃ¡bil"] {
+  max-width: 76% !important;
+  max-height: 118px !important;
+}
+
+/* TALENTS
+   VersÃ£o oficial para fundo escuro
+*/
+#empresas img[alt="Q-Max Talents"] {
+  max-width: 77% !important;
+  max-height: 126px !important;
+}
+
+/* TECHNOLOGY */
+#empresas img[alt="Q-Max Technology"] {
+  max-width: 78% !important;
+  max-height: 122px !important;
+}
+
+/* LAGERHAUS
+   Logo horizontal precisa de mais largura
+*/
+#empresas img[alt="Lagerhaus"] {
+  max-width: 88% !important;
+  max-height: 104px !important;
+}
+
+/* ---------------------------------------------------------
+   Ãrea da logo do card
+   --------------------------------------------------------- */
+
+#empresas div:has(> img[alt="Q-Max Auditoria"]),
+#empresas div:has(> img[alt="Q-Max ContÃ¡bil"]),
+#empresas div:has(> img[alt="Q-Max Talents"]),
+#empresas div:has(> img[alt="Q-Max Technology"]),
+#empresas div:has(> img[alt="Lagerhaus"]) {
+  min-height: 145px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 18px 24px !important;
+  border-radius: 20px !important;
+  overflow: visible !important;
+}
+
+/* ---------------------------------------------------------
+   Texto das empresas
+   --------------------------------------------------------- */
+
+#empresas h3 {
+  font-size: clamp(2.15rem, 2.5vw, 3.15rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.045em !important;
+}
+
+#empresas p {
+  font-size: clamp(1.03rem, 1.06vw, 1.2rem) !important;
+  line-height: 1.65 !important;
+}
+
+/* Lista lateral */
+#empresas button strong,
+#empresas button h3,
+#empresas button [class*="name"] {
+  font-size: clamp(1.28rem, 1.45vw, 1.72rem) !important;
+  line-height: 1.1 !important;
+}
+
+/* ---------------------------------------------------------
+   Mobile
+   --------------------------------------------------------- */
+
+@media (max-width: 768px) {
+
+  #empresas div:has(> img[alt="Q-Max Auditoria"]),
+  #empresas div:has(> img[alt="Q-Max ContÃ¡bil"]),
+  #empresas div:has(> img[alt="Q-Max Talents"]),
+  #empresas div:has(> img[alt="Q-Max Technology"]),
+  #empresas div:has(> img[alt="Lagerhaus"]) {
+    min-height: 110px !important;
+    padding: 14px 18px !important;
+  }
+
+  #empresas img[alt="Q-Max Auditoria"],
+  #empresas img[alt="Q-Max ContÃ¡bil"],
+  #empresas img[alt="Q-Max Talents"],
+  #empresas img[alt="Q-Max Technology"] {
+    max-width: 82% !important;
+    max-height: 92px !important;
+  }
+
+  #empresas img[alt="Lagerhaus"] {
+    max-width: 90% !important;
+    max-height: 78px !important;
+  }
+}
+
+/* QMAX V34.1 LOGOS FINAL */
+
+#empresas .ecosystem21__officialLogo {
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 auto !important;
+
+  max-width: 100% !important;
+  max-height: 125px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  background: transparent !important;
+
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  filter: none !important;
+}
+
+/* Container da marca sem retangulo branco */
+#empresas div:has(> .ecosystem21__officialLogo) {
+  width: 100% !important;
+  min-height: 145px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  padding: 14px 22px !important;
+
+  background: transparent !important;
+  background-color: transparent !important;
+
+  box-shadow: none !important;
+  border: 0 !important;
+
+  overflow: visible !important;
+}
+
+/* Auditoria */
+#empresas img[src="/brands/brand-auditoria.png"] {
+  width: min(260px, 82%) !important;
+  max-height: 125px !important;
+}
+
+/* Contabil */
+#empresas img[src="/brands/brand-contabil.png"] {
+  width: min(290px, 86%) !important;
+  max-height: 115px !important;
+}
+
+/* Talents */
+#empresas img[src="/brands/brand-talents.png"] {
+  width: min(265px, 82%) !important;
+  max-height: 125px !important;
+}
+
+/* Technology */
+#empresas img[src="/brands/brand-technology.png"] {
+  width: min(285px, 84%) !important;
+  max-height: 120px !important;
+}
+
+/* Lagerhaus */
+#empresas img[src="/brands/brand-lagerhaus.png"] {
+  width: min(340px, 92%) !important;
+  max-height: 105px !important;
+}
+
+/* Nao permite fundo antigo envolvendo marca */
+#empresas div:has(> .ecosystem21__officialLogo)::before,
+#empresas div:has(> .ecosystem21__officialLogo)::after {
+  display: none !important;
+}
+
+/* Titulo principal */
+#empresas h3 {
+  font-size: clamp(2.15rem, 2.55vw, 3.15rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.045em !important;
+}
+
+/* Texto */
+#empresas p {
+  font-size: clamp(1.05rem, 1.08vw, 1.2rem) !important;
+  line-height: 1.65 !important;
+}
+
+@media (max-width: 768px) {
+
+  #empresas div:has(> .ecosystem21__officialLogo) {
+    min-height: 105px !important;
+    padding: 10px 14px !important;
+  }
+
+  #empresas .ecosystem21__officialLogo {
+    max-width: 86% !important;
+    max-height: 85px !important;
+  }
+
+  #empresas img[src="/brands/brand-lagerhaus.png"] {
+    max-width: 94% !important;
+    max-height: 72px !important;
+  }
+}
+
+
+/* QMAX V35 FINAL VISUAL POLISH */
+
+/* ==========================================================
+   EMPRESAS
+   ========================================================== */
+
+#empresas {
+  scroll-margin-top: 96px;
+}
+
+/* Titulo da secao */
+#empresas h2 {
+  font-size: clamp(3rem, 5vw, 5.8rem) !important;
+  line-height: .95 !important;
+  letter-spacing: -0.055em !important;
+}
+
+#empresas h2 em {
+  font-style: normal !important;
+}
+
+/* Texto introdutorio */
+#empresas > div > header p,
+#empresas header > p {
+  font-size: clamp(1.08rem, 1.2vw, 1.28rem) !important;
+  line-height: 1.7 !important;
+  max-width: 680px !important;
+}
+
+/* Navegacao lateral */
+#empresas nav {
+  min-width: 290px !important;
+}
+
+#empresas nav button {
+  min-height: 92px !important;
+  padding: 18px 20px !important;
+}
+
+/* Numero */
+#empresas nav button > span:first-child {
+  font-size: .78rem !important;
+  letter-spacing: .16em !important;
+}
+
+/* Nome empresa na lateral */
+#empresas nav button strong,
+#empresas nav button h3 {
+  font-size: clamp(1.32rem, 1.5vw, 1.72rem) !important;
+  line-height: 1.08 !important;
+}
+
+/* Barrinha lateral */
+#empresas nav::before {
+  width: 3px !important;
+  min-height: 100% !important;
+  border-radius: 999px !important;
+}
+
+/* Card principal */
+#empresas [class*="detail"],
+#empresas [class*="panel"] {
+  border-radius: 28px !important;
+}
+
+/* Logo */
+#empresas .ecosystem21__officialLogo {
+  max-width: 88% !important;
+  max-height: 124px !important;
+}
+
+/* Area da logo */
+#empresas div:has(> .ecosystem21__officialLogo) {
+  min-height: 148px !important;
+  padding: 18px 26px !important;
+}
+
+/* Titulo empresa */
+#empresas h3 {
+  font-size: clamp(2.35rem, 3vw, 3.7rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+/* Descricao */
+#empresas h3 + p,
+#empresas [class*="detail"] p {
+  font-size: clamp(1.06rem, 1.16vw, 1.22rem) !important;
+  line-height: 1.72 !important;
+}
+
+/* Botoes servicos */
+#empresas button,
+#empresas a {
+  transition:
+    transform .22s ease,
+    border-color .22s ease,
+    background-color .22s ease,
+    opacity .22s ease !important;
+}
+
+#empresas [class*="service"] {
+  min-height: 52px !important;
+}
+
+/* ==========================================================
+   PRODUTOS
+   ========================================================== */
+
+#produtos {
+  scroll-margin-top: 96px;
+}
+
+#produtos h2 {
+  font-size: clamp(3rem, 5vw, 5.8rem) !important;
+  line-height: .95 !important;
+  letter-spacing: -0.055em !important;
+}
+
+#produtos h3 {
+  font-size: clamp(2.35rem, 3vw, 3.65rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+#produtos p {
+  font-size: clamp(1.04rem, 1.12vw, 1.2rem) !important;
+  line-height: 1.7 !important;
+}
+
+/* Imagem do produto */
+#produtos img {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+/* Area visual dos dashboards */
+#produtos div:has(> img) {
+  overflow: hidden !important;
+}
+
+/* Cartoes */
+#produtos button {
+  min-height: 96px !important;
+}
+
+/* ==========================================================
+   RESPONSIVO
+   ========================================================== */
+
+@media (max-width: 1100px) {
+
+  #empresas nav {
+    min-width: 240px !important;
+  }
+
+  #empresas h2,
+  #produtos h2 {
+    font-size: clamp(2.7rem, 7vw, 4.6rem) !important;
+  }
+}
+
+@media (max-width: 768px) {
+
+  #empresas,
+  #produtos {
+    scroll-margin-top: 72px;
+  }
+
+  #empresas nav {
+    min-width: 100% !important;
+  }
+
+  #empresas nav button {
+    min-height: 74px !important;
+    padding: 14px 14px !important;
+  }
+
+  #empresas h2,
+  #produtos h2 {
+    font-size: clamp(2.45rem, 11vw, 3.65rem) !important;
+    line-height: .98 !important;
+  }
+
+  #empresas h3,
+  #produtos h3 {
+    font-size: clamp(2rem, 8vw, 2.85rem) !important;
+  }
+
+  #empresas div:has(> .ecosystem21__officialLogo) {
+    min-height: 112px !important;
+    padding: 12px 16px !important;
+  }
+
+  #empresas .ecosystem21__officialLogo {
+    max-width: 86% !important;
+    max-height: 86px !important;
+  }
+
+  #produtos button {
+    min-height: 78px !important;
+  }
+}
+
+@media (max-width: 480px) {
+
+  #empresas h2,
+  #produtos h2 {
+    font-size: clamp(2.2rem, 12vw, 3rem) !important;
+  }
+
+  #empresas p,
+  #produtos p {
+    font-size: 1rem !important;
+  }
+}
+
+
+/* QMAX V36 PRODUCTS FIX */
+
+/* imagem real do produto */
+#produtos .products36__image {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 520px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  margin: 0 auto !important;
+
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  filter: none !important;
+  background: transparent !important;
+}
+
+/* container da imagem */
+#produtos div:has(> .products36__image) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  min-height: 420px !important;
+
+  padding: 24px !important;
+
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+/* cards do topo */
+#produtos button {
+  min-height: 112px !important;
+  border-radius: 24px !important;
+}
+
+/* nomes */
+#produtos button strong,
+#produtos button h3 {
+  font-size: clamp(1.35rem, 1.6vw, 1.75rem) !important;
+  line-height: 1.05 !important;
+}
+
+/* titulo principal */
+#produtos h3 {
+  font-size: clamp(2.7rem, 4vw, 4.4rem) !important;
+  line-height: .98 !important;
+  letter-spacing: -0.05em !important;
+}
+
+/* descriÃ§Ã£o */
+#produtos p {
+  font-size: clamp(1.06rem, 1.2vw, 1.24rem) !important;
+  line-height: 1.7 !important;
+}
+
+/* ==========================================================
+   BARRA LATERAL
+   ========================================================== */
+
+/* rail mais limpo e afastado do conteÃºdo */
+body [class*="side"],
+body [class*="rail"],
+body [class*="sectionNav"] {
+  z-index: 30 !important;
+}
+
+/* linha vertical */
+body [class*="rail"]::before,
+body [class*="sectionNav"]::before {
+  width: 2px !important;
+  opacity: .45 !important;
+}
+
+/* indicador ativo */
+body [class*="rail"] [class*="active"],
+body [class*="sectionNav"] [class*="active"] {
+  min-height: 34px !important;
+}
+
+/* evita colar no conteÃºdo principal */
+#sobre,
+#empresas,
+#produtos,
+#contato {
+  padding-left: clamp(28px, 4vw, 72px) !important;
+}
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 768px) {
+
+  #produtos div:has(> .products36__image) {
+    min-height: 260px !important;
+    padding: 12px !important;
+  }
+
+  #produtos .products36__image {
+    max-height: 320px !important;
+  }
+
+  #produtos button {
+    min-height: 88px !important;
+  }
+
+  #sobre,
+  #empresas,
+  #produtos,
+  #contato {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+}
+
+
+/* QMAX V36.1 PRODUCT IMAGE SCALE */
+
+/* QXSIGN maior */
+#produtos img[src="/products/qxsign-dashboard.png"] {
+  width: 112% !important;
+  max-width: 112% !important;
+  max-height: 620px !important;
+  transform: scale(1.08) !important;
+  transform-origin: center center !important;
+}
+
+/* FINORA maior */
+#produtos img[src="/products/finora-dashboard.png"] {
+  width: 114% !important;
+  max-width: 114% !important;
+  max-height: 640px !important;
+  transform: scale(1.10) !important;
+  transform-origin: center center !important;
+}
+
+/* Mais Ã¡rea Ãºtil para as duas imagens */
+#produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+#produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+  min-height: 500px !important;
+  padding: 8px !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 768px) {
+
+  #produtos img[src="/products/qxsign-dashboard.png"],
+  #produtos img[src="/products/finora-dashboard.png"] {
+    width: 106% !important;
+    max-width: 106% !important;
+    transform: scale(1.04) !important;
+    max-height: 360px !important;
+  }
+
+  #produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+  #produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+    min-height: 280px !important;
+  }
+}
+
+
+/* QMAX V36.2 PRODUCT IMAGE FIT */
+
+/* QXSIGN - grande, mas sem cortar */
+#produtos img[src="/products/qxsign-dashboard.png"] {
+  display: block !important;
+  width: 92% !important;
+  max-width: 920px !important;
+  height: auto !important;
+  max-height: 560px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  transform: none !important;
+  margin: 0 auto !important;
+}
+
+/* FINORA - grande, mas sem cortar */
+#produtos img[src="/products/finora-dashboard.png"] {
+  display: block !important;
+  width: 88% !important;
+  max-width: 860px !important;
+  height: auto !important;
+  max-height: 540px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  transform: none !important;
+  margin: 0 auto !important;
+}
+
+/* Containers deixam a imagem respirar */
+#produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+#produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+  min-height: 460px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  padding: 20px 28px !important;
+
+  overflow: visible !important;
+  background: transparent !important;
+}
+
+/* Tablet */
+@media (max-width: 1100px) {
+
+  #produtos img[src="/products/qxsign-dashboard.png"],
+  #produtos img[src="/products/finora-dashboard.png"] {
+    width: 94% !important;
+    max-height: 460px !important;
+  }
+
+  #produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+  #produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+    min-height: 390px !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+  #produtos img[src="/products/qxsign-dashboard.png"],
+  #produtos img[src="/products/finora-dashboard.png"] {
+    width: 96% !important;
+    max-width: 100% !important;
+    max-height: 300px !important;
+  }
+
+  #produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+  #produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+    min-height: 250px !important;
+    padding: 10px !important;
+    overflow: visible !important;
+  }
+}
+
+
+/* QMAX V37 MOBILE NAV FIX */
+
+/* ==========================================================
+   HEADER FIXO
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  header,
+  .navbar,
+  [class*="navbar"] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+
+    width: 100% !important;
+
+    z-index: 9998 !important;
+
+    background:
+      rgba(7, 7, 10, 0.88) !important;
+
+    -webkit-backdrop-filter: blur(18px) !important;
+    backdrop-filter: blur(18px) !important;
+
+    border-bottom:
+      1px solid rgba(255,255,255,.07) !important;
+  }
+
+  /* evita conteÃºdo entrando atrÃ¡s do header */
+  #inicio {
+    padding-top: 92px !important;
+  }
+}
+
+/* ==========================================================
+   BOTAO HAMBURGUER
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  button[aria-expanded] {
+    position: relative !important;
+    z-index: 10001 !important;
+
+    width: 56px !important;
+    height: 56px !important;
+
+    flex: 0 0 56px !important;
+
+    border-radius: 50% !important;
+
+    background:
+      rgba(10,10,13,.92) !important;
+
+    border:
+      1px solid rgba(255,255,255,.14) !important;
+  }
+}
+
+/* ==========================================================
+   MENU MOBILE ABERTO
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  /* qualquer painel imediatamente associado ao menu mobile */
+  [class*="mobile"][class*="menu"],
+  [class*="mobile"][class*="nav"],
+  [class*="drawer"],
+  [class*="menuPanel"],
+  [class*="navPanel"] {
+    z-index: 9999 !important;
+  }
+
+  /* bloqueia menus ficando atrÃ¡s do Hero */
+  nav[aria-label="NavegaÃ§Ã£o principal"] {
+    z-index: 10000 !important;
+  }
+}
+
+/* ==========================================================
+   OVERLAY MOBILE
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  nav[aria-label="NavegaÃ§Ã£o principal"] {
+    background:
+      rgba(7, 7, 10, .985) !important;
+  }
+
+  nav[aria-label="NavegaÃ§Ã£o principal"] a {
+    position: relative;
+    z-index: 10002;
+  }
+}
+
+/* ==========================================================
+   LINKS MOBILE
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  nav[aria-label="NavegaÃ§Ã£o principal"] a {
+    font-size: clamp(1.3rem, 6vw, 2rem) !important;
+    line-height: 1.15 !important;
+
+    min-height: 52px !important;
+
+    display: flex !important;
+    align-items: center !important;
+
+    color: #fff !important;
+  }
+
+  nav[aria-label="NavegaÃ§Ã£o principal"] a:hover {
+    color: #f41883 !important;
+  }
+}
+
+/* ==========================================================
+   EVITA ELEMENTOS DO SITE SOBRE O MENU
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  .qmax-signature-rail,
+  [class*="signature-rail"],
+  [class*="floating"],
+  [class*="whatsapp"],
+  [class*="contactFloat"] {
+    z-index: 50 !important;
+  }
+}
+
+
+/* QMAX V37.1 FIXED HEADER ALL SCREENS */
+
+/* HEADER FIXO EM TODAS AS TELAS */
+header,
+.navbar,
+[class*="navbar"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+
+  width: 100% !important;
+
+  z-index: 9998 !important;
+
+  background: rgba(7, 7, 10, 0.92) !important;
+
+  -webkit-backdrop-filter: blur(18px) !important;
+  backdrop-filter: blur(18px) !important;
+
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+}
+
+/* COMPENSA O HEADER */
+main {
+  padding-top: 88px !important;
+}
+
+/* BOTAO DO MENU ACIMA DE TUDO */
+button[aria-expanded] {
+  position: relative !important;
+  z-index: 10002 !important;
+}
+
+/* MENU SEMPRE ACIMA DO HERO */
+nav[aria-label="NavegaÃ§Ã£o principal"] {
+  position: relative;
+  z-index: 10001 !important;
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+
+  main {
+    padding-top: 76px !important;
+  }
+
+  header,
+  .navbar,
+  [class*="navbar"] {
+    min-height: 76px !important;
+  }
+}
+
+
+/* QMAX V37.2 NAVBAR DEFINITIVA */
+
+/* ==========================================================
+   HEADER FIXO - TODAS AS TELAS
+   ========================================================== */
+
+.nav15 {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+
+  width: 100% !important;
+
+  z-index: 10000 !important;
+
+  background: rgba(6, 6, 9, 0.92) !important;
+
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+
+  overflow: visible !important;
+}
+
+/* espaÃ§o para o header fixo */
+main {
+  padding-top: 88px !important;
+}
+
+/* ==========================================================
+   TRIGGER MOBILE
+   ========================================================== */
+
+.nav15__mobileTrigger {
+  position: relative !important;
+  z-index: 10005 !important;
+
+  cursor: pointer !important;
+
+  pointer-events: auto !important;
+}
+
+/* ==========================================================
+   MENU MOBILE
+   ========================================================== */
+
+.nav15__mobile {
+  position: fixed !important;
+
+  inset: 0 !important;
+
+  width: 100vw !important;
+  height: 100dvh !important;
+
+  z-index: 10001 !important;
+
+  background:
+    radial-gradient(
+      circle at 85% 10%,
+      rgba(244, 24, 131, .14),
+      transparent 35%
+    ),
+    rgba(5, 5, 8, .985) !important;
+
+  -webkit-backdrop-filter: blur(22px) !important;
+  backdrop-filter: blur(22px) !important;
+
+  opacity: 0 !important;
+  visibility: hidden !important;
+
+  pointer-events: none !important;
+
+  transform: translateY(-18px) !important;
+
+  transition:
+    opacity .28s ease,
+    transform .28s ease,
+    visibility .28s ease !important;
+
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+/* MENU ABERTO */
+.nav15__mobile.is-open {
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  pointer-events: auto !important;
+
+  transform: translateY(0) !important;
+}
+
+/* ==========================================================
+   CONTEUDO INTERNO
+   ========================================================== */
+
+.nav15__mobileInner {
+  width: min(100%, 720px) !important;
+  min-height: 100% !important;
+
+  margin: 0 auto !important;
+
+  padding:
+    110px
+    clamp(24px, 7vw, 56px)
+    48px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  background: transparent !important;
+}
+
+/* topo MENU / GRUPO Q-MAX */
+.nav15__mobileTop {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+
+  margin-bottom: 28px !important;
+
+  padding-bottom: 18px !important;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.10) !important;
+}
+
+.nav15__mobileTop span {
+  color: #f41883 !important;
+
+  font-size: .78rem !important;
+  font-weight: 800 !important;
+
+  letter-spacing: .18em !important;
+}
+
+.nav15__mobileTop small {
+  color: rgba(255,255,255,.42) !important;
+
+  font-size: .7rem !important;
+  letter-spacing: .14em !important;
+}
+
+/* ==========================================================
+   ITENS PRINCIPAIS
+   ========================================================== */
+
+.nav15__mobileInner > a:not(.nav15__mobileCta),
+.nav15__mobileInner > button {
+  width: 100% !important;
+
+  min-height: 74px !important;
+
+  display: grid !important;
+  grid-template-columns: 42px 1fr auto !important;
+  align-items: center !important;
+
+  gap: 12px !important;
+
+  padding: 12px 0 !important;
+
+  color: #fff !important;
+
+  background: transparent !important;
+
+  border: 0 !important;
+  border-bottom:
+    1px solid rgba(255,255,255,.09) !important;
+
+  text-align: left !important;
+
+  cursor: pointer !important;
+}
+
+.nav15__mobileInner > a span,
+.nav15__mobileInner > button span {
+  color: rgba(255,255,255,.35) !important;
+
+  font-size: .72rem !important;
+  font-weight: 700 !important;
+
+  letter-spacing: .10em !important;
+}
+
+.nav15__mobileInner > a strong,
+.nav15__mobileInner > button strong {
+  color: #fff !important;
+
+  font-size: clamp(1.55rem, 6vw, 2.15rem) !important;
+  font-weight: 750 !important;
+
+  line-height: 1 !important;
+
+  letter-spacing: -.035em !important;
+}
+
+/* seta dropdown */
+.nav15__mobileInner .rotate {
+  transform: rotate(180deg) !important;
+}
+
+/* ==========================================================
+   SUBMENUS
+   ========================================================== */
+
+.nav15__mobileSub {
+  display: grid !important;
+
+  grid-template-rows: 0fr !important;
+
+  opacity: 0 !important;
+
+  transition:
+    grid-template-rows .28s ease,
+    opacity .25s ease !important;
+
+  overflow: hidden !important;
+}
+
+.nav15__mobileSub.open {
+  grid-template-rows: 1fr !important;
+
+  opacity: 1 !important;
+
+  padding: 10px 0 16px 54px !important;
+}
+
+.nav15__mobileSub > a {
+  display: block !important;
+
+  padding: 10px 0 !important;
+
+  color: rgba(255,255,255,.65) !important;
+
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.05) !important;
+}
+
+/* ==========================================================
+   CTA MOBILE
+   ========================================================== */
+
+.nav15__mobileCta {
+  margin-top: 28px !important;
+
+  min-height: 62px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  gap: 10px !important;
+
+  border-radius: 999px !important;
+
+  background: #f41883 !important;
+
+  color: #fff !important;
+
+  font-weight: 800 !important;
+
+  border: 1px solid #f41883 !important;
+}
+
+/* ==========================================================
+   DESKTOP
+   ========================================================== */
+
+@media (min-width: 901px) {
+
+  .nav15__mobile,
+  .nav15__mobileTrigger {
+    display: none !important;
+  }
+}
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  .nav15 {
+    min-height: 76px !important;
+  }
+
+  main {
+    padding-top: 76px !important;
+  }
+
+  .nav15__mobileTrigger {
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: 56px !important;
+    height: 56px !important;
+
+    flex: 0 0 56px !important;
+
+    border-radius: 50% !important;
+
+    background: rgba(8,8,11,.96) !important;
+
+    border:
+      1px solid rgba(255,255,255,.16) !important;
+
+    color: #fff !important;
+  }
+
+  .nav15__mobileTrigger[aria-expanded="true"] {
+    border-color: #f41883 !important;
+
+    box-shadow:
+      0 0 0 1px rgba(244,24,131,.20),
+      0 0 28px rgba(244,24,131,.12) !important;
+  }
+}
+
+
+/* QMAX V37.3 MOBILE CLOSE BUTTON */
+
+@media (max-width: 900px) {
+
+  /*
+   * O botÃ£o precisa permanecer acima do overlay.
+   * Quando fechado continua dentro do header.
+   */
+  .nav15__mobileTrigger {
+    position: relative !important;
+    z-index: 20010 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  /*
+   * Quando o menu estÃ¡ aberto, fixa o X no viewport.
+   */
+  .nav15__mobileTrigger[aria-expanded="true"] {
+    position: fixed !important;
+
+    top: 10px !important;
+    right: 16px !important;
+    left: auto !important;
+
+    width: 56px !important;
+    height: 56px !important;
+
+    z-index: 30000 !important;
+
+    background: rgba(8, 8, 11, .98) !important;
+
+    border: 1px solid #f41883 !important;
+    border-radius: 50% !important;
+
+    color: #fff !important;
+
+    box-shadow:
+      0 0 0 1px rgba(244,24,131,.25),
+      0 8px 30px rgba(0,0,0,.45),
+      0 0 28px rgba(244,24,131,.14) !important;
+  }
+
+  /*
+   * Overlay fica abaixo do botÃ£o X.
+   */
+  .nav15__mobile {
+    z-index: 20000 !important;
+  }
+
+  .nav15__mobile.is-open {
+    z-index: 20000 !important;
+  }
+
+  /*
+   * Deixa espaÃ§o no topo do menu para o botÃ£o de fechar.
+   */
+  .nav15__mobileInner {
+    padding-top: 96px !important;
+  }
+}
