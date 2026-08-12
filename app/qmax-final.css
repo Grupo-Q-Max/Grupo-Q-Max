@@ -14258,3 +14258,112 @@ p {
       none !important;
   }
 }
+
+/* ============================================================
+   Q-MAX BRAND LOGO SYSTEM
+   ============================================================ */
+
+.ecosystem21 img,
+.products21 img,
+.nav15 img,
+.hero21 img,
+.finish-footer img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Logos dentro dos cards */
+.ecosystem21__brand img,
+.ecosystem21__logo img,
+.ecosystem21__visual img,
+.products21__logo img,
+.products21__visual img {
+  object-fit: contain !important;
+  object-position: center !important;
+  width: auto !important;
+  max-width: min(82%, 360px) !important;
+  max-height: 150px !important;
+  filter: none;
+}
+
+/* Evita logos horizontais gigantes */
+img[src*="lagerhaus-full"],
+img[src*="finora-white"] {
+  max-width: min(88%, 420px) !important;
+  max-height: 125px !important;
+}
+
+/* Símbolos */
+img[src*="-symbol"] {
+  width: auto !important;
+  max-width: 150px !important;
+  max-height: 150px !important;
+}
+
+/* Q-Max Technology */
+img[src*="qmax-technology"] {
+  max-height: 145px !important;
+}
+
+/* Contábil */
+img[src*="qmax-contabil"] {
+  max-height: 130px !important;
+}
+
+/* Talents */
+img[src*="qmax-talents"] {
+  max-height: 135px !important;
+}
+
+/* QXBACK */
+img[src*="qxback"] {
+  max-height: 135px !important;
+}
+
+/* Finora ganha um pouco mais de presença */
+img[src*="finora"] {
+  filter: drop-shadow(0 18px 40px rgba(109, 53, 162, 0.18));
+}
+
+/* Lagerhaus: preserva leitura da marca */
+img[src*="lagerhaus"] {
+  filter: drop-shadow(0 16px 32px rgba(219, 126, 23, 0.12));
+}
+
+/* Suavidade na troca dos cards */
+.ecosystem21 img,
+.products21 img {
+  transition:
+    transform .45s cubic-bezier(.22,1,.36,1),
+    opacity .35s ease,
+    filter .35s ease;
+}
+
+.ecosystem21 img:hover,
+.products21 img:hover {
+  transform: scale(1.025);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .ecosystem21__brand img,
+  .ecosystem21__logo img,
+  .ecosystem21__visual img,
+  .products21__logo img,
+  .products21__visual img {
+    max-width: 78% !important;
+    max-height: 110px !important;
+  }
+
+  img[src*="lagerhaus-full"],
+  img[src*="finora-white"] {
+    max-width: 84% !important;
+    max-height: 95px !important;
+  }
+
+  img[src*="-symbol"] {
+    max-width: 105px !important;
+    max-height: 105px !important;
+  }
+}
