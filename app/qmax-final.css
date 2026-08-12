@@ -14815,7 +14815,7 @@ img[src*="lagerhaus"] {
 }
 
 /* Contabil */
-#empresas img[src="/brands/brand-contabil.svg"] {
+#empresas img[src="/brands/brand-contabil.png"] {
   width: min(290px, 86%) !important;
   max-height: 115px !important;
 }
