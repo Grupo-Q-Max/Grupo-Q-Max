@@ -7,62 +7,40 @@ pool:
 variables:
 - group: 'CI-CD credenciais'
 - name: NODE_VERSION
-  value: '20.x'
+  value: '22.x'
 - name: KUDU_URL
   value: 'https://webbd01-app-gybye4gucffsf4fq.scm.brazilsouth-01.azurewebsites.net'
 
 steps:
 
-# ============================================================
-# 1. NODE
-# ============================================================
-
-- task: NodeTool@0
-  displayName: 'Usar Node.js 20'
+- task: UseNode@1
+  displayName: 'Usar Node.js 22'
   inputs:
-    versionSpec: '$(NODE_VERSION)'
+    version: '$(NODE_VERSION)'
 
-# ============================================================
-# 2. DEPENDENCIAS
-# ============================================================
-
-- script: |
-    npm ci
+- script: npm ci
   displayName: 'Instalar dependencias'
 
-# ============================================================
-# 3. BUILD NEXT.JS
-# ============================================================
-
-- script: |
-    npm run build
+- script: npm run build
   displayName: 'Build Next.js'
-
-# ============================================================
-# 4. VALIDAR STANDALONE
-# ============================================================
 
 - bash: |
     set -e
 
-    echo "Validando build standalone..."
+    echo "Validando standalone..."
 
     if [ ! -f ".qmax-next/standalone/server.js" ]; then
-      echo "ERRO: .qmax-next/standalone/server.js nao encontrado"
+      echo "ERRO: server.js standalone nao encontrado."
       exit 1
     fi
 
-    echo "Standalone OK"
+    echo "Standalone OK."
   displayName: 'Validar standalone'
-
-# ============================================================
-# 5. MONTAR PACOTE DE PRODUCAO
-# ============================================================
 
 - bash: |
     set -e
 
-    echo "Preparando pacote..."
+    echo "Preparando pacote Q-Max..."
 
     rm -rf deploy
     rm -f site.zip
@@ -81,25 +59,31 @@ steps:
       cp -R .qmax-next/static deploy/.qmax-next/static
     fi
 
-    echo ""
-    echo "Conteudo do pacote:"
-    ls -la deploy
+    node -e "
+      const fs = require('fs');
+      const p = './deploy/package.json';
+      const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
+      pkg.scripts = pkg.scripts || {};
+      pkg.scripts.start = 'node server.js';
+      fs.writeFileSync(p, JSON.stringify(pkg, null, 2));
+    "
 
     echo ""
-    echo "Compactando..."
+    echo "package.json de producao:"
+    cat deploy/package.json
+
+    echo ""
+    echo "Arquivos principais:"
+    ls -la deploy
 
     cd deploy
     zip -r ../site.zip .
     cd ..
 
     echo ""
-    echo "Pacote criado:"
+    echo "Pacote:"
     ls -lh site.zip
   displayName: 'Montar pacote standalone'
-
-# ============================================================
-# 6. DEPLOY VIA KUDU ZIPDEPLOY
-# ============================================================
 
 - task: PowerShell@2
   displayName: 'Diagnostico das credenciais'
@@ -110,32 +94,28 @@ steps:
       $user = $env:PUBLISH_USER
       $pass = $env:PUBLISH_PASS
 
-      Write-Host "=== DIAGNOSTICO ==="
-
       if ([string]::IsNullOrWhiteSpace($user)) {
-        throw "PUBLISH_USER esta vazio."
+          throw "PUBLISH_USER vazio."
       }
 
       if ([string]::IsNullOrWhiteSpace($pass)) {
-        throw "PUBLISH_PASS esta vazio."
+          throw "PUBLISH_PASS vazio."
       }
 
-      Write-Host "PUBLISH_USER recebido: [$user]"
+      Write-Host "PUBLISH_USER carregado."
       Write-Host "Tamanho USER: $($user.Length)"
       Write-Host "Tamanho PASS: $($pass.Length)"
-      Write-Host "Primeiro caractere USER: [$($user.Substring(0,1))]"
 
       if ($user -eq '$webbd01-app') {
-        Write-Host "USER EXATO: OK"
+          Write-Host "USER EXATO: OK"
       }
       else {
-        Write-Host "USER EXATO: DIFERENTE"
+          throw "PUBLISH_USER inesperado."
       }
-
-      Write-Host "Credenciais chegaram ao pipeline."
   env:
     PUBLISH_USER: $(PUBLISH_USER)
     PUBLISH_PASS: $(PUBLISH_PASS)
+
 - task: PowerShell@2
   displayName: 'Deploy Azure App Service'
   inputs:
@@ -147,15 +127,6 @@ steps:
       $username = $env:PUBLISH_USER
       $password = $env:PUBLISH_PASS
       $kuduBase = "$(KUDU_URL)"
-
-      if ([string]::IsNullOrWhiteSpace($username)) {
-          throw "PUBLISH_USER nao configurado."
-      }
-
-      if ([string]::IsNullOrWhiteSpace($password)) {
-          throw "PUBLISH_PASS nao configurado."
-      }
-
       $zipPath = "$(Build.SourcesDirectory)/site.zip"
 
       if (!(Test-Path $zipPath)) {
@@ -172,10 +143,9 @@ steps:
           Authorization = "Basic $base64"
       }
 
-      $url = "$kuduBase/api/publish?type=zip&clean=true"
+      $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true"
 
-      Write-Host "Iniciando deploy..."
-      Write-Host "Destino: webbd01-app"
+      Write-Host "Publicando Grupo Q-Max..."
 
       $response = Invoke-WebRequest `
           -Uri $url `
@@ -186,82 +156,19 @@ steps:
           -UseBasicParsing `
           -TimeoutSec 900
 
-      Write-Host ""
       Write-Host "Status HTTP: $($response.StatusCode)"
-      Write-Host "Deploy enviado com sucesso."
 
       if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
-          throw "Deploy retornou HTTP $($response.StatusCode)"
+          throw "Deploy falhou com HTTP $($response.StatusCode)"
       }
+
+      Write-Host "Deploy concluido com sucesso."
   env:
     PUBLISH_USER: $(PUBLISH_USER)
     PUBLISH_PASS: $(PUBLISH_PASS)
 
-# ============================================================
-# 7. FINAL
-# ============================================================
-
-
-# ============================================================
-# STARTUP NEXT.JS NO APP SERVICE LINUX
-# ============================================================
-
-- task: PowerShell@2
-  displayName: 'Configurar startup do Next.js'
-  inputs:
-    pwsh: true
-    targetType: 'inline'
-    script: |
-      $ErrorActionPreference = "Stop"
-
-      $username = $env:PUBLISH_USER
-      $password = $env:PUBLISH_PASS
-      $kuduBase = "$(KUDU_URL)"
-
-      $startupPath = "$(Build.SourcesDirectory)/startup.sh"
-
-      $startupContent = @"
-      #!/bin/sh
-      cd /home/site/wwwroot
-      exec node server.js
-      "@
-
-      [IO.File]::WriteAllText(
-          $startupPath,
-          $startupContent,
-          (New-Object Text.UTF8Encoding($false))
-      )
-
-      $pair = "${username}:${password}"
-
-      $base64 = [Convert]::ToBase64String(
-          [Text.Encoding]::ASCII.GetBytes($pair)
-      )
-
-      $headers = @{
-          Authorization = "Basic $base64"
-      }
-
-      $url = "$kuduBase/api/publish?type=startup&restart=true"
-
-      Write-Host "Configurando startup..."
-      Write-Host "Comando: node server.js"
-
-      $response = Invoke-WebRequest `
-          -Uri $url `
-          -Method Post `
-          -Headers $headers `
-          -InFile $startupPath `
-          -ContentType "application/octet-stream" `
-          -UseBasicParsing `
-          -TimeoutSec 300
-
-      Write-Host "Startup HTTP: $($response.StatusCode)"
-  env:
-    PUBLISH_USER: $(PUBLISH_USER)
-    PUBLISH_PASS: $(PUBLISH_PASS)
 - script: |
     echo "=========================================="
-    echo " Q-MAX DEPLOY FINALIZADO"
+    echo " GRUPO Q-MAX - DEPLOY CONCLUIDO"
     echo "=========================================="
   displayName: 'Finalizar'
