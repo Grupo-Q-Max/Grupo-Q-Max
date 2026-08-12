@@ -14874,3 +14874,470 @@ img[src*="lagerhaus"] {
     max-height: 72px !important;
   }
 }
+
+
+/* QMAX V35 FINAL VISUAL POLISH */
+
+/* ==========================================================
+   EMPRESAS
+   ========================================================== */
+
+#empresas {
+  scroll-margin-top: 96px;
+}
+
+/* Titulo da secao */
+#empresas h2 {
+  font-size: clamp(3rem, 5vw, 5.8rem) !important;
+  line-height: .95 !important;
+  letter-spacing: -0.055em !important;
+}
+
+#empresas h2 em {
+  font-style: normal !important;
+}
+
+/* Texto introdutorio */
+#empresas > div > header p,
+#empresas header > p {
+  font-size: clamp(1.08rem, 1.2vw, 1.28rem) !important;
+  line-height: 1.7 !important;
+  max-width: 680px !important;
+}
+
+/* Navegacao lateral */
+#empresas nav {
+  min-width: 290px !important;
+}
+
+#empresas nav button {
+  min-height: 92px !important;
+  padding: 18px 20px !important;
+}
+
+/* Numero */
+#empresas nav button > span:first-child {
+  font-size: .78rem !important;
+  letter-spacing: .16em !important;
+}
+
+/* Nome empresa na lateral */
+#empresas nav button strong,
+#empresas nav button h3 {
+  font-size: clamp(1.32rem, 1.5vw, 1.72rem) !important;
+  line-height: 1.08 !important;
+}
+
+/* Barrinha lateral */
+#empresas nav::before {
+  width: 3px !important;
+  min-height: 100% !important;
+  border-radius: 999px !important;
+}
+
+/* Card principal */
+#empresas [class*="detail"],
+#empresas [class*="panel"] {
+  border-radius: 28px !important;
+}
+
+/* Logo */
+#empresas .ecosystem21__officialLogo {
+  max-width: 88% !important;
+  max-height: 124px !important;
+}
+
+/* Area da logo */
+#empresas div:has(> .ecosystem21__officialLogo) {
+  min-height: 148px !important;
+  padding: 18px 26px !important;
+}
+
+/* Titulo empresa */
+#empresas h3 {
+  font-size: clamp(2.35rem, 3vw, 3.7rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+/* Descricao */
+#empresas h3 + p,
+#empresas [class*="detail"] p {
+  font-size: clamp(1.06rem, 1.16vw, 1.22rem) !important;
+  line-height: 1.72 !important;
+}
+
+/* Botoes servicos */
+#empresas button,
+#empresas a {
+  transition:
+    transform .22s ease,
+    border-color .22s ease,
+    background-color .22s ease,
+    opacity .22s ease !important;
+}
+
+#empresas [class*="service"] {
+  min-height: 52px !important;
+}
+
+/* ==========================================================
+   PRODUTOS
+   ========================================================== */
+
+#produtos {
+  scroll-margin-top: 96px;
+}
+
+#produtos h2 {
+  font-size: clamp(3rem, 5vw, 5.8rem) !important;
+  line-height: .95 !important;
+  letter-spacing: -0.055em !important;
+}
+
+#produtos h3 {
+  font-size: clamp(2.35rem, 3vw, 3.65rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+#produtos p {
+  font-size: clamp(1.04rem, 1.12vw, 1.2rem) !important;
+  line-height: 1.7 !important;
+}
+
+/* Imagem do produto */
+#produtos img {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+/* Area visual dos dashboards */
+#produtos div:has(> img) {
+  overflow: hidden !important;
+}
+
+/* Cartoes */
+#produtos button {
+  min-height: 96px !important;
+}
+
+/* ==========================================================
+   RESPONSIVO
+   ========================================================== */
+
+@media (max-width: 1100px) {
+
+  #empresas nav {
+    min-width: 240px !important;
+  }
+
+  #empresas h2,
+  #produtos h2 {
+    font-size: clamp(2.7rem, 7vw, 4.6rem) !important;
+  }
+}
+
+@media (max-width: 768px) {
+
+  #empresas,
+  #produtos {
+    scroll-margin-top: 72px;
+  }
+
+  #empresas nav {
+    min-width: 100% !important;
+  }
+
+  #empresas nav button {
+    min-height: 74px !important;
+    padding: 14px 14px !important;
+  }
+
+  #empresas h2,
+  #produtos h2 {
+    font-size: clamp(2.45rem, 11vw, 3.65rem) !important;
+    line-height: .98 !important;
+  }
+
+  #empresas h3,
+  #produtos h3 {
+    font-size: clamp(2rem, 8vw, 2.85rem) !important;
+  }
+
+  #empresas div:has(> .ecosystem21__officialLogo) {
+    min-height: 112px !important;
+    padding: 12px 16px !important;
+  }
+
+  #empresas .ecosystem21__officialLogo {
+    max-width: 86% !important;
+    max-height: 86px !important;
+  }
+
+  #produtos button {
+    min-height: 78px !important;
+  }
+}
+
+@media (max-width: 480px) {
+
+  #empresas h2,
+  #produtos h2 {
+    font-size: clamp(2.2rem, 12vw, 3rem) !important;
+  }
+
+  #empresas p,
+  #produtos p {
+    font-size: 1rem !important;
+  }
+}
+
+
+/* QMAX V36 PRODUCTS FIX */
+
+/* imagem real do produto */
+#produtos .products36__image {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 520px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  margin: 0 auto !important;
+
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  filter: none !important;
+  background: transparent !important;
+}
+
+/* container da imagem */
+#produtos div:has(> .products36__image) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  min-height: 420px !important;
+
+  padding: 24px !important;
+
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+/* cards do topo */
+#produtos button {
+  min-height: 112px !important;
+  border-radius: 24px !important;
+}
+
+/* nomes */
+#produtos button strong,
+#produtos button h3 {
+  font-size: clamp(1.35rem, 1.6vw, 1.75rem) !important;
+  line-height: 1.05 !important;
+}
+
+/* titulo principal */
+#produtos h3 {
+  font-size: clamp(2.7rem, 4vw, 4.4rem) !important;
+  line-height: .98 !important;
+  letter-spacing: -0.05em !important;
+}
+
+/* descrição */
+#produtos p {
+  font-size: clamp(1.06rem, 1.2vw, 1.24rem) !important;
+  line-height: 1.7 !important;
+}
+
+/* ==========================================================
+   BARRA LATERAL
+   ========================================================== */
+
+/* rail mais limpo e afastado do conteúdo */
+body [class*="side"],
+body [class*="rail"],
+body [class*="sectionNav"] {
+  z-index: 30 !important;
+}
+
+/* linha vertical */
+body [class*="rail"]::before,
+body [class*="sectionNav"]::before {
+  width: 2px !important;
+  opacity: .45 !important;
+}
+
+/* indicador ativo */
+body [class*="rail"] [class*="active"],
+body [class*="sectionNav"] [class*="active"] {
+  min-height: 34px !important;
+}
+
+/* evita colar no conteúdo principal */
+#sobre,
+#empresas,
+#produtos,
+#contato {
+  padding-left: clamp(28px, 4vw, 72px) !important;
+}
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 768px) {
+
+  #produtos div:has(> .products36__image) {
+    min-height: 260px !important;
+    padding: 12px !important;
+  }
+
+  #produtos .products36__image {
+    max-height: 320px !important;
+  }
+
+  #produtos button {
+    min-height: 88px !important;
+  }
+
+  #sobre,
+  #empresas,
+  #produtos,
+  #contato {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+}
+
+
+/* QMAX V36.1 PRODUCT IMAGE SCALE */
+
+/* QXSIGN maior */
+#produtos img[src="/products/qxsign-dashboard.png"] {
+  width: 112% !important;
+  max-width: 112% !important;
+  max-height: 620px !important;
+  transform: scale(1.08) !important;
+  transform-origin: center center !important;
+}
+
+/* FINORA maior */
+#produtos img[src="/products/finora-dashboard.png"] {
+  width: 114% !important;
+  max-width: 114% !important;
+  max-height: 640px !important;
+  transform: scale(1.10) !important;
+  transform-origin: center center !important;
+}
+
+/* Mais área útil para as duas imagens */
+#produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+#produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+  min-height: 500px !important;
+  padding: 8px !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 768px) {
+
+  #produtos img[src="/products/qxsign-dashboard.png"],
+  #produtos img[src="/products/finora-dashboard.png"] {
+    width: 106% !important;
+    max-width: 106% !important;
+    transform: scale(1.04) !important;
+    max-height: 360px !important;
+  }
+
+  #produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+  #produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+    min-height: 280px !important;
+  }
+}
+
+
+/* QMAX V36.2 PRODUCT IMAGE FIT */
+
+/* QXSIGN - grande, mas sem cortar */
+#produtos img[src="/products/qxsign-dashboard.png"] {
+  display: block !important;
+  width: 92% !important;
+  max-width: 920px !important;
+  height: auto !important;
+  max-height: 560px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  transform: none !important;
+  margin: 0 auto !important;
+}
+
+/* FINORA - grande, mas sem cortar */
+#produtos img[src="/products/finora-dashboard.png"] {
+  display: block !important;
+  width: 88% !important;
+  max-width: 860px !important;
+  height: auto !important;
+  max-height: 540px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  transform: none !important;
+  margin: 0 auto !important;
+}
+
+/* Containers deixam a imagem respirar */
+#produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+#produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+  min-height: 460px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  padding: 20px 28px !important;
+
+  overflow: visible !important;
+  background: transparent !important;
+}
+
+/* Tablet */
+@media (max-width: 1100px) {
+
+  #produtos img[src="/products/qxsign-dashboard.png"],
+  #produtos img[src="/products/finora-dashboard.png"] {
+    width: 94% !important;
+    max-height: 460px !important;
+  }
+
+  #produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+  #produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+    min-height: 390px !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+  #produtos img[src="/products/qxsign-dashboard.png"],
+  #produtos img[src="/products/finora-dashboard.png"] {
+    width: 96% !important;
+    max-width: 100% !important;
+    max-height: 300px !important;
+  }
+
+  #produtos div:has(> img[src="/products/qxsign-dashboard.png"]),
+  #produtos div:has(> img[src="/products/finora-dashboard.png"]) {
+    min-height: 250px !important;
+    padding: 10px !important;
+    overflow: visible !important;
+  }
+}
