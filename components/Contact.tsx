@@ -96,6 +96,61 @@ export function Contact() {
           </div>
         </motion.div>
       </div>
-    </section>
+    
+      <div
+        className="contact42__mapSection"
+        data-qmax-map="v42"
+      >
+        <div className="contact42__mapHead">
+          <div>
+            <span className="contact42__eyebrow">
+              NOSSA LOCALIZAÇÃO
+            </span>
+
+            <h3>
+              Venha conhecer a <em>Q-Max.</em>
+            </h3>
+
+            <p>
+              R. Frei Gaspar, 941 · São Bernardo do Campo/SP
+            </p>
+          </div>
+
+          <a
+            href="https://www.google.com/maps/search/?api=1&query=R.+Frei+Gaspar,+941,+Sao+Bernardo+do+Campo,+SP"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="contact42__mapButton"
+          >
+            Abrir no Google Maps
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+
+        <div className="contact42__mapFrame">
+          <iframe
+            src="https://www.google.com/maps?q=R.+Frei+Gaspar,+941,+Sao+Bernardo+do+Campo,+SP&output=embed"
+            title="Localização do Grupo Q-Max em São Bernardo do Campo"
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+
+          <div
+            className="contact42__mapShade"
+            aria-hidden="true"
+          />
+
+          <div className="contact42__mapBadge">
+            <span className="contact42__mapDot" />
+
+            <div>
+              <small>GRUPO Q-MAX</small>
+              <strong>São Bernardo do Campo</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+</section>
   );
 }

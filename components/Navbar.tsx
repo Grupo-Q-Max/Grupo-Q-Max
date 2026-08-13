@@ -17,7 +17,7 @@ const companies = [
     logo: "/brands/brand-auditoria.png",
   },
   {
-    name: "Q-Max Contábil",
+    name: "Q-Max ContÃ¡bil",
     label: "Contabilidade",
     href: "#empresas",
     logo: "/brands/brand-contabil.png",
@@ -45,19 +45,19 @@ const companies = [
 const products = [
   {
     name: "QXBACK",
-    label: "Indicações e bonificação",
+    label: "IndicaÃ§Ãµes e bonificaÃ§Ã£o",
     href: "#produtos",
     logo: "/brands/qxback.png",
   },
   {
     name: "QXSIGN",
-    label: "Documentação digital",
+    label: "DocumentaÃ§Ã£o digital",
     href: "#produtos",
     logo: "/products/qxsign-dashboard.png",
   },
   {
     name: "FINORA",
-    label: "Inteligência financeira",
+    label: "InteligÃªncia financeira",
     href: "#produtos",
     logo: "/products/finora-dashboard.png",
   },
@@ -66,9 +66,62 @@ const products = [
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const [activeSection, setActiveSection] = useState<
+    "inicio" | "sobre" | "empresas" | "produtos" | "contato"
+  >("inicio");
   const [mobileSection, setMobileSection] = useState<
     "empresas" | "produtos" | null
   >(null);
+
+
+  function goToItem(
+    event: React.MouseEvent<HTMLAnchorElement>,
+    sectionId: "empresas" | "produtos",
+    itemName: string
+  ) {
+    event.preventDefault();
+
+    setMobileOpen(false);
+    setMobileSection(null);
+
+    const section = document.getElementById(sectionId);
+
+    if (!section) return;
+
+    section.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+
+    window.setTimeout(() => {
+      const buttons = Array.from(
+        section.querySelectorAll("button")
+      ) as HTMLButtonElement[];
+
+      const normalize = (value: string) =>
+        value
+          .toLocaleLowerCase("pt-BR")
+          .replace("q-max ", "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const targetName = normalize(itemName);
+
+      const target = buttons.find((button) => {
+        const buttonName = normalize(
+          button.textContent || ""
+        );
+
+        return (
+          buttonName.includes(targetName) ||
+          targetName.includes(buttonName)
+        );
+      });
+
+      target?.click();
+    }, 500);
+  }
 
   useEffect(() => {
     const onScroll = () => {
@@ -81,7 +134,8 @@ export function Navbar() {
       passive: true,
     });
 
-    return () => {
+  
+  return () => {
       window.removeEventListener("scroll", onScroll);
     };
   }, []);
@@ -95,6 +149,57 @@ export function Navbar() {
     };
   }, [mobileOpen]);
 
+
+  useEffect(() => {
+    const ids = [
+      "inicio",
+      "sobre",
+      "empresas",
+      "produtos",
+      "contato",
+    ] as const;
+
+    const sections = ids
+      .map((id) => document.getElementById(id))
+      .filter(Boolean) as HTMLElement[];
+
+    if (!sections.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (a, b) =>
+              b.intersectionRatio - a.intersectionRatio
+          );
+
+        if (!visible.length) return;
+
+        const id = visible[0].target.id as
+          | "inicio"
+          | "sobre"
+          | "empresas"
+          | "produtos"
+          | "contato";
+
+        setActiveSection(id);
+      },
+      {
+        root: null,
+        rootMargin: "-22% 0px -55% 0px",
+        threshold: [0.05, 0.15, 0.3, 0.5],
+      }
+    );
+
+    sections.forEach((section) => {
+      observer.observe(section);
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
   function closeMenu() {
     setMobileOpen(false);
     setMobileSection(null);
@@ -128,14 +233,28 @@ export function Navbar() {
 
         <nav
           className="nav15__desktop"
-          aria-label="Navegação principal"
+          aria-label="NavegaÃ§Ã£o principal"
         >
-          <a href="#sobre">
+          <a
+            href="#sobre"
+            className={
+              activeSection === "sobre"
+                ? "is-active"
+                : undefined
+            }
+          >
             Sobre
           </a>
 
           <div className="nav15__item">
-            <button type="button">
+            <button
+              type="button"
+              className={
+                activeSection === "empresas"
+                  ? "is-active"
+                  : undefined
+              }
+            >
               Empresas
               <ChevronDown size={14} />
             </button>
@@ -153,6 +272,13 @@ export function Navbar() {
                   <a
                     key={company.name}
                     href={company.href}
+                    onClick={(event) =>
+                      goToItem(
+                        event,
+                        "empresas",
+                        company.name
+                      )
+                    }
                   >
                     <span>
                       0{index + 1}
@@ -185,14 +311,21 @@ export function Navbar() {
           </div>
 
           <div className="nav15__item">
-            <button type="button">
+            <button
+              type="button"
+              className={
+                activeSection === "produtos"
+                  ? "is-active"
+                  : undefined
+              }
+            >
               Produtos
               <ChevronDown size={14} />
             </button>
 
             <div className="nav15__dropdown nav15__dropdown--products">
               <div className="nav15__dropdownHead">
-                <span>SOLUÇÕES DIGITAIS</span>
+                <span>SOLUÃ‡Ã•ES DIGITAIS</span>
                 <strong>
                   Produtos do ecossistema.
                 </strong>
@@ -203,6 +336,13 @@ export function Navbar() {
                   <a
                     key={product.name}
                     href={product.href}
+                    onClick={(event) =>
+                      goToItem(
+                        event,
+                        "produtos",
+                        product.name
+                      )
+                    }
                   >
                     <span>
                       0{index + 1}
@@ -242,7 +382,14 @@ export function Navbar() {
             </div>
           </div>
 
-          <a href="#contato">
+          <a
+            href="#contato"
+            className={
+              activeSection === "contato"
+                ? "is-active"
+                : undefined
+            }
+          >
             Contato
           </a>
         </nav>
@@ -329,7 +476,13 @@ export function Navbar() {
               <a
                 key={company.name}
                 href={company.href}
-                onClick={closeMenu}
+                onClick={(event) =>
+                  goToItem(
+                    event,
+                    "empresas",
+                    company.name
+                  )
+                }
               >
                 {company.name}
               </a>
@@ -370,7 +523,13 @@ export function Navbar() {
               <a
                 key={product.name}
                 href={product.href}
-                onClick={closeMenu}
+                onClick={(event) =>
+                  goToItem(
+                    event,
+                    "produtos",
+                    product.name
+                  )
+                }
               >
                 {product.name}
               </a>

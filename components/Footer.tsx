@@ -1,6 +1,59 @@
+"use client";
+
+import type { MouseEvent } from "react";
+
 import Image from "next/image";
 
 export function Footer() {
+  function goToFooterItem(
+    event: MouseEvent<HTMLAnchorElement>,
+    sectionId: "empresas" | "produtos",
+    itemName: string
+  ) {
+    event.preventDefault();
+
+    const section =
+      document.getElementById(sectionId);
+
+    if (!section) return;
+
+    section.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+
+    window.setTimeout(() => {
+      const buttons = Array.from(
+        section.querySelectorAll("button")
+      ) as HTMLButtonElement[];
+
+      const normalize = (value: string) =>
+        value
+          .toLocaleLowerCase("pt-BR")
+          .replace("q-max ", "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const targetName =
+        normalize(itemName);
+
+      const target = buttons.find(
+        (button) => {
+          const buttonName = normalize(
+            button.textContent || ""
+          );
+
+          return (
+            buttonName.includes(targetName) ||
+            targetName.includes(buttonName)
+          );
+        }
+      );
+
+      target?.click();
+    }, 500);
+  }
+
   return (
     <footer className="finish-footer">
       <div className="container finish-footer__top">
@@ -10,6 +63,7 @@ export function Footer() {
             alt="Grupo Q-Max"
             width={150}
             height={76}
+            sizes="150px"
             style={{
               width: "auto",
               height: "auto",
@@ -36,19 +90,107 @@ export function Footer() {
           <div>
             <strong>EMPRESAS</strong>
 
-            <a href="#empresas">Q-Max Auditoria</a>
-            <a href="#empresas">Q-Max Contábil</a>
-            <a href="#empresas">Q-Max Talents</a>
-            <a href="#empresas">Q-Max Technology</a>
-            <a href="#empresas">Lagerhaus</a>
+            <a
+              href="#empresas"
+              onClick={(event) =>
+                goToFooterItem(
+                  event,
+                  "empresas",
+                  "Q-Max Auditoria"
+                )
+              }
+            >
+              Q-Max Auditoria
+            </a>
+            <a
+              href="#empresas"
+              onClick={(event) =>
+                goToFooterItem(
+                  event,
+                  "empresas",
+                  "Q-Max Contábil"
+                )
+              }
+            >
+              Q-Max Contábil
+            </a>
+            <a
+              href="#empresas"
+              onClick={(event) =>
+                goToFooterItem(
+                  event,
+                  "empresas",
+                  "Q-Max Talents"
+                )
+              }
+            >
+              Q-Max Talents
+            </a>
+            <a
+              href="#empresas"
+              onClick={(event) =>
+                goToFooterItem(
+                  event,
+                  "empresas",
+                  "Q-Max Technology"
+                )
+              }
+            >
+              Q-Max Technology
+            </a>
+            <a
+              href="#empresas"
+              onClick={(event) =>
+                goToFooterItem(
+                  event,
+                  "empresas",
+                  "Lagerhaus"
+                )
+              }
+            >
+              Lagerhaus
+            </a>
           </div>
 
           <div>
             <strong>PRODUTOS</strong>
 
-            <a href="#produtos">QXBACK</a>
-            <a href="#produtos">QXSIGN</a>
-            <a href="#produtos">FINORA</a>
+            <a
+              href="#produtos"
+              onClick={(event) =>
+                goToFooterItem(
+                  event,
+                  "produtos",
+                  "QXBACK"
+                )
+              }
+            >
+              QXBACK
+            </a>
+            <a
+              href="#produtos"
+              onClick={(event) =>
+                goToFooterItem(
+                  event,
+                  "produtos",
+                  "QXSIGN"
+                )
+              }
+            >
+              QXSIGN
+            </a>
+            <a
+              href="#produtos"
+              onClick={(event) =>
+                goToFooterItem(
+                  event,
+                  "produtos",
+                  "FINORA"
+                )
+              }
+            >
+              FINORA
+            </a>
           </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { QmaxAnalytics } from "@/components/QmaxAnalytics";
 import { OrganizationJsonLd } from "@/components/OrganizationJsonLd";
 import type { Metadata, Viewport } from "next";
 import "./qmax-base.css";
@@ -79,7 +80,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body><OrganizationJsonLd />{children}</body>
+      <body><QmaxAnalytics /><OrganizationJsonLd />{children}</body>
     </html>
   );
 }

@@ -251,8 +251,9 @@ export function Ecosystem() {
                     src={active.logo}
                     alt={active.name}
                     className="ecosystem21__officialLogo"
-                    loading="eager"
+                    loading="lazy"
                     decoding="async"
+                    fetchPriority="low"
                   />
                   ) : (
                     <strong>{active.name}</strong>

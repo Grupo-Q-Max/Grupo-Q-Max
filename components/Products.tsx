@@ -194,7 +194,7 @@ export function Products() {
                     src={active.logo}
                     alt={active.name}
                     className="products36__image"
-                    loading="eager"
+                    loading="lazy"
                     decoding="async"
                   />
                 ) : (
