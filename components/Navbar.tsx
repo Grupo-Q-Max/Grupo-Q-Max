@@ -14,26 +14,31 @@ const companies = [
     name: "Q-Max Auditoria",
     label: "Auditoria",
     href: "#empresas",
+    logo: "/brands/brand-auditoria.png",
   },
   {
     name: "Q-Max Contábil",
     label: "Contabilidade",
     href: "#empresas",
+    logo: "/brands/brand-contabil.png",
   },
   {
     name: "Q-Max Talents",
     label: "Pessoas",
     href: "#empresas",
+    logo: "/brands/brand-talents.png",
   },
   {
     name: "Q-Max Technology",
     label: "Tecnologia",
     href: "#empresas",
+    logo: "/brands/brand-technology.png",
   },
   {
     name: "Lagerhaus",
     label: "Estrutura",
     href: "#empresas",
+    logo: "/brands/brand-lagerhaus.png",
   },
 ];
 
@@ -42,16 +47,19 @@ const products = [
     name: "QXBACK",
     label: "Indicações e bonificação",
     href: "#produtos",
+    logo: "/brands/qxback.png",
   },
   {
     name: "QXSIGN",
     label: "Documentação digital",
     href: "#produtos",
+    logo: "/products/qxsign-dashboard.png",
   },
   {
     name: "FINORA",
     label: "Inteligência financeira",
     href: "#produtos",
+    logo: "/products/finora-dashboard.png",
   },
 ];
 
@@ -150,6 +158,15 @@ export function Navbar() {
                       0{index + 1}
                     </span>
 
+                    <div className="nav15__brandThumb">
+                      <Image
+                        src={company.logo}
+                        alt=""
+                        width={84}
+                        height={42}
+                      />
+                    </div>
+
                     <div>
                       <strong>
                         {company.name}
@@ -190,6 +207,23 @@ export function Navbar() {
                     <span>
                       0{index + 1}
                     </span>
+
+                    <div
+                      className={`nav15__brandThumb nav15__brandThumb--${product.name.toLowerCase()}`}
+                    >
+                      {product.logo ? (
+                        <Image
+                          src={product.logo}
+                          alt={product.name}
+                          width={100}
+                          height={52}
+                        />
+                      ) : (
+                        <strong className="nav15__qxsignMark">
+                          QX<span>SIGN</span>
+                        </strong>
+                      )}
+                    </div>
 
                     <div>
                       <strong>
