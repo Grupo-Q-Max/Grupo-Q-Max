@@ -5,6 +5,12 @@ import { useEffect } from "react";
 declare global {
   interface Window {
     dataLayer?: Array<Record<string, unknown>>;
+
+    gtag?: (
+      command: "event" | "config" | "js",
+      targetOrEvent: string | Date,
+      params?: Record<string, unknown>
+    ) => void;
   }
 }
 
@@ -27,6 +33,32 @@ function sendEvent(data: QmaxEvent) {
   window.dataLayer = window.dataLayer || [];
 
   window.dataLayer.push(data);
+
+  if (typeof window.gtag === "function") {
+    window.gtag(
+      "event",
+      "qmax_interaction",
+      {
+        interaction_type:
+          data.interaction_type,
+
+        interaction_label:
+          data.interaction_label,
+
+        interaction_location:
+          data.interaction_location,
+
+        destination:
+          data.destination,
+
+        event_category:
+          "engagement",
+
+        event_label:
+          data.interaction_label,
+      }
+    );
+  }
 
   window.dispatchEvent(
     new CustomEvent("qmax:analytics", {

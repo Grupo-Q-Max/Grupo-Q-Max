@@ -17,7 +17,7 @@ const companies = [
     logo: "/brands/brand-auditoria.png",
   },
   {
-    name: "Q-Max ContÃ¡bil",
+    name: "Q-Max Contábil",
     label: "Contabilidade",
     href: "#empresas",
     logo: "/brands/brand-contabil.png",
@@ -45,19 +45,19 @@ const companies = [
 const products = [
   {
     name: "QXBACK",
-    label: "IndicaÃ§Ãµes e bonificaÃ§Ã£o",
+    label: "Indicações e bonificação",
     href: "#produtos",
     logo: "/brands/qxback.png",
   },
   {
     name: "QXSIGN",
-    label: "DocumentaÃ§Ã£o digital",
+    label: "Documentação digital",
     href: "#produtos",
     logo: "/products/qxsign-dashboard.png",
   },
   {
     name: "FINORA",
-    label: "InteligÃªncia financeira",
+    label: "Inteligência financeira",
     href: "#produtos",
     logo: "/products/finora-dashboard.png",
   },
@@ -233,7 +233,7 @@ export function Navbar() {
 
         <nav
           className="nav15__desktop"
-          aria-label="NavegaÃ§Ã£o principal"
+          aria-label="Navegação principal"
         >
           <a
             href="#sobre"
@@ -325,7 +325,7 @@ export function Navbar() {
 
             <div className="nav15__dropdown nav15__dropdown--products">
               <div className="nav15__dropdownHead">
-                <span>SOLUÃ‡Ã•ES DIGITAIS</span>
+                <span>SOLUÇÕES DIGITAIS</span>
                 <strong>
                   Produtos do ecossistema.
                 </strong>

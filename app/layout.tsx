@@ -1,3 +1,4 @@
+import Script from "next/script";
 import { QmaxAnalytics } from "@/components/QmaxAnalytics";
 import { OrganizationJsonLd } from "@/components/OrganizationJsonLd";
 import type { Metadata, Viewport } from "next";
@@ -80,7 +81,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body><QmaxAnalytics /><OrganizationJsonLd />{children}</body>
+      <body>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-L5CSV2XQL3"
+          strategy="afterInteractive"
+        />
+
+        <Script
+          id="qmax-ga4"
+          strategy="afterInteractive"
+        >
+          {`
+            window.dataLayer = window.dataLayer || [];
+
+            function gtag(){
+              dataLayer.push(arguments);
+            }
+
+            gtag('js', new Date());
+
+            gtag('config', 'G-L5CSV2XQL3', {
+              send_page_view: true
+            });
+          `}
+        </Script>
+<QmaxAnalytics /><OrganizationJsonLd />{children}</body>
     </html>
   );
 }
