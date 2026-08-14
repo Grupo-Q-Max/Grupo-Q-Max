@@ -2993,3 +2993,1118 @@ a[href] {
       auto !important;
   }
 }
+
+
+/* QMAX V48.4 PRODUCTS RESPONSIVE FINAL */
+
+/* ==========================================================
+   PROTECAO GLOBAL
+   ========================================================== */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+#produtos {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+#produtos img,
+#produtos svg {
+  max-width: 100%;
+}
+
+
+/* ==========================================================
+   DESKTOP
+   Mantemos a composicao cinematografica original.
+   ========================================================== */
+
+@media (min-width: 1101px) {
+
+  #produtos .products5__visual {
+    display: block;
+  }
+}
+
+
+/* ==========================================================
+   NOTEBOOK / TABLET
+   Abaixo de 1100px vira uma composicao limpa em coluna unica.
+   ========================================================== */
+
+@media (max-width: 1100px) {
+
+  /*
+     O elemento responsavel pela logo rosa, orbitas,
+     mockup e sobreposicao e products5__visual.
+
+     Em tablet/mobile ele deixa de fazer sentido.
+  */
+
+  #produtos .products5__visual {
+    display: none !important;
+  }
+
+  /*
+     Wrapper que possui copy + visual.
+     Nao precisamos saber o nome da classe externa.
+  */
+
+  #produtos :has(> .products5__copy):has(> .products5__visual) {
+    display: block !important;
+
+    grid-template-columns:
+      minmax(0, 1fr) !important;
+
+    width: 100% !important;
+    max-width: 100% !important;
+
+    min-height: auto !important;
+
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+
+    transform: none !important;
+  }
+
+  /*
+     COPY vira o card principal.
+  */
+
+  #produtos .products5__copy {
+    position: relative !important;
+
+    inset: auto !important;
+
+    width: min(100% - 40px, 680px) !important;
+    max-width: 680px !important;
+
+    min-height: auto !important;
+
+    margin:
+      24px
+      auto
+      50px !important;
+
+    padding:
+      clamp(30px, 5vw, 48px) !important;
+
+    transform: none !important;
+
+    overflow: hidden !important;
+
+    z-index: 10 !important;
+  }
+
+  /*
+     Marca do produto.
+  */
+
+  #produtos .products5__brand {
+    width: 100% !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin:
+      12px
+      auto
+      28px !important;
+  }
+
+  #produtos .products5__brand .products36__image {
+    position: static !important;
+
+    display: block !important;
+
+    width: auto !important;
+    height: auto !important;
+
+    max-width: min(320px, 72%) !important;
+    max-height: 180px !important;
+
+    margin: 0 auto !important;
+
+    object-fit: contain !important;
+    object-position: center !important;
+
+    transform: none !important;
+
+    filter: none !important;
+  }
+
+  /*
+     Meta / eyebrow.
+  */
+
+  #produtos .products5__productMeta {
+    width: 100% !important;
+
+    margin-bottom: 20px !important;
+  }
+
+  /*
+     Titulo.
+  */
+
+  #produtos .products5__copy > h3 {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    margin:
+      0
+      0
+      22px !important;
+
+    font-size:
+      clamp(2.8rem, 7.5vw, 4.5rem) !important;
+
+    line-height: .94 !important;
+
+    letter-spacing: -.055em !important;
+
+    text-align: left !important;
+
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  /*
+     Descricao.
+  */
+
+  #produtos .products5__copy > p {
+    width: 100% !important;
+    max-width: 560px !important;
+
+    margin:
+      0
+      0
+      30px !important;
+
+    font-size:
+      clamp(1rem, 2vw, 1.15rem) !important;
+
+    line-height: 1.65 !important;
+
+    text-align: left !important;
+  }
+
+  /*
+     Beneficios.
+  */
+
+  #produtos .products5__benefits {
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+
+    gap: 12px !important;
+
+    width: 100% !important;
+
+    margin:
+      0
+      0
+      30px !important;
+  }
+
+  #produtos .products5__benefits > div {
+    width: 100% !important;
+    min-width: 0 !important;
+
+    min-height: 76px !important;
+
+    padding:
+      14px
+      16px !important;
+  }
+
+  #produtos .products5__benefits strong {
+    overflow-wrap: anywhere !important;
+  }
+
+  /*
+     CTA.
+  */
+
+  #produtos .products5__copy > a {
+    width: fit-content !important;
+    max-width: 100% !important;
+
+    margin-top: 4px !important;
+  }
+
+  /*
+     Footer/carrossel.
+  */
+
+  #produtos .products5__footer {
+    width: min(100% - 40px, 680px) !important;
+
+    margin:
+      0
+      auto !important;
+  }
+}
+
+
+/* ==========================================================
+   TABLET 820
+   ========================================================== */
+
+@media (max-width: 820px) {
+
+  #produtos .products5__copy {
+    width: calc(100% - 32px) !important;
+
+    max-width: 640px !important;
+
+    margin-top: 20px !important;
+
+    padding:
+      30px
+      28px
+      36px !important;
+
+    border-radius:
+      26px !important;
+  }
+
+  #produtos .products5__brand .products36__image {
+    max-width: min(280px, 68%) !important;
+    max-height: 160px !important;
+  }
+
+  #produtos .products5__copy > h3 {
+    font-size:
+      clamp(2.65rem, 8vw, 3.8rem) !important;
+  }
+
+  #produtos .products5__footer {
+    width: calc(100% - 32px) !important;
+  }
+}
+
+
+/* ==========================================================
+   720PX
+   Essa e exatamente a largura que estava quebrando.
+   ========================================================== */
+
+@media (max-width: 720px) {
+
+  #produtos .products5__copy {
+    width: calc(100% - 28px) !important;
+
+    padding:
+      28px
+      24px
+      34px !important;
+
+    margin-bottom:
+      36px !important;
+  }
+
+  #produtos .products5__brand {
+    margin-bottom:
+      24px !important;
+  }
+
+  #produtos .products5__brand .products36__image {
+    max-width: min(250px, 65%) !important;
+    max-height: 145px !important;
+  }
+
+  #produtos .products5__copy > h3 {
+    font-size:
+      clamp(2.45rem, 8.5vw, 3.45rem) !important;
+
+    line-height:
+      .96 !important;
+  }
+
+  #produtos .products5__copy > p {
+    font-size:
+      1rem !important;
+
+    line-height:
+      1.6 !important;
+  }
+
+  #produtos .products5__benefits {
+    gap:
+      10px !important;
+  }
+
+  #produtos .products5__benefits > div {
+    min-height:
+      72px !important;
+  }
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 560px) {
+
+  #produtos .products5__copy {
+    width: calc(100% - 20px) !important;
+
+    padding:
+      24px
+      18px
+      30px !important;
+
+    border-radius:
+      22px !important;
+  }
+
+  #produtos .products5__brand .products36__image {
+    max-width: min(215px, 70%) !important;
+    max-height: 130px !important;
+  }
+
+  #produtos .products5__copy > h3 {
+    font-size:
+      clamp(2.15rem, 10vw, 3rem) !important;
+
+    margin-bottom:
+      18px !important;
+  }
+
+  #produtos .products5__benefits {
+    grid-template-columns:
+      minmax(0, 1fr) !important;
+  }
+
+  #produtos .products5__benefits > div {
+    min-height:
+      62px !important;
+  }
+
+  #produtos .products5__copy > a {
+    width: 100% !important;
+
+    justify-content: center !important;
+
+    text-align: center !important;
+  }
+
+  #produtos .products5__footer {
+    width: calc(100% - 20px) !important;
+  }
+}
+
+
+/* ==========================================================
+   MOBILE PEQUENO
+   ========================================================== */
+
+@media (max-width: 390px) {
+
+  #produtos .products5__copy {
+    padding:
+      22px
+      16px
+      26px !important;
+  }
+
+  #produtos .products5__brand .products36__image {
+    max-width: 185px !important;
+  }
+
+  #produtos .products5__copy > h3 {
+    font-size:
+      clamp(2rem, 10.5vw, 2.65rem) !important;
+  }
+}
+
+
+/* QMAX V48.5 EMPRESAS TABLET FINAL */
+
+/* ==========================================================
+   EMPRESAS - NOTEBOOK / TABLET
+   ========================================================== */
+
+@media (max-width: 1100px) {
+
+  #empresas {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    overflow-x: hidden !important;
+  }
+
+  /* ========================================================
+     REMOVE A LOGO ROSA DECORATIVA DO GRUPO Q-MAX
+     ======================================================== */
+
+  #empresas img[src*="grupo-qmax"],
+  #empresas img[alt="Grupo Q-Max"],
+  #empresas img[alt="GRUPO Q-MAX"] {
+    display: none !important;
+  }
+
+  #empresas div:has(> img[src*="grupo-qmax"]),
+  #empresas figure:has(> img[src*="grupo-qmax"]),
+  #empresas span:has(> img[src*="grupo-qmax"]) {
+    display: none !important;
+  }
+
+  /* wrappers decorativos */
+  #empresas [class*="orbit"],
+  #empresas [class*="core"],
+  #empresas [class*="floating"],
+  #empresas [class*="ecosystemLogo"],
+  #empresas [class*="groupLogo"] {
+    display: none !important;
+  }
+
+  /* ========================================================
+     LAYOUT PRINCIPAL EM UMA COLUNA
+     ======================================================== */
+
+  #empresas > div,
+  #empresas [class*="inner"],
+  #empresas [class*="content"],
+  #empresas [class*="layout"],
+  #empresas [class*="stage"] {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* ========================================================
+     CARD DA EMPRESA
+     ======================================================== */
+
+  #empresas [class*="detail"],
+  #empresas [class*="panel"] {
+    position: relative !important;
+
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+
+    width: min(calc(100% - 40px), 680px) !important;
+    max-width: 680px !important;
+
+    margin:
+      28px
+      auto
+      50px !important;
+
+    transform: none !important;
+
+    z-index: 20 !important;
+
+    overflow: hidden !important;
+  }
+
+  /* ========================================================
+     LOGO OFICIAL DA EMPRESA
+     ======================================================== */
+
+  #empresas div:has(> .ecosystem21__officialLogo) {
+    width: 100% !important;
+
+    min-height: 130px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    padding:
+      16px
+      20px !important;
+
+    margin-bottom:
+      22px !important;
+
+    background: transparent !important;
+
+    overflow: visible !important;
+  }
+
+  #empresas .ecosystem21__officialLogo {
+    display: block !important;
+
+    position: static !important;
+
+    width: auto !important;
+    height: auto !important;
+
+    max-width: min(320px, 78%) !important;
+    max-height: 120px !important;
+
+    margin: 0 auto !important;
+
+    object-fit: contain !important;
+
+    transform: none !important;
+
+    z-index: 21 !important;
+  }
+
+  /* ========================================================
+     TITULO / TEXTO
+     ======================================================== */
+
+  #empresas [class*="detail"] h3,
+  #empresas [class*="panel"] h3 {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    font-size:
+      clamp(2.6rem, 7vw, 4rem) !important;
+
+    line-height:
+      .96 !important;
+
+    letter-spacing:
+      -.05em !important;
+
+    text-align:
+      left !important;
+  }
+
+  #empresas [class*="detail"] p,
+  #empresas [class*="panel"] p {
+    width: 100% !important;
+    max-width: 560px !important;
+
+    font-size:
+      clamp(1rem, 2vw, 1.15rem) !important;
+
+    line-height:
+      1.65 !important;
+
+    text-align:
+      left !important;
+  }
+}
+
+
+/* ==========================================================
+   820PX
+   ========================================================== */
+
+@media (max-width: 820px) {
+
+  #empresas [class*="detail"],
+  #empresas [class*="panel"] {
+    width: calc(100% - 32px) !important;
+
+    max-width: 640px !important;
+
+    margin:
+      20px
+      auto
+      40px !important;
+
+    padding:
+      30px
+      28px
+      36px !important;
+  }
+
+  #empresas .ecosystem21__officialLogo {
+    max-width: min(280px, 74%) !important;
+    max-height: 105px !important;
+  }
+
+  #empresas [class*="detail"] h3,
+  #empresas [class*="panel"] h3 {
+    font-size:
+      clamp(2.45rem, 8vw, 3.5rem) !important;
+  }
+}
+
+
+/* ==========================================================
+   720PX
+   ========================================================== */
+
+@media (max-width: 720px) {
+
+  #empresas [class*="detail"],
+  #empresas [class*="panel"] {
+    width: calc(100% - 28px) !important;
+
+    padding:
+      28px
+      24px
+      34px !important;
+  }
+
+  #empresas div:has(> .ecosystem21__officialLogo) {
+    min-height:
+      110px !important;
+  }
+
+  #empresas .ecosystem21__officialLogo {
+    max-width: min(245px, 72%) !important;
+    max-height: 95px !important;
+  }
+
+  #empresas [class*="detail"] h3,
+  #empresas [class*="panel"] h3 {
+    font-size:
+      clamp(2.3rem, 8.5vw, 3.25rem) !important;
+  }
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 560px) {
+
+  #empresas [class*="detail"],
+  #empresas [class*="panel"] {
+    width: calc(100% - 20px) !important;
+
+    padding:
+      24px
+      18px
+      30px !important;
+
+    border-radius:
+      22px !important;
+  }
+
+  #empresas div:has(> .ecosystem21__officialLogo) {
+    min-height:
+      95px !important;
+
+    padding:
+      12px
+      14px !important;
+  }
+
+  #empresas .ecosystem21__officialLogo {
+    max-width: min(210px, 76%) !important;
+    max-height: 82px !important;
+  }
+
+  #empresas [class*="detail"] h3,
+  #empresas [class*="panel"] h3 {
+    font-size:
+      clamp(2.05rem, 10vw, 2.8rem) !important;
+  }
+
+  #empresas [class*="detail"] p,
+  #empresas [class*="panel"] p {
+    font-size:
+      .98rem !important;
+  }
+}
+
+
+/* QMAX V48.6 RESPONSIVE CLEANUP FINAL */
+
+/* ==========================================================
+   1. SECOES QUE POSSUEM DECORACAO MAIOR QUE A VIEWPORT
+   O efeito continua existindo, mas nao cria scroll horizontal.
+   ========================================================== */
+
+.hero,
+.qstory,
+.ecosystem8,
+#empresas,
+.products5,
+#produtos,
+.conversion18,
+.finish-contact,
+#contato {
+  position: relative;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+
+/* ==========================================================
+   2. HERO
+   ========================================================== */
+
+@media (max-width: 640px) {
+
+  .hero__aurora {
+    max-width: 72vw !important;
+    right: -18vw !important;
+    left: auto !important;
+
+    pointer-events: none !important;
+  }
+
+  .hero__rings {
+    overflow: hidden !important;
+  }
+
+  .hero__rings > i {
+    max-width: none !important;
+    pointer-events: none !important;
+  }
+}
+
+
+/* ==========================================================
+   3. STORY
+   ========================================================== */
+
+.qstory__glow {
+  pointer-events: none !important;
+}
+
+@media (max-width: 640px) {
+
+  .qstory {
+    overflow: hidden !important;
+  }
+
+  .qstory__glow {
+    left: 50% !important;
+
+    transform:
+      translateX(-50%) !important;
+
+    width: min(760px, 180vw) !important;
+
+    max-width: none !important;
+  }
+
+  .qstory__manifesto {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+
+    box-sizing: border-box !important;
+  }
+
+  .qstory__manifestoCopy {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+
+    transform: none !important;
+  }
+
+  .qstory__manifestoCopy h3 {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+}
+
+
+/* ==========================================================
+   4. ECOSSISTEMA
+   ========================================================== */
+
+.ecosystem8__ambient {
+  pointer-events: none !important;
+}
+
+@media (max-width: 640px) {
+
+  .ecosystem8 {
+    overflow: hidden !important;
+  }
+
+  .ecosystem8__ambient {
+    display: none !important;
+  }
+}
+
+
+/* ==========================================================
+   5. PRODUTOS - AMBIENT
+   ========================================================== */
+
+.products5__ambient {
+  pointer-events: none !important;
+}
+
+@media (max-width: 820px) {
+
+  .products5 {
+    overflow: hidden !important;
+  }
+
+  .products5__ambient {
+    display: none !important;
+  }
+}
+
+
+/* ==========================================================
+   6. PRODUTOS - NAVEGACAO
+   O audit mostrou os botoes 02 e 03 saindo da viewport.
+   ========================================================== */
+
+@media (max-width: 820px) {
+
+  .products5__navigation {
+    width: calc(100% - 32px) !important;
+    max-width: 680px !important;
+
+    margin-left: auto !important;
+    margin-right: auto !important;
+
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+
+    gap: 10px !important;
+
+    overflow: visible !important;
+  }
+
+  .products5__navigation > button {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    min-width: 0 !important;
+
+    margin: 0 !important;
+
+    box-sizing: border-box !important;
+
+    transform: none !important;
+  }
+
+  .products5__navigation > button > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .products5__navigation > button span,
+  .products5__navigation > button strong,
+  .products5__navigation > button small {
+    max-width: 100% !important;
+
+    overflow-wrap: anywhere !important;
+  }
+}
+
+
+/* ==========================================================
+   7. MOBILE - PRODUTOS
+   Em 381px vira uma coluna real.
+   ========================================================== */
+
+@media (max-width: 560px) {
+
+  .products5__navigation {
+    width: calc(100% - 24px) !important;
+
+    grid-template-columns:
+      minmax(0, 1fr) !important;
+
+    gap: 8px !important;
+  }
+
+  .products5__navigation > button {
+    min-height: 78px !important;
+
+    padding:
+      12px
+      14px !important;
+
+    display: grid !important;
+
+    grid-template-columns:
+      34px
+      minmax(0, 1fr)
+      auto !important;
+
+    align-items: center !important;
+
+    gap: 12px !important;
+
+    text-align: left !important;
+  }
+
+  .products5__navigation > button > span:first-child {
+    width: auto !important;
+    min-width: 0 !important;
+
+    position: static !important;
+
+    transform: none !important;
+  }
+
+  .products5__navigation > button > div {
+    width: 100% !important;
+    min-width: 0 !important;
+
+    position: static !important;
+
+    transform: none !important;
+  }
+
+  .products5__navigation > button strong {
+    display: block !important;
+
+    width: 100% !important;
+
+    font-size: .94rem !important;
+
+    line-height: 1.15 !important;
+  }
+
+  .products5__navigation > button small {
+    display: block !important;
+
+    width: 100% !important;
+
+    margin-top: 3px !important;
+
+    font-size: .66rem !important;
+
+    line-height: 1.2 !important;
+  }
+}
+
+
+/* ==========================================================
+   8. CONVERSION BAND
+   ========================================================== */
+
+.conversion18__glow {
+  pointer-events: none !important;
+}
+
+@media (max-width: 640px) {
+
+  .conversion18 {
+    overflow: hidden !important;
+  }
+
+  .conversion18__glow {
+    width: 160vw !important;
+
+    left: 50% !important;
+    right: auto !important;
+
+    transform:
+      translateX(-50%) !important;
+  }
+}
+
+
+/* ==========================================================
+   9. CONTATO FINAL
+   ========================================================== */
+
+.finish-contact__ambient {
+  pointer-events: none !important;
+}
+
+@media (max-width: 640px) {
+
+  .finish-contact {
+    overflow: hidden !important;
+  }
+
+  .finish-contact__ambient {
+    max-width: none !important;
+  }
+
+  .finish-contact__ambient--a {
+    width: 160vw !important;
+
+    left: 50% !important;
+    right: auto !important;
+
+    transform:
+      translateX(-50%) !important;
+  }
+
+  .finish-contact__ambient--b {
+    width: 130vw !important;
+
+    left: 50% !important;
+    right: auto !important;
+
+    transform:
+      translateX(-50%) !important;
+  }
+}
+
+
+/* ==========================================================
+   10. PROTECAO DE CONTAINERS MOBILE
+   ========================================================== */
+
+@media (max-width: 640px) {
+
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+
+    box-sizing: border-box !important;
+  }
+
+  section,
+  section > div {
+    min-width: 0;
+  }
+
+  img,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+  }
+}
+
+
+/* ==========================================================
+   11. MOBILE MUITO PEQUENO
+   ========================================================== */
+
+@media (max-width: 390px) {
+
+  .container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .products5__navigation {
+    width: calc(100% - 20px) !important;
+  }
+
+  .products5__navigation > button {
+    min-height: 74px !important;
+
+    grid-template-columns:
+      30px
+      minmax(0, 1fr)
+      auto !important;
+
+    padding:
+      11px
+      12px !important;
+  }
+}

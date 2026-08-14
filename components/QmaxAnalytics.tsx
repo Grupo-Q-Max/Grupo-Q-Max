@@ -29,6 +29,81 @@ function cleanText(value: string | null | undefined) {
     .slice(0, 120);
 }
 
+function sendBusinessEvent(data: QmaxEvent) {
+  if (typeof window.gtag !== "function") return;
+
+  const commonParams = {
+    interaction_label:
+      data.interaction_label,
+
+    interaction_location:
+      data.interaction_location,
+
+    destination:
+      data.destination,
+
+    event_category:
+      "engagement",
+  };
+
+  switch (data.interaction_type) {
+    case "cta_contato":
+      window.gtag(
+        "event",
+        "qmax_contact_click",
+        commonParams
+      );
+      break;
+
+    case "telefone":
+      window.gtag(
+        "event",
+        "qmax_phone_click",
+        commonParams
+      );
+      break;
+
+    case "email":
+      window.gtag(
+        "event",
+        "qmax_email_click",
+        commonParams
+      );
+      break;
+
+    case "mapa":
+      window.gtag(
+        "event",
+        "qmax_map_open",
+        commonParams
+      );
+      break;
+
+    case "produto":
+      window.gtag(
+        "event",
+        "qmax_product_interest",
+        commonParams
+      );
+      break;
+
+    case "empresa":
+      window.gtag(
+        "event",
+        "qmax_company_interest",
+        commonParams
+      );
+      break;
+
+    case "faq":
+      window.gtag(
+        "event",
+        "qmax_faq_interaction",
+        commonParams
+      );
+      break;
+  }
+}
 function sendEvent(data: QmaxEvent) {
   window.dataLayer = window.dataLayer || [];
 
@@ -59,6 +134,8 @@ function sendEvent(data: QmaxEvent) {
       }
     );
   }
+
+  sendBusinessEvent(data);
 
   window.dispatchEvent(
     new CustomEvent("qmax:analytics", {
