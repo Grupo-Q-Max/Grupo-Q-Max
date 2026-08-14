@@ -1,6 +1,4 @@
-"use client";
-
-import { motion } from "framer-motion";
+import { DeferredGoogleMap } from "./DeferredGoogleMap";
 import {
   ArrowUpRight,
   Mail,
@@ -16,33 +14,26 @@ export function Contact() {
       <div className="finish-contact__ambient finish-contact__ambient--b" />
 
       <div className="container">
-        <motion.div
+        <div
           className="finish-contact__panel"
-          initial={{ opacity: 0, y: 36 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.25 }}
-          transition={{
-            duration: 0.72,
-            ease: [0.22, 1, 0.36, 1],
-          }}
         >
           <div className="finish-contact__copy">
             <span className="eyebrow">
               <Sparkles size={13} />
-              PRÓXIMO PASSO
+              PRÃƒâ€œXIMO PASSO
             </span>
 
             <h2>
               Grandes movimentos
               <br />
-              começam com uma
+              comeÃƒÂ§am com uma
               <br />
               <em>boa conversa.</em>
             </h2>
 
             <p>
               O Grupo Q-Max conecta diferentes especialidades para apoiar
-              negócios com mais estrutura, clareza e capacidade de execução.
+              negÃƒÂ³cios com mais estrutura, clareza e capacidade de execuÃƒÂ§ÃƒÂ£o.
             </p>
 
             <a
@@ -87,14 +78,14 @@ export function Contact() {
               </div>
 
               <span>
-                <small>ENDEREÇO</small>
+                <small>ENDEREÃƒâ€¡O</small>
                 <strong>
-                  R. Frei Gaspar, 941 · São Bernardo do Campo/SP
+                  R. Frei Gaspar, 941 Ã‚Â· SÃƒÂ£o Bernardo do Campo/SP
                 </strong>
               </span>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     
       <div
@@ -104,7 +95,7 @@ export function Contact() {
         <div className="contact42__mapHead">
           <div>
             <span className="contact42__eyebrow">
-              NOSSA LOCALIZAÇÃO
+              NOSSA LOCALIZAÃƒâ€¡ÃƒÆ’O
             </span>
 
             <h3>
@@ -112,7 +103,7 @@ export function Contact() {
             </h3>
 
             <p>
-              R. Frei Gaspar, 941 · São Bernardo do Campo/SP
+              R. Frei Gaspar, 941 Ã‚Â· SÃƒÂ£o Bernardo do Campo/SP
             </p>
           </div>
 
@@ -123,18 +114,12 @@ export function Contact() {
             className="contact42__mapButton"
           >
             Abrir no Google Maps
-            <span aria-hidden="true">↗</span>
+            <span aria-hidden="true">Ã¢â€ â€”</span>
           </a>
         </div>
 
         <div className="contact42__mapFrame">
-          <iframe
-            src="https://www.google.com/maps?q=R.+Frei+Gaspar,+941,+Sao+Bernardo+do+Campo,+SP&output=embed"
-            title="Localização do Grupo Q-Max em São Bernardo do Campo"
-            loading="lazy"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-          />
+          <DeferredGoogleMap />
 
           <div
             className="contact42__mapShade"
@@ -146,7 +131,7 @@ export function Contact() {
 
             <div>
               <small>GRUPO Q-MAX</small>
-              <strong>São Bernardo do Campo</strong>
+              <strong>SÃƒÂ£o Bernardo do Campo</strong>
             </div>
           </div>
         </div>

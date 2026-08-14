@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
 import {
   ArrowDownRight,
   Eye,
@@ -44,15 +41,8 @@ export function Story() {
         <div className="qstory__glow" />
 
         <div className="container qstory__container">
-          <motion.div
+          <div
             className="qstory__intro"
-            initial={{ opacity: 0, y: 34 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.25 }}
-            transition={{
-              duration: 0.7,
-              ease: [0.22, 1, 0.36, 1],
-            }}
           >
             <span className="eyebrow">
               <Sparkles size={13} />
@@ -66,18 +56,10 @@ export function Story() {
               <br />
               <em>Um Q de inovação.</em>
             </h2>
-          </motion.div>
+          </div>
 
-          <motion.div
+          <div
             className="qstory__statement"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{
-              duration: 0.7,
-              delay: 0.12,
-              ease: [0.22, 1, 0.36, 1],
-            }}
           >
             <span>ECOSSISTEMA EMPRESARIAL</span>
 
@@ -93,7 +75,7 @@ export function Story() {
                 responsabilidade e inovação.
               </small>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         <div className="container qstory__manifesto">
@@ -133,12 +115,8 @@ export function Story() {
           </header>
 
           <div className="qprinciples__main">
-            <motion.article
+            <article
               className="qprinciples__card qprinciples__card--mission"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.6 }}
             >
               <div className="qprinciples__cardTop">
                 <span>01 / MISSÃO</span>
@@ -156,14 +134,10 @@ export function Story() {
                 <span>Ambiente Colaborativo</span>
                 <span>Crescimento Sustentável</span>
               </div>
-            </motion.article>
+            </article>
 
-            <motion.article
+            <article
               className="qprinciples__card qprinciples__card--vision"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.6, delay: 0.08 }}
             >
               <div className="qprinciples__cardTop">
                 <span>02 / VISÃO</span>
@@ -181,7 +155,7 @@ export function Story() {
                 <span>Liderança em Inovação</span>
                 <span>Valor Real</span>
               </div>
-            </motion.article>
+            </article>
           </div>
 
           <div className="qvalues">
@@ -200,16 +174,9 @@ export function Story() {
                 const Icon = value.icon;
 
                 return (
-                  <motion.div
+                  <div
                     key={value.title}
                     className="qvalues__item"
-                    initial={{ opacity: 0, x: 24 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, amount: 0.5 }}
-                    transition={{
-                      duration: 0.45,
-                      delay: index * 0.06,
-                    }}
                   >
                     <span>{value.number}</span>
 
@@ -218,7 +185,7 @@ export function Story() {
                     <strong>{value.title}</strong>
 
                     <i />
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -230,15 +197,8 @@ export function Story() {
         <div className="qesg__world" />
 
         <div className="container qesg__layout">
-          <motion.div
+          <div
             className="qesg__visual"
-            initial={{ opacity: 0, scale: 0.92 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.25 }}
-            transition={{
-              duration: 0.8,
-              ease: [0.22, 1, 0.36, 1],
-            }}
           >
             <div className="qesg__orbit qesg__orbit--1" />
             <div className="qesg__orbit qesg__orbit--2" />
@@ -253,14 +213,10 @@ export function Story() {
             <span className="qesg__node qesg__node--e">E</span>
             <span className="qesg__node qesg__node--s">S</span>
             <span className="qesg__node qesg__node--g">G</span>
-          </motion.div>
+          </div>
 
-          <motion.div
+          <div
             className="qesg__copy"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.65 }}
           >
             <span className="eyebrow">
               <Leaf size={13} />
@@ -295,7 +251,7 @@ export function Story() {
                 <strong>Governance</strong>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
     </>

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowUpRight,
   Building2,
@@ -145,7 +144,7 @@ export function Ecosystem() {
         <div className="ecosystem8__body">
           <nav className="ecosystem8__nav">
             {companies.map((company, index) => (
-              <motion.button
+              <button
                 type="button"
                 key={company.id}
                 className={activeIndex === index ? "active" : ""}
@@ -157,7 +156,6 @@ export function Ecosystem() {
                 onMouseEnter={() => setActiveIndex(index)}
                 onFocus={() => setActiveIndex(index)}
                 onClick={() => setActiveIndex(index)}
-                whileHover={{ x: 6 }}
               >
                 <span className="ecosystem8__number">
                   {company.number}
@@ -169,7 +167,7 @@ export function Ecosystem() {
                 </span>
 
                 <i />
-              </motion.button>
+              </button>
             ))}
           </nav>
 
@@ -188,12 +186,8 @@ export function Ecosystem() {
               <div className="ecosystem8__orbit orbit-b" />
               <div className="ecosystem8__orbit orbit-c" />
 
-              <motion.div
+              <div
                 className="ecosystem8__core"
-                animate={{
-                  boxShadow: `0 0 100px ${active.color}22`,
-                }}
-                transition={{ duration: 0.4 }}
               >
                 <Image
                   src="/brands/grupo-qmax-white.png"
@@ -207,36 +201,14 @@ export function Ecosystem() {
                 />
 
                 <span>GRUPO Q-MAX</span>
-              </motion.div>
+              </div>
 
               <span className="ecosystem8__pulse pulse-a" />
               <span className="ecosystem8__pulse pulse-b" />
               <span className="ecosystem8__pulse pulse-c" />
             </div>
-
-            <AnimatePresence mode="wait">
-              <motion.article
-                key={active.id}
+<article
                 className="ecosystem8__detail"
-                initial={{
-                  opacity: 0,
-                  y: 22,
-                  filter: "blur(8px)",
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                  filter: "blur(0px)",
-                }}
-                exit={{
-                  opacity: 0,
-                  y: -12,
-                  filter: "blur(6px)",
-                }}
-                transition={{
-                  duration: 0.35,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
               >
                 <div className="ecosystem8__detailTop">
                   <span>{active.category}</span>
@@ -288,9 +260,8 @@ export function Ecosystem() {
                     <ArrowUpRight size={17} />
                   </a>
                 )}
-              </motion.article>
-            </AnimatePresence>
-          </div>
+              </article>
+</div>
         </div>
 
         <div className="ecosystem8__footer">

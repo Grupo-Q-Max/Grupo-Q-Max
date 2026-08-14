@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 
 const areas = [
@@ -18,15 +15,8 @@ export function ConversionBand() {
       <div className="conversion18__glow" aria-hidden="true" />
 
       <div className="container">
-        <motion.div
+        <div
           className="conversion18__panel"
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{
-            duration: 0.7,
-            ease: [0.22, 1, 0.36, 1],
-          }}
         >
           <div className="conversion18__copy">
             <span className="eyebrow">
@@ -62,7 +52,7 @@ export function ConversionBand() {
               <ArrowUpRight size={18} />
             </a>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

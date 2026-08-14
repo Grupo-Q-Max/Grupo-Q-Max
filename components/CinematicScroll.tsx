@@ -1,13 +1,7 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, MessageCircle } from "lucide-react";
-import {
-  motion,
-  useMotionValue,
-  useScroll,
-  useSpring,
-} from "framer-motion";
 
 const sections = [
   { id: "inicio", label: "Início", short: "Q-MAX", color: "#ef197d" },
@@ -18,18 +12,8 @@ const sections = [
 ] as const;
 
 export function CinematicScroll() {
-  const { scrollYProgress } = useScroll();
-
-  const progress = useSpring(scrollYProgress, {
-    stiffness: 130,
-    damping: 30,
-    mass: 0.22,
-  });
-
-  const pointerX = useMotionValue(-600);
-  const pointerY = useMotionValue(-600);
-  const smoothX = useSpring(pointerX, { stiffness: 85, damping: 24 });
-  const smoothY = useSpring(pointerY, { stiffness: 85, damping: 24 });
+  const progressRef = useRef<HTMLDivElement>(null);
+  const cursorRef = useRef<HTMLDivElement>(null);
 
   const [activeSection, setActiveSection] = useState("inicio");
   const [showTop, setShowTop] = useState(false);
@@ -47,6 +31,7 @@ export function CinematicScroll() {
     sync();
 
     media.addEventListener?.("change", sync);
+
     return () => media.removeEventListener?.("change", sync);
   }, []);
 
@@ -72,30 +57,105 @@ export function CinematicScroll() {
     );
 
     nodes.forEach((node) => observer.observe(node));
+
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
-    const onScroll = () => {
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+
+      const maxScroll =
+        document.documentElement.scrollHeight - window.innerHeight;
+
+      const progress =
+        maxScroll > 0
+          ? Math.min(Math.max(window.scrollY / maxScroll, 0), 1)
+          : 0;
+
+      if (progressRef.current) {
+        progressRef.current.style.transform = `scaleX(${progress})`;
+      }
+
       setShowTop(window.scrollY > window.innerHeight * 1.25);
     };
 
-    onScroll();
+    const onScroll = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(update);
+      }
+    };
+
+    update();
+
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
   }, []);
 
   useEffect(() => {
     if (!finePointer) return;
 
-    const onPointerMove = (event: PointerEvent) => {
-      pointerX.set(event.clientX);
-      pointerY.set(event.clientY);
+    const cursor = cursorRef.current;
+
+    if (!cursor) return;
+
+    let frame = 0;
+
+    let targetX = -600;
+    let targetY = -600;
+    let currentX = -600;
+    let currentY = -600;
+
+    const animate = () => {
+      currentX += (targetX - currentX) * 0.14;
+      currentY += (targetY - currentY) * 0.14;
+
+      cursor.style.transform =
+        `translate3d(${currentX}px, ${currentY}px, 0)`;
+
+      const moving =
+        Math.abs(targetX - currentX) > 0.1 ||
+        Math.abs(targetY - currentY) > 0.1;
+
+      if (moving) {
+        frame = window.requestAnimationFrame(animate);
+      } else {
+        frame = 0;
+      }
     };
 
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    return () => window.removeEventListener("pointermove", onPointerMove);
-  }, [finePointer, pointerX, pointerY]);
+    const onPointerMove = (event: PointerEvent) => {
+      targetX = event.clientX;
+      targetY = event.clientY;
+
+      if (!frame) {
+        frame = window.requestAnimationFrame(animate);
+      }
+    };
+
+    window.addEventListener("pointermove", onPointerMove, {
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
+  }, [finePointer]);
 
   useEffect(() => {
     document.documentElement.dataset.qmaxSection = active.id;
@@ -107,20 +167,37 @@ export function CinematicScroll() {
 
   return (
     <>
-      <motion.div className="qmax-progress" style={{ scaleX: progress }} />
+      <div
+        ref={progressRef}
+        className="qmax-progress"
+        style={{
+          transform: "scaleX(0)",
+          transformOrigin: "0 50%",
+        }}
+      />
 
       <div className="qmax-atmosphere" aria-hidden="true" />
 
       {finePointer && (
-        <motion.div
+        <div
+          ref={cursorRef}
           className="qmax-cursor-aura"
-          style={{ x: smoothX, y: smoothY }}
+          style={{
+            transform: "translate3d(-600px, -600px, 0)",
+            willChange: "transform",
+          }}
           aria-hidden="true"
         />
       )}
 
-      <nav className="qmax-signature-rail" aria-label="Seções da página">
-        <span className="qmax-signature-rail__label" aria-hidden="true">
+      <nav
+        className="qmax-signature-rail"
+        aria-label="Seções da página"
+      >
+        <span
+          className="qmax-signature-rail__label"
+          aria-hidden="true"
+        >
           {active.short}
         </span>
 
@@ -129,9 +206,15 @@ export function CinematicScroll() {
             <a
               key={section.id}
               href={`#${section.id}`}
-              className={activeSection === section.id ? "active" : ""}
+              className={
+                activeSection === section.id ? "active" : ""
+              }
               aria-label={`Ir para ${section.label}`}
-              aria-current={activeSection === section.id ? "location" : undefined}
+              aria-current={
+                activeSection === section.id
+                  ? "location"
+                  : undefined
+              }
             >
               <span>0{index + 1}</span>
               <i />
@@ -154,7 +237,12 @@ export function CinematicScroll() {
         type="button"
         className={`qmax-backtop ${showTop ? "visible" : ""}`}
         aria-label="Voltar ao topo"
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onClick={() =>
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          })
+        }
       >
         <ArrowUp size={18} />
       </button>

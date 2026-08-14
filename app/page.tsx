@@ -1,5 +1,5 @@
 import { Navbar } from "@/components/Navbar";
-import { CinematicScroll } from "@/components/CinematicScroll";
+import { DeferredCinematicScroll } from "@/components/DeferredCinematicScroll";
 import { Hero } from "@/components/Hero";
 import { Story } from "@/components/Story";
 import { Ecosystem } from "@/components/Ecosystem";
@@ -12,7 +12,7 @@ import { Footer } from "@/components/Footer";
 export default function Home() {
   return (
     <>
-      <CinematicScroll />
+      <DeferredCinematicScroll />
       <Navbar />
 
       <main>

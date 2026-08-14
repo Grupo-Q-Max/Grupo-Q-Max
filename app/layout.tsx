@@ -83,28 +83,28 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-L5CSV2XQL3"
-          strategy="afterInteractive"
-        />
-
-        <Script
-          id="qmax-ga4"
+          id="qmax-ga4-bootstrap"
           strategy="afterInteractive"
         >
           {`
             window.dataLayer = window.dataLayer || [];
 
-            function gtag(){
-              dataLayer.push(arguments);
-            }
+            window.gtag = window.gtag || function(){
+              window.dataLayer.push(arguments);
+            };
 
-            gtag('js', new Date());
+            window.gtag('js', new Date());
 
-            gtag('config', 'G-L5CSV2XQL3', {
+            window.gtag('config', 'G-L5CSV2XQL3', {
               send_page_view: true
             });
           `}
         </Script>
+
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-L5CSV2XQL3"
+          strategy="lazyOnload"
+        />
 <QmaxAnalytics /><OrganizationJsonLd />{children}</body>
     </html>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowUpRight,
   Check,
@@ -148,30 +147,9 @@ export function Products() {
             </button>
           ))}
         </div>
-
-        <AnimatePresence mode="wait">
-          <motion.div
+<div
             key={active.id}
             className="products5__stage"
-            initial={{
-              opacity: 0,
-              y: 28,
-              filter: "blur(10px)",
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              filter: "blur(0px)",
-            }}
-            exit={{
-              opacity: 0,
-              y: -16,
-              filter: "blur(7px)",
-            }}
-            transition={{
-              duration: 0.38,
-              ease: [0.22, 1, 0.36, 1],
-            }}
           >
             <span className="products21__watermark" aria-hidden="true">
               {active.name}
@@ -234,18 +212,8 @@ export function Products() {
                 <strong>{active.interfaceLabel}</strong>
               </div>
 
-              <motion.div
+              <div
                 className="products5__device"
-                animate={{
-                  y: [0, -9, 0],
-                  rotateY: [-3, 2, -3],
-                  rotateX: [1, -1, 1],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
               >
                 <div className="products5__deviceTop">
                   <div>
@@ -330,17 +298,15 @@ export function Products() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               <div className="products5__floating products5__floating--bottom">
                 <ActiveIcon size={16} />
                 <span>{active.name}</span>
               </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
-
-        <footer className="products5__footer">
+          </div>
+<footer className="products5__footer">
           <div className="products5__counter">
             <strong>0{activeIndex + 1}</strong>
 

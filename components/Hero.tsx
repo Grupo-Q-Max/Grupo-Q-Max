@@ -1,45 +1,18 @@
-"use client";
-
 import Image from "next/image";
-import { motion, useMotionValue, useSpring } from "framer-motion";
 import { ArrowDown, ArrowRight, Sparkles } from "lucide-react";
-import type { MouseEvent } from "react";
-
 export function Hero() {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const rotateX = useSpring(mouseY, { stiffness: 80, damping: 16 });
-  const rotateY = useSpring(mouseX, { stiffness: 80, damping: 16 });
-
-  function move(event: MouseEvent<HTMLElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    mouseX.set(((event.clientX - rect.left) / rect.width - 0.5) * 10);
-    mouseY.set(((event.clientY - rect.top) / rect.height - 0.5) * -8);
-  }
-
-  function reset() {
-    mouseX.set(0);
-    mouseY.set(0);
-  }
 
   return (
     <section
       id="inicio"
       className="hero hero21"
-      onMouseMove={move}
-      onMouseLeave={reset}
     >
       <div className="hero__aurora" />
       <div className="hero21__monogram" aria-hidden="true">Q</div>
       <div className="hero21__axis" aria-hidden="true" />
 
       <div className="container hero__grid">
-        <motion.div
-          className="hero__copy"
-          initial={{ opacity: 0, y: 28 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-        >
+        <div className="hero__copy">
           <span className="eyebrow">
             <Sparkles size={14} />
             ECOSSISTEMA EMPRESARIAL Q-MAX
@@ -75,13 +48,10 @@ export function Hero() {
             <i />
             <small>QUALIDADE / QUALIFICAÇÃO / INOVAÇÃO</small>
           </div>
-        </motion.div>
+        </div>
 
         <div className="hero__visualWrap">
-          <motion.div
-            className="hero__visual"
-            style={{ rotateX, rotateY }}
-          >
+          <div className="hero__visual">
             <div className="hero__rings">
               <i />
               <i />
@@ -113,7 +83,7 @@ export function Hero() {
               <b>Q</b>
               <span>inovação com propósito</span>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
