@@ -20,20 +20,20 @@ export function Contact() {
           <div className="finish-contact__copy">
             <span className="eyebrow">
               <Sparkles size={13} />
-              PRÃƒâ€œXIMO PASSO
+              PRÓXIMO PASSO
             </span>
 
             <h2>
               Grandes movimentos
               <br />
-              comeÃƒÂ§am com uma
+              começam com uma
               <br />
               <em>boa conversa.</em>
             </h2>
 
             <p>
               O Grupo Q-Max conecta diferentes especialidades para apoiar
-              negÃƒÂ³cios com mais estrutura, clareza e capacidade de execuÃƒÂ§ÃƒÂ£o.
+              negócios com mais estrutura, clareza e capacidade de execução.
             </p>
 
             <a
@@ -78,9 +78,9 @@ export function Contact() {
               </div>
 
               <span>
-                <small>ENDEREÃƒâ€¡O</small>
+                <small>ENDEREÇO</small>
                 <strong>
-                  R. Frei Gaspar, 941 Ã‚Â· SÃƒÂ£o Bernardo do Campo/SP
+                  R. Frei Gaspar, 941 · São Bernardo do Campo/SP
                 </strong>
               </span>
             </div>
@@ -95,7 +95,7 @@ export function Contact() {
         <div className="contact42__mapHead">
           <div>
             <span className="contact42__eyebrow">
-              NOSSA LOCALIZAÃƒâ€¡ÃƒÆ’O
+              NOSSA LOCALIZAÇÃO
             </span>
 
             <h3>
@@ -103,7 +103,7 @@ export function Contact() {
             </h3>
 
             <p>
-              R. Frei Gaspar, 941 Ã‚Â· SÃƒÂ£o Bernardo do Campo/SP
+              R. Frei Gaspar, 941 · São Bernardo do Campo/SP
             </p>
           </div>
 
@@ -114,7 +114,7 @@ export function Contact() {
             className="contact42__mapButton"
           >
             Abrir no Google Maps
-            <span aria-hidden="true">Ã¢â€ â€”</span>
+            <span aria-hidden="true">—</span>
           </a>
         </div>
 
@@ -131,7 +131,7 @@ export function Contact() {
 
             <div>
               <small>GRUPO Q-MAX</small>
-              <strong>SÃƒÂ£o Bernardo do Campo</strong>
+              <strong>São Bernardo do Campo</strong>
             </div>
           </div>
         </div>

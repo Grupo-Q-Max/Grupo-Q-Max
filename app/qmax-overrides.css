@@ -63,7 +63,7 @@
 
 /* Logo principal dentro do card */
 #empresas img[alt="Q-Max Auditoria"],
-#empresas img[alt="Q-Max ContÃ¡bil"],
+#empresas img[alt="Q-Max Contábil"],
 #empresas img[alt="Q-Max Talents"],
 #empresas img[alt="Q-Max Technology"],
 #empresas img[alt="Lagerhaus"] {
@@ -74,7 +74,7 @@
 }
 
 /* ContÃ¡bil possui arte escura â€” painel claro proposital */
-#empresas img[alt="Q-Max ContÃ¡bil"] {
+#empresas img[alt="Q-Max Contábil"] {
   max-height: 105px !important;
 }
 
@@ -236,7 +236,7 @@
   }
 
   #empresas img[alt="Q-Max Auditoria"],
-  #empresas img[alt="Q-Max ContÃ¡bil"],
+  #empresas img[alt="Q-Max Contábil"],
   #empresas img[alt="Q-Max Talents"],
   #empresas img[alt="Q-Max Technology"],
   #empresas img[alt="Lagerhaus"] {
@@ -259,7 +259,7 @@
    --------------------------------------------------------- */
 
 #empresas *:has(> img[alt="Q-Max Auditoria"]),
-#empresas *:has(> img[alt="Q-Max ContÃ¡bil"]),
+#empresas *:has(> img[alt="Q-Max Contábil"]),
 #empresas *:has(> img[alt="Q-Max Talents"]),
 #empresas *:has(> img[alt="Q-Max Technology"]),
 #empresas *:has(> img[alt="Lagerhaus"]) {
@@ -273,7 +273,7 @@
    --------------------------------------------------------- */
 
 #empresas img[alt="Q-Max Auditoria"],
-#empresas img[alt="Q-Max ContÃ¡bil"],
+#empresas img[alt="Q-Max Contábil"],
 #empresas img[alt="Q-Max Talents"],
 #empresas img[alt="Q-Max Technology"],
 #empresas img[alt="Lagerhaus"] {
@@ -298,7 +298,7 @@
 /* CONTÃBIL
    SVG branco, sem retÃ¢ngulo branco
 */
-#empresas img[alt="Q-Max ContÃ¡bil"] {
+#empresas img[alt="Q-Max Contábil"] {
   max-width: 76% !important;
   max-height: 118px !important;
 }
@@ -330,7 +330,7 @@
    --------------------------------------------------------- */
 
 #empresas div:has(> img[alt="Q-Max Auditoria"]),
-#empresas div:has(> img[alt="Q-Max ContÃ¡bil"]),
+#empresas div:has(> img[alt="Q-Max Contábil"]),
 #empresas div:has(> img[alt="Q-Max Talents"]),
 #empresas div:has(> img[alt="Q-Max Technology"]),
 #empresas div:has(> img[alt="Lagerhaus"]) {
@@ -373,7 +373,7 @@
 @media (max-width: 768px) {
 
   #empresas div:has(> img[alt="Q-Max Auditoria"]),
-  #empresas div:has(> img[alt="Q-Max ContÃ¡bil"]),
+  #empresas div:has(> img[alt="Q-Max Contábil"]),
   #empresas div:has(> img[alt="Q-Max Talents"]),
   #empresas div:has(> img[alt="Q-Max Technology"]),
   #empresas div:has(> img[alt="Lagerhaus"]) {
@@ -382,7 +382,7 @@
   }
 
   #empresas img[alt="Q-Max Auditoria"],
-  #empresas img[alt="Q-Max ContÃ¡bil"],
+  #empresas img[alt="Q-Max Contábil"],
   #empresas img[alt="Q-Max Talents"],
   #empresas img[alt="Q-Max Technology"] {
     max-width: 82% !important;
