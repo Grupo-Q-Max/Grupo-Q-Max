@@ -4108,3 +4108,66 @@ body {
       12px !important;
   }
 }
+
+/* ==========================================================
+   QMAX V63.2 - CTA ACCESSIBILITY FINAL
+   Contraste, foco por teclado e consistencia dos CTAs
+   ========================================================== */
+
+/* CTA principal da navegacao */
+.nav15__cta {
+  color: #ffffff !important;
+}
+
+/* CTA mobile */
+.nav15__mobileCta {
+  background: #c90d67 !important;
+  color: #ffffff !important;
+}
+
+/* CTA final de contato */
+.finish-contact__primary {
+  background: #ef197d !important;
+  color: #ffffff !important;
+}
+
+/* CTA da faixa de conversao */
+.conversion18__right > a {
+  color: #ffffff !important;
+}
+
+/* CTA do FAQ */
+.faq43__cta > a {
+  background: #f41883 !important;
+  color: #ffffff !important;
+}
+
+/* ----------------------------------------------------------
+   FOCUS VISIBLE
+   Navegacao por teclado
+   ---------------------------------------------------------- */
+
+.nav15__cta:focus-visible,
+.nav15__mobileCta:focus-visible,
+.finish-contact__primary:focus-visible,
+.conversion18__right > a:focus-visible,
+.faq43__cta > a:focus-visible {
+  outline: 3px solid #ffffff !important;
+  outline-offset: 4px !important;
+  box-shadow:
+    0 0 0 2px #ef197d,
+    0 0 0 6px rgba(239,25,125,.22) !important;
+}
+
+/* ----------------------------------------------------------
+   TOUCH TARGET
+   Mantem area minima confortavel
+   ---------------------------------------------------------- */
+
+.nav15__cta,
+.nav15__mobileCta,
+.finish-contact__primary,
+.conversion18__right > a,
+.faq43__cta > a {
+  min-height: 48px;
+}
