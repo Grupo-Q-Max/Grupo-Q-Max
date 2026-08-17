@@ -6,7 +6,7 @@ import "./qmax-base.css";
 import "./qmax-overrides.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.grupoqmax.com.br"),
+  metadataBase: new URL("https://qmaxbrasil.com.br"),
   applicationName: "Grupo Q-Max",
   category: "business",
   creator: "Grupo Q-Max",

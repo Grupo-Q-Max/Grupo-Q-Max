@@ -5,9 +5,9 @@ export function OrganizationJsonLd() {
 
     name: "Grupo Q-Max",
 
-    url: "https://www.grupoqmax.com.br",
+    url: "https://qmaxbrasil.com.br",
 
-    logo: "https://www.grupoqmax.com.br/icon.png",
+    logo: "https://qmaxbrasil.com.br/icon.png",
 
     description:
       "Ecossistema empresarial que conecta auditoria, contabilidade, talentos, tecnologia, estrutura e soluções digitais para apoiar empresas em diferentes áreas de gestão e desenvolvimento.",

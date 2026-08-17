@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://www.grupoqmax.com.br/sitemap.xml",
+    sitemap: "https://qmaxbrasil.com.br/sitemap.xml",
   };
 }
