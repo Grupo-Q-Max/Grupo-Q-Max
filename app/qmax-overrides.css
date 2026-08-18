@@ -4171,3 +4171,33 @@ body {
 .faq43__cta > a {
   min-height: 48px;
 }
+
+/* ==========================================================
+   QMAX V65.2 - HEADER HOVER HITBOX FIX
+   Remove a area interativa fantasma dos dropdowns desktop.
+   ========================================================== */
+
+@media (min-width: 981px) {
+
+  .nav15__dropdown {
+    pointer-events: none !important;
+  }
+
+  .nav15__item:hover > .nav15__dropdown,
+  .nav15__item:focus-within > .nav15__dropdown {
+    pointer-events: auto !important;
+  }
+
+  .nav15__item {
+    align-self: stretch;
+  }
+
+  .nav15__item > button {
+    position: relative;
+    z-index: 2;
+  }
+
+  .nav15__dropdown {
+    top: 100% !important;
+  }
+}
