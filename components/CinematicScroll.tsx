@@ -1,4 +1,6 @@
-﻿"use client";
+"use client";
+
+import { QmaxInline } from "@/components/QmaxBrandText";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, MessageCircle } from "lucide-react";
@@ -230,7 +232,7 @@ export function CinematicScroll() {
         aria-label="Falar com a Q-Max"
       >
         <MessageCircle size={18} />
-        <span>Fale com a Q-Max</span>
+        <span>Fale com a <QmaxInline>Q-Max</QmaxInline></span>
       </a>
 
       <button

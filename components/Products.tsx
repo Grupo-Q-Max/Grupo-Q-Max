@@ -1,5 +1,7 @@
 "use client";
 
+import { QmaxInline } from "@/components/QmaxBrandText";
+
 import Image from "next/image";
 import {
   ArrowUpRight,
@@ -20,7 +22,7 @@ const products = [
     name: "QXBACK",
     label: "INDICAÇÕES & BONIFICAÇÃO",
     color: "#55ff00",
-    logo: "/brands/qxback.png",
+    logo: "/brands/qxbackfavicon.png",
     icon: MousePointerClick,
     headline: "Indique. Acompanhe. Seja bonificado.",
     description:
@@ -39,7 +41,7 @@ const products = [
     name: "QXSIGN",
     label: "DOCUMENTAÇÃO DIGITAL",
     color: "#16d2c5",
-    logo: "/products/qxsign-dashboard.png",
+    logo: "/brands/favcon.png",
     icon: FileCheck2,
     headline: "Documentação digital sem complicação.",
     description:
@@ -107,7 +109,7 @@ export function Products() {
           <div>
             <span className="eyebrow">
               <Sparkles size={13} />
-              PRODUTOS Q-MAX
+              PRODUTOS <QmaxInline>Q-MAX</QmaxInline>
             </span>
 
             <h2>
@@ -208,7 +210,7 @@ export function Products() {
               <div className="products5__orbit orbit-c" />
 
               <div className="products5__floating products5__floating--top">
-                <span>PRODUTO Q-MAX</span>
+                <span>PRODUTO <QmaxInline>Q-MAX</QmaxInline></span>
                 <strong>{active.interfaceLabel}</strong>
               </div>
 
@@ -260,7 +262,7 @@ export function Products() {
 
                       <article>
                         <small>Ecossistema</small>
-                        <strong>Q-Max</strong>
+                        <strong><QmaxInline>Q-Max</QmaxInline></strong>
                       </article>
                     </div>
 

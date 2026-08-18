@@ -1,0 +1,8188 @@
+.audit67 {
+  --red: #f22b22;
+  --red-deep: #a80e09;
+  --bg: #050505;
+  --panel: #0b0b0c;
+  --text: #f7f7f7;
+  --muted: rgba(255,255,255,.58);
+  --soft: rgba(255,255,255,.34);
+  --line: rgba(255,255,255,.105);
+
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.audit67 *,
+.audit67 *::before,
+.audit67 *::after {
+  box-sizing: border-box;
+}
+
+.audit67 a {
+  color: inherit;
+}
+
+.audit67__nav {
+  position: relative;
+  z-index: 50;
+  border-bottom: 1px solid var(--line);
+  background: rgba(5,5,5,.9);
+  backdrop-filter: blur(18px);
+}
+
+.audit67__navInner {
+  width: min(1440px, calc(100% - 80px));
+  min-height: 100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 36px;
+}
+
+.audit67__brand {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+}
+
+.audit67__brand img {
+  display: block;
+  width: 142px;
+  height: auto;
+  object-fit: contain;
+}
+
+.audit67__links {
+  display: flex;
+  align-items: center;
+  gap: 38px;
+}
+
+.audit67__links a {
+  position: relative;
+  padding: 40px 0;
+  color: rgba(255,255,255,.62);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color .25s ease;
+}
+
+.audit67__links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: 29px;
+  height: 1px;
+  background: var(--red);
+  transition: right .3s ease;
+}
+
+.audit67__links a:hover {
+  color: #fff;
+}
+
+.audit67__links a:hover::after {
+  right: 0;
+}
+
+.audit67__navCta {
+  justify-self: end;
+  min-height: 50px;
+  padding: 0 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--red);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.audit67__hero {
+  min-height: 830px;
+  position: relative;
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 84% 20%, rgba(242,43,34,.12), transparent 34%),
+    linear-gradient(90deg, #050505 0%, #050505 52%, #090606 100%);
+}
+
+.audit67__hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .15;
+  background-image:
+    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 120px 120px;
+  mask-image: linear-gradient(to right, transparent 5%, black 60%, black);
+}
+
+.audit67__heroGrid {
+  width: min(1440px, calc(100% - 80px));
+  min-height: 830px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, .92fr) minmax(500px, .78fr);
+  align-items: center;
+  gap: clamp(60px, 8vw, 150px);
+}
+
+.audit67__heroCopy {
+  padding: 100px 0;
+}
+
+.audit67__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .22em;
+}
+
+.audit67__eyebrow span {
+  width: 44px;
+  height: 1px;
+  background: var(--red);
+}
+
+.audit67__hero h1 {
+  max-width: 760px;
+  margin: 38px 0 32px;
+  font-size: clamp(62px, 6.25vw, 104px);
+  line-height: .84;
+  letter-spacing: -.07em;
+  font-weight: 850;
+}
+
+.audit67__hero h1 strong {
+  color: rgba(255,255,255,.31);
+  font-weight: inherit;
+}
+
+.audit67__hero h1 em {
+  color: var(--red);
+  font-style: normal;
+}
+
+.audit67__heroCopy > p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+.audit67__heroActions {
+  margin-top: 38px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.audit67__primary {
+  min-height: 56px;
+  padding: 0 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  background: var(--red);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.audit67__textLink {
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(255,255,255,.25);
+  color: rgba(255,255,255,.72);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.audit67__heroSignals {
+  margin-top: 78px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 30px;
+  color: var(--soft);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+
+.audit67__intelligence {
+  position: relative;
+}
+
+.audit67__panel {
+  min-height: 610px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 78% 35%, rgba(242,43,34,.14), transparent 32%),
+    linear-gradient(145deg, rgba(255,255,255,.04), transparent 45%),
+    #09090a;
+  box-shadow: 0 60px 160px rgba(0,0,0,.55);
+}
+
+.audit67__panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: .14;
+  background-image:
+    linear-gradient(rgba(255,255,255,.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.09) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+.audit67__panelTop,
+.audit67__panelBottom {
+  position: absolute;
+  z-index: 5;
+  left: 28px;
+  right: 28px;
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255,255,255,.35);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.audit67__panelTop {
+  top: 26px;
+}
+
+.audit67__panelBottom {
+  bottom: 26px;
+}
+
+.audit67__axis {
+  position: absolute;
+  z-index: 1;
+  background: rgba(255,255,255,.07);
+}
+
+.audit67__axis--x {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+}
+
+.audit67__axis--y {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+.audit67__radar {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.audit67__ring {
+  position: absolute;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 50%;
+}
+
+.audit67__ring--1 {
+  width: 440px;
+  height: 440px;
+}
+
+.audit67__ring--2 {
+  width: 310px;
+  height: 310px;
+  border-color: rgba(242,43,34,.23);
+}
+
+.audit67__ring--3 {
+  width: 180px;
+  height: 180px;
+  border-color: rgba(242,43,34,.4);
+}
+
+.audit67__logoCore {
+  width: 210px;
+  height: 130px;
+  position: relative;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+}
+
+.audit67__logoCore img {
+  display: block;
+  width: 190px;
+  height: auto;
+  object-fit: contain;
+}
+
+.audit67__point {
+  width: 7px;
+  height: 7px;
+  position: absolute;
+  z-index: 5;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 20px rgba(242,43,34,.8);
+}
+
+.audit67__point--1 {
+  top: 25%;
+  left: 34%;
+}
+
+.audit67__point--2 {
+  right: 24%;
+  top: 47%;
+}
+
+.audit67__point--3 {
+  left: 40%;
+  bottom: 20%;
+}
+
+.audit67__panelMetric {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.audit67__panelMetric small {
+  color: var(--red);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+
+.audit67__panelMetric strong {
+  font-size: 14px;
+}
+
+.audit67__panelMetric span {
+  color: var(--soft);
+  font-size: 8px;
+}
+
+.audit67__panelMetric--left {
+  left: 28px;
+  top: 42%;
+}
+
+.audit67__panelMetric--right {
+  right: 28px;
+  top: 62%;
+  text-align: right;
+}
+
+.audit67__floatingCard {
+  width: 245px;
+  min-height: 120px;
+  padding: 22px;
+  position: absolute;
+  z-index: 8;
+  right: -28px;
+  bottom: -30px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: rgba(14,14,15,.92);
+  box-shadow: 0 24px 70px rgba(0,0,0,.5);
+  backdrop-filter: blur(16px);
+}
+
+.audit67__floatingCard > span {
+  margin-bottom: 15px;
+  color: var(--red);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.audit67__floatingCard strong {
+  font-size: 15px;
+}
+
+.audit67__floatingCard small {
+  margin-top: 5px;
+  color: var(--soft);
+}
+
+.audit67__heroGlow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+}
+
+.audit67__heroGlow--one {
+  width: 420px;
+  height: 420px;
+  right: -220px;
+  top: 10%;
+  background: rgba(242,43,34,.13);
+}
+
+.audit67__heroGlow--two {
+  width: 300px;
+  height: 300px;
+  left: 20%;
+  bottom: -180px;
+  background: rgba(242,43,34,.06);
+}
+
+.audit67__manifesto {
+  width: min(1320px, calc(100% - 80px));
+  margin: 0 auto;
+  padding: 170px 0 150px;
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 70px;
+}
+
+.audit67__manifestoIndex {
+  padding-top: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--red);
+}
+
+.audit67__manifestoIndex span {
+  font-size: 34px;
+  font-weight: 850;
+}
+
+.audit67__manifestoIndex small {
+  color: var(--soft);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .18em;
+}
+
+.audit67__kicker,
+.audit67__sectionNumber,
+.audit67__contactIndex {
+  color: var(--red);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .2em;
+}
+
+.audit67__manifesto h2,
+.audit67__sectionIntro h2,
+.audit67__methodCopy h2,
+.audit67__principlesHead h2,
+.audit67__contact h2 {
+  margin: 25px 0 0;
+  font-size: clamp(50px, 5vw, 82px);
+  line-height: .96;
+  letter-spacing: -.055em;
+}
+
+.audit67__manifesto h2 em,
+.audit67__sectionIntro h2 em,
+.audit67__methodCopy h2 em,
+.audit67__principlesHead h2 em {
+  color: var(--red);
+  font-style: normal;
+}
+
+.audit67__manifestoText {
+  max-width: 920px;
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+}
+
+.audit67__manifestoText p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.audit67__proof {
+  width: min(1440px, calc(100% - 80px));
+  margin: 0 auto;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.audit67__proofItem {
+  min-height: 145px;
+  padding: 32px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.audit67__proofItem:last-child {
+  border-right: 0;
+}
+
+.audit67__proofItem strong {
+  color: var(--red);
+  font-size: 12px;
+}
+
+.audit67__proofItem span {
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.audit67__services {
+  width: min(1440px, calc(100% - 80px));
+  margin: 0 auto;
+  padding: 170px 0;
+}
+
+.audit67__sectionIntro {
+  margin-bottom: 75px;
+  display: grid;
+  grid-template-columns: 1.2fr .55fr;
+  align-items: end;
+  gap: 100px;
+}
+
+.audit67__sectionIntro p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.audit67__serviceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.audit67__service {
+  min-height: 430px;
+  padding: 34px;
+  position: relative;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: background .35s ease;
+}
+
+.audit67__service:first-child {
+  border-left: 1px solid var(--line);
+}
+
+.audit67__service:hover {
+  background: rgba(255,255,255,.025);
+}
+
+.audit67__service::after {
+  content: "";
+  position: absolute;
+  left: 34px;
+  right: 34px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--red);
+  transform: scaleX(.12);
+  transform-origin: left;
+  transition: transform .45s ease;
+}
+
+.audit67__service:hover::after {
+  transform: scaleX(1);
+}
+
+.audit67__serviceTop {
+  display: flex;
+  justify-content: space-between;
+  color: var(--red);
+  font-size: 11px;
+}
+
+.audit67__service h3 {
+  max-width: 320px;
+  margin: 0 0 18px;
+  font-size: 27px;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.audit67__service p {
+  max-width: 330px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.audit67__serviceArrow {
+  width: 38px;
+  height: 38px;
+  position: absolute;
+  right: 30px;
+  bottom: 30px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--soft);
+}
+
+.audit67__method {
+  width: min(1440px, calc(100% - 80px));
+  margin: 0 auto 170px;
+  border: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.audit67__methodVisual {
+  min-height: 650px;
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--line);
+  background:
+    radial-gradient(circle at center, rgba(242,43,34,.10), transparent 35%),
+    #09090a;
+}
+
+.audit67__methodGrid {
+  position: absolute;
+  inset: 0;
+  opacity: .13;
+  background-image:
+    linear-gradient(rgba(255,255,255,.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.09) 1px, transparent 1px);
+  background-size: 58px 58px;
+}
+
+.audit67__methodCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+}
+
+.audit67__methodCenter svg {
+  position: relative;
+  z-index: 3;
+  color: var(--red);
+}
+
+.audit67__methodCenter strong {
+  position: relative;
+  z-index: 3;
+  margin-top: 20px;
+  font-size: 11px;
+  letter-spacing: .16em;
+}
+
+.audit67__methodCenter small {
+  position: relative;
+  z-index: 3;
+  color: var(--soft);
+  font-size: 8px;
+  letter-spacing: .15em;
+}
+
+.audit67__methodRing {
+  position: absolute;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 50%;
+}
+
+.audit67__methodRing--1 {
+  width: 400px;
+  height: 400px;
+}
+
+.audit67__methodRing--2 {
+  width: 250px;
+  height: 250px;
+  border-color: rgba(242,43,34,.27);
+}
+
+.audit67__coordinate {
+  position: absolute;
+  color: var(--soft);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+
+.audit67__coordinate--1 {
+  top: 30px;
+  left: 30px;
+}
+
+.audit67__coordinate--2 {
+  right: 30px;
+  top: 48%;
+}
+
+.audit67__coordinate--3 {
+  left: 30px;
+  bottom: 30px;
+}
+
+.audit67__methodCopy {
+  padding: clamp(60px, 7vw, 110px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.audit67__methodCopy h2 {
+  font-size: clamp(44px, 4.2vw, 68px);
+}
+
+.audit67__methodCopy > p {
+  max-width: 540px;
+  margin: 36px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.audit67__methodCopy ul {
+  margin: 42px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.audit67__methodCopy li {
+  padding: 17px 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: rgba(255,255,255,.75);
+  font-size: 13px;
+}
+
+.audit67__methodCopy li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.audit67__methodCopy li svg {
+  flex: 0 0 auto;
+  color: var(--red);
+}
+
+.audit67__principles {
+  width: min(1440px, calc(100% - 80px));
+  margin: 0 auto;
+  padding: 0 0 170px;
+}
+
+.audit67__principlesHead {
+  margin-bottom: 70px;
+}
+
+.audit67__principlesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--line);
+}
+
+.audit67__principlesGrid article {
+  min-height: 290px;
+  padding: 30px;
+  border-right: 1px solid var(--line);
+}
+
+.audit67__principlesGrid article:first-child {
+  border-left: 1px solid var(--line);
+}
+
+.audit67__principlesGrid article > div {
+  display: flex;
+  justify-content: space-between;
+  color: var(--red);
+  font-size: 10px;
+}
+
+.audit67__principlesGrid h3 {
+  margin: 95px 0 14px;
+  font-size: 22px;
+}
+
+.audit67__principlesGrid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.audit67__contact {
+  width: min(1440px, calc(100% - 80px));
+  margin: 0 auto 80px;
+  padding: 90px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(255,255,255,.16), transparent 26%),
+    linear-gradient(125deg, #9e0c08, #ed241b 55%, #a20d08);
+}
+
+.audit67__contact::after {
+  content: "Q";
+  position: absolute;
+  right: -30px;
+  bottom: -130px;
+  color: rgba(255,255,255,.055);
+  font-size: 430px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.audit67__contactGrid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1.25fr .55fr;
+  align-items: end;
+  gap: 100px;
+}
+
+.audit67__contactIndex {
+  color: rgba(255,255,255,.65);
+}
+
+.audit67__contact h2 {
+  font-size: clamp(48px, 5vw, 76px);
+}
+
+.audit67__contact h2 em {
+  color: #fff;
+  font-style: normal;
+}
+
+.audit67__contactAction p {
+  margin: 0 0 28px;
+  color: rgba(255,255,255,.74);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.audit67__contactAction a {
+  min-height: 58px;
+  padding: 0 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  color: #111;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.audit67__contactMeta {
+  margin-top: 70px;
+  padding-top: 22px;
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid rgba(255,255,255,.22);
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255,255,255,.58);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+
+.audit67__footer {
+  width: min(1440px, calc(100% - 80px));
+  min-height: 150px;
+  margin: 0 auto;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 30px;
+  color: var(--soft);
+  font-size: 10px;
+}
+
+.audit67__footer img {
+  display: block;
+  width: 125px;
+  height: auto;
+  object-fit: contain;
+}
+
+.audit67__footer > span {
+  text-align: center;
+}
+
+.audit67__footer > a:last-child {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: rgba(255,255,255,.6);
+  text-decoration: none;
+}
+
+.audit67 a:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
+@media (max-width: 1100px) {
+  .audit67__heroGrid {
+    grid-template-columns: 1fr 470px;
+    gap: 50px;
+  }
+
+  .audit67__hero h1 {
+    font-size: clamp(60px, 7vw, 80px);
+  }
+
+  .audit67__sectionIntro {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .audit67__principlesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .audit67__principlesGrid article {
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 900px) {
+  .audit67__navInner {
+    grid-template-columns: 1fr auto;
+  }
+
+  .audit67__links {
+    display: none;
+  }
+
+  .audit67__hero,
+  .audit67__heroGrid {
+    min-height: auto;
+  }
+
+  .audit67__heroGrid {
+    grid-template-columns: 1fr;
+    padding-bottom: 110px;
+  }
+
+  .audit67__heroCopy {
+    padding: 90px 0 20px;
+  }
+
+  .audit67__intelligence {
+    max-width: 650px;
+  }
+
+  .audit67__manifesto {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+
+  .audit67__manifestoIndex {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .audit67__proof {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .audit67__serviceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .audit67__service {
+    min-height: 330px;
+    border-left: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .audit67__method {
+    grid-template-columns: 1fr;
+  }
+
+  .audit67__methodVisual {
+    min-height: 500px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .audit67__contactGrid {
+    grid-template-columns: 1fr;
+    gap: 45px;
+  }
+}
+
+@media (max-width: 640px) {
+  .audit67__navInner,
+  .audit67__heroGrid,
+  .audit67__manifesto,
+  .audit67__proof,
+  .audit67__services,
+  .audit67__method,
+  .audit67__principles,
+  .audit67__contact,
+  .audit67__footer {
+    width: min(100% - 32px, 1440px);
+  }
+
+  .audit67__navInner {
+    min-height: 76px;
+  }
+
+  .audit67__brand img {
+    width: 112px;
+  }
+
+  .audit67__navCta {
+    min-height: 44px;
+    padding: 0 16px;
+    font-size: 10px;
+  }
+
+  .audit67__heroCopy {
+    padding-top: 72px;
+  }
+
+  .audit67__hero h1 {
+    margin-top: 30px;
+    font-size: clamp(51px, 15vw, 70px);
+  }
+
+  .audit67__heroCopy > p {
+    font-size: 15px;
+  }
+
+  .audit67__heroActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .audit67__primary {
+    justify-content: center;
+  }
+
+  .audit67__textLink {
+    text-align: center;
+  }
+
+  .audit67__heroSignals {
+    margin-top: 50px;
+    flex-wrap: wrap;
+    gap: 14px 22px;
+  }
+
+  .audit67__panel {
+    min-height: 430px;
+    border-radius: 20px;
+  }
+
+  .audit67__ring--1 {
+    width: 300px;
+    height: 300px;
+  }
+
+  .audit67__ring--2 {
+    width: 220px;
+    height: 220px;
+  }
+
+  .audit67__ring--3 {
+    width: 140px;
+    height: 140px;
+  }
+
+  .audit67__logoCore img {
+    width: 145px;
+  }
+
+  .audit67__panelMetric {
+    display: none;
+  }
+
+  .audit67__floatingCard {
+    width: calc(100% - 36px);
+    right: 18px;
+    bottom: -45px;
+  }
+
+  .audit67__manifesto {
+    padding: 135px 0 100px;
+  }
+
+  .audit67__manifesto h2,
+  .audit67__sectionIntro h2,
+  .audit67__methodCopy h2,
+  .audit67__principlesHead h2,
+  .audit67__contact h2 {
+    font-size: clamp(42px, 13vw, 58px);
+  }
+
+  .audit67__manifestoText {
+    margin-top: 40px;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .audit67__proof {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .audit67__proofItem {
+    min-height: 120px;
+    padding: 22px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .audit67__services {
+    padding: 110px 0;
+  }
+
+  .audit67__service {
+    min-height: 330px;
+    padding: 26px;
+  }
+
+  .audit67__method {
+    margin-bottom: 110px;
+  }
+
+  .audit67__methodVisual {
+    min-height: 390px;
+  }
+
+  .audit67__methodRing--1 {
+    width: 290px;
+    height: 290px;
+  }
+
+  .audit67__methodRing--2 {
+    width: 190px;
+    height: 190px;
+  }
+
+  .audit67__methodCopy {
+    padding: 45px 28px;
+  }
+
+  .audit67__principles {
+    padding-bottom: 110px;
+  }
+
+  .audit67__principlesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .audit67__principlesGrid article {
+    min-height: 230px;
+    border-left: 1px solid var(--line);
+  }
+
+  .audit67__principlesGrid h3 {
+    margin-top: 65px;
+  }
+
+  .audit67__contact {
+    margin-bottom: 50px;
+    padding: 48px 28px;
+    border-radius: 24px;
+  }
+
+  .audit67__contactAction a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .audit67__contactMeta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .audit67__footer {
+    padding: 42px 0;
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .audit67__footer > span {
+    text-align: left;
+  }
+
+  .audit67__footer > a:last-child {
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audit67 *,
+  .audit67 *::before,
+  .audit67 *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+/* ==========================================================
+   QMAX V66.3 - HEADER AND MOTION POLISH
+   ========================================================== */
+
+/* ----------------------------------------------------------
+   HEADER
+   ---------------------------------------------------------- */
+
+.audit67__nav {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+
+  height: 76px !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(5,5,5,.97),
+      rgba(5,5,5,.88)
+    ) !important;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.09) !important;
+
+  box-shadow:
+    0 12px 40px rgba(0,0,0,.22);
+
+  backdrop-filter:
+    blur(20px)
+    saturate(140%);
+}
+
+.audit67__navInner {
+  width: min(1440px, calc(100% - 64px)) !important;
+
+  height: 76px !important;
+  min-height: 0 !important;
+
+  grid-template-columns:
+    minmax(150px, 1fr)
+    auto
+    minmax(150px, 1fr) !important;
+}
+
+.audit67__brand {
+  height: 76px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.audit67__brand img {
+  width: 94px !important;
+  height: auto !important;
+  max-height: 50px !important;
+}
+
+.audit67__links {
+  height: 76px !important;
+}
+
+.audit67__links a {
+  height: 76px !important;
+
+  padding: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+
+  font-size: 12px !important;
+}
+
+.audit67__links a::after {
+  bottom: 0 !important;
+  height: 2px !important;
+}
+
+.audit67__navCta {
+  min-height: 42px !important;
+  padding: 0 19px !important;
+
+  box-shadow:
+    0 8px 30px rgba(242,43,34,.16);
+
+  transition:
+    transform .28s ease,
+    box-shadow .28s ease,
+    background .28s ease;
+}
+
+.audit67__navCta:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 12px 38px rgba(242,43,34,.28);
+}
+
+/* ----------------------------------------------------------
+   ANCHOR OFFSET
+   ---------------------------------------------------------- */
+
+.audit67 section[id] {
+  scroll-margin-top: 96px;
+}
+
+/* ----------------------------------------------------------
+   HERO POLISH
+   ---------------------------------------------------------- */
+
+.audit67__hero {
+  min-height:
+    calc(100svh - 76px) !important;
+}
+
+.audit67__heroGrid {
+  min-height:
+    calc(100svh - 76px) !important;
+}
+
+.audit67__panel {
+  transform-style: preserve-3d;
+
+  transition:
+    border-color .35s ease,
+    box-shadow .35s ease;
+}
+
+.audit67__panel:hover {
+  border-color:
+    rgba(242,43,34,.32);
+
+  box-shadow:
+    0 70px 180px rgba(0,0,0,.58),
+    0 0 80px rgba(242,43,34,.07);
+}
+
+/* grid lento no painel */
+
+.audit67__panel::before {
+  animation:
+    audit67-grid-drift
+    18s
+    linear
+    infinite;
+}
+
+@keyframes audit67-grid-drift {
+  from {
+    background-position:
+      0 0;
+  }
+
+  to {
+    background-position:
+      52px 52px;
+  }
+}
+
+/* radar */
+
+.audit67__ring {
+  border-top-color:
+    rgba(242,43,34,.32);
+}
+
+.audit67__ring--1 {
+  animation:
+    audit67-ring-one
+    26s
+    linear
+    infinite;
+}
+
+.audit67__ring--2 {
+  animation:
+    audit67-ring-two
+    19s
+    linear
+    infinite reverse;
+}
+
+@keyframes audit67-ring-one {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes audit67-ring-two {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ----------------------------------------------------------
+   BUTTONS
+   ---------------------------------------------------------- */
+
+.audit67__primary,
+.audit67__contactAction a {
+  position: relative;
+  overflow: hidden;
+
+  transition:
+    transform .3s ease,
+    box-shadow .3s ease;
+}
+
+.audit67__primary::before,
+.audit67__contactAction a::before {
+  content: "";
+
+  position: absolute;
+  top: -80%;
+  left: -50%;
+
+  width: 34%;
+  height: 260%;
+
+  transform:
+    rotate(25deg)
+    translateX(-250%);
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,.35),
+      transparent
+    );
+
+  transition:
+    transform .75s ease;
+}
+
+.audit67__primary:hover::before,
+.audit67__contactAction a:hover::before {
+  transform:
+    rotate(25deg)
+    translateX(650%);
+}
+
+.audit67__primary:hover {
+  transform:
+    translateY(-3px);
+
+  box-shadow:
+    0 15px 40px rgba(242,43,34,.25);
+}
+
+.audit67__contactAction a:hover {
+  transform:
+    translateY(-3px);
+
+  box-shadow:
+    0 15px 45px rgba(0,0,0,.18);
+}
+
+/* ----------------------------------------------------------
+   SERVICES
+   ---------------------------------------------------------- */
+
+.audit67__service {
+  overflow: hidden;
+}
+
+.audit67__service::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  opacity: 0;
+
+  background:
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(242,43,34,.11),
+      transparent 34%
+    );
+
+  transition:
+    opacity .4s ease;
+}
+
+.audit67__service:hover::before {
+  opacity: 1;
+}
+
+.audit67__service:hover
+.audit67__serviceArrow {
+  border-color:
+    rgba(242,43,34,.5);
+
+  color:
+    var(--red);
+
+  transform:
+    translateX(3px);
+}
+
+.audit67__serviceArrow {
+  transition:
+    transform .3s ease,
+    border-color .3s ease,
+    color .3s ease;
+}
+
+/* ----------------------------------------------------------
+   PRINCIPLES
+   ---------------------------------------------------------- */
+
+.audit67__principlesGrid article {
+  position: relative;
+  overflow: hidden;
+
+  transition:
+    background .35s ease,
+    transform .35s ease;
+}
+
+.audit67__principlesGrid article:hover {
+  background:
+    rgba(255,255,255,.025);
+
+  transform:
+    translateY(-4px);
+}
+
+/* ----------------------------------------------------------
+   METHOD PANEL
+   ---------------------------------------------------------- */
+
+.audit67__methodVisual {
+  transition:
+    background .45s ease;
+}
+
+.audit67__method:hover
+.audit67__methodVisual {
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(242,43,34,.16),
+      transparent 38%
+    ),
+    #09090a;
+}
+
+/* ----------------------------------------------------------
+   CONTACT
+   ---------------------------------------------------------- */
+
+.audit67__contact {
+  background-size:
+    130% 130%;
+
+  animation:
+    audit67-contact-breathe
+    9s
+    ease-in-out
+    infinite alternate;
+}
+
+@keyframes audit67-contact-breathe {
+  from {
+    background-position:
+      0% 50%;
+  }
+
+  to {
+    background-position:
+      100% 50%;
+  }
+}
+
+/* ----------------------------------------------------------
+   MOBILE HEADER
+   ---------------------------------------------------------- */
+
+@media (max-width: 900px) {
+
+  .audit67__nav {
+    height:
+      68px !important;
+  }
+
+  .audit67__navInner {
+    height:
+      68px !important;
+
+    min-height:
+      0 !important;
+  }
+
+  .audit67__brand {
+    height:
+      68px !important;
+  }
+
+  .audit67__brand img {
+    width:
+      86px !important;
+
+    max-height:
+      45px !important;
+  }
+
+  .audit67__navCta {
+    min-height:
+      40px !important;
+  }
+}
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67__panel::before,
+  .audit67__ring,
+  .audit67__contact {
+    animation:
+      none !important;
+  }
+
+}
+
+/* ==========================================================
+   QMAX V67.5B - AUDITORIA PREMIUM FINISH
+   Cinematic interaction / depth / polish
+   ========================================================== */
+
+.audit67 {
+  --audit-red: #f22b22;
+  --audit-red-bright: #ff443b;
+  --audit-red-soft: rgba(242,43,34,.12);
+  --audit-line: rgba(255,255,255,.085);
+  --audit-ease: cubic-bezier(.22,1,.36,1);
+}
+
+/* ----------------------------------------------------------
+   HERO ATMOSPHERE
+   ---------------------------------------------------------- */
+
+.audit67__hero {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.audit67__hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at 76% 44%,
+      rgba(242,43,34,.085),
+      transparent 31%
+    ),
+    radial-gradient(
+      circle at 14% 8%,
+      rgba(255,255,255,.035),
+      transparent 25%
+    );
+}
+
+.audit67__hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  opacity: .22;
+
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.025) 1px,
+      transparent 1px
+    );
+
+  background-size: 76px 76px;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.7),
+      transparent 88%
+    );
+}
+
+/* ----------------------------------------------------------
+   HERO COPY
+   ---------------------------------------------------------- */
+
+.audit67__heroCopy h1 strong,
+.audit67__heroCopy h1 em {
+  position: relative;
+  display: inline-block;
+}
+
+.audit67__heroCopy h1 em {
+  color: var(--audit-red);
+  text-shadow:
+    0 0 38px rgba(242,43,34,.13);
+}
+
+.audit67__heroCopy h1 em::after {
+  content: "";
+  position: absolute;
+
+  left: 2%;
+  right: 2%;
+  bottom: .04em;
+
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      var(--audit-red),
+      transparent
+    );
+
+  opacity: .5;
+  transform: scaleX(.35);
+  transform-origin: left;
+}
+
+/* ----------------------------------------------------------
+   BUTTON
+   ---------------------------------------------------------- */
+
+.audit67__primary {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  transition:
+    transform .35s var(--audit-ease),
+    box-shadow .35s ease,
+    background .35s ease;
+}
+
+.audit67__primary::before {
+  content: "";
+  position: absolute;
+
+  inset: 0;
+
+  z-index: -1;
+
+  background:
+    linear-gradient(
+      110deg,
+      transparent 20%,
+      rgba(255,255,255,.22) 46%,
+      transparent 72%
+    );
+
+  transform:
+    translateX(-140%)
+    skewX(-18deg);
+
+  transition:
+    transform .7s var(--audit-ease);
+}
+
+.audit67__primary:hover {
+  transform:
+    translateY(-3px);
+
+  box-shadow:
+    0 18px 48px rgba(242,43,34,.22);
+}
+
+.audit67__primary:hover::before {
+  transform:
+    translateX(140%)
+    skewX(-18deg);
+}
+
+.audit67__primary svg {
+  transition:
+    transform .35s var(--audit-ease);
+}
+
+.audit67__primary:hover svg {
+  transform:
+    translateX(5px);
+}
+
+/* ----------------------------------------------------------
+   AUDIT INTELLIGENCE PANEL
+   ---------------------------------------------------------- */
+
+.audit67__panel {
+  position: relative;
+  isolation: isolate;
+
+  box-shadow:
+    0 45px 120px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.06);
+
+  transition:
+    transform .7s var(--audit-ease),
+    border-color .5s ease,
+    box-shadow .5s ease;
+}
+
+.audit67__intelligence:hover .audit67__panel {
+  transform:
+    translateY(-6px)
+    rotateX(1.4deg)
+    rotateY(-1.2deg);
+
+  border-color:
+    rgba(242,43,34,.22);
+
+  box-shadow:
+    0 55px 150px rgba(0,0,0,.54),
+    0 0 70px rgba(242,43,34,.055),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.audit67__panel::after {
+  content: "";
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      115deg,
+      transparent 20%,
+      rgba(255,255,255,.025) 46%,
+      transparent 72%
+    );
+
+  transform:
+    translateX(-100%);
+
+  animation:
+    audit67-panel-scan 8s ease-in-out infinite;
+}
+
+@keyframes audit67-panel-scan {
+  0%,
+  58% {
+    transform: translateX(-110%);
+  }
+
+  78%,
+  100% {
+    transform: translateX(110%);
+  }
+}
+
+/* ----------------------------------------------------------
+   RADAR
+   ---------------------------------------------------------- */
+
+.audit67__radar {
+  transform-style: preserve-3d;
+}
+
+.audit67__ring {
+  animation:
+    audit67-ring-breathe 4.8s ease-in-out infinite;
+}
+
+.audit67__ring--2 {
+  animation-delay: -.8s;
+}
+
+.audit67__ring--3 {
+  animation-delay: -1.6s;
+}
+
+@keyframes audit67-ring-breathe {
+  0%,
+  100% {
+    opacity: .28;
+    transform: scale(.985);
+  }
+
+  50% {
+    opacity: .68;
+    transform: scale(1.025);
+  }
+}
+
+.audit67__point {
+  box-shadow:
+    0 0 0 0 rgba(242,43,34,.5);
+
+  animation:
+    audit67-point-pulse 2.7s ease-out infinite;
+}
+
+.audit67__point--2 {
+  animation-delay: -.8s;
+}
+
+.audit67__point--3 {
+  animation-delay: -1.6s;
+}
+
+@keyframes audit67-point-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(242,43,34,.45);
+  }
+
+  70% {
+    box-shadow:
+      0 0 0 13px rgba(242,43,34,0);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(242,43,34,0);
+  }
+}
+
+/* ----------------------------------------------------------
+   FLOATING CARD
+   ---------------------------------------------------------- */
+
+.audit67__floatingCard {
+  animation:
+    audit67-card-float 5.4s ease-in-out infinite;
+
+  box-shadow:
+    0 24px 60px rgba(0,0,0,.28);
+}
+
+@keyframes audit67-card-float {
+  0%,
+  100% {
+    transform: translate3d(0,0,0);
+  }
+
+  50% {
+    transform: translate3d(0,-9px,0);
+  }
+}
+
+/* ----------------------------------------------------------
+   PROOF STRIP
+   ---------------------------------------------------------- */
+
+.audit67__proofItem {
+  position: relative;
+  overflow: hidden;
+
+  transition:
+    background .35s ease,
+    transform .35s var(--audit-ease);
+}
+
+.audit67__proofItem::after {
+  content: "";
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 2px;
+
+  background:
+    var(--audit-red);
+
+  transform:
+    scaleX(0);
+
+  transform-origin:
+    left;
+
+  transition:
+    transform .45s var(--audit-ease);
+}
+
+.audit67__proofItem:hover {
+  background:
+    rgba(255,255,255,.018);
+
+  transform:
+    translateY(-2px);
+}
+
+.audit67__proofItem:hover::after {
+  transform:
+    scaleX(1);
+}
+
+/* ----------------------------------------------------------
+   SERVICES
+   ---------------------------------------------------------- */
+
+.audit67__service {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  transition:
+    transform .45s var(--audit-ease),
+    border-color .35s ease,
+    background .35s ease,
+    box-shadow .45s ease;
+}
+
+.audit67__service::before {
+  content: "";
+  position: absolute;
+
+  width: 240px;
+  height: 240px;
+
+  right: -150px;
+  top: -150px;
+
+  z-index: -1;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(242,43,34,.13),
+      transparent 68%
+    );
+
+  opacity: 0;
+
+  transform:
+    scale(.7);
+
+  transition:
+    opacity .4s ease,
+    transform .6s var(--audit-ease);
+}
+
+.audit67__service:hover {
+  transform:
+    translateY(-8px);
+
+  border-color:
+    rgba(242,43,34,.25);
+
+  box-shadow:
+    0 32px 75px rgba(0,0,0,.15);
+}
+
+.audit67__service:hover::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.audit67__service svg,
+.audit67__serviceArrow {
+  transition:
+    transform .4s var(--audit-ease),
+    color .3s ease;
+}
+
+.audit67__service:hover .audit67__serviceTop svg {
+  color:
+    var(--audit-red);
+
+  transform:
+    rotate(-6deg)
+    scale(1.08);
+}
+
+.audit67__service:hover .audit67__serviceArrow {
+  color:
+    var(--audit-red);
+
+  transform:
+    translateX(6px);
+}
+
+/* ----------------------------------------------------------
+   METHOD VISUAL
+   ---------------------------------------------------------- */
+
+.audit67__methodCenter {
+  transition:
+    transform .55s var(--audit-ease);
+}
+
+.audit67__methodVisual:hover .audit67__methodCenter {
+  transform:
+    scale(1.035);
+}
+
+.audit67__methodRing {
+  animation:
+    audit67-method-pulse 5s ease-in-out infinite;
+}
+
+.audit67__methodRing--2 {
+  animation-delay:
+    -1.7s;
+}
+
+@keyframes audit67-method-pulse {
+  0%,
+  100% {
+    opacity: .22;
+    transform: scale(.97);
+  }
+
+  50% {
+    opacity: .58;
+    transform: scale(1.035);
+  }
+}
+
+.audit67__coordinate {
+  transition:
+    color .3s ease,
+    letter-spacing .35s ease;
+}
+
+.audit67__methodVisual:hover .audit67__coordinate {
+  color:
+    rgba(255,255,255,.72);
+
+  letter-spacing:
+    .15em;
+}
+
+/* ----------------------------------------------------------
+   PRINCIPLES
+   ---------------------------------------------------------- */
+
+.audit67__principlesGrid article {
+  position: relative;
+
+  transition:
+    transform .4s var(--audit-ease),
+    background .35s ease;
+}
+
+.audit67__principlesGrid article:hover {
+  transform:
+    translateY(-6px);
+
+  background:
+    rgba(255,255,255,.025);
+}
+
+.audit67__principlesGrid article svg {
+  transition:
+    color .3s ease,
+    transform .4s var(--audit-ease);
+}
+
+.audit67__principlesGrid article:hover svg {
+  color:
+    var(--audit-red);
+
+  transform:
+    scale(1.1)
+    rotate(-5deg);
+}
+
+/* ----------------------------------------------------------
+   CONTACT
+   ---------------------------------------------------------- */
+
+.audit67__contactAction > a {
+  position: relative;
+
+  transition:
+    transform .35s var(--audit-ease),
+    box-shadow .35s ease;
+}
+
+.audit67__contactAction > a:hover {
+  transform:
+    translateY(-3px);
+
+  box-shadow:
+    0 18px 50px rgba(242,43,34,.16);
+}
+
+.audit67__contactAction > a svg {
+  transition:
+    transform .35s var(--audit-ease);
+}
+
+.audit67__contactAction > a:hover svg {
+  transform:
+    translateX(6px);
+}
+
+/* ----------------------------------------------------------
+   HEADER DESKTOP SAFETY
+   Remove qualquer hitbox fantasma dos dropdowns
+   ---------------------------------------------------------- */
+
+@media (min-width: 981px) {
+
+  .qeh__dropdown {
+    pointer-events:
+      none !important;
+  }
+
+  .qeh__item:hover > .qeh__dropdown,
+  .qeh__item:focus-within > .qeh__dropdown {
+    pointer-events:
+      auto !important;
+  }
+}
+
+/* ----------------------------------------------------------
+   RESPONSIVE
+   ---------------------------------------------------------- */
+
+@media (max-width: 980px) {
+
+  .audit67__intelligence:hover .audit67__panel {
+    transform:
+      none;
+  }
+
+  .audit67__service:hover,
+  .audit67__principlesGrid article:hover,
+  .audit67__proofItem:hover {
+    transform:
+      none;
+  }
+}
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67__panel::after,
+  .audit67__ring,
+  .audit67__point,
+  .audit67__floatingCard,
+  .audit67__methodRing {
+    animation:
+      none !important;
+  }
+
+  .audit67__panel,
+  .audit67__service,
+  .audit67__principlesGrid article,
+  .audit67__proofItem,
+  .audit67__primary,
+  .audit67__contactAction > a {
+    transition:
+      none !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V69.0B - AUDITORIA CINEMATIC MOTION
+   Scroll choreography / reveal / depth
+   ========================================================== */
+
+.audit67 {
+  --audit-page-scroll: 0;
+  --audit-hero-scroll: 0;
+  --audit-reveal-delay: 0ms;
+  --audit-proof-delay: 0ms;
+}
+
+/* ----------------------------------------------------------
+   PAGE PROGRESS
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready::after {
+  content: "";
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  z-index: 120;
+
+  width: 2px;
+  height: 100vh;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      to bottom,
+      var(--audit-red) 0%,
+      var(--audit-red)
+        calc(var(--audit-page-scroll) * 100%),
+      transparent
+        calc(var(--audit-page-scroll) * 100%),
+      transparent 100%
+    );
+
+  opacity: .72;
+
+  box-shadow:
+    0 0 18px rgba(242,43,34,.22);
+}
+
+/* ----------------------------------------------------------
+   HERO ENTRANCE
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready .audit67__eyebrow,
+.audit67--motion-ready .audit67__heroCopy h1,
+.audit67--motion-ready .audit67__heroCopy > p,
+.audit67--motion-ready .audit67__heroActions,
+.audit67--motion-ready .audit67__heroSignals {
+  opacity: 0;
+
+  transform:
+    translate3d(0, 28px, 0);
+
+  transition:
+    opacity .85s ease,
+    transform 1s var(--audit-ease);
+}
+
+.audit67--motion-ready .audit67__intelligence {
+  opacity: 0;
+
+  transform:
+    translate3d(
+      28px,
+      calc(18px + var(--audit-parallax-y, 0px)),
+      0
+    )
+    scale(.975);
+
+  transition:
+    opacity 1s ease,
+    transform 1.15s var(--audit-ease);
+}
+
+.audit67--entered .audit67__eyebrow {
+  opacity: 1;
+  transform: translate3d(0,0,0);
+  transition-delay: 80ms;
+}
+
+.audit67--entered .audit67__heroCopy h1 {
+  opacity: 1;
+  transform: translate3d(0,0,0);
+  transition-delay: 170ms;
+}
+
+.audit67--entered .audit67__heroCopy > p {
+  opacity: 1;
+  transform: translate3d(0,0,0);
+  transition-delay: 300ms;
+}
+
+.audit67--entered .audit67__heroActions {
+  opacity: 1;
+  transform: translate3d(0,0,0);
+  transition-delay: 410ms;
+}
+
+.audit67--entered .audit67__heroSignals {
+  opacity: 1;
+  transform: translate3d(0,0,0);
+  transition-delay: 520ms;
+}
+
+.audit67--entered .audit67__intelligence {
+  opacity: 1;
+
+  transform:
+    translate3d(
+      0,
+      var(--audit-parallax-y, 0px),
+      0
+    )
+    scale(1);
+
+  transition-delay: 240ms;
+}
+
+/* ----------------------------------------------------------
+   HERO SCROLL DEPTH
+   ---------------------------------------------------------- */
+
+@media (min-width: 981px) {
+
+  .audit67--motion-ready .audit67__heroCopy {
+    transform:
+      translate3d(
+        0,
+        calc(var(--audit-hero-scroll) * -18px),
+        0
+      );
+  }
+
+  .audit67--motion-ready .audit67__panel {
+    rotate:
+      var(--audit-panel-scroll-rotate, 0deg);
+
+    will-change:
+      transform;
+  }
+
+  .audit67--motion-ready .audit67__intelligence {
+    will-change:
+      transform;
+  }
+}
+
+/* ----------------------------------------------------------
+   GENERIC SCROLL REVEAL
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready .audit67__reveal {
+  opacity: 0;
+
+  transform:
+    translate3d(0, 42px, 0);
+
+  transition:
+    opacity .8s ease var(--audit-reveal-delay),
+    transform 1s var(--audit-ease) var(--audit-reveal-delay);
+}
+
+.audit67--motion-ready
+.audit67__reveal.audit67__reveal--visible {
+  opacity: 1;
+
+  transform:
+    translate3d(0,0,0);
+}
+
+/* ----------------------------------------------------------
+   MANIFESTO
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready .audit67__manifesto {
+  transform:
+    translate3d(0, 34px, 0);
+}
+
+.audit67--motion-ready
+.audit67__manifesto.audit67__reveal--visible {
+  transform:
+    translate3d(0,0,0);
+}
+
+.audit67--motion-ready
+.audit67__manifestoIndex {
+  transition:
+    transform 1s var(--audit-ease),
+    opacity .8s ease;
+}
+
+.audit67--motion-ready
+.audit67__manifesto:not(.audit67__reveal--visible)
+.audit67__manifestoIndex {
+  opacity: 0;
+
+  transform:
+    translate3d(-18px,0,0);
+}
+
+/* ----------------------------------------------------------
+   PROOF CASCADE
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__proofItem {
+  opacity: 0;
+
+  transform:
+    translate3d(0,24px,0);
+
+  transition:
+    opacity .65s ease var(--audit-proof-delay),
+    transform .8s var(--audit-ease) var(--audit-proof-delay),
+    background .35s ease;
+}
+
+.audit67--motion-ready
+.audit67__proof.audit67__reveal--visible
+.audit67__proofItem {
+  opacity: 1;
+
+  transform:
+    translate3d(0,0,0);
+}
+
+/* ----------------------------------------------------------
+   SERVICES CASCADE
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__service {
+  transform:
+    translate3d(0,46px,0)
+    scale(.985);
+}
+
+.audit67--motion-ready
+.audit67__service.audit67__reveal--visible {
+  transform:
+    translate3d(0,0,0)
+    scale(1);
+}
+
+/* mantém hover premium depois do reveal */
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67--motion-ready
+  .audit67__service.audit67__reveal--visible:hover {
+    transform:
+      translate3d(0,-8px,0)
+      scale(1);
+  }
+}
+
+/* ----------------------------------------------------------
+   METHOD
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__methodVisual {
+  transform:
+    translate3d(-30px,28px,0)
+    scale(.97);
+}
+
+.audit67--motion-ready
+.audit67__methodVisual.audit67__reveal--visible {
+  transform:
+    translate3d(0,0,0)
+    scale(1);
+}
+
+.audit67--motion-ready
+.audit67__methodCopy {
+  transform:
+    translate3d(34px,28px,0);
+}
+
+.audit67--motion-ready
+.audit67__methodCopy.audit67__reveal--visible {
+  transform:
+    translate3d(0,0,0);
+}
+
+.audit67--motion-ready
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__coordinate--1 {
+  animation:
+    audit69-coordinate-in .7s var(--audit-ease) .2s both;
+}
+
+.audit67--motion-ready
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__coordinate--2 {
+  animation:
+    audit69-coordinate-in .7s var(--audit-ease) .32s both;
+}
+
+.audit67--motion-ready
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__coordinate--3 {
+  animation:
+    audit69-coordinate-in .7s var(--audit-ease) .44s both;
+}
+
+@keyframes audit69-coordinate-in {
+
+  from {
+    opacity: 0;
+
+    filter:
+      blur(4px);
+  }
+
+  to {
+    opacity: 1;
+
+    filter:
+      blur(0);
+  }
+}
+
+/* ----------------------------------------------------------
+   PRINCIPLES
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__principlesGrid article {
+  transform:
+    translate3d(0,34px,0)
+    scale(.985);
+}
+
+.audit67--motion-ready
+.audit67__principlesGrid article.audit67__reveal--visible {
+  transform:
+    translate3d(0,0,0)
+    scale(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67--motion-ready
+  .audit67__principlesGrid
+  article.audit67__reveal--visible:hover {
+    transform:
+      translate3d(0,-6px,0)
+      scale(1);
+  }
+}
+
+/* ----------------------------------------------------------
+   CONTACT
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__contact {
+  transform:
+    translate3d(0,48px,0);
+}
+
+.audit67--motion-ready
+.audit67__contact.audit67__reveal--visible {
+  transform:
+    translate3d(0,0,0);
+}
+
+/* ----------------------------------------------------------
+   MOTION PERFORMANCE
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__heroCopy,
+.audit67--motion-ready
+.audit67__intelligence,
+.audit67--motion-ready
+.audit67__reveal {
+  backface-visibility:
+    hidden;
+}
+
+/* ----------------------------------------------------------
+   TABLET / MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 980px) {
+
+  .audit67--motion-ready::after {
+    display:
+      none;
+  }
+
+  .audit67--motion-ready
+  .audit67__intelligence {
+    transform:
+      translate3d(0,24px,0)
+      scale(.985);
+  }
+
+  .audit67--entered
+  .audit67__intelligence {
+    transform:
+      translate3d(0,0,0)
+      scale(1);
+  }
+
+  .audit67--motion-ready
+  .audit67__methodVisual,
+  .audit67--motion-ready
+  .audit67__methodCopy {
+    transform:
+      translate3d(0,30px,0);
+  }
+
+  .audit67--motion-ready
+  .audit67__methodVisual.audit67__reveal--visible,
+  .audit67--motion-ready
+  .audit67__methodCopy.audit67__reveal--visible {
+    transform:
+      translate3d(0,0,0);
+  }
+}
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67--motion-ready::after {
+    display:
+      none !important;
+  }
+
+  .audit67--motion-ready .audit67__eyebrow,
+  .audit67--motion-ready .audit67__heroCopy h1,
+  .audit67--motion-ready .audit67__heroCopy > p,
+  .audit67--motion-ready .audit67__heroActions,
+  .audit67--motion-ready .audit67__heroSignals,
+  .audit67--motion-ready .audit67__intelligence,
+  .audit67--motion-ready .audit67__reveal,
+  .audit67--motion-ready .audit67__proofItem {
+    opacity:
+      1 !important;
+
+    transform:
+      none !important;
+
+    transition:
+      none !important;
+  }
+
+  .audit67--motion-ready
+  .audit67__coordinate {
+    animation:
+      none !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V69.1 - HEADER HERO INTEGRATION
+   Corrige a transicao visual entre header e hero.
+   ========================================================== */
+
+/* ----------------------------------------------------------
+   DESKTOP
+   ---------------------------------------------------------- */
+
+@media (min-width: 981px) {
+
+  .audit67__hero {
+    min-height: calc(100svh - 76px) !important;
+
+    padding-top: clamp(54px, 5.2vw, 86px) !important;
+    padding-bottom: clamp(64px, 6vw, 104px) !important;
+
+    display: flex !important;
+    align-items: center !important;
+
+    overflow: hidden;
+  }
+
+  .audit67__heroGrid {
+    width: min(1440px, calc(100% - 96px)) !important;
+
+    margin-left: auto !important;
+    margin-right: auto !important;
+
+    align-items: center !important;
+  }
+
+  .audit67__heroCopy {
+    align-self: center !important;
+  }
+
+  /*
+   * Eyebrow:
+   * impede Q-MAX de quebrar em Q- / MAX.
+   */
+  .audit67__eyebrow {
+    display: inline-flex !important;
+    align-items: center !important;
+
+    width: max-content !important;
+    max-width: 100% !important;
+
+    white-space: nowrap !important;
+
+    gap: 12px !important;
+  }
+
+  .audit67__eyebrow span,
+  .audit67__eyebrow strong {
+    white-space: nowrap !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   LARGE DESKTOP
+   ---------------------------------------------------------- */
+
+@media (min-width: 1440px) {
+
+  .audit67__heroGrid {
+    width: min(1440px, calc(100% - 128px)) !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLET
+   ---------------------------------------------------------- */
+
+@media (min-width: 701px) and (max-width: 980px) {
+
+  .audit67__hero {
+    min-height: auto !important;
+
+    padding-top: 56px !important;
+    padding-bottom: 72px !important;
+  }
+
+  .audit67__heroGrid {
+    width: min(100% - 48px, 920px) !important;
+    margin-inline: auto !important;
+  }
+
+  .audit67__eyebrow {
+    display: inline-flex !important;
+    width: max-content !important;
+    white-space: nowrap !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .audit67__hero {
+    min-height: auto !important;
+
+    padding-top: 42px !important;
+    padding-bottom: 58px !important;
+  }
+
+  .audit67__heroGrid {
+    width: calc(100% - 32px) !important;
+    margin-inline: auto !important;
+  }
+
+  .audit67__eyebrow {
+    display: inline-flex !important;
+    align-items: center !important;
+
+    width: max-content !important;
+    max-width: 100% !important;
+
+    white-space: nowrap !important;
+
+    gap: 9px !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V69.2B - HERO HEIGHT DEFINITIVE FIX
+   Remove dupla altura de viewport que criava o vazio
+   entre o header e o conteudo do Hero.
+   ========================================================== */
+
+/* ----------------------------------------------------------
+   DESKTOP
+   ---------------------------------------------------------- */
+
+@media (min-width: 981px) {
+
+  /*
+   * O Hero NAO precisa ocupar outra viewport inteira.
+   * O conteúdo determina a altura.
+   */
+
+  .audit67__hero {
+    min-height: 0 !important;
+    height: auto !important;
+
+    padding-top:
+      clamp(42px, 4vw, 64px) !important;
+
+    padding-bottom:
+      clamp(76px, 7vw, 112px) !important;
+
+    display: block !important;
+  }
+
+  /*
+   * Esta era a principal origem do buraco.
+   * O grid também estava com quase 100vh.
+   */
+
+  .audit67__heroGrid {
+    min-height: 0 !important;
+    height: auto !important;
+
+    width:
+      min(1440px, calc(100% - 96px)) !important;
+
+    margin:
+      0 auto !important;
+
+    align-items:
+      center !important;
+  }
+
+  .audit67__heroCopy {
+    align-self:
+      center !important;
+
+    margin-top:
+      0 !important;
+  }
+
+  /*
+   * Mantém o painel alinhado ao conteúdo,
+   * sem empurrar toda a seção.
+   */
+
+  .audit67__intelligence {
+    align-self:
+      center !important;
+  }
+
+  /*
+   * Eyebrow institucional em uma linha.
+   */
+
+  .audit67__eyebrow {
+    width:
+      max-content !important;
+
+    max-width:
+      100% !important;
+
+    margin-bottom:
+      24px !important;
+
+    white-space:
+      nowrap !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   LARGE DESKTOP
+   ---------------------------------------------------------- */
+
+@media (min-width: 1440px) {
+
+  .audit67__hero {
+    padding-top:
+      54px !important;
+  }
+
+  .audit67__heroGrid {
+    width:
+      min(1440px, calc(100% - 128px)) !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLET
+   ---------------------------------------------------------- */
+
+@media (min-width: 701px) and (max-width: 980px) {
+
+  .audit67__hero,
+  .audit67__heroGrid {
+    min-height:
+      0 !important;
+
+    height:
+      auto !important;
+  }
+
+  .audit67__hero {
+    padding-top:
+      42px !important;
+
+    padding-bottom:
+      72px !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .audit67__hero,
+  .audit67__heroGrid {
+    min-height:
+      0 !important;
+
+    height:
+      auto !important;
+  }
+
+  .audit67__hero {
+    padding-top:
+      34px !important;
+
+    padding-bottom:
+      58px !important;
+  }
+
+  .audit67__eyebrow {
+    margin-bottom:
+      20px !important;
+
+    white-space:
+      nowrap !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V69.4 - ROOT TOP OFFSET FIX
+   Remove qualquer espaco herdado antes do header.
+   ========================================================== */
+
+html,
+body {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+body > main.audit67,
+main.audit67,
+.audit67 {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.audit67 > .qeh {
+  position: sticky !important;
+
+  top: 0 !important;
+
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+
+  transform: none !important;
+}
+
+/*
+   O header e o hero devem ser vizinhos diretos,
+   sem gap externo entre eles.
+*/
+
+.audit67 > .qeh + .audit67__hero {
+  margin-top: 0 !important;
+}
+
+/* ==========================================================
+   QMAX V69.6 - AUDITORIA HERO FINAL ART
+   Hierarquia, composicao e acabamento do Hero.
+   ========================================================== */
+
+
+/* ----------------------------------------------------------
+   DESKTOP
+   ---------------------------------------------------------- */
+
+@media (min-width: 1181px) {
+
+  .audit67__heroGrid {
+    grid-template-columns:
+      minmax(0, .92fr)
+      minmax(520px, 1.08fr) !important;
+
+    gap:
+      clamp(58px, 6vw, 112px) !important;
+  }
+
+  .audit67__heroCopy {
+    max-width:
+      720px !important;
+  }
+
+  /* Eyebrow institucional */
+  .audit67__eyebrow {
+    display:
+      inline-flex !important;
+
+    align-items:
+      center !important;
+
+    gap:
+      12px !important;
+
+    margin-bottom:
+      30px !important;
+
+    white-space:
+      nowrap !important;
+
+    font-size:
+      11px !important;
+
+    font-weight:
+      900 !important;
+
+    letter-spacing:
+      .2em !important;
+  }
+
+  .audit67__eyebrow > span:first-child {
+    width:
+      52px !important;
+
+    height:
+      2px !important;
+
+    flex:
+      0 0 52px !important;
+
+    background:
+      var(--audit-red) !important;
+  }
+
+
+  /* Headline */
+  .audit67__heroCopy h1 {
+    max-width:
+      760px !important;
+
+    margin:
+      0 !important;
+
+    font-size:
+      clamp(66px, 5.6vw, 104px) !important;
+
+    line-height:
+      .88 !important;
+
+    letter-spacing:
+      -.065em !important;
+  }
+
+  .audit67__heroCopy h1 strong,
+  .audit67__heroCopy h1 em {
+    display:
+      inline-block;
+
+    font-style:
+      normal;
+  }
+
+  .audit67__heroCopy h1 strong {
+    color:
+      rgba(255,255,255,.30) !important;
+  }
+
+  .audit67__heroCopy h1 em {
+    color:
+      var(--audit-red) !important;
+  }
+
+
+  /* Texto de apoio */
+  .audit67__heroCopy > p {
+    max-width:
+      620px !important;
+
+    margin-top:
+      34px !important;
+
+    font-size:
+      17px !important;
+
+    line-height:
+      1.7 !important;
+
+    color:
+      rgba(255,255,255,.58) !important;
+  }
+
+
+  /* CTAs */
+  .audit67__heroActions {
+    margin-top:
+      34px !important;
+
+    gap:
+      22px !important;
+  }
+
+  .audit67__primary {
+    min-height:
+      52px !important;
+
+    padding:
+      0 24px !important;
+
+    border-radius:
+      999px !important;
+  }
+
+  .audit67__textLink {
+    min-height:
+      52px !important;
+
+    display:
+      inline-flex !important;
+
+    align-items:
+      center !important;
+  }
+
+
+  /* Sinais inferiores */
+  .audit67__heroSignals {
+    margin-top:
+      38px !important;
+
+    padding-top:
+      20px !important;
+
+    border-top:
+      1px solid rgba(255,255,255,.09) !important;
+
+    gap:
+      26px !important;
+  }
+
+  .audit67__heroSignals span {
+    font-size:
+      8px !important;
+
+    letter-spacing:
+      .17em !important;
+
+    color:
+      rgba(255,255,255,.38) !important;
+  }
+
+
+  /* --------------------------------------------------------
+     PAINEL
+     -------------------------------------------------------- */
+
+  .audit67__intelligence {
+    width:
+      100% !important;
+
+    max-width:
+      690px !important;
+
+    justify-self:
+      end !important;
+
+    align-self:
+      center !important;
+  }
+
+  .audit67__panel {
+    width:
+      100% !important;
+
+    min-height:
+      510px !important;
+
+    border-radius:
+      28px !important;
+
+    border:
+      1px solid rgba(255,255,255,.11) !important;
+
+    box-shadow:
+      0 42px 110px rgba(0,0,0,.42),
+      inset 0 1px 0 rgba(255,255,255,.035) !important;
+  }
+
+  .audit67__panelTop {
+    padding:
+      28px 30px 0 !important;
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   HERO BACKGROUND DEPTH
+   ---------------------------------------------------------- */
+
+.audit67__hero::before {
+  opacity:
+    .72 !important;
+}
+
+.audit67__heroGlow--one {
+  opacity:
+    .55 !important;
+
+  filter:
+    blur(10px);
+}
+
+.audit67__heroGlow--two {
+  opacity:
+    .36 !important;
+
+  filter:
+    blur(18px);
+}
+
+
+/* ----------------------------------------------------------
+   TRANSICAO PARA A PROXIMA SECTION
+   ---------------------------------------------------------- */
+
+.audit67__hero {
+  position:
+    relative;
+}
+
+.audit67__hero::after {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  left:
+    50%;
+
+  bottom:
+    0;
+
+  width:
+    min(1440px, calc(100% - 96px));
+
+  height:
+    1px;
+
+  transform:
+    translateX(-50%);
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(242,43,34,.30),
+      rgba(255,255,255,.10),
+      transparent
+    );
+
+  pointer-events:
+    none;
+}
+
+
+/* ----------------------------------------------------------
+   TABLET
+   ---------------------------------------------------------- */
+
+@media (min-width: 701px) and (max-width: 1180px) {
+
+  .audit67__heroGrid {
+    gap:
+      52px !important;
+  }
+
+  .audit67__heroCopy h1 {
+    font-size:
+      clamp(58px, 8vw, 84px) !important;
+
+    line-height:
+      .9 !important;
+  }
+
+  .audit67__intelligence {
+    max-width:
+      680px !important;
+
+    margin-inline:
+      auto !important;
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .audit67__eyebrow {
+    margin-bottom:
+      22px !important;
+
+    font-size:
+      9px !important;
+
+    letter-spacing:
+      .16em !important;
+  }
+
+  .audit67__eyebrow > span:first-child {
+    width:
+      34px !important;
+
+    flex-basis:
+      34px !important;
+  }
+
+  .audit67__heroCopy h1 {
+    font-size:
+      clamp(48px, 14vw, 68px) !important;
+
+    line-height:
+      .91 !important;
+
+    letter-spacing:
+      -.055em !important;
+  }
+
+  .audit67__heroCopy > p {
+    margin-top:
+      26px !important;
+
+    font-size:
+      15px !important;
+
+    line-height:
+      1.65 !important;
+  }
+
+  .audit67__heroActions {
+    margin-top:
+      28px !important;
+
+    gap:
+      12px !important;
+  }
+
+  .audit67__heroSignals {
+    margin-top:
+      28px !important;
+
+    padding-top:
+      16px !important;
+  }
+
+  .audit67__panel {
+    min-height:
+      410px !important;
+
+    border-radius:
+      22px !important;
+  }
+
+  .audit67__hero::after {
+    width:
+      calc(100% - 32px);
+  }
+}
+
+/* ==========================================================
+   QMAX V69.7 - MANIFESTO PROOF FINAL
+   Autoridade, ritmo editorial e prova institucional.
+   ========================================================== */
+
+
+/* ----------------------------------------------------------
+   MANIFESTO
+   ---------------------------------------------------------- */
+
+.audit67__manifesto {
+  position: relative;
+
+  isolation: isolate;
+
+  overflow: hidden;
+}
+
+
+/* brilho técnico extremamente sutil */
+
+.audit67__manifesto::before {
+  content: "";
+
+  position: absolute;
+
+  z-index: -1;
+
+  top: 50%;
+  left: 50%;
+
+  width: min(900px, 80vw);
+  height: 420px;
+
+  transform:
+    translate(-50%, -50%);
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(242,43,34,.065),
+      transparent 68%
+    );
+
+  filter:
+    blur(22px);
+
+  opacity:
+    .8;
+}
+
+
+/* índice 01 */
+
+.audit67__manifestoIndex {
+  position:
+    relative;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    12px;
+
+  color:
+    var(--audit-red) !important;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .18em;
+}
+
+
+/* pequena linha técnica */
+
+.audit67__manifestoIndex::after {
+  content: "";
+
+  display:
+    block;
+
+  width:
+    42px;
+
+  height:
+    1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--audit-red),
+      transparent
+    );
+}
+
+
+/* título central */
+
+.audit67__manifesto h2 {
+  max-width:
+    1120px;
+
+  margin-left:
+    auto;
+
+  margin-right:
+    auto;
+
+  text-wrap:
+    balance;
+}
+
+
+/* texto de apoio */
+
+.audit67__manifesto > p,
+.audit67__manifestoCopy {
+  max-width:
+    850px;
+
+  margin-left:
+    auto;
+
+  margin-right:
+    auto;
+
+  color:
+    rgba(255,255,255,.56);
+
+  line-height:
+    1.75;
+}
+
+
+/* ----------------------------------------------------------
+   PROOF STRIP
+   ---------------------------------------------------------- */
+
+.audit67__proof {
+  position:
+    relative;
+
+  overflow:
+    hidden;
+
+  border-top:
+    1px solid rgba(255,255,255,.07);
+
+  border-bottom:
+    1px solid rgba(255,255,255,.07);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.018),
+      rgba(255,255,255,.005)
+    );
+}
+
+
+/* linha vermelha de leitura */
+
+.audit67__proof::before {
+  content: "";
+
+  position:
+    absolute;
+
+  top:
+    0;
+  left:
+    0;
+
+  width:
+    100%;
+  height:
+    1px;
+
+  pointer-events:
+    none;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(242,43,34,.62),
+      transparent
+    );
+
+  transform:
+    scaleX(.34);
+
+  transform-origin:
+    center;
+
+  opacity:
+    .7;
+
+  transition:
+    transform 1.2s cubic-bezier(.22,1,.36,1);
+}
+
+
+/* abre a linha quando a section entra */
+
+.audit67__proof.audit67__reveal--visible::before {
+  transform:
+    scaleX(1);
+}
+
+
+/* ----------------------------------------------------------
+   PROOF ITEMS
+   ---------------------------------------------------------- */
+
+.audit67__proofItem {
+  position:
+    relative;
+
+  min-height:
+    142px;
+
+  padding:
+    30px 28px;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  justify-content:
+    space-between;
+
+  overflow:
+    hidden;
+
+  transition:
+    background .3s ease,
+    border-color .3s ease,
+    transform .4s cubic-bezier(.22,1,.36,1);
+}
+
+
+/* separadores */
+
+.audit67__proofItem + .audit67__proofItem {
+  border-left:
+    1px solid rgba(255,255,255,.065);
+}
+
+
+/* número / índice pequeno */
+
+.audit67__proofItem > span:first-child,
+.audit67__proofItem small {
+  color:
+    var(--audit-red);
+
+  font-size:
+    8px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .16em;
+}
+
+
+/* texto principal */
+
+.audit67__proofItem strong {
+  max-width:
+    210px;
+
+  font-size:
+    clamp(15px, 1.2vw, 19px);
+
+  line-height:
+    1.18;
+
+  letter-spacing:
+    -.025em;
+
+  color:
+    rgba(255,255,255,.92);
+}
+
+
+/* micro indicador */
+
+.audit67__proofItem::after {
+  content: "";
+
+  position:
+    absolute;
+
+  left:
+    28px;
+  bottom:
+    19px;
+
+  width:
+    16px;
+  height:
+    2px;
+
+  background:
+    var(--audit-red);
+
+  transform-origin:
+    left;
+
+  transform:
+    scaleX(.35);
+
+  opacity:
+    .48;
+
+  transition:
+    transform .35s ease,
+    opacity .35s ease;
+}
+
+
+/* ----------------------------------------------------------
+   HOVER DESKTOP
+   ---------------------------------------------------------- */
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67__proofItem:hover {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(242,43,34,.055),
+        rgba(242,43,34,.012)
+      );
+
+    transform:
+      translateY(-3px);
+  }
+
+  .audit67__proofItem:hover::after {
+    transform:
+      scaleX(1);
+
+    opacity:
+      1;
+  }
+
+  .audit67__proofItem:hover strong {
+    color:
+      #ffffff;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   ENTRADA CASCATA MAIS REFINADA
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__proofItem {
+  filter:
+    blur(3px);
+
+  transition:
+    opacity .7s ease var(--audit-proof-delay),
+    transform .9s var(--audit-ease) var(--audit-proof-delay),
+    filter .75s ease var(--audit-proof-delay),
+    background .3s ease;
+}
+
+.audit67--motion-ready
+.audit67__proof.audit67__reveal--visible
+.audit67__proofItem {
+  filter:
+    blur(0);
+}
+
+
+/* ----------------------------------------------------------
+   TABLET
+   ---------------------------------------------------------- */
+
+@media (max-width: 980px) {
+
+  .audit67__proofItem {
+    min-height:
+      126px;
+
+    padding:
+      24px 22px;
+  }
+
+  .audit67__proofItem::after {
+    left:
+      22px;
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .audit67__manifesto::before {
+    width:
+      120vw;
+
+    height:
+      340px;
+
+    opacity:
+      .55;
+  }
+
+  .audit67__manifesto h2 {
+    text-align:
+      left;
+  }
+
+  .audit67__manifesto > p,
+  .audit67__manifestoCopy {
+    text-align:
+      left;
+  }
+
+
+  .audit67__proof {
+    border:
+      1px solid rgba(255,255,255,.07);
+
+    border-radius:
+      20px;
+
+    overflow:
+      hidden;
+  }
+
+  .audit67__proofItem {
+    min-height:
+      116px;
+
+    padding:
+      22px 20px;
+  }
+
+  .audit67__proofItem + .audit67__proofItem {
+    border-left:
+      0;
+
+    border-top:
+      1px solid rgba(255,255,255,.065);
+  }
+
+  .audit67__proofItem::after {
+    left:
+      20px;
+
+    bottom:
+      15px;
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67__proof::before {
+    transform:
+      scaleX(1) !important;
+
+    transition:
+      none !important;
+  }
+
+  .audit67__proofItem {
+    filter:
+      none !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V69.8 - SERVICES CINEMATIC FINAL
+   Direcao de arte final dos cards de atuacao.
+   ========================================================== */
+
+
+/* ----------------------------------------------------------
+   SECTION
+   ---------------------------------------------------------- */
+
+.audit67__services {
+  position:
+    relative;
+
+  isolation:
+    isolate;
+
+  overflow:
+    hidden;
+}
+
+
+/* atmosfera da section */
+
+.audit67__services::before {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  z-index:
+    -1;
+
+  top:
+    22%;
+
+  right:
+    -220px;
+
+  width:
+    620px;
+
+  height:
+    620px;
+
+  border-radius:
+    50%;
+
+  pointer-events:
+    none;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(242,43,34,.065),
+      rgba(242,43,34,.018) 34%,
+      transparent 70%
+    );
+
+  filter:
+    blur(12px);
+
+  opacity:
+    .8;
+}
+
+
+/* ----------------------------------------------------------
+   INTRO
+   ---------------------------------------------------------- */
+
+.audit67__sectionIntro {
+  position:
+    relative;
+
+  z-index:
+    2;
+}
+
+.audit67__sectionNumber {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+
+  color:
+    var(--audit-red) !important;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .17em;
+}
+
+.audit67__sectionNumber::after {
+  content:
+    "";
+
+  width:
+    34px;
+
+  height:
+    1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--audit-red),
+      transparent
+    );
+}
+
+.audit67__sectionIntro h2 {
+  text-wrap:
+    balance;
+}
+
+.audit67__sectionIntro h2 em {
+  color:
+    var(--audit-red) !important;
+
+  font-style:
+    normal;
+}
+
+.audit67__sectionIntro > p {
+  color:
+    rgba(255,255,255,.53) !important;
+
+  line-height:
+    1.72 !important;
+}
+
+
+/* ----------------------------------------------------------
+   GRID
+   ---------------------------------------------------------- */
+
+.audit67__serviceGrid {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  gap:
+    1px !important;
+
+  padding:
+    1px;
+
+  border:
+    1px solid rgba(255,255,255,.065);
+
+  border-radius:
+    26px;
+
+  overflow:
+    hidden;
+
+  background:
+    rgba(255,255,255,.065);
+
+  box-shadow:
+    0 34px 100px rgba(0,0,0,.22);
+}
+
+
+/* ----------------------------------------------------------
+   CARD BASE
+   ---------------------------------------------------------- */
+
+.audit67__service {
+  --service-x: 50%;
+  --service-y: 50%;
+
+  position:
+    relative;
+
+  min-height:
+    390px !important;
+
+  padding:
+    30px 30px 26px !important;
+
+  border:
+    0 !important;
+
+  border-radius:
+    0 !important;
+
+  display:
+    flex !important;
+
+  flex-direction:
+    column !important;
+
+  justify-content:
+    space-between !important;
+
+  overflow:
+    hidden;
+
+  isolation:
+    isolate;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.035),
+      rgba(255,255,255,.012) 55%,
+      rgba(242,43,34,.018)
+    ) !important;
+
+  box-shadow:
+    none !important;
+
+  transform:
+    translate3d(0,0,0);
+
+  transition:
+    transform .55s cubic-bezier(.22,1,.36,1),
+    background .4s ease,
+    box-shadow .5s ease !important;
+}
+
+
+/* ----------------------------------------------------------
+   INTERNO - VINHETA
+   ---------------------------------------------------------- */
+
+.audit67__service::before {
+  content:
+    "" !important;
+
+  position:
+    absolute !important;
+
+  inset:
+    0 !important;
+
+  z-index:
+    -2 !important;
+
+  pointer-events:
+    none;
+
+  background:
+    radial-gradient(
+      360px circle
+      at var(--service-x)
+      var(--service-y),
+      rgba(242,43,34,.12),
+      rgba(242,43,34,.035) 28%,
+      transparent 68%
+    ) !important;
+
+  opacity:
+    0 !important;
+
+  transform:
+    none !important;
+
+  transition:
+    opacity .45s ease !important;
+}
+
+
+/* ----------------------------------------------------------
+   LINHA DINAMICA
+   ---------------------------------------------------------- */
+
+.audit67__service::after {
+  content:
+    "" !important;
+
+  position:
+    absolute;
+
+  left:
+    0;
+
+  bottom:
+    0;
+
+  width:
+    100%;
+
+  height:
+    2px;
+
+  z-index:
+    3;
+
+  pointer-events:
+    none;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--audit-red),
+      rgba(242,43,34,.42),
+      transparent 72%
+    ) !important;
+
+  transform:
+    scaleX(.16) !important;
+
+  transform-origin:
+    left center !important;
+
+  opacity:
+    .62;
+
+  transition:
+    transform .6s cubic-bezier(.22,1,.36,1),
+    opacity .4s ease !important;
+}
+
+
+/* ----------------------------------------------------------
+   TOP / INDEX / ICON
+   ---------------------------------------------------------- */
+
+.audit67__serviceTop {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  display:
+    flex !important;
+
+  align-items:
+    center !important;
+
+  justify-content:
+    space-between !important;
+}
+
+.audit67__serviceTop > span {
+  color:
+    var(--audit-red) !important;
+
+  font-size:
+    9px !important;
+
+  font-weight:
+    900 !important;
+
+  letter-spacing:
+    .18em !important;
+}
+
+.audit67__serviceTop svg {
+  width:
+    27px;
+
+  height:
+    27px;
+
+  color:
+    rgba(255,255,255,.44);
+
+  transform:
+    rotate(0deg)
+    scale(1);
+
+  transform-origin:
+    center;
+
+  transition:
+    color .4s ease,
+    transform .55s cubic-bezier(.22,1,.36,1),
+    filter .4s ease !important;
+}
+
+
+/* ----------------------------------------------------------
+   COPY
+   ---------------------------------------------------------- */
+
+.audit67__service > div:nth-child(2) {
+  position:
+    relative;
+
+  z-index:
+    2;
+}
+
+.audit67__service h3 {
+  max-width:
+    310px;
+
+  margin-bottom:
+    18px !important;
+
+  color:
+    rgba(255,255,255,.95) !important;
+
+  font-size:
+    clamp(25px, 2vw, 34px) !important;
+
+  line-height:
+    1.02 !important;
+
+  letter-spacing:
+    -.045em !important;
+
+  transition:
+    color .4s ease,
+    transform .5s cubic-bezier(.22,1,.36,1);
+}
+
+.audit67__service p {
+  max-width:
+    330px;
+
+  color:
+    rgba(255,255,255,.49) !important;
+
+  font-size:
+    14px !important;
+
+  line-height:
+    1.72 !important;
+
+  transition:
+    color .4s ease,
+    transform .5s cubic-bezier(.22,1,.36,1);
+}
+
+
+/* ----------------------------------------------------------
+   ARROW
+   ---------------------------------------------------------- */
+
+.audit67__serviceArrow {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  width:
+    44px !important;
+
+  height:
+    44px !important;
+
+  border:
+    1px solid rgba(255,255,255,.10);
+
+  border-radius:
+    50%;
+
+  display:
+    inline-flex !important;
+
+  align-items:
+    center !important;
+
+  justify-content:
+    center !important;
+
+  color:
+    rgba(255,255,255,.50) !important;
+
+  background:
+    rgba(255,255,255,.018);
+
+  transition:
+    color .35s ease,
+    background .35s ease,
+    border-color .35s ease,
+    transform .5s cubic-bezier(.22,1,.36,1),
+    box-shadow .4s ease !important;
+}
+
+
+/* ----------------------------------------------------------
+   HOVER - DESKTOP
+   ---------------------------------------------------------- */
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67__service:hover {
+    z-index:
+      5;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.055),
+        rgba(255,255,255,.018) 46%,
+        rgba(242,43,34,.045)
+      ) !important;
+
+    transform:
+      translate3d(0,-9px,0)
+      scale(1.012) !important;
+
+    box-shadow:
+      0 28px 76px rgba(0,0,0,.32),
+      0 0 0 1px rgba(242,43,34,.12) !important;
+  }
+
+  .audit67__service:hover::before {
+    opacity:
+      1 !important;
+  }
+
+  .audit67__service:hover::after {
+    transform:
+      scaleX(1) !important;
+
+    opacity:
+      1;
+  }
+
+  .audit67__service:hover .audit67__serviceTop svg {
+    color:
+      var(--audit-red) !important;
+
+    transform:
+      rotate(-7deg)
+      scale(1.12) !important;
+
+    filter:
+      drop-shadow(
+        0 0 15px rgba(242,43,34,.35)
+      );
+  }
+
+  .audit67__service:hover h3 {
+    color:
+      #ffffff !important;
+
+    transform:
+      translate3d(0,-4px,0);
+  }
+
+  .audit67__service:hover p {
+    color:
+      rgba(255,255,255,.64) !important;
+
+    transform:
+      translate3d(0,-2px,0);
+  }
+
+  .audit67__service:hover .audit67__serviceArrow {
+    color:
+      #ffffff !important;
+
+    border-color:
+      rgba(242,43,34,.48);
+
+    background:
+      var(--audit-red);
+
+    transform:
+      translate3d(6px,0,0)
+      rotate(-6deg) !important;
+
+    box-shadow:
+      0 10px 30px rgba(242,43,34,.20);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   REVEAL
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__service {
+  opacity:
+    0;
+
+  filter:
+    blur(5px);
+
+  transform:
+    translate3d(0,50px,0)
+    scale(.975);
+
+  transition:
+    opacity .75s ease var(--audit-reveal-delay),
+    transform 1s var(--audit-ease) var(--audit-reveal-delay),
+    filter .8s ease var(--audit-reveal-delay),
+    background .4s ease,
+    box-shadow .5s ease !important;
+}
+
+.audit67--motion-ready
+.audit67__service.audit67__reveal--visible {
+  opacity:
+    1;
+
+  filter:
+    blur(0);
+
+  transform:
+    translate3d(0,0,0)
+    scale(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67--motion-ready
+  .audit67__service.audit67__reveal--visible:hover {
+    transform:
+      translate3d(0,-9px,0)
+      scale(1.012) !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLET
+   ---------------------------------------------------------- */
+
+@media (max-width: 980px) {
+
+  .audit67__serviceGrid {
+    border-radius:
+      22px;
+  }
+
+  .audit67__service {
+    min-height:
+      330px !important;
+
+    padding:
+      26px 24px 23px !important;
+  }
+
+  .audit67__service h3 {
+    font-size:
+      clamp(23px, 4vw, 30px) !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .audit67__services::before {
+    right:
+      -320px;
+
+    width:
+      520px;
+
+    height:
+      520px;
+
+    opacity:
+      .48;
+  }
+
+  .audit67__serviceGrid {
+    gap:
+      1px !important;
+
+    padding:
+      1px;
+
+    border-radius:
+      20px;
+  }
+
+  .audit67__service {
+    min-height:
+      290px !important;
+
+    padding:
+      24px 21px 21px !important;
+  }
+
+  .audit67__service h3 {
+    max-width:
+      280px;
+
+    font-size:
+      27px !important;
+  }
+
+  .audit67__service p {
+    max-width:
+      290px;
+
+    font-size:
+      14px !important;
+  }
+
+  .audit67__serviceArrow {
+    width:
+      40px !important;
+
+    height:
+      40px !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67__service,
+  .audit67__service h3,
+  .audit67__service p,
+  .audit67__serviceTop svg,
+  .audit67__serviceArrow {
+    transition:
+      none !important;
+
+    transform:
+      none !important;
+
+    filter:
+      none !important;
+  }
+
+  .audit67--motion-ready
+  .audit67__service {
+    opacity:
+      1 !important;
+
+    filter:
+      none !important;
+
+    transform:
+      none !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V69.9 - METHOD INTELLIGENCE FINAL
+   Sistema visual do metodo:
+   analisar -> compreender -> orientar.
+   ========================================================== */
+
+
+/* ----------------------------------------------------------
+   SECTION
+   ---------------------------------------------------------- */
+
+.audit67__method {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+
+/* atmosfera central */
+
+.audit67__method::before {
+  content: "";
+
+  position: absolute;
+  z-index: -1;
+
+  left: 18%;
+  top: 50%;
+
+  width: 760px;
+  height: 760px;
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(242,43,34,.055),
+      rgba(242,43,34,.018) 36%,
+      transparent 70%
+    );
+
+  filter: blur(18px);
+
+  opacity: .75;
+}
+
+
+/* ----------------------------------------------------------
+   VISUAL PANEL
+   ---------------------------------------------------------- */
+
+.audit67__methodVisual {
+  position: relative;
+
+  isolation: isolate;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(255,255,255,.085) !important;
+
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(242,43,34,.04),
+      transparent 31%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.025),
+      rgba(255,255,255,.006)
+    ) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.025),
+    0 38px 100px rgba(0,0,0,.22);
+
+  transition:
+    border-color .5s ease,
+    box-shadow .6s ease,
+    transform .7s cubic-bezier(.22,1,.36,1) !important;
+}
+
+
+/* vignette */
+
+.audit67__methodVisual::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  z-index: -1;
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at center,
+      transparent 20%,
+      rgba(0,0,0,.18) 72%,
+      rgba(0,0,0,.34) 100%
+    );
+}
+
+
+/* scanner */
+
+.audit67__methodVisual::after {
+  content: "";
+
+  position: absolute;
+
+  z-index: 4;
+
+  left: 8%;
+  right: 8%;
+
+  top: 0;
+
+  height: 1px;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(242,43,34,.18),
+      rgba(242,43,34,.78),
+      rgba(242,43,34,.18),
+      transparent
+    );
+
+  box-shadow:
+    0 0 18px rgba(242,43,34,.22);
+
+  opacity: 0;
+}
+
+
+/* scanner somente depois do reveal */
+
+.audit67__methodVisual.audit67__reveal--visible::after {
+  animation:
+    audit67-method-scan 5.8s
+    cubic-bezier(.4,0,.2,1)
+    1.4s infinite;
+}
+
+@keyframes audit67-method-scan {
+
+  0% {
+    top: 8%;
+    opacity: 0;
+  }
+
+  8% {
+    opacity: .55;
+  }
+
+  46% {
+    opacity: .32;
+  }
+
+  70% {
+    top: 92%;
+    opacity: 0;
+  }
+
+  100% {
+    top: 92%;
+    opacity: 0;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   GRID
+   ---------------------------------------------------------- */
+
+.audit67__methodGrid {
+  opacity: .42 !important;
+
+  background-size:
+    42px 42px !important;
+
+  mask-image:
+    radial-gradient(
+      circle at center,
+      #000 0%,
+      rgba(0,0,0,.86) 34%,
+      transparent 79%
+    );
+
+  -webkit-mask-image:
+    radial-gradient(
+      circle at center,
+      #000 0%,
+      rgba(0,0,0,.86) 34%,
+      transparent 79%
+    );
+
+  transition:
+    opacity 1.2s ease !important;
+}
+
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__methodGrid {
+  opacity: .68 !important;
+}
+
+
+/* ----------------------------------------------------------
+   CENTER
+   ---------------------------------------------------------- */
+
+.audit67__methodCenter {
+  position: absolute;
+
+  z-index: 3;
+
+  transform:
+    translate(-50%, -50%)
+    scale(.92);
+
+  opacity: .72;
+
+  transition:
+    transform 1.2s cubic-bezier(.22,1,.36,1),
+    opacity .9s ease,
+    filter .9s ease !important;
+}
+
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__methodCenter {
+  transform:
+    translate(-50%, -50%)
+    scale(1);
+
+  opacity: 1;
+
+  filter:
+    drop-shadow(
+      0 0 28px rgba(242,43,34,.08)
+    );
+}
+
+
+/* icon */
+
+.audit67__methodCenter svg {
+  color:
+    rgba(255,255,255,.78) !important;
+
+  filter:
+    drop-shadow(
+      0 0 18px rgba(255,255,255,.06)
+    );
+
+  transition:
+    color .5s ease,
+    transform .8s cubic-bezier(.22,1,.36,1),
+    filter .5s ease !important;
+}
+
+
+/* VISÃO INTEGRADA */
+
+.audit67__methodCenter strong {
+  color:
+    #ffffff !important;
+
+  letter-spacing:
+    .13em !important;
+
+  text-shadow:
+    0 0 22px rgba(255,255,255,.05);
+}
+
+
+/* subtitle */
+
+.audit67__methodCenter small {
+  color:
+    rgba(255,255,255,.34) !important;
+
+  letter-spacing:
+    .15em !important;
+}
+
+
+/* ----------------------------------------------------------
+   RINGS
+   cancela as animacoes antigas e cria um sistema unico
+   ---------------------------------------------------------- */
+
+.audit67__methodRing {
+  animation:
+    none !important;
+
+  opacity:
+    0;
+
+  transform:
+    scale(.72);
+
+  transition:
+    opacity 1s ease,
+    transform 1.45s cubic-bezier(.22,1,.36,1),
+    border-color .5s ease,
+    box-shadow .5s ease !important;
+}
+
+
+.audit67__methodRing--1 {
+  border-color:
+    rgba(242,43,34,.38) !important;
+}
+
+.audit67__methodRing--2 {
+  border-color:
+    rgba(255,255,255,.10) !important;
+}
+
+
+/* ring 1 entra primeiro */
+
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__methodRing--1 {
+  opacity:
+    .86;
+
+  transform:
+    scale(1);
+
+  transition-delay:
+    .18s !important;
+}
+
+
+/* ring 2 depois */
+
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__methodRing--2 {
+  opacity:
+    .68;
+
+  transform:
+    scale(1);
+
+  transition-delay:
+    .48s !important;
+}
+
+
+/* respiração começa após montagem */
+
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__methodRing--1 {
+  animation:
+    audit67-method-ring-one
+    5.8s ease-in-out
+    1.7s infinite !important;
+}
+
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__methodRing--2 {
+  animation:
+    audit67-method-ring-two
+    7.2s ease-in-out
+    2s infinite !important;
+}
+
+
+@keyframes audit67-method-ring-one {
+
+  0%,
+  100% {
+    opacity: .66;
+    box-shadow:
+      0 0 0 rgba(242,43,34,0);
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow:
+      0 0 38px rgba(242,43,34,.075);
+  }
+}
+
+
+@keyframes audit67-method-ring-two {
+
+  0%,
+  100% {
+    opacity: .38;
+  }
+
+  50% {
+    opacity: .72;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   COORDINATES
+   ANALISAR -> COMPREENDER -> ORIENTAR
+   ---------------------------------------------------------- */
+
+.audit67__coordinate {
+  opacity:
+    0 !important;
+
+  filter:
+    blur(5px);
+
+  color:
+    rgba(255,255,255,.32) !important;
+
+  transform:
+    translate3d(0,14px,0);
+
+  transition:
+    opacity .7s ease,
+    filter .7s ease,
+    transform .9s cubic-bezier(.22,1,.36,1),
+    color .35s ease !important;
+}
+
+
+/* 01 */
+
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__coordinate--1 {
+  opacity:
+    1 !important;
+
+  filter:
+    blur(0);
+
+  transform:
+    translate3d(0,0,0);
+
+  transition-delay:
+    .55s !important;
+}
+
+
+/* 02 */
+
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__coordinate--2 {
+  opacity:
+    1 !important;
+
+  filter:
+    blur(0);
+
+  transform:
+    translate3d(0,0,0);
+
+  transition-delay:
+    .82s !important;
+}
+
+
+/* 03 */
+
+.audit67__methodVisual.audit67__reveal--visible
+.audit67__coordinate--3 {
+  opacity:
+    1 !important;
+
+  filter:
+    blur(0);
+
+  transform:
+    translate3d(0,0,0);
+
+  transition-delay:
+    1.09s !important;
+}
+
+
+/* ----------------------------------------------------------
+   HOVER
+   ---------------------------------------------------------- */
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67__methodVisual:hover {
+    border-color:
+      rgba(242,43,34,.18) !important;
+
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.035),
+      0 44px 120px rgba(0,0,0,.28),
+      0 0 60px rgba(242,43,34,.025) !important;
+
+    transform:
+      translate3d(0,-4px,0);
+  }
+
+  .audit67__methodVisual:hover
+  .audit67__methodCenter svg {
+    color:
+      var(--audit-red) !important;
+
+    transform:
+      scale(1.08);
+
+    filter:
+      drop-shadow(
+        0 0 18px rgba(242,43,34,.25)
+      );
+  }
+
+  .audit67__methodVisual:hover
+  .audit67__coordinate {
+    color:
+      rgba(255,255,255,.60) !important;
+  }
+
+  .audit67__methodVisual:hover
+  .audit67__coordinate--1 {
+    color:
+      rgba(242,43,34,.92) !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   COPY
+   ---------------------------------------------------------- */
+
+.audit67__methodCopy {
+  position:
+    relative;
+}
+
+.audit67__methodCopy h2 {
+  text-wrap:
+    balance;
+}
+
+.audit67__methodCopy h2 em {
+  color:
+    var(--audit-red) !important;
+
+  font-style:
+    normal;
+}
+
+.audit67__methodCopy > p {
+  color:
+    rgba(255,255,255,.53) !important;
+
+  line-height:
+    1.72 !important;
+}
+
+
+/* checklist */
+
+.audit67__methodCopy li {
+  position:
+    relative;
+
+  transition:
+    color .3s ease,
+    transform .4s cubic-bezier(.22,1,.36,1);
+}
+
+.audit67__methodCopy li svg {
+  color:
+    var(--audit-red) !important;
+
+  transition:
+    transform .4s cubic-bezier(.22,1,.36,1),
+    filter .35s ease;
+}
+
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67__methodCopy li:hover {
+    color:
+      rgba(255,255,255,.94);
+
+    transform:
+      translate3d(5px,0,0);
+  }
+
+  .audit67__methodCopy li:hover svg {
+    transform:
+      scale(1.12);
+
+    filter:
+      drop-shadow(
+        0 0 8px rgba(242,43,34,.35)
+      );
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLET
+   ---------------------------------------------------------- */
+
+@media (max-width: 980px) {
+
+  .audit67__method::before {
+    left:
+      50%;
+
+    top:
+      28%;
+
+    width:
+      620px;
+
+    height:
+      620px;
+  }
+
+  .audit67__methodVisual {
+    min-height:
+      500px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .audit67__method::before {
+    width:
+      480px;
+
+    height:
+      480px;
+
+    opacity:
+      .48;
+  }
+
+  .audit67__methodVisual {
+    min-height:
+      420px;
+
+    border-radius:
+      20px;
+  }
+
+  .audit67__methodGrid {
+    background-size:
+      32px 32px !important;
+  }
+
+  .audit67__methodCenter svg {
+    width:
+      42px;
+
+    height:
+      42px;
+  }
+
+  .audit67__methodCenter strong {
+    font-size:
+      11px;
+  }
+
+  .audit67__methodCenter small {
+    font-size:
+      7px;
+  }
+
+  .audit67__coordinate {
+    font-size:
+      7px !important;
+
+    letter-spacing:
+      .12em !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67__methodVisual,
+  .audit67__methodCenter,
+  .audit67__methodRing,
+  .audit67__coordinate,
+  .audit67__methodCenter svg,
+  .audit67__methodCopy li,
+  .audit67__methodCopy li svg {
+    animation:
+      none !important;
+
+    transition:
+      none !important;
+  }
+
+  .audit67__methodVisual::after {
+    display:
+      none !important;
+  }
+
+  .audit67__methodCenter {
+    opacity:
+      1 !important;
+
+    filter:
+      none !important;
+  }
+
+  .audit67__methodRing {
+    opacity:
+      .65 !important;
+
+    transform:
+      scale(1) !important;
+  }
+
+  .audit67__coordinate {
+    opacity:
+      1 !important;
+
+    filter:
+      none !important;
+
+    transform:
+      none !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V70.0 - VISION AUTHORITY FINAL
+   Fechamento institucional da Auditoria.
+   ========================================================== */
+
+
+/* ----------------------------------------------------------
+   SECTION
+   ---------------------------------------------------------- */
+
+.audit67__principles {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+
+/* atmosfera */
+
+.audit67__principles::before {
+  content: "";
+
+  position: absolute;
+  z-index: -1;
+
+  left: 50%;
+  top: 48%;
+
+  width: min(980px, 78vw);
+  height: 520px;
+
+  transform: translate(-50%, -50%);
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(242,43,34,.055),
+      rgba(242,43,34,.018) 38%,
+      transparent 72%
+    );
+
+  filter: blur(22px);
+
+  opacity: .76;
+}
+
+
+/* ----------------------------------------------------------
+   HEADER
+   ---------------------------------------------------------- */
+
+.audit67__principlesHead {
+  position: relative;
+
+  max-width: 1080px;
+}
+
+.audit67__principlesHead .audit67__sectionNumber {
+  margin-bottom: 22px;
+}
+
+.audit67__principlesHead h2 {
+  max-width: 980px;
+
+  text-wrap: balance;
+}
+
+.audit67__principlesHead h2 em {
+  color: var(--audit-red) !important;
+  font-style: normal;
+}
+
+
+/* pequena assinatura técnica */
+
+.audit67__principlesHead::after {
+  content: "INDEPENDÊNCIA  /  QUALIDADE  /  CONFIANÇA";
+
+  display: block;
+
+  margin-top: 30px;
+
+  color: rgba(255,255,255,.28);
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: .19em;
+}
+
+
+/* ----------------------------------------------------------
+   GRID
+   ---------------------------------------------------------- */
+
+.audit67__principlesGrid {
+  position: relative;
+
+  margin-top: 54px;
+
+  display: grid;
+
+  gap: 1px !important;
+
+  padding: 1px;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(255,255,255,.065);
+
+  border-radius: 24px;
+
+  background:
+    rgba(255,255,255,.065);
+
+  box-shadow:
+    0 36px 100px rgba(0,0,0,.20);
+}
+
+
+/* ----------------------------------------------------------
+   CARD
+   ---------------------------------------------------------- */
+
+.audit67__principlesGrid article {
+  position: relative;
+
+  min-height: 280px;
+
+  padding: 28px 26px 24px;
+
+  overflow: hidden;
+
+  isolation: isolate;
+
+  border: 0 !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.032),
+      rgba(255,255,255,.008)
+    ) !important;
+
+  transition:
+    transform .5s cubic-bezier(.22,1,.36,1),
+    background .4s ease,
+    box-shadow .45s ease !important;
+}
+
+
+/* brilho interno */
+
+.audit67__principlesGrid article::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  z-index: -1;
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      280px circle at 20% 10%,
+      rgba(242,43,34,.08),
+      transparent 65%
+    );
+
+  opacity: 0;
+
+  transition:
+    opacity .4s ease;
+}
+
+
+/* barra inferior */
+
+.audit67__principlesGrid article::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--audit-red),
+      rgba(242,43,34,.30),
+      transparent 70%
+    );
+
+  transform:
+    scaleX(.12);
+
+  transform-origin:
+    left;
+
+  opacity: .52;
+
+  transition:
+    transform .55s cubic-bezier(.22,1,.36,1),
+    opacity .35s ease;
+}
+
+
+/* ----------------------------------------------------------
+   TOP
+   ---------------------------------------------------------- */
+
+.audit67__principlesGrid article > div:first-child {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+}
+
+.audit67__principlesGrid article > div:first-child span {
+  color: var(--audit-red) !important;
+
+  font-size: 9px;
+
+  font-weight: 900;
+
+  letter-spacing: .18em;
+}
+
+.audit67__principlesGrid article svg {
+  color:
+    rgba(255,255,255,.40);
+
+  transition:
+    color .35s ease,
+    transform .5s cubic-bezier(.22,1,.36,1),
+    filter .35s ease;
+}
+
+
+/* ----------------------------------------------------------
+   TITLE
+   ---------------------------------------------------------- */
+
+.audit67__principlesGrid article h3 {
+  max-width: 260px;
+
+  margin-top: 68px;
+
+  color:
+    rgba(255,255,255,.92);
+
+  font-size:
+    clamp(23px, 1.8vw, 30px);
+
+  line-height: 1.03;
+
+  letter-spacing: -.04em;
+
+  transition:
+    color .35s ease,
+    transform .45s cubic-bezier(.22,1,.36,1);
+}
+
+
+/* ----------------------------------------------------------
+   HOVER
+   ---------------------------------------------------------- */
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67__principlesGrid article:hover {
+    z-index: 3;
+
+    transform:
+      translate3d(0,-7px,0)
+      scale(1.008);
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.045),
+        rgba(242,43,34,.028)
+      ) !important;
+
+    box-shadow:
+      0 24px 64px rgba(0,0,0,.26);
+  }
+
+  .audit67__principlesGrid article:hover::before {
+    opacity: 1;
+  }
+
+  .audit67__principlesGrid article:hover::after {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+
+  .audit67__principlesGrid article:hover svg {
+    color:
+      var(--audit-red);
+
+    transform:
+      rotate(-6deg)
+      scale(1.10);
+
+    filter:
+      drop-shadow(
+        0 0 12px rgba(242,43,34,.24)
+      );
+  }
+
+  .audit67__principlesGrid article:hover h3 {
+    color: #ffffff;
+
+    transform:
+      translate3d(0,-3px,0);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   REVEAL
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__principlesGrid article {
+  opacity: 0;
+
+  filter: blur(4px);
+
+  transform:
+    translate3d(0,36px,0)
+    scale(.985);
+
+  transition:
+    opacity .7s ease var(--audit-reveal-delay),
+    transform .9s var(--audit-ease) var(--audit-reveal-delay),
+    filter .75s ease var(--audit-reveal-delay),
+    background .4s ease,
+    box-shadow .45s ease !important;
+}
+
+.audit67--motion-ready
+.audit67__principlesGrid article.audit67__reveal--visible {
+  opacity: 1;
+
+  filter: blur(0);
+
+  transform:
+    translate3d(0,0,0)
+    scale(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67--motion-ready
+  .audit67__principlesGrid
+  article.audit67__reveal--visible:hover {
+    transform:
+      translate3d(0,-7px,0)
+      scale(1.008) !important;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLET
+   ---------------------------------------------------------- */
+
+@media (max-width: 980px) {
+
+  .audit67__principlesGrid {
+    margin-top: 44px;
+
+    border-radius: 20px;
+  }
+
+  .audit67__principlesGrid article {
+    min-height: 240px;
+
+    padding:
+      24px 22px;
+  }
+
+  .audit67__principlesGrid article h3 {
+    margin-top: 54px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .audit67__principles::before {
+    width: 130vw;
+
+    height: 400px;
+
+    opacity: .48;
+  }
+
+  .audit67__principlesHead::after {
+    margin-top: 22px;
+
+    font-size: 7px;
+
+    line-height: 1.8;
+  }
+
+  .audit67__principlesGrid {
+    margin-top: 34px;
+
+    border-radius: 18px;
+  }
+
+  .audit67__principlesGrid article {
+    min-height: 210px;
+
+    padding:
+      22px 20px;
+  }
+
+  .audit67__principlesGrid article h3 {
+    margin-top: 44px;
+
+    font-size: 25px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67__principlesGrid article,
+  .audit67__principlesGrid article svg,
+  .audit67__principlesGrid article h3 {
+    transition: none !important;
+
+    transform: none !important;
+
+    filter: none !important;
+  }
+
+  .audit67--motion-ready
+  .audit67__principlesGrid article {
+    opacity: 1 !important;
+
+    filter: none !important;
+
+    transform: none !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V70.1 - CLOSING EXPERIENCE
+   Fechamento cinematografico da pagina Auditoria.
+   ========================================================== */
+
+
+/* ==========================================================
+   CONTACT STAGE
+   ========================================================== */
+
+.audit67__contact {
+  position: relative !important;
+
+  isolation: isolate;
+
+  overflow: hidden !important;
+
+  min-height:
+    clamp(560px, 66vh, 760px);
+
+  display: flex !important;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(12,12,13,1) 0%,
+      rgba(10,10,11,1) 52%,
+      rgba(7,7,8,1) 100%
+    ) !important;
+}
+
+
+/* glow principal */
+
+.audit67__contact::before {
+  content: "";
+
+  position: absolute;
+
+  z-index: -2;
+
+  left: 47%;
+  top: 48%;
+
+  width:
+    min(1050px, 82vw);
+
+  height:
+    min(620px, 62vw);
+
+  transform:
+    translate(-50%, -50%);
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(242,43,34,.105) 0%,
+      rgba(242,43,34,.045) 32%,
+      rgba(242,43,34,.012) 52%,
+      transparent 73%
+    );
+
+  filter:
+    blur(20px);
+
+  opacity:
+    .72;
+
+  animation:
+    audit67-closing-glow
+    7s ease-in-out infinite alternate;
+}
+
+
+/* linha técnica superior */
+
+.audit67__contact::after {
+  content: "";
+
+  position: absolute !important;
+
+  z-index: 2;
+
+  left: 50% !important;
+  top: 0 !important;
+
+  width:
+    min(1320px, calc(100% - 80px)) !important;
+
+  height:
+    1px !important;
+
+  transform:
+    translateX(-50%) !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,.12) 18%,
+      rgba(242,43,34,.48) 50%,
+      rgba(255,255,255,.12) 82%,
+      transparent
+    ) !important;
+
+  opacity:
+    .8 !important;
+
+  animation:
+    none !important;
+}
+
+
+@keyframes audit67-closing-glow {
+
+  from {
+    opacity: .52;
+
+    transform:
+      translate(-50%, -50%)
+      scale(.94);
+  }
+
+  to {
+    opacity: .82;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.06);
+  }
+}
+
+
+/* ==========================================================
+   CONTACT GRID
+   ========================================================== */
+
+.audit67__contactGrid {
+  position: relative;
+
+  z-index: 3;
+
+  width: 100%;
+
+  align-items: end !important;
+
+  gap:
+    clamp(54px, 8vw, 150px) !important;
+}
+
+
+/* ==========================================================
+   INDEX
+   ========================================================== */
+
+.audit67__contactIndex {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 11px;
+
+  color:
+    rgba(255,255,255,.42) !important;
+
+  font-size:
+    8px !important;
+
+  font-weight:
+    850 !important;
+
+  letter-spacing:
+    .19em !important;
+}
+
+
+.audit67__contactIndex::before {
+  content: "";
+
+  width: 24px;
+  height: 1px;
+
+  background:
+    var(--audit-red);
+
+  box-shadow:
+    0 0 10px rgba(242,43,34,.35);
+}
+
+
+/* ==========================================================
+   HEADLINE
+   ========================================================== */
+
+.audit67__contact h2 {
+  position: relative;
+
+  max-width:
+    850px !important;
+
+  margin-top:
+    27px !important;
+
+  font-size:
+    clamp(46px, 5.8vw, 92px) !important;
+
+  line-height:
+    .92 !important;
+
+  letter-spacing:
+    -.066em !important;
+
+  text-wrap:
+    balance;
+}
+
+
+.audit67__contact h2 em {
+  position: relative;
+
+  color:
+    var(--audit-red) !important;
+
+  font-style:
+    normal !important;
+
+  text-shadow:
+    0 0 40px rgba(242,43,34,.08);
+}
+
+
+/* detalhe na frase vermelha */
+
+.audit67__contact h2 em::after {
+  content: "";
+
+  position: absolute;
+
+  left: 2px;
+  bottom: -9px;
+
+  width: 38%;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--audit-red),
+      rgba(242,43,34,.18),
+      transparent
+    );
+
+  transform:
+    scaleX(.2);
+
+  transform-origin:
+    left;
+
+  opacity:
+    .72;
+
+  transition:
+    transform .9s cubic-bezier(.22,1,.36,1);
+}
+
+
+.audit67__contact.audit67__reveal--visible
+.audit67__contact h2 em::after {
+  transform:
+    scaleX(1);
+}
+
+
+/* ==========================================================
+   ACTION AREA
+   ========================================================== */
+
+.audit67__contactAction {
+  position: relative;
+
+  max-width:
+    410px;
+
+  padding-bottom:
+    6px;
+}
+
+
+.audit67__contactAction p {
+  max-width:
+    390px !important;
+
+  margin-bottom:
+    32px !important;
+
+  color:
+    rgba(255,255,255,.52) !important;
+
+  font-size:
+    clamp(14px, 1.1vw, 17px) !important;
+
+  line-height:
+    1.72 !important;
+}
+
+
+/* ==========================================================
+   MAIN CTA
+   ========================================================== */
+
+.audit67__contactAction > a {
+  position: relative !important;
+
+  isolation: isolate;
+
+  overflow: hidden;
+
+  min-height:
+    62px !important;
+
+  padding:
+    0 26px !important;
+
+  display:
+    inline-flex !important;
+
+  align-items:
+    center !important;
+
+  justify-content:
+    space-between !important;
+
+  gap:
+    34px !important;
+
+  border:
+    1px solid rgba(242,43,34,.72) !important;
+
+  border-radius:
+    999px !important;
+
+  background:
+    var(--audit-red) !important;
+
+  color:
+    #ffffff !important;
+
+  box-shadow:
+    0 16px 48px rgba(242,43,34,.13);
+
+  font-size:
+    12px !important;
+
+  font-weight:
+    850 !important;
+
+  letter-spacing:
+    .035em !important;
+
+  transition:
+    transform .45s cubic-bezier(.22,1,.36,1),
+    box-shadow .45s ease,
+    border-color .35s ease !important;
+}
+
+
+/* sweep */
+
+.audit67__contactAction > a::before {
+  content: "";
+
+  position: absolute;
+
+  z-index: -1;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      110deg,
+      transparent 15%,
+      rgba(255,255,255,.20) 43%,
+      rgba(255,255,255,.06) 54%,
+      transparent 78%
+    );
+
+  transform:
+    translateX(-130%)
+    skewX(-18deg);
+
+  transition:
+    transform .85s cubic-bezier(.22,1,.36,1);
+}
+
+
+/* círculo da seta */
+
+.audit67__contactAction > a svg {
+  flex:
+    0 0 auto;
+
+  transition:
+    transform .45s cubic-bezier(.22,1,.36,1);
+}
+
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67__contactAction > a:hover {
+    transform:
+      translate3d(0,-5px,0)
+      scale(1.015) !important;
+
+    border-color:
+      rgba(255,255,255,.20) !important;
+
+    box-shadow:
+      0 24px 70px rgba(242,43,34,.23) !important;
+  }
+
+  .audit67__contactAction > a:hover::before {
+    transform:
+      translateX(130%)
+      skewX(-18deg);
+  }
+
+  .audit67__contactAction > a:hover svg {
+    transform:
+      translate3d(6px,0,0);
+  }
+}
+
+
+/* ==========================================================
+   META
+   ========================================================== */
+
+.audit67__contactMeta {
+  position: relative;
+
+  z-index: 3;
+
+  margin-top:
+    clamp(70px, 9vw, 130px) !important;
+
+  padding-top:
+    20px !important;
+
+  border-top:
+    1px solid rgba(255,255,255,.075) !important;
+
+  color:
+    rgba(255,255,255,.28) !important;
+
+  font-size:
+    7px !important;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    .16em !important;
+}
+
+
+.audit67__contactMeta span:first-child {
+  color:
+    rgba(255,255,255,.55) !important;
+}
+
+
+/* ==========================================================
+   FOOTER
+   ========================================================== */
+
+.audit67__footer {
+  position: relative;
+
+  min-height:
+    104px !important;
+
+  padding-top:
+    26px !important;
+
+  padding-bottom:
+    26px !important;
+
+  border-top:
+    1px solid rgba(255,255,255,.055) !important;
+
+  background:
+    #070708 !important;
+}
+
+
+.audit67__footer img {
+  width:
+    auto !important;
+
+  height:
+    34px !important;
+
+  opacity:
+    .88;
+
+  transition:
+    opacity .35s ease,
+    transform .4s cubic-bezier(.22,1,.36,1);
+}
+
+
+.audit67__footer > span {
+  color:
+    rgba(255,255,255,.27) !important;
+
+  font-size:
+    8px !important;
+
+  letter-spacing:
+    .12em !important;
+}
+
+
+.audit67__footer > a:last-child {
+  position: relative;
+
+  color:
+    rgba(255,255,255,.58) !important;
+
+  font-size:
+    9px !important;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    .09em !important;
+
+  transition:
+    color .3s ease !important;
+}
+
+
+.audit67__footer > a:last-child svg {
+  transition:
+    transform .4s cubic-bezier(.22,1,.36,1);
+}
+
+
+@media (hover: hover) and (pointer: fine) {
+
+  .audit67__footer > a:first-child:hover img {
+    opacity:
+      1;
+
+    transform:
+      translate3d(0,-2px,0);
+  }
+
+  .audit67__footer > a:last-child:hover {
+    color:
+      #ffffff !important;
+  }
+
+  .audit67__footer > a:last-child:hover svg {
+    transform:
+      translate3d(4px,0,0);
+  }
+}
+
+
+/* ==========================================================
+   REVEAL
+   ========================================================== */
+
+.audit67--motion-ready
+.audit67__contactGrid > div:first-child {
+  opacity:
+    0;
+
+  transform:
+    translate3d(0,40px,0);
+
+  filter:
+    blur(4px);
+
+  transition:
+    opacity .8s ease .05s,
+    transform 1s var(--audit-ease) .05s,
+    filter .8s ease .05s;
+}
+
+
+.audit67--motion-ready
+.audit67__contactAction {
+  opacity:
+    0;
+
+  transform:
+    translate3d(0,36px,0);
+
+  filter:
+    blur(3px);
+
+  transition:
+    opacity .8s ease .22s,
+    transform 1s var(--audit-ease) .22s,
+    filter .8s ease .22s;
+}
+
+
+.audit67--motion-ready
+.audit67__contactMeta {
+  opacity:
+    0;
+
+  transform:
+    translate3d(0,18px,0);
+
+  transition:
+    opacity .7s ease .42s,
+    transform .9s var(--audit-ease) .42s;
+}
+
+
+.audit67--motion-ready
+.audit67__contact.audit67__reveal--visible
+.audit67__contactGrid > div:first-child,
+
+.audit67--motion-ready
+.audit67__contact.audit67__reveal--visible
+.audit67__contactAction,
+
+.audit67--motion-ready
+.audit67__contact.audit67__reveal--visible
+.audit67__contactMeta {
+  opacity:
+    1;
+
+  transform:
+    translate3d(0,0,0);
+
+  filter:
+    none;
+}
+
+
+/* ==========================================================
+   TABLET
+   ========================================================== */
+
+@media (max-width: 980px) {
+
+  .audit67__contact {
+    min-height:
+      auto;
+  }
+
+  .audit67__contactGrid {
+    align-items:
+      start !important;
+
+    gap:
+      48px !important;
+  }
+
+  .audit67__contactAction {
+    max-width:
+      520px;
+  }
+
+  .audit67__contactAction p {
+    max-width:
+      500px !important;
+  }
+
+  .audit67__contactMeta {
+    margin-top:
+      72px !important;
+  }
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 700px) {
+
+  .audit67__contact {
+    min-height:
+      auto !important;
+  }
+
+  .audit67__contact::after {
+    width:
+      calc(100% - 36px) !important;
+  }
+
+  .audit67__contact::before {
+    width:
+      150vw;
+
+    height:
+      520px;
+
+    left:
+      50%;
+
+    top:
+      38%;
+
+    opacity:
+      .48;
+  }
+
+  .audit67__contactGrid {
+    gap:
+      42px !important;
+  }
+
+  .audit67__contact h2 {
+    margin-top:
+      22px !important;
+
+    font-size:
+      clamp(42px, 13vw, 62px) !important;
+
+    line-height:
+      .94 !important;
+  }
+
+  .audit67__contactAction {
+    width:
+      100%;
+
+    max-width:
+      none;
+  }
+
+  .audit67__contactAction p {
+    margin-bottom:
+      25px !important;
+  }
+
+  .audit67__contactAction > a {
+    width:
+      100% !important;
+
+    min-height:
+      60px !important;
+  }
+
+  .audit67__contactMeta {
+    margin-top:
+      60px !important;
+
+    gap:
+      12px;
+  }
+
+  .audit67__footer {
+    min-height:
+      auto !important;
+
+    gap:
+      20px !important;
+  }
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+   ========================================================== */
+
+@media (max-width: 480px) {
+
+  .audit67__contact h2 {
+    font-size:
+      clamp(39px, 12.5vw, 54px) !important;
+  }
+
+  .audit67__contactAction > a {
+    padding:
+      0 21px !important;
+
+    gap:
+      20px !important;
+  }
+
+  .audit67__contactMeta {
+    font-size:
+      6px !important;
+
+    line-height:
+      1.7;
+  }
+
+  .audit67__footer img {
+    height:
+      30px !important;
+  }
+}
+
+
+/* ==========================================================
+   REDUCED MOTION
+   ========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67__contact::before {
+    animation:
+      none !important;
+  }
+
+  .audit67__contactGrid > div:first-child,
+  .audit67__contactAction,
+  .audit67__contactMeta,
+  .audit67__contactAction > a,
+  .audit67__contactAction > a::before,
+  .audit67__contactAction > a svg,
+  .audit67__footer img,
+  .audit67__footer svg {
+    animation:
+      none !important;
+
+    transition:
+      none !important;
+
+    transform:
+      none !important;
+
+    filter:
+      none !important;
+  }
+
+  .audit67--motion-ready
+  .audit67__contactGrid > div:first-child,
+
+  .audit67--motion-ready
+  .audit67__contactAction,
+
+  .audit67--motion-ready
+  .audit67__contactMeta {
+    opacity:
+      1 !important;
+
+    transform:
+      none !important;
+
+    filter:
+      none !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V70.3 - PRODUCTION HARDENING
+   Protecao final contra overflow horizontal.
+   Nao altera composicao visual das secoes.
+   ========================================================== */
+
+.audit67 {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.audit67 main {
+  width: 100%;
+  max-width: 100%;
+}
+
+.audit67 section {
+  max-width: 100%;
+}
+
+.audit67 img,
+.audit67 svg,
+.audit67 video {
+  max-width: 100%;
+}
+
+/*
+   Fallback para navegadores sem overflow: clip.
+*/
+@supports not (overflow: clip) {
+  .audit67 {
+    overflow-x: hidden;
+  }
+}
+
+/* ==========================================================
+   QMAX V70.4 - AUDITORIA IDENTITY PASS
+   Identidade local da pagina Auditoria.
+   Nao altera geometria estrutural do header.
+   ========================================================== */
+
+.audit67 {
+  --audit-accent: #f22b22;
+  --audit-accent-bright: #ff342c;
+  --audit-accent-soft: rgba(242, 43, 34, .14);
+  --audit-accent-glow: rgba(242, 43, 34, .28);
+}
+
+
+/* ----------------------------------------------------------
+   HERO EYEBROW
+   ---------------------------------------------------------- */
+
+.audit67 .audit67__eyebrow {
+  display: inline-flex !important;
+  align-items: center !important;
+
+  width: auto !important;
+  max-width: 100% !important;
+
+  gap: 14px !important;
+
+  margin-bottom: 22px !important;
+
+  color: var(--audit-accent) !important;
+
+  white-space: nowrap !important;
+}
+
+.audit67 .audit67__eyebrow > span:first-child {
+  display: block !important;
+
+  width: 46px !important;
+  min-width: 46px !important;
+  flex: 0 0 46px !important;
+
+  height: 2px !important;
+
+  margin: 0 !important;
+
+  background: var(--audit-accent) !important;
+
+  border: 0 !important;
+  border-radius: 999px !important;
+}
+
+.audit67 .audit67__eyebrowLabel {
+  display: block !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  color: var(--audit-accent) !important;
+  -webkit-text-fill-color: var(--audit-accent) !important;
+
+  font: inherit !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+
+  line-height: 1 !important;
+
+  letter-spacing: .20em !important;
+  text-transform: uppercase !important;
+
+  white-space: nowrap !important;
+}
+
+
+/* ----------------------------------------------------------
+   TEXT SELECTION
+   Auditoria usa vermelho, nao magenta institucional.
+   ---------------------------------------------------------- */
+
+.audit67 ::selection {
+  color: #fff !important;
+  background: var(--audit-accent) !important;
+}
+
+.audit67::-moz-selection,
+.audit67 *::-moz-selection {
+  color: #fff !important;
+  background: var(--audit-accent) !important;
+}
+
+
+/* ----------------------------------------------------------
+   HEADER — PAGE ACCENT
+   Somente estados de interface.
+   Nao altera dimensoes, logo ou posicionamento.
+   ---------------------------------------------------------- */
+
+.audit67 .qeh {
+  --qeh-page-accent: var(--audit-accent);
+}
+
+.audit67 .qeh__desktop > a:hover::after,
+.audit67 .qeh__item:hover > button::after,
+.audit67 .qeh__item:focus-within > button::after {
+  background: var(--qeh-page-accent) !important;
+}
+
+.audit67 .qeh__desktop > a:focus-visible,
+.audit67 .qeh__item > button:focus-visible,
+.audit67 .qeh__cta:focus-visible,
+.audit67 .qeh__mobileButton:focus-visible,
+.audit67 .qeh__mobileSection a:focus-visible {
+  outline: 2px solid var(--qeh-page-accent) !important;
+  outline-offset: 4px !important;
+}
+
+
+/* ----------------------------------------------------------
+   HEADER GROUP LABEL
+   O nome Grupo Q-Max continua neutro.
+   ---------------------------------------------------------- */
+
+.audit67 .qeh__qmaxText {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 820px) {
+
+  .audit67 .audit67__eyebrow {
+    gap: 10px !important;
+    margin-bottom: 18px !important;
+  }
+
+  .audit67 .audit67__eyebrow > span:first-child {
+    width: 30px !important;
+    min-width: 30px !important;
+    flex-basis: 30px !important;
+  }
+
+  .audit67 .audit67__eyebrowLabel {
+    font-size: 9px !important;
+    letter-spacing: .17em !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V70.5 - AUDIT INTELLIGENCE LAYER
+   ========================================================== */
+
+.audit67__intelligenceLayer {
+  position: relative;
+  isolation: isolate;
+
+  padding:
+    clamp(110px, 10vw, 170px) 0;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      180deg,
+      #080809,
+      #0b0b0c 50%,
+      #080809
+    );
+}
+
+
+.audit67__intelligenceLayer::before {
+  content: "";
+
+  position: absolute;
+
+  width: 780px;
+  height: 780px;
+
+  left: 50%;
+  top: 38%;
+
+  transform:
+    translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(242,43,34,.07),
+      transparent 67%
+    );
+
+  filter: blur(28px);
+
+  pointer-events: none;
+}
+
+
+.audit67__intelligenceInner {
+  position: relative;
+  z-index: 2;
+
+  width:
+    min(1440px, calc(100% - 96px));
+
+  margin-inline: auto;
+}
+
+
+/* ----------------------------------------------------------
+   HEAD
+   ---------------------------------------------------------- */
+
+.audit67__intelligenceHead {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.25fr)
+    minmax(280px, .75fr);
+
+  align-items: end;
+
+  gap:
+    clamp(50px, 7vw, 120px);
+
+  margin-bottom:
+    62px;
+}
+
+
+.audit67__intelligenceHead h2 {
+  margin-top: 18px;
+
+  max-width: 880px;
+
+  font-size:
+    clamp(48px, 5vw, 82px);
+
+  line-height: .95;
+
+  letter-spacing: -.055em;
+
+  text-wrap: balance;
+}
+
+
+.audit67__intelligenceHead h2 em {
+  color: var(--audit-accent);
+  font-style: normal;
+}
+
+
+.audit67__intelligenceHead > p {
+  max-width: 430px;
+
+  color:
+    rgba(255,255,255,.52);
+
+  font-size: 15px;
+
+  line-height: 1.75;
+}
+
+
+/* ----------------------------------------------------------
+   CARDS
+   ---------------------------------------------------------- */
+
+.audit67__intelligenceCards {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0,1fr));
+
+  gap: 1px;
+
+  padding: 1px;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(255,255,255,.075);
+
+  border-radius: 26px;
+
+  background:
+    rgba(255,255,255,.07);
+}
+
+
+.audit67__intelligenceCard {
+  position: relative;
+
+  min-height: 450px;
+
+  padding: 30px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.034),
+      rgba(255,255,255,.008)
+    );
+
+  transition:
+    transform .55s cubic-bezier(.22,1,.36,1),
+    background .4s ease,
+    box-shadow .45s ease;
+}
+
+
+.audit67__intelligenceCard::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      360px circle at 20% 10%,
+      rgba(242,43,34,.11),
+      transparent 67%
+    );
+
+  opacity: 0;
+
+  transition:
+    opacity .45s ease;
+}
+
+
+.audit67__intelligenceCard::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--audit-accent),
+      rgba(242,43,34,.25),
+      transparent
+    );
+
+  transform:
+    scaleX(.12);
+
+  transform-origin:
+    left;
+
+  transition:
+    transform .6s cubic-bezier(.22,1,.36,1);
+}
+
+
+.audit67__intelligenceCardTop {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+}
+
+
+.audit67__intelligenceCardTop span {
+  color:
+    var(--audit-accent);
+
+  font-size: 9px;
+
+  font-weight: 900;
+
+  letter-spacing: .18em;
+}
+
+
+.audit67__intelligenceCardTop svg {
+  color:
+    rgba(255,255,255,.42);
+
+  transition:
+    color .35s ease,
+    transform .55s cubic-bezier(.22,1,.36,1),
+    filter .4s ease;
+}
+
+
+.audit67__intelligenceCard > div:nth-child(2) {
+  position: relative;
+  z-index: 2;
+}
+
+
+.audit67__intelligenceCard small {
+  display: block;
+
+  margin-bottom: 14px;
+
+  color:
+    var(--audit-accent);
+
+  font-size: 8px;
+
+  font-weight: 900;
+
+  letter-spacing: .21em;
+}
+
+
+.audit67__intelligenceCard h3 {
+  max-width: 310px;
+
+  color: #fff;
+
+  font-size:
+    clamp(28px, 2.4vw, 38px);
+
+  line-height: 1;
+
+  letter-spacing: -.045em;
+}
+
+
+.audit67__intelligenceCard p {
+  max-width: 330px;
+
+  margin-top: 20px;
+
+  color:
+    rgba(255,255,255,.48);
+
+  font-size: 14px;
+
+  line-height: 1.72;
+}
+
+
+/* ----------------------------------------------------------
+   TAGS
+   ---------------------------------------------------------- */
+
+.audit67__intelligenceTags {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 7px;
+}
+
+
+.audit67__intelligenceTags span {
+  padding:
+    7px 10px;
+
+  border:
+    1px solid rgba(255,255,255,.09);
+
+  border-radius:
+    999px;
+
+  color:
+    rgba(255,255,255,.42);
+
+  background:
+    rgba(255,255,255,.015);
+
+  font-size: 7px;
+
+  font-weight: 800;
+
+  letter-spacing: .11em;
+
+  text-transform: uppercase;
+
+  transition:
+    color .3s ease,
+    border-color .3s ease,
+    background .3s ease;
+}
+
+
+/* ----------------------------------------------------------
+   HOVER
+   ---------------------------------------------------------- */
+
+@media (hover:hover) and (pointer:fine) {
+
+  .audit67__intelligenceCard:hover {
+    z-index: 3;
+
+    transform:
+      translate3d(0,-8px,0);
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.05),
+        rgba(242,43,34,.025)
+      );
+
+    box-shadow:
+      0 30px 80px rgba(0,0,0,.28);
+  }
+
+
+  .audit67__intelligenceCard:hover::before {
+    opacity: 1;
+  }
+
+
+  .audit67__intelligenceCard:hover::after {
+    transform:
+      scaleX(1);
+  }
+
+
+  .audit67__intelligenceCard:hover
+  .audit67__intelligenceCardTop svg {
+    color:
+      var(--audit-accent);
+
+    transform:
+      scale(1.12)
+      rotate(-6deg);
+
+    filter:
+      drop-shadow(
+        0 0 12px rgba(242,43,34,.30)
+      );
+  }
+
+
+  .audit67__intelligenceCard:hover
+  .audit67__intelligenceTags span {
+    color:
+      rgba(255,255,255,.75);
+
+    border-color:
+      rgba(242,43,34,.22);
+
+    background:
+      rgba(242,43,34,.025);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   SCOPE STRIP
+   ---------------------------------------------------------- */
+
+.audit67__scope {
+  margin-top: 30px;
+
+  padding:
+    21px 24px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 30px;
+
+  border:
+    1px solid rgba(255,255,255,.07);
+
+  border-radius:
+    18px;
+
+  background:
+    rgba(255,255,255,.014);
+}
+
+
+.audit67__scope > span {
+  flex: 0 0 auto;
+
+  color:
+    rgba(255,255,255,.30);
+
+  font-size: 7px;
+
+  font-weight: 900;
+
+  letter-spacing: .18em;
+}
+
+
+.audit67__scopeItems {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  justify-content: flex-end;
+
+  gap:
+    9px 21px;
+}
+
+
+.audit67__scopeItems span {
+  position: relative;
+
+  padding-left: 11px;
+
+  color:
+    rgba(255,255,255,.53);
+
+  font-size: 10px;
+
+  font-weight: 650;
+
+  letter-spacing: .025em;
+}
+
+
+.audit67__scopeItems span::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 50%;
+
+  width: 4px;
+  height: 4px;
+
+  transform:
+    translateY(-50%);
+
+  border-radius: 50%;
+
+  background:
+    var(--audit-accent);
+
+  box-shadow:
+    0 0 7px rgba(242,43,34,.32);
+}
+
+
+/* ----------------------------------------------------------
+   ENTRY MOTION
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__intelligenceCard {
+  opacity: 0;
+
+  filter:
+    blur(5px);
+
+  transform:
+    translate3d(0,42px,0)
+    scale(.98);
+}
+
+
+.audit67--entered
+.audit67__intelligenceCard {
+  animation:
+    audit67-intelligence-in
+    .95s cubic-bezier(.22,1,.36,1)
+    both;
+}
+
+
+.audit67--entered
+.audit67__intelligenceCard:nth-child(1) {
+  animation-delay: .12s;
+}
+
+.audit67--entered
+.audit67__intelligenceCard:nth-child(2) {
+  animation-delay: .24s;
+}
+
+.audit67--entered
+.audit67__intelligenceCard:nth-child(3) {
+  animation-delay: .36s;
+}
+
+
+@keyframes audit67-intelligence-in {
+
+  to {
+    opacity: 1;
+
+    filter: blur(0);
+
+    transform:
+      translate3d(0,0,0)
+      scale(1);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLET
+   ---------------------------------------------------------- */
+
+@media (max-width: 980px) {
+
+  .audit67__intelligenceInner {
+    width:
+      min(100% - 48px, 900px);
+  }
+
+  .audit67__intelligenceHead {
+    grid-template-columns:
+      1fr;
+
+    align-items:
+      start;
+
+    gap:
+      28px;
+  }
+
+  .audit67__intelligenceCards {
+    grid-template-columns:
+      1fr;
+  }
+
+  .audit67__intelligenceCard {
+    min-height:
+      340px;
+  }
+
+  .audit67__scope {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+
+  .audit67__scopeItems {
+    justify-content:
+      flex-start;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .audit67__intelligenceLayer {
+    padding:
+      82px 0;
+  }
+
+  .audit67__intelligenceInner {
+    width:
+      calc(100% - 32px);
+  }
+
+  .audit67__intelligenceHead h2 {
+    font-size:
+      clamp(40px, 12vw, 58px);
+  }
+
+  .audit67__intelligenceCards {
+    border-radius:
+      20px;
+  }
+
+  .audit67__intelligenceCard {
+    min-height:
+      315px;
+
+    padding:
+      23px 21px;
+  }
+
+  .audit67__scope {
+    padding:
+      19px;
+
+    border-radius:
+      16px;
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67__intelligenceCard {
+    opacity:
+      1 !important;
+
+    filter:
+      none !important;
+
+    transform:
+      none !important;
+
+    animation:
+      none !important;
+
+    transition:
+      none !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V70.6 - FLOATING WHATSAPP EXPERIENCE
+   ========================================================== */
+
+.audit67__whatsapp {
+  position: fixed;
+
+  z-index: 120;
+
+  right:
+    clamp(18px, 2vw, 32px);
+
+  bottom:
+    clamp(18px, 2vw, 30px);
+
+  width: 58px;
+  height: 58px;
+
+  display: flex;
+
+  align-items: center;
+
+  overflow: hidden;
+
+  isolation: isolate;
+
+  border:
+    1px solid rgba(242,43,34,.42);
+
+  border-radius: 999px;
+
+  color: #fff;
+
+  background:
+    rgba(10,10,11,.88);
+
+  box-shadow:
+    0 18px 60px rgba(0,0,0,.34),
+    0 0 0 1px rgba(255,255,255,.025) inset,
+    0 0 30px rgba(242,43,34,.055);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+
+  text-decoration: none;
+
+  transform:
+    translate3d(0,0,0);
+
+  transition:
+    width .65s cubic-bezier(.22,1,.36,1),
+    transform .45s cubic-bezier(.22,1,.36,1),
+    border-color .35s ease,
+    background .35s ease,
+    box-shadow .45s ease;
+}
+
+
+/* brilho interno */
+
+.audit67__whatsapp::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  z-index: -1;
+
+  background:
+    linear-gradient(
+      110deg,
+      rgba(242,43,34,.08),
+      transparent 40%,
+      rgba(242,43,34,.045)
+    );
+
+  opacity: .55;
+}
+
+
+/* ----------------------------------------------------------
+   ICON
+   ---------------------------------------------------------- */
+
+.audit67__whatsappIcon {
+  position: relative;
+
+  z-index: 3;
+
+  width: 56px;
+  min-width: 56px;
+  height: 56px;
+
+  display: grid;
+
+  place-items: center;
+
+  color:
+    var(--audit-accent);
+
+  transition:
+    transform .5s cubic-bezier(.22,1,.36,1),
+    color .35s ease;
+}
+
+
+/* ----------------------------------------------------------
+   COPY
+   ---------------------------------------------------------- */
+
+.audit67__whatsappCopy {
+  min-width: 170px;
+
+  padding-right: 18px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  opacity: 0;
+
+  transform:
+    translate3d(12px,0,0);
+
+  transition:
+    opacity .35s ease .05s,
+    transform .5s cubic-bezier(.22,1,.36,1) .05s;
+}
+
+
+.audit67__whatsappCopy small {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  margin-bottom: 3px;
+
+  color:
+    rgba(255,255,255,.36);
+
+  font-size: 6px;
+
+  font-weight: 900;
+
+  letter-spacing: .17em;
+}
+
+
+.audit67__whatsappCopy small i {
+  width: 5px;
+  height: 5px;
+
+  border-radius: 50%;
+
+  background:
+    var(--audit-accent);
+
+  box-shadow:
+    0 0 8px rgba(242,43,34,.48);
+}
+
+
+.audit67__whatsappCopy strong {
+  white-space: nowrap;
+
+  color:
+    rgba(255,255,255,.94);
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: -.01em;
+}
+
+
+/* ----------------------------------------------------------
+   ARROW
+   ---------------------------------------------------------- */
+
+.audit67__whatsappArrow {
+  position: absolute;
+
+  right: 17px;
+
+  color:
+    rgba(255,255,255,.62);
+
+  font-size: 15px;
+
+  opacity: 0;
+
+  transform:
+    translate3d(-8px,5px,0);
+
+  transition:
+    opacity .3s ease .12s,
+    transform .5s cubic-bezier(.22,1,.36,1) .12s;
+}
+
+
+/* ----------------------------------------------------------
+   PULSE
+   ---------------------------------------------------------- */
+
+.audit67__whatsappPulse {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 36px;
+  height: 36px;
+
+  border:
+    1px solid rgba(242,43,34,.26);
+
+  border-radius: 50%;
+
+  transform:
+    translate(-50%,-50%);
+
+  animation:
+    audit67-whatsapp-pulse
+    3.2s ease-out infinite;
+
+  pointer-events: none;
+}
+
+
+@keyframes audit67-whatsapp-pulse {
+
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(-50%,-50%)
+      scale(.72);
+  }
+
+  20% {
+    opacity: .5;
+  }
+
+  75% {
+    opacity: 0;
+
+    transform:
+      translate(-50%,-50%)
+      scale(1.55);
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   DESKTOP HOVER
+   ---------------------------------------------------------- */
+
+@media (hover:hover) and (pointer:fine) {
+
+  .audit67__whatsapp:hover {
+    width: 258px;
+
+    transform:
+      translate3d(0,-4px,0);
+
+    border-color:
+      rgba(242,43,34,.72);
+
+    background:
+      rgba(13,9,10,.96);
+
+    box-shadow:
+      0 24px 72px rgba(0,0,0,.40),
+      0 0 0 1px rgba(242,43,34,.08) inset,
+      0 0 38px rgba(242,43,34,.10);
+  }
+
+
+  .audit67__whatsapp:hover
+  .audit67__whatsappIcon {
+    color: #fff;
+
+    transform:
+      scale(1.10)
+      rotate(-7deg);
+  }
+
+
+  .audit67__whatsapp:hover
+  .audit67__whatsappCopy {
+    opacity: 1;
+
+    transform:
+      translate3d(0,0,0);
+  }
+
+
+  .audit67__whatsapp:hover
+  .audit67__whatsappArrow {
+    opacity: 1;
+
+    transform:
+      translate3d(0,0,0);
+  }
+
+
+  .audit67__whatsapp:hover
+  .audit67__whatsappPulse {
+    animation: none;
+
+    opacity: 0;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   INITIAL ENTRANCE
+   ---------------------------------------------------------- */
+
+.audit67--motion-ready
+.audit67__whatsapp {
+  opacity: 0;
+
+  transform:
+    translate3d(0,22px,0)
+    scale(.88);
+}
+
+
+.audit67--entered
+.audit67__whatsapp {
+  animation:
+    audit67-whatsapp-enter
+    .85s cubic-bezier(.22,1,.36,1)
+    1.15s both;
+}
+
+
+@keyframes audit67-whatsapp-enter {
+
+  to {
+    opacity: 1;
+
+    transform:
+      translate3d(0,0,0)
+      scale(1);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .audit67__whatsapp {
+    right: 14px;
+    bottom: 14px;
+
+    width: 54px;
+    height: 54px;
+
+    border-color:
+      rgba(242,43,34,.52);
+
+    background:
+      rgba(9,9,10,.94);
+  }
+
+
+  .audit67__whatsappIcon {
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+  }
+
+
+  .audit67__whatsappCopy,
+  .audit67__whatsappArrow {
+    display: none;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .audit67__whatsapp,
+  .audit67__whatsappIcon,
+  .audit67__whatsappCopy,
+  .audit67__whatsappArrow,
+  .audit67__whatsappPulse {
+    animation:
+      none !important;
+
+    transition:
+      none !important;
+
+    transform:
+      none !important;
+  }
+
+
+  .audit67__whatsapp {
+    opacity:
+      1 !important;
+  }
+}

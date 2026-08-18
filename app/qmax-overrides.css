@@ -4201,3 +4201,238 @@ body {
     top: 100% !important;
   }
 }
+
+/* ==========================================================
+   QMAX V68.5 - SIGNATURE RAIL SUBTLE
+   Mantem a rail pequena e elegante, apenas mais legivel.
+   NAO altera margens ou grid da pagina.
+   ========================================================== */
+
+@media (min-width: 1181px) {
+
+  .qmax-signature-rail {
+    left: 18px !important;
+    width: 92px !important;
+
+    opacity: .94 !important;
+
+    z-index: 65 !important;
+  }
+
+  .qmax-signature-rail::before {
+    opacity: .7 !important;
+  }
+
+  .qmax-signature-rail__label {
+    opacity: .72 !important;
+
+    font-size: 8px !important;
+    letter-spacing: .14em !important;
+  }
+
+  .qmax-signature-rail__items {
+    gap: 7px !important;
+  }
+
+  .qmax-signature-rail__items a {
+    min-height: 30px !important;
+
+    grid-template-columns:
+      20px
+      20px
+      minmax(0, 1fr) !important;
+
+    gap: 2px !important;
+
+    opacity: .62;
+
+    transition:
+      opacity .25s ease,
+      transform .25s ease !important;
+  }
+
+  .qmax-signature-rail__items a:hover,
+  .qmax-signature-rail__items a.active {
+    opacity: 1 !important;
+  }
+
+  .qmax-signature-rail__items a:hover {
+    transform: translateX(2px);
+  }
+
+  .qmax-signature-rail__items a > span {
+    font-size: 8px !important;
+    font-weight: 800 !important;
+  }
+
+  .qmax-signature-rail__items a > strong {
+    font-size: 8px !important;
+    font-weight: 750 !important;
+
+    max-width: 48px !important;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .qmax-signature-rail__items a > i {
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  .qmax-signature-rail__items a.active > i {
+    width: 18px !important;
+    height: 6px !important;
+
+    background: #ef197d !important;
+    border-color: #ef197d !important;
+
+    box-shadow:
+      0 0 10px rgba(239,25,125,.32) !important;
+  }
+}
+
+/* tablet/mobile continuam sem a rail */
+
+@media (max-width: 1180px) {
+  .qmax-signature-rail {
+    display: none !important;
+  }
+}
+
+/* =========================================================
+   QMAX V68.6 - PRODUCTS FOOTER RIGHT
+   Padroniza navegacao de produtos no lado direito.
+   ========================================================= */
+
+@media (min-width: 821px) {
+
+  #produtos .products5__footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+
+    width: 100% !important;
+    max-width: none !important;
+
+    margin-left: auto !important;
+    margin-right: 0 !important;
+
+    gap: 18px !important;
+  }
+
+  #produtos .products5__counter {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+
+    width: auto !important;
+    margin: 0 !important;
+
+    gap: 10px !important;
+  }
+
+  #produtos .products5__controls {
+    display: flex !important;
+    align-items: center !important;
+
+    width: auto !important;
+    margin: 0 !important;
+
+    gap: 8px !important;
+  }
+
+  #produtos .products5__controls button {
+    flex: 0 0 auto !important;
+  }
+}
+
+@media (max-width: 820px) {
+
+  #produtos .products5__footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+
+    width: calc(100% - 32px) !important;
+    max-width: 680px !important;
+
+    margin-left: auto !important;
+    margin-right: auto !important;
+
+    gap: 12px !important;
+  }
+
+  #produtos .products5__counter {
+    display: flex !important;
+    align-items: center !important;
+
+    width: auto !important;
+    margin: 0 !important;
+
+    gap: 7px !important;
+  }
+
+  #produtos .products5__controls {
+    display: flex !important;
+    align-items: center !important;
+
+    width: auto !important;
+    margin: 0 !important;
+
+    gap: 7px !important;
+  }
+}
+
+@media (max-width: 560px) {
+
+  #produtos .products5__footer {
+    width: calc(100% - 20px) !important;
+    gap: 8px !important;
+  }
+
+  #produtos .products5__counter {
+    gap: 5px !important;
+  }
+
+  #produtos .products5__controls {
+    gap: 5px !important;
+  }
+}
+
+/* =========================================================
+   QMAX V68.7 - PRODUCTS CLEAN NAV
+   Remove setas e mantém somente indicadores do carrossel.
+   ========================================================= */
+
+#produtos .products5__controls {
+  display: none !important;
+}
+
+#produtos .products5__footer {
+  justify-content: flex-end !important;
+}
+
+#produtos .products5__counter {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+/* ==========================================================
+   QMAX V69.5 - GROUP COMPANY NAME EXCEPTION
+   ========================================================== */
+
+#empresas :is(
+  h3,
+  h4,
+  strong,
+  .ecosystem8__brand,
+  .ecosystem8__companyName
+) .qmax-brand-word {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+
+  text-shadow: none !important;
+}

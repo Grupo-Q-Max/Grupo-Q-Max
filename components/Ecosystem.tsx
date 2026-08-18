@@ -1,5 +1,7 @@
 "use client";
 
+import { QmaxInline } from "@/components/QmaxBrandText";
+
 import Image from "next/image";
 import {
   ArrowUpRight,
@@ -90,7 +92,7 @@ const companies = [
     category: "ESTRUTURA & COWORKING",
     color: "#ff8b2a",
     icon: Building2,
-    logo: "/brands/brand-lagerhaus.png",
+    logo: "/brands/lagerhaus-full.png",
     description:
       "Endereço fiscal, comercial e espaços de coworking modernos para apoiar a operação do seu negócio.",
     services: [
@@ -200,7 +202,7 @@ export function Ecosystem() {
                   }}
                 />
 
-                <span>GRUPO Q-MAX</span>
+                <span>GRUPO <QmaxInline>Q-MAX</QmaxInline></span>
               </div>
 
               <span className="ecosystem8__pulse pulse-a" />
@@ -232,7 +234,7 @@ export function Ecosystem() {
                   )}
                 </div>
 
-                <h3>{active.name}</h3>
+                <h3><QmaxInline>{active.name}</QmaxInline></h3>
 
                 <p>{active.description}</p>
 
@@ -256,7 +258,7 @@ export function Ecosystem() {
                   </a>
                 ) : (
                   <a href="#contato">
-                    Falar com a Q-Max
+                    Falar com a <QmaxInline>Q-Max</QmaxInline>
                     <ArrowUpRight size={17} />
                   </a>
                 )}
@@ -265,7 +267,7 @@ export function Ecosystem() {
         </div>
 
         <div className="ecosystem8__footer">
-          <span>ECOSSISTEMA EMPRESARIAL Q-MAX</span>
+          <span>ECOSSISTEMA EMPRESARIAL <QmaxInline>Q-MAX</QmaxInline></span>
 
           <div>
             {companies.map((company, index) => (

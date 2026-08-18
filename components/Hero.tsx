@@ -1,3 +1,4 @@
+import { QmaxInline } from "@/components/QmaxBrandText";
 import Image from "next/image";
 import { ArrowDown, ArrowRight, Sparkles } from "lucide-react";
 export function Hero() {
@@ -15,15 +16,15 @@ export function Hero() {
         <div className="hero__copy">
           <span className="eyebrow">
             <Sparkles size={14} />
-            ECOSSISTEMA EMPRESARIAL Q-MAX
+            ECOSSISTEMA EMPRESARIAL <QmaxInline>Q-MAX</QmaxInline>
           </span>
 
           <h1>
-            Tecnologia,
+            Tecnologia<span className="qmax-hero-punctuation qmax-hero-punctuation--magenta">,</span>
             <br />
-            <em>Inovação,</em>
+            <em>Inovação<span className="qmax-hero-punctuation qmax-hero-punctuation--white">,</span></em>
             <br />
-            Atitude.
+            Atitude<span className="qmax-hero-punctuation qmax-hero-punctuation--magenta">.</span>
           </h1>
 
           <p>
@@ -39,12 +40,12 @@ export function Hero() {
             </a>
 
             <a href="#sobre" className="button button--ghost">
-              Conheça o Grupo Q-Max
+              Conheça o Grupo <QmaxInline>Q-Max</QmaxInline>
             </a>
           </div>
 
           <div className="hero21__signature" aria-hidden="true">
-            <span>Q-MAX</span>
+            <span><QmaxInline>Q-MAX</QmaxInline></span>
             <i />
             <small>QUALIDADE / QUALIFICAÇÃO / INOVAÇÃO</small>
           </div>

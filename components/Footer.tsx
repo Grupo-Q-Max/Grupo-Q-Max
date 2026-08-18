@@ -1,5 +1,7 @@
 "use client";
 
+import { QmaxInline } from "@/components/QmaxBrandText";
+
 import type { MouseEvent } from "react";
 
 import Image from "next/image";
@@ -196,7 +198,7 @@ export function Footer() {
       </div>
 
       <div className="container finish-footer__bottom">
-        <span>© 2026 Grupo Q-Max.</span>
+        <span>© 2026 Grupo <QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span></span>
 
         <div>
           <span>São Bernardo do Campo · SP</span>

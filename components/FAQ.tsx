@@ -1,5 +1,7 @@
 "use client";
 
+import { QmaxInline } from "@/components/QmaxBrandText";
+
 import { useState } from "react";
 import {
   ArrowUpRight,
@@ -55,7 +57,7 @@ export function FAQ() {
           </div>
 
           <p>
-            Respostas rápidas para entender como o ecossistema Q-Max
+            Respostas rápidas para entender como o ecossistema{" "}<QmaxInline>Q-Max</QmaxInline>
             pode se conectar ao seu negócio.
           </p>
         </div>
@@ -82,7 +84,7 @@ export function FAQ() {
                     {String(index + 1).padStart(2, "0")}
                   </span>
 
-                  <strong>{item.question}</strong>
+                  <strong><QmaxInline>{item.question}</QmaxInline></strong>
 
                   <ChevronDown
                     size={20}
@@ -96,7 +98,7 @@ export function FAQ() {
                   role="region"
                   aria-hidden={!open}
                 >
-                  <p>{item.answer}</p>
+                  <p><QmaxInline>{item.answer}</QmaxInline></p>
                 </div>
               </button>
             );
@@ -113,13 +115,13 @@ export function FAQ() {
             </h3>
 
             <p>
-              Fale com a Q-Max e descubra quais empresas e soluções
+              Fale com a <QmaxInline>Q-Max</QmaxInline> e descubra quais empresas e soluções
               fazem sentido para o seu momento.
             </p>
           </div>
 
           <a href="#contato">
-            Fale com a Q-Max
+            Fale com a <QmaxInline>Q-Max</QmaxInline>
             <ArrowUpRight size={18} />
           </a>
         </div>

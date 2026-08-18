@@ -1,0 +1,447 @@
+/* ==========================================================
+   Q-MAX BRAND TYPOGRAPHY SYSTEM
+   Grupo Q-Max: assinatura institucional magenta
+   ========================================================== */
+
+:root {
+  --qmax-magenta: #ef197d;
+  --qmax-brand-white: #ffffff;
+}
+
+/* ----------------------------------------------------------
+   Q-MAX
+   Toda representação textual institucional da marca
+   ---------------------------------------------------------- */
+
+.qmax-brand-word {
+  color: var(--qmax-magenta) !important;
+}
+
+/* ----------------------------------------------------------
+   TEXTO BRANCO
+   Pontuação -> magenta
+   ---------------------------------------------------------- */
+
+.qmax-accent-text--white {
+  color: var(--qmax-brand-white);
+}
+
+.qmax-accent-text--white > .qmax-punctuation {
+  color: var(--qmax-magenta) !important;
+}
+
+/* ----------------------------------------------------------
+   TEXTO MAGENTA
+   Pontuação -> branca
+   ---------------------------------------------------------- */
+
+.qmax-accent-text--magenta {
+  color: var(--qmax-magenta);
+}
+
+.qmax-accent-text--magenta > .qmax-punctuation {
+  color: var(--qmax-brand-white) !important;
+}
+
+/* ----------------------------------------------------------
+   USO DIRETO
+   ---------------------------------------------------------- */
+
+.qmax-text-white {
+  color: var(--qmax-brand-white) !important;
+}
+
+.qmax-text-white .qmax-punctuation {
+  color: var(--qmax-magenta) !important;
+}
+
+.qmax-text-magenta {
+  color: var(--qmax-magenta) !important;
+}
+
+.qmax-text-magenta .qmax-punctuation {
+  color: var(--qmax-brand-white) !important;
+}
+
+/* ----------------------------------------------------------
+   HEADER DO ECOSSISTEMA
+   Q-Max sempre magenta
+   ---------------------------------------------------------- */
+
+.qeh__qmaxText,
+.qeh__qmaxText strong,
+.qeh__qmaxText span {
+  color: var(--qmax-magenta) !important;
+}
+
+/* ----------------------------------------------------------
+   ACABAMENTO
+   ---------------------------------------------------------- */
+
+.qmax-brand-word,
+.qmax-punctuation {
+  transition:
+    color .25s ease,
+    opacity .25s ease;
+}
+
+/* ==========================================================
+   QMAX V67.3 - VISUAL BRAND LAYER
+   Identidade visual compartilhada do ecossistema
+   ========================================================== */
+
+/* ----------------------------------------------------------
+   TOKENS
+   ---------------------------------------------------------- */
+
+:root {
+  --qmax-magenta: #ef197d;
+  --qmax-magenta-bright: #ff2b91;
+  --qmax-magenta-soft: rgba(239, 25, 125, .14);
+  --qmax-magenta-glow: rgba(239, 25, 125, .34);
+}
+
+/* ----------------------------------------------------------
+   MARCA
+   ---------------------------------------------------------- */
+
+.qmax-brand-word,
+.qeh__qmaxText {
+  color: var(--qmax-magenta) !important;
+  font-weight: inherit;
+}
+
+/* ----------------------------------------------------------
+   HEADER SHARED
+   ---------------------------------------------------------- */
+
+.qeh__qmaxText {
+  position: relative;
+  display: inline-block;
+}
+
+.qeh__qmaxText::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--qmax-magenta),
+    transparent
+  );
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform .35s ease;
+}
+
+.qeh__qmaxText:hover::after {
+  transform: scaleX(1);
+}
+
+/* ----------------------------------------------------------
+   HERO / ASSINATURAS DO GRUPO
+   ---------------------------------------------------------- */
+
+.hero21__signature > span {
+  color: var(--qmax-magenta) !important;
+  text-shadow:
+    0 0 24px rgba(239,25,125,.18);
+}
+
+.hero21__signature > i {
+  background:
+    linear-gradient(
+      90deg,
+      var(--qmax-magenta),
+      rgba(239,25,125,.08)
+    ) !important;
+}
+
+/* ----------------------------------------------------------
+   ECOSSISTEMA
+   ---------------------------------------------------------- */
+
+.ecosystem8__footer > span {
+  color: var(--qmax-magenta) !important;
+}
+
+.ecosystem8__brand span {
+  transition:
+    color .3s ease,
+    text-shadow .3s ease;
+}
+
+/* ----------------------------------------------------------
+   PRODUTOS
+   ---------------------------------------------------------- */
+
+.products5__floating--top > span,
+.products5__navigation strong {
+  transition:
+    color .3s ease,
+    transform .3s ease;
+}
+
+/* ----------------------------------------------------------
+   FOOTER / CONTATO
+   ---------------------------------------------------------- */
+
+.finish-footer__bottom .qmax-brand-word,
+.finish-contact__copy .qmax-brand-word {
+  color: var(--qmax-magenta) !important;
+}
+
+/* ----------------------------------------------------------
+   PONTUACAO INVERTIDA
+   Branco -> pontuacao magenta
+   Magenta -> pontuacao branca
+   ---------------------------------------------------------- */
+
+.qmax-text-white > .qmax-punctuation,
+.qmax-accent-text--white > .qmax-punctuation {
+  color: var(--qmax-magenta) !important;
+}
+
+.qmax-text-magenta > .qmax-punctuation,
+.qmax-accent-text--magenta > .qmax-punctuation {
+  color: #ffffff !important;
+}
+
+/* ----------------------------------------------------------
+   MICRO INTERACTION
+   ---------------------------------------------------------- */
+
+.qmax-brand-word {
+  position: relative;
+  display: inline-block;
+  transition:
+    color .25s ease,
+    text-shadow .25s ease,
+    transform .25s ease;
+}
+
+a:hover .qmax-brand-word,
+button:hover .qmax-brand-word {
+  color: var(--qmax-magenta-bright) !important;
+  text-shadow:
+    0 0 18px var(--qmax-magenta-glow);
+}
+
+/* ----------------------------------------------------------
+   ACESSIBILIDADE
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .qmax-brand-word,
+  .qeh__qmaxText,
+  .qeh__qmaxText::after {
+    transition: none !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V67.7 - GROUP TYPOGRAPHIC SIGNATURE
+   Texto branco -> pontuacao magenta
+   Texto magenta -> pontuacao branca
+   ========================================================== */
+
+.qmax-text-white,
+.qmax-accent-text--white {
+  color: #ffffff !important;
+}
+
+.qmax-text-white > .qmax-punctuation,
+.qmax-text-white .qmax-punctuation,
+.qmax-accent-text--white > .qmax-punctuation,
+.qmax-accent-text--white .qmax-punctuation {
+  color: var(--qmax-magenta) !important;
+}
+
+.qmax-text-magenta,
+.qmax-accent-text--magenta,
+.qmax-brand-word,
+.qeh__qmaxText {
+  color: var(--qmax-magenta) !important;
+}
+
+.qmax-text-magenta > .qmax-punctuation,
+.qmax-text-magenta .qmax-punctuation,
+.qmax-accent-text--magenta > .qmax-punctuation,
+.qmax-accent-text--magenta .qmax-punctuation,
+.qmax-brand-word > .qmax-punctuation {
+  color: #ffffff !important;
+}
+
+/* A marca textual Q-Max nunca perde o magenta */
+.qmax-brand-word,
+.qeh__qmaxText,
+.qeh__qmaxText strong,
+.qeh__qmaxText span:not(.qmax-punctuation) {
+  color: var(--qmax-magenta) !important;
+}
+
+/* Pontuacao ganha acabamento mais preciso */
+.qmax-punctuation {
+  display: inline;
+  font: inherit;
+  line-height: inherit;
+  text-shadow: none;
+  transition:
+    color .28s ease,
+    text-shadow .28s ease,
+    opacity .28s ease;
+}
+
+/* Micro brilho somente em destaque magenta */
+.qmax-text-magenta:hover .qmax-punctuation,
+.qmax-accent-text--magenta:hover .qmax-punctuation {
+  text-shadow: 0 0 16px rgba(255,255,255,.16);
+}
+
+/* ==========================================================
+   QMAX V67.8 - STRICT PUNCTUATION
+   Linha branca  -> pontuacao magenta
+   Linha magenta -> pontuacao branca
+   ========================================================== */
+
+.qmax-hero-punctuation,
+.qmax-story-punctuation {
+  display: inline !important;
+  font: inherit !important;
+  line-height: inherit !important;
+  letter-spacing: inherit !important;
+  text-shadow: none !important;
+}
+
+/* BRANCO -> MAGENTA */
+
+.qmax-hero-punctuation--magenta,
+.qmax-story-punctuation--magenta {
+  color: #ef197d !important;
+  -webkit-text-fill-color: #ef197d !important;
+}
+
+/* MAGENTA -> BRANCO */
+
+.qmax-hero-punctuation--white,
+.qmax-story-punctuation--white {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Q-Max textual continua institucionalmente magenta */
+
+.qmax-brand-word,
+.qeh__qmaxText {
+  color: #ef197d !important;
+  -webkit-text-fill-color: #ef197d !important;
+}
+
+/* ==========================================================
+   QMAX V68.2 - SEMANTIC MAGENTA
+   ========================================================== */
+
+.qmax-brand-word {
+  color: #ef197d !important;
+  -webkit-text-fill-color: #ef197d !important;
+}
+
+a .qmax-brand-word,
+button .qmax-brand-word,
+strong .qmax-brand-word,
+small .qmax-brand-word,
+em .qmax-brand-word {
+  color: #ef197d !important;
+  -webkit-text-fill-color: #ef197d !important;
+}
+
+/* texto magenta -> pontuação branca */
+
+em .qmax-punctuation,
+.qmax-text-magenta .qmax-punctuation,
+.qmax-accent-text--magenta .qmax-punctuation {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+/* texto branco -> pontuação magenta */
+
+.qmax-text-white .qmax-punctuation,
+.qmax-accent-text--white .qmax-punctuation {
+  color: #ef197d !important;
+  -webkit-text-fill-color: #ef197d !important;
+}
+
+/* ==========================================================
+   QMAX V69.5 - COMPANY NAME BRAND EXCEPTION
+
+   Q-Max institucional/destaque:
+   magenta.
+
+   Q-Max dentro do nome oficial de uma empresa:
+   NÃO recebe magenta automaticamente.
+   ========================================================== */
+
+/* Header compartilhado / Auditoria */
+
+.qeh__company strong,
+.qeh__company strong .qmax-brand-word {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+
+  text-shadow: none !important;
+}
+
+
+/* Header principal do Grupo */
+
+.nav15__dropdownList a .qmax-brand-word,
+.nav15__mobileSub a .qmax-brand-word {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+
+  text-shadow: none !important;
+}
+
+
+/* Cards/listas de empresas na Home */
+
+#empresas .qmax-brand-word {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+
+  text-shadow: none !important;
+}
+
+
+/*
+   Se uma empresa ganhar uma classe explícita
+   no futuro, esta é a regra canônica.
+*/
+
+.qmax-company-name,
+.qmax-company-name .qmax-brand-word {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+
+  text-shadow: none !important;
+}
+
+
+/* Hover não transforma nome oficial da empresa em magenta */
+
+a:hover .qmax-company-name .qmax-brand-word,
+button:hover .qmax-company-name .qmax-brand-word,
+.qeh__company:hover .qmax-brand-word,
+.nav15__dropdownList a:hover .qmax-brand-word,
+.nav15__mobileSub a:hover .qmax-brand-word {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+
+  text-shadow: none !important;
+}

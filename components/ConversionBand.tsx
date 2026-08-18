@@ -1,3 +1,4 @@
+import { QmaxInline } from "@/components/QmaxBrandText";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 
 const areas = [
@@ -21,7 +22,7 @@ export function ConversionBand() {
           <div className="conversion18__copy">
             <span className="eyebrow">
               <Sparkles size={13} />
-              GRUPO Q-MAX
+              GRUPO <QmaxInline>Q-MAX</QmaxInline>
             </span>
 
             <h2>
@@ -48,7 +49,7 @@ export function ConversionBand() {
             </div>
 
             <a href="#contato">
-              <span>Fale com a Q-Max</span>
+              <span>Fale com a <QmaxInline>Q-Max</QmaxInline></span>
               <ArrowUpRight size={18} />
             </a>
           </div>

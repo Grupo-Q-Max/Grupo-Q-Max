@@ -144,7 +144,6 @@ function sendEvent(data: QmaxEvent) {
   );
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[QMAX analytics]", data);
   }
 }
 

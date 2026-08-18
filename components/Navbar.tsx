@@ -1,5 +1,7 @@
 "use client";
 
+import { QmaxInline } from "@/components/QmaxBrandText";
+
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
@@ -367,7 +369,7 @@ export function Navbar() {
 
                     <div>
                       <strong>
-                        {product.name}
+                        <QmaxInline>{product.name}</QmaxInline>
                       </strong>
 
                       <small>
@@ -398,7 +400,7 @@ export function Navbar() {
           href="#contato"
           className="nav15__cta"
         >
-          <span>Fale com a Q-Max</span>
+          <span>Fale com a <QmaxInline>Q-Max</QmaxInline></span>
           <ArrowUpRight size={16} />
         </a>
 
@@ -431,7 +433,7 @@ export function Navbar() {
         <div className="nav15__mobileInner">
           <div className="nav15__mobileTop">
             <span>MENU</span>
-            <small>GRUPO Q-MAX</small>
+            <small>GRUPO <QmaxInline>Q-MAX</QmaxInline></small>
           </div>
 
           <a
@@ -531,7 +533,7 @@ export function Navbar() {
                   )
                 }
               >
-                {product.name}
+                <QmaxInline>{product.name}</QmaxInline>
               </a>
             ))}
           </div>
@@ -549,7 +551,7 @@ export function Navbar() {
             onClick={closeMenu}
             className="nav15__mobileCta"
           >
-            Fale com a Q-Max
+            Fale com a <QmaxInline>Q-Max</QmaxInline>
             <ArrowUpRight size={17} />
           </a>
         </div>

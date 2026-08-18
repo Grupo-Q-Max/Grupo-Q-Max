@@ -1,3 +1,4 @@
+import { QmaxInline } from "@/components/QmaxBrandText";
 import {
   ArrowDownRight,
   Eye,
@@ -50,11 +51,11 @@ export function Story() {
             </span>
 
             <h2>
-              Qualidade.
+              Qualidade<span className="qmax-story-punctuation qmax-story-punctuation--magenta">.</span>
               <br />
-              Qualificação.
+              Qualificação<span className="qmax-story-punctuation qmax-story-punctuation--magenta">.</span>
               <br />
-              <em>Um Q de inovação.</em>
+              <em>Um Q de inovação<span className="qmax-story-punctuation qmax-story-punctuation--white">.</span></em>
             </h2>
           </div>
 
@@ -109,7 +110,7 @@ export function Story() {
             </div>
 
             <p>
-              Missão, visão e valores definem como o Grupo Q-Max estrutura
+              Missão, visão e valores definem como o Grupo <QmaxInline>Q-Max</QmaxInline> estrutura
               relações, soluções e decisões dentro do seu ecossistema.
             </p>
           </header>
@@ -165,7 +166,7 @@ export function Story() {
               <h3>
                 O jeito
                 <br />
-                <em>Q-Max de ser.</em>
+                <em><QmaxInline>Q-Max</QmaxInline> de ser<span className="qmax-punctuation">.</span></em>
               </h3>
             </div>
 
@@ -230,7 +231,7 @@ export function Story() {
             </h2>
 
             <p>
-              O Grupo Q-Max declara compromisso com práticas ambientais,
+              O Grupo <QmaxInline>Q-Max</QmaxInline> declara compromisso com práticas ambientais,
               sociais e de governança para desenvolver negócios responsáveis
               e gerar valor compartilhado.
             </p>

@@ -1,3 +1,4 @@
+import { QmaxInline } from "@/components/QmaxBrandText";
 import { DeferredGoogleMap } from "./DeferredGoogleMap";
 import {
   ArrowUpRight,
@@ -32,7 +33,7 @@ export function Contact() {
             </h2>
 
             <p>
-              O Grupo Q-Max conecta diferentes especialidades para apoiar
+              O Grupo <QmaxInline>Q-Max</QmaxInline> conecta diferentes especialidades para apoiar
               negócios com mais estrutura, clareza e capacidade de execução.
             </p>
 
@@ -40,7 +41,7 @@ export function Contact() {
               className="finish-contact__primary"
               href="mailto:contato@grupoqmax.com.br"
             >
-              Fale com a Q-Max
+              Fale com a <QmaxInline>Q-Max</QmaxInline>
               <ArrowUpRight size={18} />
             </a>
           </div>
@@ -99,7 +100,7 @@ export function Contact() {
             </span>
 
             <h3>
-              Venha conhecer a <em>Q-Max.</em>
+              Venha conhecer a <em><QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span></em>
             </h3>
 
             <p>
@@ -130,7 +131,7 @@ export function Contact() {
             <span className="contact42__mapDot" />
 
             <div>
-              <small>GRUPO Q-MAX</small>
+              <small>GRUPO <QmaxInline>Q-MAX</QmaxInline></small>
               <strong>São Bernardo do Campo</strong>
             </div>
           </div>

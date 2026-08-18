@@ -1,0 +1,833 @@
+.qeh {
+  --qeh-magenta: #ef197d;
+  --qeh-accent: #ef197d;
+
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+
+  height: 76px;
+
+  color: #fff;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(5,5,5,.97),
+      rgba(5,5,5,.91)
+    );
+
+  border-bottom:
+    1px solid rgba(255,255,255,.09);
+
+  box-shadow:
+    0 16px 45px rgba(0,0,0,.18);
+
+  backdrop-filter:
+    blur(22px)
+    saturate(135%);
+}
+
+.qeh *,
+.qeh *::before,
+.qeh *::after {
+  box-sizing: border-box;
+}
+
+.qeh__inner {
+  width: min(1440px, calc(100% - 64px));
+  height: 76px;
+
+  margin: 0 auto;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(150px,1fr)
+    auto
+    minmax(150px,1fr);
+
+  align-items: center;
+
+  gap: 34px;
+}
+
+.qeh__brand {
+  width: fit-content;
+  height: 76px;
+
+  display: flex;
+  align-items: center;
+}
+
+.qeh__brand img {
+  width: auto;
+  max-width: 126px;
+  height: 46px;
+
+  object-fit: contain;
+}
+
+.qeh__desktop {
+  height: 76px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 34px;
+}
+
+.qeh__desktop > a,
+.qeh__item > button {
+  height: 76px;
+
+  border: 0;
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+
+  gap: 6px;
+
+  position: relative;
+
+  background: transparent;
+
+  color: rgba(255,255,255,.64);
+
+  text-decoration: none;
+
+  font: inherit;
+  font-size: 12px;
+
+  cursor: pointer;
+
+  transition:
+    color .25s ease;
+}
+
+.qeh__desktop > a::after,
+.qeh__item > button::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  right: 100%;
+  bottom: 0;
+
+  height: 2px;
+
+  background:
+    var(--qeh-accent);
+
+  transition:
+    right .3s ease;
+}
+
+.qeh__desktop > a:hover,
+.qeh__item:hover > button,
+.qeh__item:focus-within > button {
+  color: #fff;
+}
+
+.qeh__desktop > a:hover::after,
+.qeh__item:hover > button::after,
+.qeh__item:focus-within > button::after {
+  right: 0;
+}
+
+/* ---------------------------------------------------------
+   Q-MAX MAGENTA
+   --------------------------------------------------------- */
+
+.qeh__qmaxText {
+  color:
+    var(--qeh-magenta);
+
+  font-weight: 800;
+}
+
+/* ---------------------------------------------------------
+   DROPDOWN
+   --------------------------------------------------------- */
+
+.qeh__item {
+  height: 76px;
+
+  position: relative;
+
+  display: flex;
+  align-items: center;
+}
+
+.qeh__dropdown {
+  min-width: 600px;
+
+  padding: 25px;
+
+  position: absolute;
+
+  top: 76px;
+  left: 50%;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transform:
+    translate(-50%, 14px)
+    scale(.985);
+
+  transform-origin:
+    top center;
+
+  border:
+    1px solid rgba(255,255,255,.10);
+
+  border-radius:
+    0 0 22px 22px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(17,17,18,.98),
+      rgba(7,7,8,.99)
+    );
+
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.56);
+
+  backdrop-filter:
+    blur(28px);
+
+  transition:
+    opacity .24s ease,
+    visibility .24s ease,
+    transform .32s cubic-bezier(.22,1,.36,1);
+}
+
+.qeh__item:hover > .qeh__dropdown,
+.qeh__item:focus-within > .qeh__dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+
+  transform:
+    translate(-50%,0)
+    scale(1);
+}
+
+.qeh__dropdownHead {
+  padding:
+    5px 5px 22px;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.09);
+
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    flex-start;
+
+  gap: 30px;
+}
+
+.qeh__dropdownHead small {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color:
+    var(--qeh-magenta);
+
+  font-size: 8px;
+  font-weight: 900;
+
+  letter-spacing:
+    .18em;
+}
+
+.qeh__dropdownHead strong {
+  font-size: 19px;
+
+  line-height: 1.13;
+
+  letter-spacing:
+    -.025em;
+}
+
+.qeh__dropdownHead svg {
+  color:
+    rgba(255,255,255,.28);
+}
+
+/* ---------------------------------------------------------
+   COMPANIES
+   --------------------------------------------------------- */
+
+.qeh__companyGrid {
+  padding-top: 16px;
+
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 6px;
+}
+
+.qeh__company {
+  min-height: 70px;
+
+  padding:
+    12px 14px;
+
+  border-radius:
+    12px;
+
+  display: grid;
+
+  grid-template-columns:
+    auto
+    1fr
+    auto;
+
+  align-items:
+    center;
+
+  gap: 12px;
+
+  color: #fff;
+
+  text-decoration:
+    none;
+
+  transition:
+    background .25s ease,
+    transform .25s ease;
+}
+
+.qeh__company:hover,
+.qeh__company.active {
+  background:
+    rgba(255,255,255,.045);
+
+  transform:
+    translateX(3px);
+}
+
+.qeh__companyDot {
+  width: 7px;
+  height: 7px;
+
+  border-radius:
+    50%;
+
+  background:
+    var(--company-accent);
+
+  box-shadow:
+    0 0 16px
+    color-mix(
+      in srgb,
+      var(--company-accent) 65%,
+      transparent
+    );
+}
+
+.qeh__company small,
+.qeh__product small {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color:
+    rgba(255,255,255,.36);
+
+  font-size: 7px;
+
+  letter-spacing:
+    .12em;
+}
+
+.qeh__company strong,
+.qeh__product strong {
+  font-size:
+    12px;
+}
+
+/* ---------------------------------------------------------
+   PRODUCTS
+   --------------------------------------------------------- */
+
+.qeh__dropdown--products {
+  min-width:
+    460px;
+}
+
+.qeh__productGrid {
+  padding-top:
+    15px;
+}
+
+.qeh__product {
+  min-height: 72px;
+
+  padding: 13px;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.07);
+
+  display: flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap: 20px;
+
+  color: #fff;
+
+  text-decoration:
+    none;
+
+  transition:
+    padding-left .25s ease,
+    background .25s ease;
+}
+
+.qeh__product:hover {
+  padding-left:
+    18px;
+
+  background:
+    rgba(239,25,125,.045);
+}
+
+/* ---------------------------------------------------------
+   CTA
+   --------------------------------------------------------- */
+
+.qeh__actions {
+  justify-self:
+    end;
+
+  display: flex;
+
+  align-items:
+    center;
+
+  gap: 12px;
+}
+
+.qeh__cta {
+  min-height: 44px;
+
+  padding:
+    0 19px;
+
+  border-radius:
+    999px;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap: 10px;
+
+  background:
+    var(--qeh-accent);
+
+  color: #fff;
+
+  text-decoration:
+    none;
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+
+  box-shadow:
+    0 10px 34px
+    color-mix(
+      in srgb,
+      var(--qeh-accent) 20%,
+      transparent
+    );
+
+  transition:
+    transform .28s ease,
+    box-shadow .28s ease;
+}
+
+.qeh__cta:hover {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 14px 42px
+    color-mix(
+      in srgb,
+      var(--qeh-accent) 30%,
+      transparent
+    );
+}
+
+.qeh__mobileButton {
+  width: 44px;
+  height: 44px;
+
+  display: none;
+
+  border:
+    1px solid rgba(255,255,255,.11);
+
+  border-radius:
+    50%;
+
+  background:
+    rgba(255,255,255,.03);
+
+  color: #fff;
+}
+
+/* ---------------------------------------------------------
+   MOBILE
+   --------------------------------------------------------- */
+
+.qeh__mobile {
+  position: fixed;
+
+  inset:
+    76px 0 0;
+
+  opacity: 0;
+
+  visibility:
+    hidden;
+
+  pointer-events:
+    none;
+
+  background:
+    rgba(5,5,5,.98);
+
+  transform:
+    translateY(-12px);
+
+  transition:
+    opacity .25s ease,
+    visibility .25s ease,
+    transform .35s ease;
+}
+
+.qeh__mobile.active {
+  opacity: 1;
+
+  visibility:
+    visible;
+
+  pointer-events:
+    auto;
+
+  transform:
+    translateY(0);
+}
+
+.qeh__mobileInner {
+  width:
+    min(100% - 32px, 700px);
+
+  margin:
+    0 auto;
+
+  padding:
+    38px 0 70px;
+}
+
+.qeh__mobileInner > a:first-child {
+  display: inline-flex;
+
+  margin-bottom:
+    35px;
+
+  text-decoration:
+    none;
+}
+
+.qeh__mobileSection {
+  padding:
+    24px 0;
+
+  border-top:
+    1px solid rgba(255,255,255,.08);
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap: 5px;
+}
+
+.qeh__mobileSection small {
+  margin-bottom:
+    12px;
+
+  color:
+    rgba(255,255,255,.3);
+
+  font-size:
+    8px;
+
+  letter-spacing:
+    .18em;
+}
+
+.qeh__mobileSection a {
+  padding:
+    10px 0;
+
+  color: #fff;
+
+  text-decoration:
+    none;
+
+  font-size:
+    clamp(23px,7vw,36px);
+
+  font-weight:
+    750;
+
+  letter-spacing:
+    -.04em;
+}
+
+.qeh__mobileCta {
+  min-height:
+    56px;
+
+  margin-top:
+    28px;
+
+  padding:
+    0 22px;
+
+  border-radius:
+    999px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap: 12px;
+
+  background:
+    var(--qeh-accent);
+
+  color: #fff;
+
+  text-decoration:
+    none;
+
+  font-weight:
+    800;
+}
+
+@media (max-width: 980px) {
+
+  .qeh {
+    height:
+      68px;
+  }
+
+  .qeh__inner {
+    width:
+      min(100% - 32px, 1440px);
+
+    height:
+      68px;
+
+    grid-template-columns:
+      1fr auto;
+  }
+
+  .qeh__brand {
+    height:
+      68px;
+  }
+
+  .qeh__brand img {
+    max-width:
+      105px;
+
+    height:
+      42px;
+  }
+
+  .qeh__desktop {
+    display:
+      none;
+  }
+
+  .qeh__cta {
+    display:
+      none;
+  }
+
+  .qeh__mobileButton {
+    display:
+      grid;
+
+    place-items:
+      center;
+  }
+
+  .qeh__mobile {
+    inset:
+      68px 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .qeh *,
+  .qeh *::before,
+  .qeh *::after {
+    transition-duration:
+      .01ms !important;
+
+    animation-duration:
+      .01ms !important;
+  }
+}
+
+/* ==========================================================
+   QMAX V69.3 - HEADER HEIGHT HARD RESET
+   Corrige faixa vertical excessiva do header compartilhado.
+   ========================================================== */
+
+@media (min-width: 981px) {
+
+  .qeh {
+    height: 76px !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+
+    display: block !important;
+
+    overflow: visible !important;
+  }
+
+  .qeh__inner {
+    height: 76px !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+
+    align-items: center !important;
+  }
+
+  .qeh__brand,
+  .qeh__desktop,
+  .qeh__item,
+  .qeh__actions {
+    height: 76px !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+
+    align-items: center !important;
+  }
+
+  .qeh__brand {
+    display: flex !important;
+  }
+
+  .qeh__desktop {
+    display: flex !important;
+  }
+
+  .qeh__actions {
+    display: flex !important;
+  }
+
+  .qeh__desktop > a,
+  .qeh__item > button {
+    height: 76px !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .qeh__brand img {
+    max-height: 46px !important;
+    height: 46px !important;
+    width: auto !important;
+
+    margin: 0 !important;
+  }
+
+  .qeh__cta {
+    min-height: 44px !important;
+    height: 44px !important;
+    max-height: 44px !important;
+
+    margin: 0 !important;
+  }
+}
+
+/* ==========================================================
+   AUDITORIA - garante que nenhum wrapper externo expanda
+   o header compartilhado
+   ========================================================== */
+
+.audit67 > .qeh {
+  height: 76px !important;
+  min-height: 76px !important;
+  max-height: 76px !important;
+
+  padding-block: 0 !important;
+  margin-block: 0 !important;
+}
+
+.audit67 > .qeh + .audit67__hero {
+  margin-top: 0 !important;
+}
