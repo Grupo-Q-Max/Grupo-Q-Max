@@ -104,19 +104,34 @@ export function Contact() {
             </h3>
 
             <p>
-              R. Frei Gaspar, 941 · São Bernardo do Campo/SP
+              R. Frei Gaspar, 941 · Conjunto 103-105 · Centro, São Bernardo do Campo/SP
             </p>
+            <small style={{ color: "#71717a", fontSize: "0.8rem", display: "block", marginTop: 4 }}>
+              🕒 Horário de Atendimento: Segunda a Sexta das 08h às 18h
+            </small>
           </div>
 
-          <a
-            href="https://www.google.com/maps/search/?api=1&query=R.+Frei+Gaspar,+941,+Sao+Bernardo+do+Campo,+SP"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="contact42__mapButton"
-          >
-            Abrir no Google Maps
-            <span aria-hidden="true">—</span>
-          </a>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=R.+Frei+Gaspar,+941,+Sao+Bernardo+do+Campo,+SP"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="contact42__mapButton"
+            >
+              Google Maps
+              <ArrowUpRight size={15} />
+            </a>
+            <a
+              href="https://waze.com/ul?q=Rua+Frei+Gaspar+941+Sao+Bernardo+do+Campo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="contact42__mapButton"
+              style={{ background: "rgba(255, 255, 255, 0.05)" }}
+            >
+              Waze
+              <ArrowUpRight size={15} />
+            </a>
+          </div>
         </div>
 
         <div className="contact42__mapFrame">

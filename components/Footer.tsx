@@ -216,6 +216,16 @@ export function Footer() {
         </div>
       </div>
 
+      <div className="container" style={{ padding: "16px 0", borderTop: "1px solid rgba(255, 255, 255, 0.05)", borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, fontSize: "0.78rem", color: "#a1a1aa" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span style={{ color: "#14d0c1", fontWeight: 700 }}>🔒 CONFORMIDADE LGPD:</span>
+            <span>Ambiente seguro, governança corporativa e sigilo rigoroso de dados protegidos pela Lei 13.709/18.</span>
+          </span>
+          <span style={{ color: "#71717a" }}>Certificados Digitais & Auditoria Contábil Regular</span>
+        </div>
+      </div>
+
       <div className="container finish-footer__bottom">
         <span>© 2026 Grupo <QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span></span>
 
