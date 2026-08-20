@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { BackToTop } from "@/components/BackToTop";
 import { CountUp } from "@/components/CountUp";
 import "./lagerhaus.css";
 
@@ -286,6 +287,7 @@ export default function LagerhausPage() {
       </footer>
 
       <FloatingWhatsApp />
+      <BackToTop />
     </main>
   );
 }

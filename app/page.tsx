@@ -15,6 +15,7 @@ import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { QuickLeadModal } from "@/components/QuickLeadModal";
+import { BackToTop } from "@/components/BackToTop";
 
 export default function Home() {
   return (
@@ -39,6 +40,7 @@ export default function Home() {
 
       <Footer />
       <FloatingWhatsApp />
+      <BackToTop />
       <QuickLeadModal />
     </>
   );

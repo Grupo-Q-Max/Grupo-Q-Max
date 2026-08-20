@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { BackToTop } from "@/components/BackToTop";
 import { QmaxInline } from "@/components/QmaxBrandText";
 import { CountUp } from "@/components/CountUp";
 import "./technology.css";
@@ -288,6 +289,7 @@ export default function TechnologyPage() {
       </footer>
 
       <FloatingWhatsApp />
+      <BackToTop />
     </main>
   );
 }

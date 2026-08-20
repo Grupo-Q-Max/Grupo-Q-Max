@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { BackToTop } from "@/components/BackToTop";
 import { TaxDiagnosticCalculator } from "@/components/TaxDiagnosticCalculator";
 import { QmaxInline } from "@/components/QmaxBrandText";
 import { CountUp } from "@/components/CountUp";
@@ -296,6 +297,7 @@ export default function ContabilPage() {
       </footer>
 
       <FloatingWhatsApp />
+      <BackToTop />
     </main>
   );
 }

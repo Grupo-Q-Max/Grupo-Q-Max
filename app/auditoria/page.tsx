@@ -19,6 +19,7 @@ import {
 
 import { AuditoriaMotion } from "@/components/AuditoriaMotion";
 import { AuditoriaWhatsApp } from "@/components/AuditoriaWhatsApp";
+import { BackToTop } from "@/components/BackToTop";
 import { QmaxBrandUppercase } from "@/components/QmaxBrandText";
 import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 
@@ -622,6 +623,8 @@ export default function AuditoriaPage() {
           </div>
         </div>
       </footer>
+
+      <BackToTop />
     </main>
   );
 }

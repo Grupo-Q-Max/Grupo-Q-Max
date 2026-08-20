@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { BackToTop } from "@/components/BackToTop";
 import { CountUp } from "@/components/CountUp";
 import "./talents.css";
 
@@ -289,6 +290,7 @@ export default function TalentsPage() {
       </footer>
 
       <FloatingWhatsApp />
+      <BackToTop />
     </main>
   );
 }
