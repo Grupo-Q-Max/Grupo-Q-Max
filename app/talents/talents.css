@@ -1,0 +1,135 @@
+/* Q-MAX TALENTS - DEDICATED THEME (PURPLE / VIOLET) */
+
+.talents-page {
+  background: #060509;
+  color: #f4f4f5;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.talents-hero {
+  position: relative;
+  padding: clamp(120px, 12vw, 180px) 0 clamp(80px, 8vw, 120px);
+  overflow: hidden;
+}
+
+.talents-hero__glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(140px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.talents-hero__glow--purple {
+  top: -100px;
+  right: -50px;
+  background: radial-gradient(circle, rgba(143, 58, 168, 0.22), transparent 70%);
+}
+
+.talents-hero__grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(40px, 6vw, 80px);
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .talents-hero__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.talents-hero__copy h1 {
+  font-size: clamp(2.6rem, 4.5vw, 4.8rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  margin: 20px 0;
+}
+
+.talents-hero__copy h1 em {
+  font-style: italic;
+  background: linear-gradient(135deg, #c084fc 0%, #8f3aa8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.talents-hero__copy p {
+  font-size: clamp(1.05rem, 1.25vw, 1.25rem);
+  color: #a1a1aa;
+  line-height: 1.65;
+  max-width: 580px;
+  margin-bottom: 32px;
+}
+
+.talents-hero__primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #8f3aa8 0%, #6d28d9 100%);
+  color: #ffffff !important;
+  font-weight: 700;
+  border-radius: 9999px;
+  text-decoration: none !important;
+  box-shadow: 0 4px 25px rgba(143, 58, 168, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.talents-hero__primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 35px rgba(143, 58, 168, 0.65);
+}
+
+.talents-hero__card {
+  background: linear-gradient(145deg, rgba(26, 18, 32, 0.85), rgba(12, 10, 18, 0.95));
+  border: 1px solid rgba(143, 58, 168, 0.28);
+  box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(143, 58, 168, 0.15);
+  border-radius: 28px;
+  padding: clamp(28px, 4vw, 44px);
+  backdrop-filter: blur(24px);
+}
+
+.talents-services__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.talents-card {
+  background: rgba(22, 18, 28, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.talents-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(143, 58, 168, 0.45);
+  box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.6), 0 0 25px rgba(143, 58, 168, 0.2);
+}
+
+.talents-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: radial-gradient(circle, rgba(143, 58, 168, 0.28), rgba(143, 58, 168, 0.05));
+  border: 1px solid rgba(143, 58, 168, 0.35);
+  color: #c084fc;
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+}

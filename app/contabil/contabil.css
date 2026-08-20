@@ -1,0 +1,233 @@
+/* Q-MAX CONTÁBIL - DEDICATED THEME (ELECTRIC CYAN) */
+
+.contabil-page {
+  background: #050507;
+  color: #f4f4f5;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.contabil-hero {
+  position: relative;
+  padding: clamp(120px, 12vw, 180px) 0 clamp(80px, 8vw, 120px);
+  overflow: hidden;
+}
+
+.contabil-hero__glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(140px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.contabil-hero__glow--cyan {
+  top: -100px;
+  right: -50px;
+  background: radial-gradient(circle, rgba(20, 208, 193, 0.18), transparent 70%);
+}
+
+.contabil-hero__glow--magenta {
+  bottom: 0;
+  left: -100px;
+  background: radial-gradient(circle, rgba(239, 25, 125, 0.1), transparent 70%);
+}
+
+.contabil-hero__grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(40px, 6vw, 80px);
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .contabil-hero__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contabil-hero__copy h1 {
+  font-size: clamp(2.6rem, 4.5vw, 4.8rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  margin: 20px 0;
+}
+
+.contabil-hero__copy h1 em {
+  font-style: italic;
+  background: linear-gradient(135deg, #14d0c1 0%, #0ab8aa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.contabil-hero__copy p {
+  font-size: clamp(1.05rem, 1.25vw, 1.25rem);
+  color: #a1a1aa;
+  line-height: 1.65;
+  max-width: 580px;
+  margin-bottom: 32px;
+}
+
+.contabil-hero__actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.contabil-hero__primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #14d0c1 0%, #0ab8aa 100%);
+  color: #050507 !important;
+  font-weight: 700;
+  border-radius: 9999px;
+  text-decoration: none !important;
+  box-shadow: 0 4px 25px rgba(20, 208, 193, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.contabil-hero__primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 35px rgba(20, 208, 193, 0.6);
+}
+
+.contabil-hero__ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 26px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  border-radius: 9999px;
+  color: #ffffff !important;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: all 0.3s ease;
+}
+
+.contabil-hero__ghost:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(20, 208, 193, 0.4);
+  transform: translateY(-2px);
+}
+
+.contabil-hero__card {
+  background: linear-gradient(145deg, rgba(20, 24, 28, 0.85), rgba(10, 14, 18, 0.95));
+  border: 1px solid rgba(20, 208, 193, 0.25);
+  box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(20, 208, 193, 0.12);
+  border-radius: 28px;
+  padding: clamp(28px, 4vw, 44px);
+  backdrop-filter: blur(24px);
+  position: relative;
+}
+
+.contabil-hero__cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.contabil-hero__cardHeader span {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: #14d0c1;
+}
+
+.contabil-hero__metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.contabil-hero__metric {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.contabil-hero__metric small {
+  font-size: 0.7rem;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.contabil-hero__metric strong {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 4px;
+}
+
+/* SERVICES SECTION */
+.contabil-services {
+  padding: clamp(80px, 8vw, 130px) 0;
+  position: relative;
+}
+
+.contabil-services__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.contabil-service-card {
+  background: rgba(18, 18, 24, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.contabil-service-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(20, 208, 193, 0.4);
+  box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.6), 0 0 25px rgba(20, 208, 193, 0.15);
+}
+
+.contabil-service-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: radial-gradient(circle, rgba(20, 208, 193, 0.25), rgba(20, 208, 193, 0.05));
+  border: 1px solid rgba(20, 208, 193, 0.35);
+  color: #14d0c1;
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+}
+
+.contabil-service-card h3 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.contabil-service-card p {
+  color: #a1a1aa;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}

@@ -1,0 +1,148 @@
+/* FINORA - DEDICATED THEME (ELECTRIC VIOLET) */
+
+.finora-page {
+  background: #060509;
+  color: #f4f4f5;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.finora-hero {
+  position: relative;
+  padding: clamp(120px, 12vw, 180px) 0 clamp(80px, 8vw, 120px);
+  overflow: hidden;
+}
+
+.finora-hero__glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(140px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.finora-hero__glow--violet {
+  top: -100px;
+  right: -50px;
+  background: radial-gradient(circle, rgba(164, 92, 255, 0.22), transparent 70%);
+}
+
+.finora-hero__glow--magenta {
+  bottom: 0;
+  left: -100px;
+  background: radial-gradient(circle, rgba(239, 25, 125, 0.12), transparent 70%);
+}
+
+.finora-hero__grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(40px, 6vw, 80px);
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .finora-hero__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.finora-hero__copy h1 {
+  font-size: clamp(2.6rem, 4.5vw, 4.8rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  margin: 20px 0;
+}
+
+.finora-hero__copy h1 em {
+  font-style: italic;
+  background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.finora-hero__copy p {
+  font-size: clamp(1.05rem, 1.25vw, 1.25rem);
+  color: #a1a1aa;
+  line-height: 1.65;
+  max-width: 580px;
+  margin-bottom: 32px;
+}
+
+.finora-hero__actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.finora-hero__primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #a45cff 0%, #8530ec 100%);
+  color: #ffffff !important;
+  font-weight: 700;
+  border-radius: 9999px;
+  text-decoration: none !important;
+  box-shadow: 0 4px 25px rgba(164, 92, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.finora-hero__primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 35px rgba(164, 92, 255, 0.65);
+}
+
+.finora-hero__card {
+  background: linear-gradient(145deg, rgba(26, 20, 36, 0.85), rgba(12, 10, 20, 0.95));
+  border: 1px solid rgba(164, 92, 255, 0.28);
+  box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(164, 92, 255, 0.15);
+  border-radius: 28px;
+  padding: clamp(28px, 4vw, 44px);
+  backdrop-filter: blur(24px);
+}
+
+.finora-benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.finora-card {
+  background: rgba(22, 18, 28, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.finora-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(164, 92, 255, 0.45);
+  box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.6), 0 0 25px rgba(164, 92, 255, 0.2);
+}
+
+.finora-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: radial-gradient(circle, rgba(164, 92, 255, 0.28), rgba(164, 92, 255, 0.05));
+  border: 1px solid rgba(164, 92, 255, 0.35);
+  color: #c084fc;
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+}

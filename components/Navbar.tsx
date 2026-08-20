@@ -399,6 +399,10 @@ export function Navbar() {
         <a
           href="#contato"
           className="nav15__cta"
+          onClick={(e) => {
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent("open-qmax-modal"));
+          }}
         >
           <span>Fale com a <QmaxInline>Q-Max</QmaxInline></span>
           <ArrowUpRight size={16} />

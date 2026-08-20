@@ -27,9 +27,9 @@ export function Contact() {
             <h2>
               Grandes movimentos
               <br />
-              começam com uma
+              começam com um
               <br />
-              <em>boa conversa.</em>
+              <em>bom relacionamento.</em>
             </h2>
 
             <p>

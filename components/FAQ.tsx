@@ -111,12 +111,12 @@ export function FAQ() {
 
             <h3>
               Seu negócio não precisa de mais fornecedores.
-              <em> Precisa das conexões certas.</em>
+              <em> Precisa das conexões acertadas.</em>
             </h3>
 
             <p>
-              Fale com a <QmaxInline>Q-Max</QmaxInline> e descubra quais empresas e soluções
-              fazem sentido para o seu momento.
+              Fale com a <QmaxInline>Q-Max</QmaxInline> e descubra qual empresa e solução
+              faz sentido para o seu momento.
             </p>
           </div>
 

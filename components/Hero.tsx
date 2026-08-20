@@ -1,6 +1,7 @@
 import { QmaxInline } from "@/components/QmaxBrandText";
+import { CountUp } from "@/components/CountUp";
 import Image from "next/image";
-import { ArrowDown, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, Building2, Sparkles, Users, Users2 } from "lucide-react";
 export function Hero() {
 
   return (
@@ -71,18 +72,39 @@ export function Hero() {
             />
 
             <div className="hero__badge hero__badge--a">
-              <b>05</b>
-              <span>empresas conectadas</span>
+              <div className="hero__badgeIcon hero__badgeIcon--cyan">
+                <Users size={16} />
+              </div>
+              <div className="hero__badgeText">
+                <b>
+                  <CountUp end={400} prefix="+" duration={1800} />
+                </b>
+                <span>clientes atendidos</span>
+              </div>
             </div>
 
             <div className="hero__badge hero__badge--b">
-              <b>03</b>
-              <span>produtos em destaque</span>
+              <div className="hero__badgeIcon hero__badgeIcon--magenta">
+                <Users2 size={16} />
+              </div>
+              <div className="hero__badgeText">
+                <b>
+                  <CountUp end={32} duration={1500} />
+                </b>
+                <span>colaboradores</span>
+              </div>
             </div>
 
             <div className="hero__badge hero__badge--c">
-              <b>Q</b>
-              <span>inovação com propósito</span>
+              <div className="hero__badgeIcon hero__badgeIcon--violet">
+                <Building2 size={16} />
+              </div>
+              <div className="hero__badgeText">
+                <b>
+                  <CountUp end={5} prefix="0" duration={1200} />
+                </b>
+                <span>empresas conectadas</span>
+              </div>
             </div>
           </div>
         </div>

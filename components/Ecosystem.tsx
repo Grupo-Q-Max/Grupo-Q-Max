@@ -21,7 +21,7 @@ const companies = [
     category: "AUDITORIA & COMPLIANCE",
     color: "#ff315f",
     logo: "/brands/brand-auditoria.png",
-    url: "https://grupoqmax.com.br/auditoria",
+    url: "/auditoria",
     icon: ShieldCheck,
     description:
       "Auditoria moderna e estratégica, com atuação em auditoria independente, controles internos e compliance.",
@@ -39,15 +39,15 @@ const companies = [
     category: "CONTABILIDADE & GESTÃO",
     color: "#14d0c1",
     logo: "/brands/brand-contabil.png",
-    url: "https://www.grupoqmax.com.br/contabil/index.php",
+    url: "/contabil",
     icon: Building2,
     description:
       "Gestão contábil e fiscal completa, com soluções para apoiar conformidade, organização e decisões empresariais.",
     services: [
       "Assessoria Contábil, Fiscal e Trabalhista",
       "Abertura de Empresas",
-      "Terceirização Financeira",
-      "Recuperação Tributária",
+      "Terceirização - BPO",
+      "Planejamento Tributário",
     ],
   },
   {
@@ -57,7 +57,7 @@ const companies = [
     category: "PESSOAS & RH",
     color: "#8f3aa8",
     logo: "/brands/brand-talents.png",
-    url: "https://grupoqmax.com.br/talents/",
+    url: "/talents",
     icon: Users2,
     description:
       "Soluções completas em gestão de pessoas, unindo operação, estratégia e desenvolvimento de talentos.",
@@ -75,14 +75,15 @@ const companies = [
     category: "TECNOLOGIA & DIGITAL",
     color: "#3156ff",
     logo: "/brands/brand-technology.png",
+    url: "/technology",
     icon: Sparkles,
     description:
-      "Estratégias digitais e campanhas personalizadas para aumentar a visibilidade da sua marca.",
+      "Estratégias digitais, programa de indicação e desenvolvimento de ferramentas para acelerar o seu negócio.",
     services: [
       "Estratégias Digitais",
-      "Campanhas Personalizadas",
+      "Programa de Indicação",
       "Visibilidade de Marca",
-      "Integração com o Ecossistema Q-Max",
+      "Desenvolvimento de Ferramentas",
     ],
   },
   {
@@ -93,13 +94,14 @@ const companies = [
     color: "#ff8b2a",
     icon: Building2,
     logo: "/brands/lagerhaus-full.png",
+    url: "/lagerhaus",
     description:
-      "Endereço fiscal, comercial e espaços de coworking modernos para apoiar a operação do seu negócio.",
+      "Endereço fiscal, comercial, armazenagem/estocagem e espaços de coworking modernos para apoiar a operação do seu negócio.",
     services: [
       "Endereço Fiscal",
       "Endereço Comercial",
+      "Armazenagem e Estocagem",
       "Espaços de Coworking",
-      "Estrutura para Negócios",
     ],
   },
 ];

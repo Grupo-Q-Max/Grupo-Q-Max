@@ -26,13 +26,15 @@ const products = [
     icon: MousePointerClick,
     headline: "Indique. Acompanhe. Seja bonificado.",
     description:
-      "Programa de bonificação por indicação conectado a serviços contábeis, tributários, fiscais e trabalhistas.",
+      "Programa de bonificação por indicação: conectando pessoas e negócios, convertendo relacionamento em receita.",
     benefits: [
       "Cashback por serviços contratados",
       "Bônus por propostas enviadas",
       "Plataforma de gestão de indicações",
       "Ganhos em tempo real",
+      "Cancelar e estornar resgate",
     ],
+    url: "https://qxback.com.br",
     interfaceLabel: "GESTÃO DE INDICAÇÕES",
   },
   {
@@ -47,11 +49,11 @@ const products = [
     description:
       "Solução do ecossistema Q-Max para apoiar processos de documentação e certificados digitais.",
     benefits: [
-      "Atendimento especializado",
-      "Suporte em documentação digital",
-      "Certificados digitais simplificados",
-      "Acesso a sistemas governamentais",
+      "Atendimento personalizado",
+      "Documentação digital simplificada",
+      "Certificados digitais",
     ],
+    url: "https://qxsign.com.br",
     interfaceLabel: "DOCUMENTOS DIGITAIS",
   },
   {
@@ -62,15 +64,16 @@ const products = [
     color: "#a45cff",
     logo: "/products/finora-dashboard.png",
     icon: HeartPulse,
-    headline: "Inteligência financeira para clínicas.",
+    headline: "Inteligência financeira para clínicas odontológicas.",
     description:
-      "Gestão contábil e financeira direcionada principalmente a profissionais e clínicas da área da saúde.",
+      "Gestão contábil e financeira direcionada a clínicas odontológicas com foco em planejamento e liberdade profissional.",
     benefits: [
-      "Redução legal de impostos",
+      "Planejamento tributário",
       "Gestão contábil e financeira",
       "Regularização documental",
-      "Foco em profissionais da saúde",
+      "Liberdade profissional",
     ],
+    url: "/finora",
     interfaceLabel: "GESTÃO FINANCEIRA",
   },
 ];
@@ -198,10 +201,21 @@ export function Products() {
                 ))}
               </div>
 
-              <a href="#contato">
-                Quero conhecer {active.name}
-                <ArrowUpRight size={17} />
-              </a>
+              {active.url.startsWith("http") ? (
+                <a
+                  href={active.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Acessar {active.name}
+                  <ArrowUpRight size={17} />
+                </a>
+              ) : (
+                <a href={active.url}>
+                  Quero conhecer {active.name}
+                  <ArrowUpRight size={17} />
+                </a>
+              )}
             </div>
 
             <div className="products5__visual">

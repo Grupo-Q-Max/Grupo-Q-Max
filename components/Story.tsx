@@ -51,11 +51,11 @@ export function Story() {
             </span>
 
             <h2>
-              Qualidade<span className="qmax-story-punctuation qmax-story-punctuation--magenta">.</span>
+              Qualidade.
               <br />
-              Qualificação<span className="qmax-story-punctuation qmax-story-punctuation--magenta">.</span>
+              Qualificação.
               <br />
-              <em>Um Q de inovação<span className="qmax-story-punctuation qmax-story-punctuation--white">.</span></em>
+              <em>Um <span className="qmax-brand-word">Q</span> de inovação.</em>
             </h2>
           </div>
 

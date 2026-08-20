@@ -76,6 +76,25 @@ export function Footer() {
             Tecnologia, inovação e atitude conectando empresas,
             pessoas e soluções.
           </p>
+
+          <div className="finish-footer__quickContact">
+            <a
+              href="https://wa.me/5511912957356"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="finish-footer__quickBtn"
+              aria-label="WhatsApp Grupo Q-Max"
+            >
+              <span>● WhatsApp: (11) 91295-7356</span>
+            </a>
+            <a
+              href="mailto:contato@grupoqmax.com.br"
+              className="finish-footer__quickBtn"
+              aria-label="E-mail Grupo Q-Max"
+            >
+              <span>contato@grupoqmax.com.br</span>
+            </a>
+          </div>
         </div>
 
         <div className="finish-footer__nav">
