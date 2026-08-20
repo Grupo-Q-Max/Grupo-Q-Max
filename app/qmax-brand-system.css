@@ -1654,6 +1654,217 @@ button:hover .qmax-company-name .qmax-brand-word,
   box-shadow: 0 8px 35px rgba(239, 25, 125, 0.6);
 }
 
+/* =========================================================================
+   19. ENLARGED LATERAL DRAWER MENU & GLOBAL TYPOGRAPHY BOOST
+   ========================================================================= */
+
+/* A) EXPANDED LATERAL DRAWER MENU */
+.nav15__mobile,
+.qeh__mobile {
+  width: min(500px, 94vw) !important;
+  background: linear-gradient(180deg, rgba(14, 14, 20, 0.98), rgba(6, 6, 10, 0.99)) !important;
+  backdrop-filter: blur(28px) !important;
+  box-shadow: -15px 0 60px rgba(0, 0, 0, 0.85), -1px 0 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.nav15__mobileInner,
+.qeh__mobileInner {
+  padding: 36px 32px !important;
+  gap: 16px !important;
+}
+
+.nav15__mobileTop,
+.qeh__mobileTop {
+  padding-bottom: 24px !important;
+  margin-bottom: 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.nav15__mobileTop span,
+.qeh__mobileTop span {
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.18em !important;
+  color: #ef197d !important;
+}
+
+.nav15__mobileTop small,
+.qeh__mobileTop small {
+  font-size: 0.88rem !important;
+  color: #a1a1aa !important;
+}
+
+/* Primary Items in Drawer */
+.nav15__mobileInner > a:not(.nav15__mobileCta),
+.nav15__mobileInner > button,
+.qeh__mobileInner > a:not(.qeh__mobileCta),
+.qeh__mobileInner > button {
+  padding: 18px 22px !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.nav15__mobileInner > a:not(.nav15__mobileCta):hover,
+.nav15__mobileInner > button:hover,
+.qeh__mobileInner > a:not(.qeh__mobileCta):hover,
+.qeh__mobileInner > button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(239, 25, 125, 0.4) !important;
+  transform: translateX(4px) !important;
+}
+
+.nav15__mobileInner > a span,
+.nav15__mobileInner > button span,
+.qeh__mobileInner > a span,
+.qeh__mobileInner > button span {
+  font-size: 1.1rem !important;
+  font-weight: 800 !important;
+  color: #ef197d !important;
+}
+
+.nav15__mobileInner > a strong,
+.nav15__mobileInner > button strong,
+.qeh__mobileInner > a strong,
+.qeh__mobileInner > button strong {
+  font-size: 1.4rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: #ffffff !important;
+}
+
+/* Sub-items in Drawer */
+.nav15__mobileSub,
+.qeh__mobileSub {
+  padding: 8px 12px 14px 24px !important;
+  gap: 8px !important;
+}
+
+.nav15__mobileSub a,
+.qeh__mobileSub a {
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+  padding: 12px 18px !important;
+  color: #d4d4d8 !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+.nav15__mobileSub a:hover,
+.qeh__mobileSub a:hover {
+  color: #ffffff !important;
+  background: rgba(239, 25, 125, 0.12) !important;
+  border-color: rgba(239, 25, 125, 0.3) !important;
+}
+
+/* Drawer CTA */
+.nav15__mobileCta,
+.qeh__mobileCta {
+  margin-top: 16px !important;
+  padding: 20px 28px !important;
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 8px 30px rgba(239, 25, 125, 0.45) !important;
+}
+
+/* B) GLOBAL TYPOGRAPHY BOOST (LETRAS MAIORES E MAIS LEGÍVEIS) */
+
+/* Eyebrow & Badges */
+.eyebrow,
+[class*="__eyebrow"],
+.audit67__eyebrowLabel,
+.contact42__eyebrow {
+  font-size: 0.84rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.16em !important;
+  padding: 6px 14px !important;
+}
+
+/* Paragraphs Across All Sections */
+p,
+.qstory__statement p,
+.qstory p,
+.hero p,
+.faq43__answer p,
+.finish-contact__copy p,
+.qmax-comparison__header p,
+.qmax-journey__header p,
+.qmax-calculator__header p,
+.audit67__heroCopy p,
+.contabil-hero__copy p,
+.finora-hero__copy p,
+.talents-hero__copy p,
+.technology-hero__copy p,
+.lagerhaus-hero__copy p {
+  font-size: clamp(1.08rem, 1.2vw, 1.25rem) !important;
+  line-height: 1.75 !important;
+  color: #a8a8b3 !important;
+}
+
+/* Card Descriptions and Text */
+.ecosystem-card p,
+.products5__copy p,
+.contabil-service-card p,
+.finora-card p,
+.talents-card p,
+.technology-card p,
+.lagerhaus-card p,
+.qmax-journey__body p {
+  font-size: 1rem !important;
+  line-height: 1.65 !important;
+}
+
+/* Small Tags, Labels and Sub-indicators */
+small,
+.kicker,
+[class*="__kicker"],
+.qmax-calculator__label span,
+.qmax-calculator__sliderHead span,
+.qmax-comparison__badge,
+.finish-footer__nav strong,
+.finish-footer__bottom span,
+.contabil-hero__metric small,
+.finora-hero__card small,
+.talents-hero__card small,
+.technology-hero__card small,
+.lagerhaus-hero__card small {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Card Titles & Headings */
+.ecosystem-card h3,
+.products5__copy h3,
+.contabil-service-card h3,
+.finora-card h3,
+.talents-card h3,
+.technology-card h3,
+.lagerhaus-card h3,
+.qmax-journey__body h3 {
+  font-size: 1.45rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+}
+
+/* FAQ Questions */
+.faq43__trigger,
+.faq43__trigger span {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+}
+
+/* Footer Links & Navigation */
+.finish-footer__nav a,
+.finish-footer__quickBtn span {
+  font-size: 0.96rem !important;
+  line-height: 1.6 !important;
+}
+
+
 
 
 
