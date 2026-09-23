@@ -7,7 +7,7 @@ const SETTINGS_PATH = path.join(process.cwd(), "data", "settings.json");
 const DEFAULTS = {
   siteName: "Grupo Q-Max",
   tagline: "Tecnologia, Inovação e Atitude",
-  whatsapp: "+55 (11) 91295-7356",
+  whatsapp: "+55 (11) 2897-6514",
   phone: "+55 (11) 2897-6514",
   email: "contato@grupoqmax.com.br",
   address: "R. Frei Gaspar, 941 - Conjunto 103-105, São Bernardo do Campo - SP",

@@ -107,7 +107,7 @@ export default function FinoraPage() {
               </a>
 
               <a
-                href="https://wa.me/5511912957356?text=Olá!%20Tenho%20uma%20clínica%20odontológica%20e%20gostaria%20de%20um%20diagnóstico%20com%20a%20FINORA."
+                href="https://wa.me/551128976514?text=Olá!%20Tenho%20uma%20clínica%20odontológica%20e%20gostaria%20de%20um%20diagnóstico%20com%20a%20FINORA."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="finora-hero__primary"
@@ -224,13 +224,13 @@ export default function FinoraPage() {
 
             <div className="finish-footer__quickContact">
               <a
-                href="https://wa.me/5511912957356"
+                href="https://wa.me/551128976514"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="finish-footer__quickBtn"
                 aria-label="WhatsApp FINORA"
               >
-                <span>● WhatsApp: (11) 91295-7356</span>
+                <span>● WhatsApp: (11) 2897-6514</span>
               </a>
               <a
                 href="mailto:contato@grupoqmax.com.br"

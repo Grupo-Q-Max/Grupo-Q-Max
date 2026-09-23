@@ -100,6 +100,6 @@ export const values = [
 export const contact = {
   email: "contato@grupoqmax.com.br",
   phone: "+55 (11) 2897-6514",
-  whatsapp: "+55 (11) 91295-7356",
+  whatsapp: "+55 (11) 2897-6514",
   address: "R. Frei Gaspar, 941 - Conjunto 103-105, São Bernardo do Campo - SP",
 } as const;

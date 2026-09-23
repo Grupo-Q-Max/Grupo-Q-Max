@@ -1147,7 +1147,7 @@ function SettingsTab({
               type="text"
               value={settings.whatsapp}
               onChange={(e) => update("whatsapp", e.target.value)}
-              placeholder="+55 (11) 91295-7356"
+              placeholder="+55 (11) 2897-6514"
             />
           </label>
           <label>

@@ -105,7 +105,7 @@ export default function LagerhausPage() {
               </a>
 
               <a
-                href="https://wa.me/5511912957356?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20o%20endereço%20fiscal%20e%20armazenagem%20da%20Lagerhaus."
+                href="https://wa.me/551128976514?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20o%20endereço%20fiscal%20e%20armazenagem%20da%20Lagerhaus."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="lagerhaus-hero__primary"
@@ -232,13 +232,13 @@ export default function LagerhausPage() {
 
             <div className="finish-footer__quickContact">
               <a
-                href="https://wa.me/5511912957356"
+                href="https://wa.me/551128976514"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="finish-footer__quickBtn"
                 aria-label="WhatsApp Lagerhaus"
               >
-                <span>● WhatsApp: (11) 91295-7356</span>
+                <span>● WhatsApp: (11) 2897-6514</span>
               </a>
               <a
                 href="mailto:contato@grupoqmax.com.br"

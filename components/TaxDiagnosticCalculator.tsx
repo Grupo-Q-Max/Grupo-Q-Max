@@ -135,7 +135,7 @@ export function TaxDiagnosticCalculator() {
             </div>
 
             <a
-              href={`https://wa.me/5511912957356?text=${whatsappMessage}`}
+              href={`https://wa.me/551128976514?text=${whatsappMessage}`}
               target="_blank"
               rel="noopener noreferrer"
               className="qmax-calculator__cta"

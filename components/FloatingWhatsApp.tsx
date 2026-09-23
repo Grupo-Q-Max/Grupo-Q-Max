@@ -3,7 +3,7 @@
 import { MessageCircle } from "lucide-react";
 
 const WHATSAPP_URL =
-  "https://wa.me/5511912957356?text=Olá%2C%20estou%20no%20site%20do%20Grupo%20Q-Max%20e%20gostaria%20de%20conversar.";
+  "https://wa.me/551128976514?text=Olá%2C%20estou%20no%20site%20do%20Grupo%20Q-Max%20e%20gostaria%20de%20conversar.";
 
 export function FloatingWhatsApp() {
   function handleClick() {

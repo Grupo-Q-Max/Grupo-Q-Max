@@ -104,7 +104,7 @@ export default function TalentsPage() {
               </a>
 
               <a
-                href="https://wa.me/5511912957356?text=Olá!%20Gostaria%20de%20conversar%20com%20a%20equipe%20da%20Q-Max%20Talents."
+                href="https://wa.me/551128976514?text=Olá!%20Gostaria%20de%20conversar%20com%20a%20equipe%20da%20Q-Max%20Talents."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="talents-hero__primary"
@@ -235,13 +235,13 @@ export default function TalentsPage() {
 
             <div className="finish-footer__quickContact">
               <a
-                href="https://wa.me/5511912957356"
+                href="https://wa.me/551128976514"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="finish-footer__quickBtn"
                 aria-label="WhatsApp Q-Max Talents"
               >
-                <span>● WhatsApp: (11) 91295-7356</span>
+                <span>● WhatsApp: (11) 2897-6514</span>
               </a>
               <a
                 href="mailto:contato@grupoqmax.com.br"

@@ -108,7 +108,7 @@ export default function ContabilPage() {
               </a>
 
               <a
-                href="https://wa.me/5511912957356?text=Olá!%20Gostaria%20de%20conversar%20com%20um%20especialista%20da%20Q-Max%20Contábil."
+                href="https://wa.me/551128976514?text=Olá!%20Gostaria%20de%20conversar%20com%20um%20especialista%20da%20Q-Max%20Contábil."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="contabil-hero__ghost"
@@ -241,13 +241,13 @@ export default function ContabilPage() {
 
             <div className="finish-footer__quickContact">
               <a
-                href="https://wa.me/5511912957356"
+                href="https://wa.me/551128976514"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="finish-footer__quickBtn"
                 aria-label="WhatsApp Q-Max Contábil"
               >
-                <span>● WhatsApp: (11) 91295-7356</span>
+                <span>● WhatsApp: (11) 2897-6514</span>
               </a>
               <a
                 href="mailto:contato@grupoqmax.com.br"

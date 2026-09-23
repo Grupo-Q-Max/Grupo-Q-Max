@@ -79,13 +79,13 @@ export function Footer() {
 
           <div className="finish-footer__quickContact">
             <a
-              href="https://wa.me/5511912957356"
+              href="https://wa.me/551128976514"
               target="_blank"
               rel="noopener noreferrer"
               className="finish-footer__quickBtn"
               aria-label="WhatsApp Grupo Q-Max"
             >
-              <span>● WhatsApp: (11) 91295-7356</span>
+              <span>● WhatsApp: (11) 2897-6514</span>
             </a>
             <a
               href="mailto:contato@grupoqmax.com.br"

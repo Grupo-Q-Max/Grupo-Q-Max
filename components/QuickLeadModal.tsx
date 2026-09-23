@@ -45,7 +45,7 @@ export function QuickLeadModal() {
     const text = encodeURIComponent(
       `Olá! Meu nome é ${name || "Visitante"}${companyName ? ` (Empresa: ${companyName})` : ""}. Gostaria de solicitar um diagnóstico com a unidade ${selectedCompany.name} (${selectedCompany.category}).`
     );
-    window.open(`https://wa.me/5511912957356?text=${text}`, "_blank");
+    window.open(`https://wa.me/551128976514?text=${text}`, "_blank");
     setIsOpen(false);
   };
 
