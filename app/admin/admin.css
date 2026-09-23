@@ -1004,6 +1004,250 @@
   border-top: 1px solid rgba(255,255,255,.07);
 }
 
+/* ── Crop Modal ─────────────────────────────────────────── */
+.qadmin-modal--crop {
+  max-width: 440px;
+}
+
+.qadmin-crop__titleWrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.qadmin-crop__titleWrap h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f4f4f5;
+  margin: 0;
+}
+.qadmin-crop__titleWrap p {
+  font-size: 0.75rem;
+  color: #71717a;
+  margin: 2px 0 0;
+}
+
+.qadmin-crop__icon {
+  color: #14d0c1;
+  background: rgba(20, 208, 193, 0.1);
+  padding: 8px;
+  border-radius: 10px;
+  box-sizing: content-box;
+}
+
+.qadmin-modal__body--crop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+}
+
+/* Viewport frame matching exactly the card ratio 12:13 */
+.qadmin-crop__viewport {
+  position: relative;
+  width: 320px;
+  height: 350px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #090912;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  border: 2px solid rgba(20, 208, 193, 0.4);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(20, 208, 193, 0.15);
+}
+.qadmin-crop__viewport.dragging {
+  cursor: grabbing;
+  border-color: #14d0c1;
+}
+
+.qadmin-crop__image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
+  transform-origin: center center;
+}
+
+/* Framing rule-of-thirds grid overlay */
+.qadmin-crop__gridOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 20px;
+}
+.qadmin-crop__gridH1, .qadmin-crop__gridH2 {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.qadmin-crop__gridH1 { top: 33.33%; }
+.qadmin-crop__gridH2 { top: 66.66%; }
+
+.qadmin-crop__gridV1, .qadmin-crop__gridV2 {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.qadmin-crop__gridV1 { left: 33.33%; }
+.qadmin-crop__gridV2 { left: 66.66%; }
+
+/* Bottom live overlay simulating real site preview */
+.qadmin-crop__liveOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 30px 18px 16px;
+  background: linear-gradient(to top, rgba(4, 4, 10, 0.95) 0%, rgba(4, 4, 10, 0.7) 60%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.qadmin-crop__liveSector {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #14d0c1;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 100px;
+  border: 1px solid rgba(20, 208, 193, 0.3);
+}
+
+.qadmin-crop__liveName {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f9f9fb;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.qadmin-crop__liveRole {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.qadmin-crop__dragHint {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 100px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.68rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* Controls bar below image */
+.qadmin-crop__controls {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qadmin-crop__zoomRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+
+.qadmin-crop__ctrlBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d4d4d8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.qadmin-crop__ctrlBtn:hover {
+  background: rgba(20, 208, 193, 0.15);
+  border-color: rgba(20, 208, 193, 0.3);
+  color: #14d0c1;
+}
+
+.qadmin-crop__range {
+  flex: 1;
+  accent-color: #14d0c1;
+  height: 6px;
+  cursor: pointer;
+}
+
+.qadmin-crop__zoomBadge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-family: monospace;
+  color: #14d0c1;
+  min-width: 42px;
+  text-align: right;
+}
+
+.qadmin-crop__actionsRow {
+  display: flex;
+  gap: 8px;
+}
+
+.qadmin-crop__actionBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a1a1aa;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.qadmin-crop__actionBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f4f5;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.qadmin__spinner--sm {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 760px) {
   .qadmin {

@@ -33,6 +33,11 @@ import {
   EyeOff,
   RefreshCw,
   Pencil,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Move,
+  Crop,
 } from "lucide-react";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
@@ -309,6 +314,293 @@ function MemberModal({
   );
 }
 
+/* ─── Image Crop & Adjust Modal ─────────────────────────────────────────── */
+function ImageCropModal({
+  file,
+  member,
+  onConfirm,
+  onClose,
+}: {
+  file: File;
+  member: TeamMember;
+  onConfirm: (croppedBlob: Blob) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setImageSrc(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setIsDragging(true);
+    dragStart.current = {
+      x: e.clientX - offset.x,
+      y: e.clientY - offset.y,
+    };
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging) return;
+    setOffset({
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y,
+    });
+  }
+
+  function handlePointerUp() {
+    setIsDragging(false);
+  }
+
+  function handleWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    const delta = -e.deltaY * 0.0015;
+    setZoom((prev) => Math.min(3, Math.max(1, +(prev + delta).toFixed(2))));
+  }
+
+  function resetAdjustments() {
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+    setRotation(0);
+  }
+
+  async function handleApply() {
+    if (!imgRef.current || !viewportRef.current) return;
+    setSubmitting(true);
+    try {
+      const img = imgRef.current;
+      const TARGET_W = 720;
+      const TARGET_H = 780;
+      const viewRect = viewportRef.current.getBoundingClientRect();
+      const viewW = viewRect.width || 340;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = TARGET_W;
+      canvas.height = TARGET_H;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Contexto 2D indisponível");
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      // Dark background matching the card
+      ctx.fillStyle = "#0d0d18";
+      ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+
+      ctx.save();
+      // Translate to center
+      ctx.translate(TARGET_W / 2, TARGET_H / 2);
+      ctx.rotate((rotation * Math.PI) / 180);
+
+      // Scale factor
+      const scaleFactor = TARGET_W / viewW;
+      ctx.scale(zoom, zoom);
+      ctx.translate((offset.x * scaleFactor) / zoom, (offset.y * scaleFactor) / zoom);
+
+      // Fit aspect
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      const targetAspect = TARGET_W / TARGET_H;
+      let baseW = TARGET_W;
+      let baseH = TARGET_H;
+      if (imgAspect > targetAspect) {
+        baseH = TARGET_H;
+        baseW = TARGET_H * imgAspect;
+      } else {
+        baseW = TARGET_W;
+        baseH = TARGET_W / imgAspect;
+      }
+
+      ctx.drawImage(img, -baseW / 2, -baseH / 2, baseW, baseH);
+      ctx.restore();
+
+      canvas.toBlob(
+        async (blob) => {
+          if (!blob) {
+            setSubmitting(false);
+            return;
+          }
+          await onConfirm(blob);
+          setSubmitting(false);
+        },
+        "image/jpeg",
+        0.92
+      );
+    } catch (err) {
+      console.error(err);
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="qadmin-modal-overlay" onClick={onClose}>
+      <div
+        className="qadmin-modal qadmin-modal--crop"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="qadmin-modal__header">
+          <div className="qadmin-crop__titleWrap">
+            <Crop size={18} className="qadmin-crop__icon" />
+            <div>
+              <h3>Ajustar Foto do Membro</h3>
+              <p>Arraste para mover · Use a barra para zoom</p>
+            </div>
+          </div>
+          <button className="qadmin-modal__close" onClick={onClose} disabled={submitting}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="qadmin-modal__body qadmin-modal__body--crop">
+          {/* Viewport frame */}
+          <div
+            ref={viewportRef}
+            className={`qadmin-crop__viewport ${isDragging ? "dragging" : ""}`}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onWheel={handleWheel}
+            title="Arraste para mover a imagem · Roda do mouse para zoom"
+          >
+            {imageSrc && (
+              <img
+                ref={imgRef}
+                src={imageSrc}
+                alt="Para enquadrar"
+                className="qadmin-crop__image"
+                style={{
+                  transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) rotate(${rotation}deg)`,
+                }}
+                draggable={false}
+              />
+            )}
+
+            {/* Grid overlay for framing */}
+            <div className="qadmin-crop__gridOverlay">
+              <span className="qadmin-crop__gridH1" />
+              <span className="qadmin-crop__gridH2" />
+              <span className="qadmin-crop__gridV1" />
+              <span className="qadmin-crop__gridV2" />
+            </div>
+
+            {/* Bottom overlay preview matching the real site card */}
+            <div className="qadmin-crop__liveOverlay">
+              <span
+                className="qadmin-crop__liveSector"
+                style={{
+                  borderColor: member.accentColor ? `${member.accentColor}66` : undefined,
+                  color: member.accentColor || undefined,
+                }}
+              >
+                {member.sector}
+              </span>
+              <h4 className="qadmin-crop__liveName">{member.name}</h4>
+              <p className="qadmin-crop__liveRole">{member.role}</p>
+            </div>
+
+            {/* Drag hint badge */}
+            <div className="qadmin-crop__dragHint">
+              <Move size={14} />
+              <span>Arraste para enquadrar</span>
+            </div>
+          </div>
+
+          {/* Controls Bar */}
+          <div className="qadmin-crop__controls">
+            <div className="qadmin-crop__zoomRow">
+              <button
+                type="button"
+                className="qadmin-crop__ctrlBtn"
+                onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
+                title="Diminuir zoom"
+              >
+                <ZoomOut size={16} />
+              </button>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.02"
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="qadmin-crop__range"
+                aria-label="Controle de zoom"
+              />
+              <button
+                type="button"
+                className="qadmin-crop__ctrlBtn"
+                onClick={() => setZoom((z) => Math.min(3, +(z + 0.1).toFixed(2)))}
+                title="Aumentar zoom"
+              >
+                <ZoomIn size={16} />
+              </button>
+              <span className="qadmin-crop__zoomBadge">{Math.round(zoom * 100)}%</span>
+            </div>
+
+            <div className="qadmin-crop__actionsRow">
+              <button
+                type="button"
+                className="qadmin-crop__actionBtn"
+                onClick={() => setRotation((r) => (r + 90) % 360)}
+                title="Girar imagem 90 graus"
+              >
+                <RotateCw size={14} />
+                <span>Girar 90°</span>
+              </button>
+              <button
+                type="button"
+                className="qadmin-crop__actionBtn"
+                onClick={resetAdjustments}
+                title="Resetar enquadramento e zoom"
+              >
+                <RefreshCw size={14} />
+                <span>Resetar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="qadmin-modal__footer">
+          <button
+            className="qadmin-btn qadmin-btn--ghost"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            Cancelar
+          </button>
+          <button
+            className="qadmin-btn qadmin-btn--primary"
+            onClick={handleApply}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <>
+                <div className="qadmin__spinner qadmin__spinner--sm" />
+                Salvando foto...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={16} />
+                Aplicar e Salvar Foto
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Dashboard Tab ──────────────────────────────────────────────────────── */
 function DashboardTab({
   teamCount,
@@ -409,6 +701,7 @@ function TeamTab({
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalMember, setModalMember] = useState<TeamMember | null | "new">(null);
+  const [cropTarget, setCropTarget] = useState<{ member: TeamMember; file: File } | null>(null);
   const dragIdx = useRef<number | null>(null);
 
   const fetchTeam = useCallback(async () => {
@@ -467,9 +760,13 @@ function TeamTab({
     }
   }
 
-  async function handleUpload(member: TeamMember, file: File) {
+  async function handleCropConfirm(blob: Blob) {
+    if (!cropTarget) return;
+    const { member, file } = cropTarget;
     const fd = new FormData();
-    fd.append("file", file);
+    const cleanName = file.name.replace(/\.[^.]+$/, "") || "photo";
+    const croppedFile = new File([blob], `${cleanName}.jpg`, { type: "image/jpeg" });
+    fd.append("file", croppedFile);
     fd.append("memberId", member.id);
     try {
       const res = await fetch("/api/team/upload", { method: "POST", body: fd });
@@ -480,9 +777,10 @@ function TeamTab({
         body: JSON.stringify({ image: path }),
       });
       setTeam((p) => p.map((m) => (m.id === member.id ? { ...m, image: path } : m)));
-      showToast("Foto atualizada!");
+      showToast("Foto ajustada e salva com sucesso!");
+      setCropTarget(null);
     } catch {
-      showToast("Erro no upload", "error");
+      showToast("Erro ao salvar foto ajustada", "error");
     }
   }
 
@@ -522,10 +820,19 @@ function TeamTab({
         />
       )}
 
+      {cropTarget && (
+        <ImageCropModal
+          file={cropTarget.file}
+          member={cropTarget.member}
+          onConfirm={handleCropConfirm}
+          onClose={() => setCropTarget(null)}
+        />
+      )}
+
       <div className="qadmin__toolbar">
         <div>
           <h2>Membros da equipe</h2>
-          <p>Arraste para reordenar · Clique na foto para upload · Edite dados e cores</p>
+          <p>Arraste para reordenar · Clique na foto para enquadrar/upload · Edite dados e cores</p>
         </div>
         <button
           className="qadmin-btn qadmin-btn--primary"
@@ -563,14 +870,17 @@ function TeamTab({
                 <GripVertical size={18} />
               </div>
 
-              <label className="qadmin__photoLabel" title="Clique para trocar a foto">
+              <label className="qadmin__photoLabel" title="Clique para trocar e enquadrar a foto">
                 <input
                   type="file"
                   accept="image/*"
                   style={{ display: "none" }}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) handleUpload(member, file);
+                    if (file) {
+                      setCropTarget({ member, file });
+                      e.target.value = "";
+                    }
                   }}
                 />
                 <div className="qadmin__photo">
