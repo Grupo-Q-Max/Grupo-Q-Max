@@ -103,6 +103,7 @@ export function Footer() {
 
             <a href="#inicio">Início</a>
             <a href="#sobre">Sobre</a>
+            <a href="#time">Nosso Time</a>
             <a href="#empresas">Empresas</a>
             <a href="#produtos">Produtos</a>
             <a href="#contato">Contato</a>

@@ -248,6 +248,10 @@ export function Navbar() {
             Sobre
           </a>
 
+          <a href="#time">
+            Nosso Time
+          </a>
+
           <div className="nav15__item">
             <button
               type="button"

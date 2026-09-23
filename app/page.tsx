@@ -4,6 +4,7 @@ import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { Hero } from "@/components/Hero";
 import { SegmentsMarquee } from "@/components/SegmentsMarquee";
 import { Story } from "@/components/Story";
+import { Team } from "@/components/Team";
 import { Ecosystem } from "@/components/Ecosystem";
 import { Products } from "@/components/Products";
 import { TaxDiagnosticCalculator } from "@/components/TaxDiagnosticCalculator";
@@ -28,6 +29,7 @@ export default function Home() {
         <Hero />
         <SegmentsMarquee />
         <Story />
+        <Team />
         <Ecosystem />
         <Products />
         <TaxDiagnosticCalculator />

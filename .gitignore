@@ -16,3 +16,7 @@ pnpm-debug.log*
 Thumbs.db
 
 backup-*
+
+# Admin generated files (passwords & uploaded photos)
+data/settings.json
+public/team/
