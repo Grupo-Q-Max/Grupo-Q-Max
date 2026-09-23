@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     sector: body.sector || "Setor",
     image: body.image || null,
     order: team.length,
+    accentColor: body.accentColor || "#14d0c1",
   };
   team.push(newMember);
   writeTeam(team);

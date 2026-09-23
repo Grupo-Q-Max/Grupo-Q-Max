@@ -5,6 +5,7 @@
     "role": "CEO & Founder",
     "sector": "Liderança",
     "image": "/team/team-1-1790110533761.png",
-    "order": 0
+    "order": 0,
+    "accentColor": "#14d0c1"
   }
 ]

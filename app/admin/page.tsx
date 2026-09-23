@@ -32,6 +32,7 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  Pencil,
 } from "lucide-react";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
@@ -42,6 +43,7 @@ interface TeamMember {
   sector: string;
   image: string | null;
   order: number;
+  accentColor?: string;
 }
 
 interface BrandLogo {
@@ -153,23 +155,43 @@ function Toast({
   );
 }
 
+const COLOR_PRESETS = [
+  { label: "Ciano Q-Max", value: "#14d0c1" },
+  { label: "Magenta Neon", value: "#e91e8c" },
+  { label: "Roxo Tech", value: "#a855f7" },
+  { label: "Azul Elétrico", value: "#0084ff" },
+  { label: "Verde Esmeralda", value: "#10b981" },
+  { label: "Âmbar", value: "#f59e0b" },
+  { label: "Ouro VIP", value: "#eab308" },
+  { label: "Coral", value: "#ff4757" },
+];
+
 /* ─── Member Modal ───────────────────────────────────────────────────────── */
 function MemberModal({
+  initialData,
   onSave,
   onClose,
 }: {
+  initialData?: TeamMember | null;
   onSave: (data: Partial<TeamMember>) => void;
   onClose: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
-  const [sector, setSector] = useState("");
+  const [name, setName] = useState(initialData?.name || "");
+  const [role, setRole] = useState(initialData?.role || "");
+  const [sector, setSector] = useState(initialData?.sector || "");
+  const [accentColor, setAccentColor] = useState(initialData?.accentColor || "#14d0c1");
+
+  // Extract valid 6-char hex for native <input type="color">
+  const hexValue =
+    accentColor.startsWith("#") && (accentColor.length === 7 || accentColor.length === 4)
+      ? accentColor
+      : "#14d0c1";
 
   return (
     <div className="qadmin-modal-overlay" onClick={onClose}>
-      <div className="qadmin-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="qadmin-modal qadmin-modal--wide" onClick={(e) => e.stopPropagation()}>
         <div className="qadmin-modal__header">
-          <h3>Adicionar Membro</h3>
+          <h3>{initialData ? "Editar Membro" : "Adicionar Membro"}</h3>
           <button className="qadmin-modal__close" onClick={onClose}>
             <X size={20} />
           </button>
@@ -203,14 +225,79 @@ function MemberModal({
               placeholder="Ex: Liderança"
             />
           </label>
+
+          {/* Color selector for details/glow/tags */}
+          <div className="qadmin-color-picker">
+            <span className="qadmin-color-picker__title">
+              Cor dos detalhes (Hex ou RGBA)
+            </span>
+            <span className="qadmin-color-picker__subtitle">
+              Define a cor de destaque da tag, borda luminosa e detalhes visuais deste membro.
+            </span>
+
+            {/* Presets */}
+            <div className="qadmin-color-presets">
+              {COLOR_PRESETS.map((preset) => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  className={`qadmin-color-chip ${
+                    accentColor.toLowerCase() === preset.value.toLowerCase() ? "active" : ""
+                  }`}
+                  style={{ "--chip-color": preset.value } as React.CSSProperties}
+                  onClick={() => setAccentColor(preset.value)}
+                  title={preset.label}
+                >
+                  <span className="qadmin-color-chip__circle" />
+                  <span className="qadmin-color-chip__label">{preset.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Direct Input: Color Picker + Text Field */}
+            <div className="qadmin-color-input-row">
+              <div className="qadmin-color-native-wrap" title="Clique para abrir o seletor visual">
+                <input
+                  type="color"
+                  value={hexValue}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                  className="qadmin-color-native"
+                />
+                <span className="qadmin-color-native-swatch" style={{ background: accentColor }} />
+              </div>
+              <input
+                type="text"
+                value={accentColor}
+                onChange={(e) => setAccentColor(e.target.value)}
+                placeholder="Ex: #14d0c1 ou rgba(20,208,193,0.9)"
+                className="qadmin-color-text-input"
+              />
+            </div>
+
+            {/* Live Preview */}
+            <div
+              className="qadmin-color-preview-box"
+              style={{ "--preview-color": accentColor } as React.CSSProperties}
+            >
+              <div className="qadmin-color-preview-tag">
+                {sector.trim() || "Ex: Liderança"}
+              </div>
+              <div className="qadmin-color-preview-info">
+                <strong>{name.trim() || "Nome do Membro"}</strong>
+                <span>{role.trim() || "Cargo"}</span>
+              </div>
+              <span className="qadmin-color-preview-badge">Prévia ao vivo</span>
+            </div>
+          </div>
         </div>
+
         <div className="qadmin-modal__footer">
           <button className="qadmin-btn qadmin-btn--ghost" onClick={onClose}>
             Cancelar
           </button>
           <button
             className="qadmin-btn qadmin-btn--primary"
-            onClick={() => onSave({ name, role, sector })}
+            onClick={() => onSave({ name, role, sector, accentColor })}
             disabled={!name.trim()}
           >
             <CheckCircle2 size={16} />
@@ -321,7 +408,7 @@ function TeamTab({
 }) {
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(false);
+  const [modalMember, setModalMember] = useState<TeamMember | null | "new">(null);
   const dragIdx = useRef<number | null>(null);
 
   const fetchTeam = useCallback(async () => {
@@ -341,18 +428,31 @@ function TeamTab({
     fetchTeam();
   }, [fetchTeam]);
 
-  async function handleAdd(data: Partial<TeamMember>) {
+  async function handleSaveMember(data: Partial<TeamMember>) {
     try {
-      await fetch("/api/team", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      await fetchTeam();
-      setModal(false);
-      showToast("Membro adicionado!");
+      if (typeof modalMember === "object" && modalMember?.id) {
+        // Edit existing
+        const res = await fetch(`/api/team/${modalMember.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const updated = await res.json();
+        setTeam((p) => p.map((m) => (m.id === modalMember.id ? { ...m, ...updated } : m)));
+        showToast("Membro atualizado!");
+      } else {
+        // Add new
+        await fetch("/api/team", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        await fetchTeam();
+        showToast("Membro adicionado!");
+      }
+      setModalMember(null);
     } catch {
-      showToast("Erro ao adicionar", "error");
+      showToast("Erro ao salvar membro", "error");
     }
   }
 
@@ -414,14 +514,23 @@ function TeamTab({
 
   return (
     <div>
-      {modal && <MemberModal onSave={handleAdd} onClose={() => setModal(false)} />}
+      {modalMember && (
+        <MemberModal
+          initialData={typeof modalMember === "object" ? modalMember : null}
+          onSave={handleSaveMember}
+          onClose={() => setModalMember(null)}
+        />
+      )}
 
       <div className="qadmin__toolbar">
         <div>
           <h2>Membros da equipe</h2>
-          <p>Arraste para reordenar · Clique na foto para fazer upload</p>
+          <p>Arraste para reordenar · Clique na foto para upload · Edite dados e cores</p>
         </div>
-        <button className="qadmin-btn qadmin-btn--primary" onClick={() => setModal(true)}>
+        <button
+          className="qadmin-btn qadmin-btn--primary"
+          onClick={() => setModalMember("new")}
+        >
           <Plus size={18} />
           Adicionar membro
         </button>
@@ -488,18 +597,44 @@ function TeamTab({
               </label>
 
               <div className="qadmin__cardInfo">
-                <span className="qadmin__cardSector">{member.sector}</span>
+                <div className="qadmin__cardSectorRow">
+                  <span
+                    className="qadmin__cardSector"
+                    style={{
+                      borderColor: member.accentColor ? `${member.accentColor}55` : undefined,
+                      color: member.accentColor || undefined,
+                    }}
+                  >
+                    {member.sector}
+                  </span>
+                  <span
+                    className="qadmin__colorIndicator"
+                    style={{ background: member.accentColor || "#14d0c1" }}
+                    title={`Cor de destaque: ${member.accentColor || "#14d0c1"}`}
+                  />
+                </div>
                 <strong className="qadmin__cardName">{member.name}</strong>
                 <span className="qadmin__cardRole">{member.role}</span>
               </div>
 
-              <button
-                className="qadmin__deleteBtn"
-                onClick={() => handleDelete(member.id)}
-                aria-label={`Remover ${member.name}`}
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="qadmin__cardActions">
+                <button
+                  className="qadmin__editBtn"
+                  onClick={() => setModalMember(member)}
+                  aria-label={`Editar ${member.name}`}
+                  title="Editar detalhes e cor"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  className="qadmin__deleteBtn"
+                  onClick={() => handleDelete(member.id)}
+                  aria-label={`Remover ${member.name}`}
+                  title="Remover membro"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
           ))}
         </div>

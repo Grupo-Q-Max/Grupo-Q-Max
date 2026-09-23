@@ -11,14 +11,48 @@ interface TeamMember {
   sector: string;
   image: string | null;
   order: number;
+  accentColor?: string;
 }
 
-// Accent colors cycling per member index
+// Accent colors cycling fallback
 const ACCENTS = [
   { color: "#14d0c1", rgb: "20,208,193" },
   { color: "#e91e8c", rgb: "233,30,140" },
   { color: "#a855f7", rgb: "168,85,247" },
 ];
+
+function parseColorToRgb(
+  colorStr?: string,
+  fallback = { color: "#14d0c1", rgb: "20, 208, 193" }
+): { color: string; rgb: string } {
+  if (!colorStr || typeof colorStr !== "string") return fallback;
+  const str = colorStr.trim();
+
+  // Hex: #fff, #14d0c1, #14d0c1ee
+  if (str.startsWith("#")) {
+    let hex = str.slice(1);
+    if (hex.length === 3) {
+      hex = hex.split("").map((c) => c + c).join("");
+    }
+    if (hex.length >= 6) {
+      const r = parseInt(hex.substring(0, 2), 16) || 0;
+      const g = parseInt(hex.substring(2, 4), 16) || 0;
+      const b = parseInt(hex.substring(4, 6), 16) || 0;
+      return { color: str, rgb: `${r}, ${g}, ${b}` };
+    }
+  }
+
+  // rgba(r, g, b, a) or rgb(r, g, b)
+  const matchRgb = str.match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (matchRgb) {
+    return {
+      color: str,
+      rgb: `${matchRgb[1]}, ${matchRgb[2]}, ${matchRgb[3]}`,
+    };
+  }
+
+  return { color: str, rgb: fallback.rgb };
+}
 
 const SLIDE_DURATION = 5000;
 
@@ -108,7 +142,10 @@ export function Team() {
   }, [current, team.length]);
 
   const m = team[current];
-  const accent = m ? ACCENTS[current % ACCENTS.length] : ACCENTS[0];
+  const fallbackAccent = ACCENTS[current % ACCENTS.length];
+  const accent = m?.accentColor
+    ? parseColorToRgb(m.accentColor, fallbackAccent)
+    : fallbackAccent;
 
   return (
     <section id="time" className="qteam">
