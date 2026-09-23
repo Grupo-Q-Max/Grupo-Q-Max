@@ -168,7 +168,7 @@ steps:
           Authorization = "Basic $base64"
       }
 
-      $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true"
+      $url = "$kuduBase/api/publish?type=zip&clean=false&restart=true"
 
       Write-Host "Publicando Grupo Q-Max..."
 
