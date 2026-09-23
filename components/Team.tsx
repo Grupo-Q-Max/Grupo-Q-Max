@@ -70,7 +70,7 @@ export function Team() {
 
   // Fetch team from API
   useEffect(() => {
-    fetch("/api/team")
+    fetch("/api/team", { cache: "no-store" })
       .then((r) => r.json())
       .then((data: TeamMember[]) => {
         setTeam(data.sort((a, b) => a.order - b.order));

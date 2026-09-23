@@ -20,9 +20,16 @@ function writeTeam(data: unknown[]) {
   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2), "utf8");
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const team = readTeam();
-  return NextResponse.json(team);
+  return NextResponse.json(team, {
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {

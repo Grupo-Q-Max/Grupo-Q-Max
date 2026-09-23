@@ -707,7 +707,7 @@ function TeamTab({
   const fetchTeam = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/team");
+      const res = await fetch("/api/team", { cache: "no-store" });
       const data = await res.json();
       setTeam(data.sort((a: TeamMember, b: TeamMember) => a.order - b.order));
     } catch {
@@ -1240,7 +1240,7 @@ export default function AdminPage() {
   // Load team count for dashboard
   useEffect(() => {
     if (auth) {
-      fetch("/api/team")
+      fetch("/api/team", { cache: "no-store" })
         .then((r) => r.json())
         .then((d) => setTeamCount(d.length))
         .catch(() => {});
