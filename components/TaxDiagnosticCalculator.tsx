@@ -140,7 +140,7 @@ export function TaxDiagnosticCalculator() {
               rel="noopener noreferrer"
               className="qmax-calculator__cta"
             >
-              <span>Solicitar Diagnóstico Detalhado Gratuito</span>
+              <span>Solicitar Diagnóstico Detalhado</span>
               <ArrowRight size={17} />
             </a>
           </div>

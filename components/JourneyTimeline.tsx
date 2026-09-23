@@ -4,12 +4,12 @@ import { QmaxInline } from "@/components/QmaxBrandText";
 const steps = [
   {
     number: "01",
-    title: "Diagnóstico Gratuito 360°",
+    title: "Diagnóstico Estratégico 360°",
     kicker: "ANÁLISE INICIAL",
     icon: Compass,
     color: "#14d0c1",
     description: "Mapeamos o cenário fiscal, contábil, de processos, pessoas e tecnologia do seu negócio para identificar gargalos e oportunidades imediatas de economia.",
-    highlight: "Sem custo e sem compromisso",
+    highlight: "Análise consultiva sob medida",
   },
   {
     number: "02",
