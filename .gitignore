@@ -17,6 +17,5 @@ Thumbs.db
 
 backup-*
 
-# Admin generated files (passwords & uploaded photos)
+# Admin generated files (passwords)
 data/settings.json
-public/team/

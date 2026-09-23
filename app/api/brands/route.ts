@@ -2,24 +2,41 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-const BRANDS_DIR = path.join(process.cwd(), "public", "brands");
+const PUBLIC_BRANDS_DIR = path.join(process.cwd(), "public", "brands");
+const UPLOAD_BRANDS_DIR = path.join(process.cwd(), "data", "uploads", "brands");
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const file = formData.get("file") as File | null;
-  const filename = formData.get("filename") as string | null;
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+    const filename = formData.get("filename") as string | null;
 
-  if (!file || !filename) {
-    return NextResponse.json({ error: "Missing file or filename" }, { status: 400 });
+    if (!file || !filename) {
+      return NextResponse.json({ error: "Missing file or filename" }, { status: 400 });
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json({ error: "Only images allowed" }, { status: 400 });
+    }
+
+    // Sanitize filename
+    const safeName = path.basename(filename);
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Save to both public/brands (dev/build static) and data/uploads/brands (runtime)
+    if (!fs.existsSync(PUBLIC_BRANDS_DIR)) {
+      fs.mkdirSync(PUBLIC_BRANDS_DIR, { recursive: true });
+    }
+    fs.writeFileSync(path.join(PUBLIC_BRANDS_DIR, safeName), buffer);
+
+    if (!fs.existsSync(UPLOAD_BRANDS_DIR)) {
+      fs.mkdirSync(UPLOAD_BRANDS_DIR, { recursive: true });
+    }
+    fs.writeFileSync(path.join(UPLOAD_BRANDS_DIR, safeName), buffer);
+
+    return NextResponse.json({ path: `/brands/${safeName}`, ok: true });
+  } catch (err) {
+    console.error("Error saving brand logo:", err);
+    return NextResponse.json({ error: "Failed to save logo" }, { status: 500 });
   }
-
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Only images allowed" }, { status: 400 });
-  }
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const filePath = path.join(BRANDS_DIR, filename);
-  fs.writeFileSync(filePath, buffer);
-
-  return NextResponse.json({ path: `/brands/${filename}`, ok: true });
 }

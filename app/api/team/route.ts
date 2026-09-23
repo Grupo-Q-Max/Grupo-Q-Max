@@ -10,6 +10,8 @@ function readTeam() {
 }
 
 function writeTeam(data: unknown[]) {
+  const dir = path.dirname(DATA_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), "utf8");
 }
 

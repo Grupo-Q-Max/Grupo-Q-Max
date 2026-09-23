@@ -10,6 +10,8 @@ function readTeam() {
 }
 
 function writeTeam(data: unknown[]) {
+  const dir = path.dirname(DATA_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), "utf8");
 }
 
@@ -21,10 +23,12 @@ export async function DELETE(
   const team = readTeam();
   const filtered = team.filter((m: { id: string }) => m.id !== id);
 
-  // Delete the image file if it exists
+  // Delete the image file if it exists (stored in data/uploads/)
   const member = team.find((m: { id: string }) => m.id === id);
   if (member?.image) {
-    const imgPath = path.join(process.cwd(), "public", member.image);
+    // Support both old /team/ paths and new /api/files/ paths
+    const filename = path.basename(member.image.split("?")[0]);
+    const imgPath = path.join(process.cwd(), "data", "uploads", filename);
     if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
   }
 

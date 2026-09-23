@@ -54,6 +54,14 @@ steps:
     fi
 
     echo ""
+    echo "3.1. Copiando DATA (uploads e team)..."
+    mkdir -p deploy/data/uploads
+    mkdir -p deploy/public/team
+    if [ -d "data" ]; then
+      cp -R data/. deploy/data/
+    fi
+
+    echo ""
     echo "4. Validando logos obrigatorias..."
 
     test -f deploy/public/brands/brand-auditoria.png

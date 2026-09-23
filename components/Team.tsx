@@ -181,6 +181,7 @@ export function Team() {
                       style={{ objectFit: "cover" }}
                       sizes="420px"
                       priority
+                      unoptimized
                     />
                   ) : (
                     <div className="qteam__photoFallback">

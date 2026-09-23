@@ -467,7 +467,7 @@ function TeamTab({
                 <div className="qadmin__photo">
                   {member.image ? (
                     <Image
-                      src={`${member.image}?t=${Date.now()}`}
+                      src={member.image}
                       alt={member.name}
                       fill
                       style={{ objectFit: "cover" }}
