@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { getUploadsDir } from "@/lib/storage";
 
-// Serve uploaded files from data/uploads/ with fallback to public/team/ and public/brands/
+// Serve uploaded files from persistent storage with fallback to public/team/ and public/brands/
 // This works reliably in dev, local build, and Azure App Service (Next.js standalone)
 export async function GET(
   _req: NextRequest,
@@ -18,13 +19,16 @@ export async function GET(
     const safeName = path.basename(filename);
 
     // Search locations in priority order:
-    // 1. data/uploads/[filename] (runtime uploads)
-    // 2. public/team/[filename] (legacy team folder)
-    // 3. data/uploads/brands/[filename]
-    // 4. public/brands/[filename]
+    // 1. Persistent cloud uploads: HOME/site/qmax_data/uploads (survives any deploy)
+    // 2. Local/build data/uploads/[filename]
+    // 3. public/team/[filename] (legacy folder)
+    // 4. Brands directories
+    const persistentUploads = getUploadsDir();
     const searchPaths = [
+      path.join(persistentUploads, safeName),
       path.join(process.cwd(), "data", "uploads", safeName),
       path.join(process.cwd(), "public", "team", safeName),
+      path.join(persistentUploads, "brands", safeName),
       path.join(process.cwd(), "data", "uploads", "brands", safeName),
       path.join(process.cwd(), "public", "brands", safeName),
     ];

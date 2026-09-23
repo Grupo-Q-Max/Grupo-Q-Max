@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-
-const SETTINGS_PATH = path.join(process.cwd(), "data", "settings.json");
+import { getSettingsJsonPath } from "@/lib/storage";
 
 const DEFAULTS = {
   siteName: "Grupo Q-Max",
@@ -15,14 +14,20 @@ const DEFAULTS = {
 };
 
 function read() {
-  if (!fs.existsSync(SETTINGS_PATH)) return DEFAULTS;
-  return { ...DEFAULTS, ...JSON.parse(fs.readFileSync(SETTINGS_PATH, "utf8")) };
+  const p = getSettingsJsonPath();
+  if (!fs.existsSync(p)) return DEFAULTS;
+  try {
+    return { ...DEFAULTS, ...JSON.parse(fs.readFileSync(p, "utf8")) };
+  } catch {
+    return DEFAULTS;
+  }
 }
 
 function write(data: object) {
-  const dir = path.dirname(SETTINGS_PATH);
+  const p = getSettingsJsonPath();
+  const dir = path.dirname(p);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(data, null, 2), "utf8");
+  fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf8");
 }
 
 export async function GET() {

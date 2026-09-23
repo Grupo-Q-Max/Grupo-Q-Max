@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-
-// Upload dir is inside `data/` — NOT inside `public/`.
-// This ensures files survive in Next.js standalone (output: "standalone") production builds,
-// where runtime writes to public/ are NOT served as static files.
-// Files are served via /api/files/[filename] instead.
-const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads");
+import { getUploadsDir } from "@/lib/storage";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -21,13 +16,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Only images allowed" }, { status: 400 });
   }
 
-  if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-  }
-
+  const uploadDir = getUploadsDir();
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const fileName = `team-${memberId}-${Date.now()}.${ext}`;
-  const filePath = path.join(UPLOAD_DIR, fileName);
+  const filePath = path.join(uploadDir, fileName);
 
   const buffer = Buffer.from(await file.arrayBuffer());
   fs.writeFileSync(filePath, buffer);

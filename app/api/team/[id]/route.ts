@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-
-const DATA_PATH = path.join(process.cwd(), "data", "team.json");
+import { getTeamJsonPath, getUploadsDir } from "@/lib/storage";
 
 function readTeam() {
-  if (!fs.existsSync(DATA_PATH)) return [];
-  return JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
+  const dataPath = getTeamJsonPath();
+  if (!fs.existsSync(dataPath)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(dataPath, "utf8"));
+  } catch {
+    return [];
+  }
 }
 
 function writeTeam(data: unknown[]) {
-  const dir = path.dirname(DATA_PATH);
+  const dataPath = getTeamJsonPath();
+  const dir = path.dirname(dataPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), "utf8");
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2), "utf8");
 }
 
 export async function DELETE(
@@ -23,13 +28,14 @@ export async function DELETE(
   const team = readTeam();
   const filtered = team.filter((m: { id: string }) => m.id !== id);
 
-  // Delete the image file if it exists (stored in data/uploads/)
+  // Delete the image file if it exists
   const member = team.find((m: { id: string }) => m.id === id);
   if (member?.image) {
-    // Support both old /team/ paths and new /api/files/ paths
     const filename = path.basename(member.image.split("?")[0]);
-    const imgPath = path.join(process.cwd(), "data", "uploads", filename);
+    const imgPath = path.join(getUploadsDir(), filename);
     if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+    const legacyPath = path.join(process.cwd(), "public", "team", filename);
+    if (fs.existsSync(legacyPath)) fs.unlinkSync(legacyPath);
   }
 
   writeTeam(filtered);
