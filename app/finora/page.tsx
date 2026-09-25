@@ -14,8 +14,8 @@ import {
   FileCheck2,
   Users,
 } from "lucide-react";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
-import { BackToTop } from "@/components/BackToTop";
+
+
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { TaxDiagnosticCalculator } from "@/components/TaxDiagnosticCalculator";
 import { QmaxInline } from "@/components/QmaxBrandText";
@@ -212,8 +212,8 @@ export default function FinoraPage() {
 
 
 
-      <FloatingWhatsApp />
-      <BackToTop />
+      
+      
     </main>
   );
 }

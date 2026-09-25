@@ -13,9 +13,9 @@ import { JourneyTimeline } from "@/components/JourneyTimeline";
 import { ConversionBand } from "@/components/ConversionBand";
 import { FAQ } from "@/components/FAQ";
 import { Contact } from "@/components/Contact";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+
 import { QuickLeadModal } from "@/components/QuickLeadModal";
-import { BackToTop } from "@/components/BackToTop";
+
 
 import { ScrollReveal } from "@/components/ScrollReveal";
 
@@ -41,8 +41,8 @@ export default function Home() {
         <ScrollReveal animation="fade-up"><Contact /></ScrollReveal>
       </main>
 
-      <FloatingWhatsApp />
-      <BackToTop />
+      
+      
       <QuickLeadModal />
     </>
   );

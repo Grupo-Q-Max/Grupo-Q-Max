@@ -19,7 +19,7 @@ import {
 
 import { AuditoriaMotion } from "@/components/AuditoriaMotion";
 import { AuditoriaWhatsApp } from "@/components/AuditoriaWhatsApp";
-import { BackToTop } from "@/components/BackToTop";
+
 import { QmaxBrandUppercase } from "@/components/QmaxBrandText";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
@@ -537,7 +537,7 @@ export default function AuditoriaPage() {
         </section>
       </ScrollReveal>
 
-      <BackToTop />
+      
     </main>
   );
 }

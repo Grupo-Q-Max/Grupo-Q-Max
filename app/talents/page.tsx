@@ -12,8 +12,8 @@ import {
   UserCheck,
   Users2,
 } from "lucide-react";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
-import { BackToTop } from "@/components/BackToTop";
+
+
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { CountUp } from "@/components/CountUp";
 import "./talents.css";
@@ -212,8 +212,8 @@ export default function TalentsPage() {
 
 
 
-      <FloatingWhatsApp />
-      <BackToTop />
+      
+      
     </main>
   );
 }

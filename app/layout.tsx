@@ -4,6 +4,10 @@ import { QmaxAnalytics } from "@/components/QmaxAnalytics";
 import { OrganizationJsonLd } from "@/components/OrganizationJsonLd";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { BackToTop } from "@/components/BackToTop";
+import { SettingsProvider } from "@/components/SettingsProvider";
+import { readSettings } from "@/lib/settings";
 import type { Metadata, Viewport } from "next";
 import "./qmax-base.css";
 import "./qmax-overrides.css";
@@ -90,37 +94,43 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = readSettings();
+
   return (
     <html lang="pt-BR" className={montserrat.variable}>
       <body>
-        <Script
-          id="qmax-ga4-bootstrap"
-          strategy="afterInteractive"
-        >
-          {`
-            window.dataLayer = window.dataLayer || [];
+        <SettingsProvider settings={settings}>
+          <Script
+            id="qmax-ga4-bootstrap"
+            strategy="afterInteractive"
+          >
+            {`
+              window.dataLayer = window.dataLayer || [];
 
-            window.gtag = window.gtag || function(){
-              window.dataLayer.push(arguments);
-            };
+              window.gtag = window.gtag || function(){
+                window.dataLayer.push(arguments);
+              };
 
-            window.gtag('js', new Date());
+              window.gtag('js', new Date());
 
-            window.gtag('config', 'G-L5CSV2XQL3', {
-              send_page_view: true
-            });
-          `}
-        </Script>
+              window.gtag('config', 'G-L5CSV2XQL3', {
+                send_page_view: true
+              });
+            `}
+          </Script>
 
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-L5CSV2XQL3"
-          strategy="lazyOnload"
-        />
-        <QmaxAnalytics />
-        <OrganizationJsonLd />
-        <Navbar />
-        {children}
-        <Footer />
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=G-L5CSV2XQL3"
+            strategy="lazyOnload"
+          />
+          <QmaxAnalytics />
+          <OrganizationJsonLd />
+          <Navbar />
+          {children}
+          <Footer />
+          <FloatingWhatsApp whatsapp={settings.whatsapp} />
+          <BackToTop />
+        </SettingsProvider>
       </body>
     </html>
   );

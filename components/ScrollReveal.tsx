@@ -14,7 +14,7 @@ export function ScrollReveal({
   children,
   animation = "fade-up",
   delay = 0,
-  duration = 0.8,
+  duration = 1.2,
   className = "",
 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -51,10 +51,10 @@ export function ScrollReveal({
 
   if (!isVisible) {
     style.opacity = 0;
-    if (animation === "fade-up") style.transform = "translateY(40px)";
-    else if (animation === "zoom-in") style.transform = "scale(0.95)";
-    else if (animation === "slide-left") style.transform = "translateX(-40px)";
-    else if (animation === "slide-right") style.transform = "translateX(40px)";
+    if (animation === "fade-up") style.transform = "translateY(120px)";
+    else if (animation === "zoom-in") style.transform = "scale(0.8)";
+    else if (animation === "slide-left") style.transform = "translateX(-120px)";
+    else if (animation === "slide-right") style.transform = "translateX(120px)";
   } else {
     style.opacity = 1;
     style.transform = "translate(0, 0) scale(1)";

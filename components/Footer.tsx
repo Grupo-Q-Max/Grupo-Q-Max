@@ -4,6 +4,7 @@ import { QmaxInline } from "@/components/QmaxBrandText";
 
 import type { MouseEvent } from "react";
 
+import { useSettings } from "@/components/SettingsProvider";
 import Image from "next/image";
 
 export function Footer() {
@@ -59,13 +60,16 @@ export function Footer() {
     }, 500);
   }
 
+  const settings = useSettings();
+  const phoneOnly = settings.whatsapp.replace(/\D/g, "");
+
   return (
     <footer className="finish-footer">
       <div className="container finish-footer__top">
         <div className="finish-footer__brand">
           <Image
             src="/brands/grupo-qmax-white.png"
-            alt="Grupo Q-Max"
+            alt={settings.siteName}
             width={150}
             height={76}
             sizes="150px"
@@ -76,26 +80,25 @@ export function Footer() {
           />
 
           <p>
-            Tecnologia, inovação e atitude conectando empresas,
-            pessoas e soluções.
+            {settings.tagline}
           </p>
 
           <div className="finish-footer__quickContact">
             <a
-              href="https://wa.me/551128976514"
+              href={`https://wa.me/${phoneOnly}`}
               target="_blank"
               rel="noopener noreferrer"
               className="finish-footer__quickBtn"
               aria-label="WhatsApp Grupo Q-Max"
             >
-              <span>● WhatsApp: (11) 2897-6514</span>
+              <span>● WhatsApp: {settings.whatsapp}</span>
             </a>
             <a
-              href="mailto:contato@grupoqmax.com.br"
+              href={`mailto:${settings.email}`}
               className="finish-footer__quickBtn"
               aria-label="E-mail Grupo Q-Max"
             >
-              <span>contato@grupoqmax.com.br</span>
+              <span>{settings.email}</span>
             </a>
           </div>
         </div>
@@ -231,10 +234,10 @@ export function Footer() {
       </div>
 
       <div className="container finish-footer__bottom">
-        <span>© 2026 Grupo <QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span></span>
+        <span>© 2026 {settings.siteName} <QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span></span>
 
         <div>
-          <span>Sede em São Bernardo do Campo - SP</span>
+          <span>{settings.address.split("-")[1] || settings.address}</span>
           <i />
           <span>Atendimento Nacional</span>
         </div>

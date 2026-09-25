@@ -2,26 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { getSettingsJsonPath } from "@/lib/storage";
-
-const DEFAULTS = {
-  siteName: "Grupo Q-Max",
-  tagline: "Tecnologia, Inovação e Atitude",
-  whatsapp: "+55 (11) 2897-6514",
-  phone: "+55 (11) 2897-6514",
-  email: "contato@grupoqmax.com.br",
-  address: "R. Frei Gaspar, 941 - Conjunto 103-105, São Bernardo do Campo - SP",
-  adminPassword: "qmax2025",
-};
-
-function read() {
-  const p = getSettingsJsonPath();
-  if (!fs.existsSync(p)) return DEFAULTS;
-  try {
-    return { ...DEFAULTS, ...JSON.parse(fs.readFileSync(p, "utf8")) };
-  } catch {
-    return DEFAULTS;
-  }
-}
+import { readSettings } from "@/lib/settings";
 
 function write(data: object) {
   const p = getSettingsJsonPath();
@@ -31,12 +12,12 @@ function write(data: object) {
 }
 
 export async function GET() {
-  return NextResponse.json(read());
+  return NextResponse.json(readSettings());
 }
 
 export async function PUT(req: NextRequest) {
   const body = await req.json();
-  const current = read();
+  const current = readSettings();
   const updated = { ...current, ...body };
   write(updated);
   return NextResponse.json(updated);

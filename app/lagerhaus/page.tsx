@@ -13,8 +13,8 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
-import { BackToTop } from "@/components/BackToTop";
+
+
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { CountUp } from "@/components/CountUp";
 import "./lagerhaus.css";
@@ -208,8 +208,8 @@ export default function LagerhausPage() {
 
 
 
-      <FloatingWhatsApp />
-      <BackToTop />
+      
+      
     </main>
   );
 }

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, PlaySquare } from "lucide-react";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
-import { BackToTop } from "@/components/BackToTop";
+
+
 import { ScrollReveal } from "@/components/ScrollReveal";
 import "./technology.css";
 
@@ -170,8 +170,8 @@ export default function TechnologyPage() {
         </section>
       </ScrollReveal>
 
-      <FloatingWhatsApp />
-      <BackToTop />
+      
+      
     </main>
   );
 }

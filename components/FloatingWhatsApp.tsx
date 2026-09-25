@@ -2,10 +2,12 @@
 
 import { MessageCircle } from "lucide-react";
 
-const WHATSAPP_URL =
-  "https://wa.me/551128976514?text=Olá%2C%20estou%20no%20site%20do%20Grupo%20Q-Max%20e%20gostaria%20de%20conversar.";
+export function FloatingWhatsApp({ whatsapp }: { whatsapp?: string }) {
+  // If not provided, fallback to the hardcoded default
+  const defaultWa = "551128976514";
+  const phoneOnly = whatsapp ? whatsapp.replace(/\D/g, "") : defaultWa;
+  const WHATSAPP_URL = `https://wa.me/${phoneOnly}?text=Olá%2C%20estou%20no%20site%20do%20Grupo%20Q-Max%20e%20gostaria%20de%20conversar.`;
 
-export function FloatingWhatsApp() {
   function handleClick() {
     if (typeof window !== "undefined") {
       window.dispatchEvent(
