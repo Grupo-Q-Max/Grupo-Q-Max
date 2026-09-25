@@ -15,9 +15,9 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
-import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { TaxDiagnosticCalculator } from "@/components/TaxDiagnosticCalculator";
 import { QmaxInline } from "@/components/QmaxBrandText";
 import { CountUp } from "@/components/CountUp";
@@ -73,14 +73,10 @@ const services = [
 export default function ContabilPage() {
   return (
     <main className="contabil-page">
-      <QmaxEcosystemHeader
-        brand="contabil"
-        logo="/brands/brand-contabil.png"
-        accent="#14d0c1"
-      />
 
       {/* HERO SECTION */}
-      <section className="contabil-hero">
+      <ScrollReveal animation="fade-up">
+        <section className="contabil-hero">
         <div className="contabil-hero__glow contabil-hero__glow--cyan" />
         <div className="contabil-hero__glow contabil-hero__glow--magenta" />
 
@@ -157,8 +153,10 @@ export default function ContabilPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* SERVICES SECTION */}
+      <ScrollReveal animation="slide-left" delay={0.2}>
       <section id="especialidades" className="contabil-services">
         <div className="container">
           <header className="text-center" style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -213,88 +211,14 @@ export default function ContabilPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* DIAGNOSTIC CALCULATOR */}
-      <TaxDiagnosticCalculator />
+      <ScrollReveal animation="fade-up" delay={0.1}>
+        <TaxDiagnosticCalculator />
+      </ScrollReveal>
 
-      {/* FOOTER */}
-      <footer className="finish-footer" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
-        <div className="container finish-footer__top">
-          <div className="finish-footer__brand">
-            <Link href="/contabil" aria-label="Q-Max Contábil">
-              <Image
-                src="/brands/brand-contabil.png"
-                alt="Q-Max Contábil"
-                width={180}
-                height={60}
-                sizes="180px"
-                style={{
-                  width: "auto",
-                  height: "48px",
-                }}
-              />
-            </Link>
 
-            <p>
-              Contabilidade moderna, BPO financeiro e planejamento tributário estratégico com inteligência e proximidade.
-            </p>
-
-            <div className="finish-footer__quickContact">
-              <a
-                href="https://wa.me/551128976514"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="finish-footer__quickBtn"
-                aria-label="WhatsApp Q-Max Contábil"
-              >
-                <span>● WhatsApp: (11) 2897-6514</span>
-              </a>
-              <a
-                href="mailto:contato@grupoqmax.com.br"
-                className="finish-footer__quickBtn"
-                aria-label="E-mail Q-Max Contábil"
-              >
-                <span>contato@grupoqmax.com.br</span>
-              </a>
-            </div>
-          </div>
-
-          <div className="finish-footer__nav">
-            <div>
-              <strong>NAVEGAÇÃO</strong>
-              <Link href="/contabil">Início</Link>
-              <a href="#especialidades">Especialidades</a>
-              <a href="#diagnostico">Simulador</a>
-            </div>
-
-            <div>
-              <strong>SERVIÇOS</strong>
-              <a href="#especialidades">Assessoria Fiscal</a>
-              <a href="#especialidades">BPO Financeiro</a>
-              <a href="#especialidades">Planejamento Tributário</a>
-              <a href="#especialidades">Abertura de Empresas</a>
-            </div>
-
-            <div>
-              <strong>ECOSSISTEMA</strong>
-              <Link href="/">Grupo Q-Max</Link>
-              <Link href="/auditoria">Q-Max Auditoria</Link>
-              <a href="https://grupoqmax.com.br/talents/" target="_blank" rel="noopener noreferrer">Q-Max Talents</a>
-              <a href="https://lagerhaus.work" target="_blank" rel="noopener noreferrer">Lagerhaus</a>
-            </div>
-          </div>
-        </div>
-
-        <div className="container finish-footer__bottom">
-          <span>© 2026 Q-Max Contábil · Uma empresa do Grupo Q-Max<span className="qmax-punctuation">.</span></span>
-
-          <div>
-            <span>São Bernardo do Campo · SP</span>
-            <i />
-            <span>Contabilidade Consultiva, BPO e Planejamento.</span>
-          </div>
-        </div>
-      </footer>
 
       <FloatingWhatsApp />
       <BackToTop />

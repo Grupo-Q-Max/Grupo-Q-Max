@@ -13,9 +13,9 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { CountUp } from "@/components/CountUp";
 import "./lagerhaus.css";
 
@@ -69,13 +69,8 @@ const services = [
 export default function LagerhausPage() {
   return (
     <main className="lagerhaus-page">
-      <QmaxEcosystemHeader
-        brand="lagerhaus"
-        logo="/brands/lagerhaus-full.png"
-        accent="#ff8b2a"
-      />
-
       {/* HERO SECTION */}
+      <ScrollReveal animation="fade-up">
       <section className="lagerhaus-hero">
         <div className="lagerhaus-hero__glow talents-hero__glow--amber" />
 
@@ -151,8 +146,10 @@ export default function LagerhausPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* SERVICES SECTION */}
+      <ScrollReveal animation="slide-right" delay={0.2}>
       <section id="servicos" style={{ padding: "clamp(80px, 8vw, 130px) 0" }}>
         <div className="container">
           <header className="text-center" style={{ maxWidth: 740, margin: "0 auto" }}>
@@ -207,84 +204,9 @@ export default function LagerhausPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
-      {/* FOOTER */}
-      <footer className="finish-footer" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
-        <div className="container finish-footer__top">
-          <div className="finish-footer__brand">
-            <Link href="/lagerhaus" aria-label="Lagerhaus">
-              <Image
-                src="/brands/lagerhaus-full.png"
-                alt="Lagerhaus"
-                width={180}
-                height={60}
-                sizes="180px"
-                style={{
-                  width: "auto",
-                  height: "48px",
-                }}
-              />
-            </Link>
 
-            <p>
-              Endereço fiscal, comercial, armazenagem/estocagem e espaços de coworking modernos para apoiar a operação do seu negócio.
-            </p>
-
-            <div className="finish-footer__quickContact">
-              <a
-                href="https://wa.me/551128976514"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="finish-footer__quickBtn"
-                aria-label="WhatsApp Lagerhaus"
-              >
-                <span>● WhatsApp: (11) 2897-6514</span>
-              </a>
-              <a
-                href="mailto:contato@grupoqmax.com.br"
-                className="finish-footer__quickBtn"
-                aria-label="E-mail Lagerhaus"
-              >
-                <span>contato@grupoqmax.com.br</span>
-              </a>
-            </div>
-          </div>
-
-          <div className="finish-footer__nav">
-            <div>
-              <strong>NAVEGAÇÃO</strong>
-              <Link href="/lagerhaus">Início</Link>
-              <a href="#servicos">Serviços</a>
-            </div>
-
-            <div>
-              <strong>ESPECIALIDADES</strong>
-              <a href="#servicos">Endereço Fiscal</a>
-              <a href="#servicos">Endereço Comercial</a>
-              <a href="#servicos">Armazenagem & Estocagem</a>
-              <a href="#servicos">Coworking</a>
-            </div>
-
-            <div>
-              <strong>ECOSSISTEMA</strong>
-              <Link href="/">Grupo Q-Max</Link>
-              <Link href="/contabil">Q-Max Contábil</Link>
-              <Link href="/auditoria">Q-Max Auditoria</Link>
-              <Link href="/technology">Q-Max Technology</Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="container finish-footer__bottom">
-          <span>© 2026 Lagerhaus · Uma empresa do Grupo Q-Max<span className="qmax-punctuation">.</span></span>
-
-          <div>
-            <span>São Bernardo do Campo · SP</span>
-            <i />
-            <span>Estrutura para Negócios & Coworking.</span>
-          </div>
-        </div>
-      </footer>
 
       <FloatingWhatsApp />
       <BackToTop />

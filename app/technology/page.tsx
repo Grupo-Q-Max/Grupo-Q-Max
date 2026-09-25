@@ -12,9 +12,9 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
-import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { QmaxInline } from "@/components/QmaxBrandText";
 import { CountUp } from "@/components/CountUp";
 import "./technology.css";
@@ -69,13 +69,8 @@ const services = [
 export default function TechnologyPage() {
   return (
     <main className="technology-page">
-      <QmaxEcosystemHeader
-        brand="technology"
-        logo="/brands/brand-technology.png"
-        accent="#3156ff"
-      />
-
       {/* HERO SECTION */}
+      <ScrollReveal animation="fade-up">
       <section className="technology-hero">
         <div className="technology-hero__glow technology-hero__glow--blue" />
 
@@ -153,8 +148,10 @@ export default function TechnologyPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* SERVICES SECTION */}
+      <ScrollReveal animation="slide-left" delay={0.2}>
       <section id="servicos" style={{ padding: "clamp(80px, 8vw, 130px) 0" }}>
         <div className="container">
           <header className="text-center" style={{ maxWidth: 740, margin: "0 auto" }}>
@@ -209,84 +206,9 @@ export default function TechnologyPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
-      {/* FOOTER */}
-      <footer className="finish-footer" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
-        <div className="container finish-footer__top">
-          <div className="finish-footer__brand">
-            <Link href="/technology" aria-label="Q-Max Technology">
-              <Image
-                src="/brands/brand-technology.png"
-                alt="Q-Max Technology"
-                width={180}
-                height={60}
-                sizes="180px"
-                style={{
-                  width: "auto",
-                  height: "48px",
-                }}
-              />
-            </Link>
 
-            <p>
-              Estratégias digitais, programas de indicação e desenvolvimento de ferramentas para acelerar marcas.
-            </p>
-
-            <div className="finish-footer__quickContact">
-              <a
-                href="https://wa.me/551128976514"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="finish-footer__quickBtn"
-                aria-label="WhatsApp Q-Max Technology"
-              >
-                <span>● WhatsApp: (11) 2897-6514</span>
-              </a>
-              <a
-                href="mailto:contato@grupoqmax.com.br"
-                className="finish-footer__quickBtn"
-                aria-label="E-mail Q-Max Technology"
-              >
-                <span>contato@grupoqmax.com.br</span>
-              </a>
-            </div>
-          </div>
-
-          <div className="finish-footer__nav">
-            <div>
-              <strong>NAVEGAÇÃO</strong>
-              <Link href="/technology">Início</Link>
-              <a href="#servicos">Soluções</a>
-            </div>
-
-            <div>
-              <strong>ESPECIALIDADES</strong>
-              <a href="#servicos">Desenvolvimento de Software</a>
-              <a href="#servicos">Programas de Indicação</a>
-              <a href="#servicos">Estratégias Digitais</a>
-              <a href="#servicos">Transformação Cloud</a>
-            </div>
-
-            <div>
-              <strong>ECOSSISTEMA</strong>
-              <Link href="/">Grupo Q-Max</Link>
-              <Link href="/contabil">Q-Max Contábil</Link>
-              <Link href="/auditoria">Q-Max Auditoria</Link>
-              <Link href="/talents">Q-Max Talents</Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="container finish-footer__bottom">
-          <span>© 2026 Q-Max Technology · Uma empresa do Grupo Q-Max<span className="qmax-punctuation">.</span></span>
-
-          <div>
-            <span>São Bernardo do Campo · SP</span>
-            <i />
-            <span>Digital, Inovação e Atitude.</span>
-          </div>
-        </div>
-      </footer>
 
       <FloatingWhatsApp />
       <BackToTop />

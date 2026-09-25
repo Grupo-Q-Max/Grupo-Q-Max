@@ -12,9 +12,9 @@ import {
   UserCheck,
   Users2,
 } from "lucide-react";
-import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { CountUp } from "@/components/CountUp";
 import "./talents.css";
 
@@ -68,13 +68,9 @@ const services = [
 export default function TalentsPage() {
   return (
     <main className="talents-page">
-      <QmaxEcosystemHeader
-        brand="talents"
-        logo="/brands/brand-talents.png"
-        accent="#8f3aa8"
-      />
 
       {/* HERO SECTION */}
+      <ScrollReveal animation="fade-up">
       <section className="talents-hero">
         <div className="talents-hero__glow talents-hero__glow--purple" />
 
@@ -154,8 +150,10 @@ export default function TalentsPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* SERVICES SECTION */}
+      <ScrollReveal animation="slide-right" delay={0.2}>
       <section id="servicos" style={{ padding: "clamp(80px, 8vw, 130px) 0" }}>
         <div className="container">
           <header className="text-center" style={{ maxWidth: 740, margin: "0 auto" }}>
@@ -210,84 +208,9 @@ export default function TalentsPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
-      {/* FOOTER */}
-      <footer className="finish-footer" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
-        <div className="container finish-footer__top">
-          <div className="finish-footer__brand">
-            <Link href="/talents" aria-label="Q-Max Talents">
-              <Image
-                src="/brands/brand-talents.png"
-                alt="Q-Max Talents"
-                width={180}
-                height={60}
-                sizes="180px"
-                style={{
-                  width: "auto",
-                  height: "48px",
-                }}
-              />
-            </Link>
 
-            <p>
-              Soluções completas em gestão de pessoas, unindo operação, estratégia e desenvolvimento de talentos.
-            </p>
-
-            <div className="finish-footer__quickContact">
-              <a
-                href="https://wa.me/551128976514"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="finish-footer__quickBtn"
-                aria-label="WhatsApp Q-Max Talents"
-              >
-                <span>● WhatsApp: (11) 2897-6514</span>
-              </a>
-              <a
-                href="mailto:contato@grupoqmax.com.br"
-                className="finish-footer__quickBtn"
-                aria-label="E-mail Q-Max Talents"
-              >
-                <span>contato@grupoqmax.com.br</span>
-              </a>
-            </div>
-          </div>
-
-          <div className="finish-footer__nav">
-            <div>
-              <strong>NAVEGAÇÃO</strong>
-              <Link href="/talents">Início</Link>
-              <a href="#servicos">Serviços</a>
-            </div>
-
-            <div>
-              <strong>ESPECIALIDADES</strong>
-              <a href="#servicos">Recrutamento & Seleção</a>
-              <a href="#servicos">Treinamento & Desenvolvimento</a>
-              <a href="#servicos">Gestão Operacional de DP</a>
-              <a href="#servicos">Clima e Cultura</a>
-            </div>
-
-            <div>
-              <strong>ECOSSISTEMA</strong>
-              <Link href="/">Grupo Q-Max</Link>
-              <Link href="/contabil">Q-Max Contábil</Link>
-              <Link href="/auditoria">Q-Max Auditoria</Link>
-              <Link href="/finora">FINORA</Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="container finish-footer__bottom">
-          <span>© 2026 Q-Max Talents · Uma empresa do Grupo Q-Max<span className="qmax-punctuation">.</span></span>
-
-          <div>
-            <span>São Bernardo do Campo · SP</span>
-            <i />
-            <span>Pessoas & Performance Empresarial.</span>
-          </div>
-        </div>
-      </footer>
 
       <FloatingWhatsApp />
       <BackToTop />

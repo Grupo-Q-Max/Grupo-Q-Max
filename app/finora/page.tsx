@@ -14,9 +14,9 @@ import {
   FileCheck2,
   Users,
 } from "lucide-react";
-import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { TaxDiagnosticCalculator } from "@/components/TaxDiagnosticCalculator";
 import { QmaxInline } from "@/components/QmaxBrandText";
 import { CountUp } from "@/components/CountUp";
@@ -72,13 +72,8 @@ const pillars = [
 export default function FinoraPage() {
   return (
     <main className="finora-page">
-      <QmaxEcosystemHeader
-        brand="group"
-        logo="/brands/grupo-qmax-white.png"
-        accent="#a45cff"
-      />
-
       {/* HERO SECTION */}
+      <ScrollReveal animation="fade-up">
       <section className="finora-hero">
         <div className="finora-hero__glow finora-hero__glow--violet" />
         <div className="finora-hero__glow finora-hero__glow--magenta" />
@@ -150,8 +145,10 @@ export default function FinoraPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* PILARES SECTION */}
+      <ScrollReveal animation="slide-left" delay={0.2}>
       <section id="pilares" style={{ padding: "clamp(80px, 8vw, 130px) 0" }}>
         <div className="container">
           <header className="text-center" style={{ maxWidth: 740, margin: "0 auto" }}>
@@ -206,78 +203,14 @@ export default function FinoraPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* DIAGNOSTIC CALCULATOR */}
-      <TaxDiagnosticCalculator />
+      <ScrollReveal animation="fade-up" delay={0.1}>
+        <TaxDiagnosticCalculator />
+      </ScrollReveal>
 
-      {/* FOOTER */}
-      <footer className="finish-footer" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
-        <div className="container finish-footer__top">
-          <div className="finish-footer__brand">
-            <strong style={{ fontSize: "1.8rem", letterSpacing: "-0.03em", color: "#c084fc" }}>
-              FINORA
-            </strong>
 
-            <p>
-              Solução do Grupo Q-Max em gestão contábil, financeira e planejamento tributário estratégico para clínicas odontológicas.
-            </p>
-
-            <div className="finish-footer__quickContact">
-              <a
-                href="https://wa.me/551128976514"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="finish-footer__quickBtn"
-                aria-label="WhatsApp FINORA"
-              >
-                <span>● WhatsApp: (11) 2897-6514</span>
-              </a>
-              <a
-                href="mailto:contato@grupoqmax.com.br"
-                className="finish-footer__quickBtn"
-                aria-label="E-mail FINORA"
-              >
-                <span>contato@grupoqmax.com.br</span>
-              </a>
-            </div>
-          </div>
-
-          <div className="finish-footer__nav">
-            <div>
-              <strong>NAVEGAÇÃO</strong>
-              <Link href="/finora">Início</Link>
-              <a href="#pilares">Pilares</a>
-              <a href="#diagnostico">Simulador</a>
-            </div>
-
-            <div>
-              <strong>ESPECIALIDADES</strong>
-              <a href="#pilares">Planejamento Tributário</a>
-              <a href="#pilares">BPO Odontológico</a>
-              <a href="#pilares">Contratos e CRO</a>
-              <a href="#pilares">Equiparação Hospitalar</a>
-            </div>
-
-            <div>
-              <strong>ECOSSISTEMA</strong>
-              <Link href="/">Grupo Q-Max</Link>
-              <Link href="/contabil">Q-Max Contábil</Link>
-              <Link href="/auditoria">Q-Max Auditoria</Link>
-              <a href="https://lagerhaus.work" target="_blank" rel="noopener noreferrer">Lagerhaus</a>
-            </div>
-          </div>
-        </div>
-
-        <div className="container finish-footer__bottom">
-          <span>© 2026 FINORA · Uma solução do Grupo Q-Max<span className="qmax-punctuation">.</span></span>
-
-          <div>
-            <span>São Bernardo do Campo · SP</span>
-            <i />
-            <span>Inteligência Financeira para Clínicas Odontológicas.</span>
-          </div>
-        </div>
-      </footer>
 
       <FloatingWhatsApp />
       <BackToTop />
