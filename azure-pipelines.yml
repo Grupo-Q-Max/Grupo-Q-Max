@@ -21,6 +21,19 @@ steps:
 - script: npm ci
   displayName: 'Instalar dependencias'
 
+- script: npx prisma generate
+  displayName: 'Gerar Prisma Client'
+
+- script: npx prisma db push
+  displayName: 'Sincronizar Banco de Dados (DB Push)'
+  env:
+    DATABASE_URL: $(DATABASE_URL)
+
+- script: node test-db.js
+  displayName: 'Robô de Testes Automatizados'
+  env:
+    DATABASE_URL: $(DATABASE_URL)
+
 - script: npm run build
   displayName: 'Build Next.js'
 

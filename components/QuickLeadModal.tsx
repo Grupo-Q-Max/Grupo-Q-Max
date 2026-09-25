@@ -39,12 +39,30 @@ export function QuickLeadModal() {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanNumber = whatsapp.replace(/\D/g, "");
     const text = encodeURIComponent(
       `Olá! Meu nome é ${name || "Visitante"}${companyName ? ` (Empresa: ${companyName})` : ""}. Gostaria de solicitar um diagnóstico com a unidade ${selectedCompany.name} (${selectedCompany.category}).`
     );
+
+    // Salvar o Lead no Banco de Dados
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name || "Visitante",
+          email: "Não informado", // Adicionar campo no form se quiser
+          phone: "WhatsApp Chat", // Adicionar campo se quiser capturar
+          company: companyName,
+          message: `Deseja diagnóstico com ${selectedCompany.name}`,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to save lead:", error);
+    }
+
     window.open(`https://wa.me/551128976514?text=${text}`, "_blank");
     setIsOpen(false);
   };

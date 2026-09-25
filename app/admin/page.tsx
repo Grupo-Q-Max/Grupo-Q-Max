@@ -38,6 +38,8 @@ import {
   RotateCw,
   Move,
   Crop,
+  MessageSquare,
+  Activity,
 } from "lucide-react";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
@@ -69,7 +71,7 @@ interface SiteSettings {
   adminPassword: string;
 }
 
-type Tab = "dashboard" | "team" | "logos" | "settings";
+type Tab = "dashboard" | "team" | "logos" | "settings" | "leads" | "analytics";
 
 const BRAND_LOGOS: BrandLogo[] = [
   {
@@ -1216,9 +1218,178 @@ function SettingsTab({
   );
 }
 
+/* ─── Leads Tab ──────────────────────────────────────────────────────────── */
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string | null;
+  message: string;
+  status: string;
+  createdAt: string;
+}
+
+function LeadsTab() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/leads")
+      .then((r) => r.json())
+      .then((data) => setLeads(data))
+      .catch(() => console.error("Failed to fetch leads"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="qadmin__leads">
+      <div className="qadmin__toolbar">
+        <div>
+          <h2>Leads e Contatos</h2>
+          <p>Potenciais clientes que solicitaram contato pelo site</p>
+        </div>
+      </div>
+      
+      {loading ? (
+        <div className="qadmin__loading">
+          <div className="qadmin__spinner" />
+          <span>Carregando leads...</span>
+        </div>
+      ) : leads.length === 0 ? (
+        <div className="qadmin__empty">
+          <MessageSquare size={48} />
+          <h3>Nenhum lead ainda</h3>
+          <p>Os contatos do formulário aparecerão aqui.</p>
+        </div>
+      ) : (
+        <div className="qadmin__leadsTableWrap">
+          <table className="qadmin__leadsTable">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nome</th>
+                <th>Empresa</th>
+                <th>Contato</th>
+                <th>Interesse</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leads.map((lead) => (
+                <tr key={lead.id}>
+                  <td>{new Date(lead.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+                  <td><strong>{lead.name}</strong></td>
+                  <td>{lead.company || "-"}</td>
+                  <td>
+                    <div>{lead.phone}</div>
+                    {lead.email !== "Não informado" && <div><small>{lead.email}</small></div>}
+                  </td>
+                  <td>{lead.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Analytics Tab ──────────────────────────────────────────────────────── */
+interface PageVisit {
+  id: string;
+  path: string;
+  referrer: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
+function AnalyticsTab() {
+  const [visits, setVisits] = useState<PageVisit[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/analytics")
+      .then((r) => r.json())
+      .then((data) => setVisits(data))
+      .catch(() => console.error("Failed to fetch analytics"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="qadmin__leads">
+      <div className="qadmin__toolbar">
+        <div>
+          <h2>Auditoria de Acessos</h2>
+          <p>Veja em tempo real as páginas acessadas pelos visitantes em todo o ecossistema Q-Max.</p>
+        </div>
+        <button
+          className="qadmin-btn qadmin-btn--ghost"
+          onClick={() => {
+            setLoading(true);
+            fetch("/api/analytics")
+              .then((r) => r.json())
+              .then((data) => setVisits(data))
+              .finally(() => setLoading(false));
+          }}
+        >
+          <RefreshCw size={16} /> Atualizar
+        </button>
+      </div>
+      
+      {loading ? (
+        <div className="qadmin__loading">
+          <div className="qadmin__spinner" />
+          <span>Carregando auditoria...</span>
+        </div>
+      ) : visits.length === 0 ? (
+        <div className="qadmin__empty">
+          <Activity size={48} />
+          <h3>Nenhum acesso registrado ainda</h3>
+          <p>Assim que os usuários navegarem, os registros aparecerão aqui.</p>
+        </div>
+      ) : (
+        <div className="qadmin__leadsTableWrap">
+          <table className="qadmin__leadsTable">
+            <thead>
+              <tr>
+                <th>Data / Hora</th>
+                <th>Página Acessada</th>
+                <th>Origem (Referrer)</th>
+                <th>Dispositivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visits.map((v) => (
+                <tr key={v.id}>
+                  <td>
+                    {new Date(v.createdAt).toLocaleDateString("pt-BR")} às{" "}
+                    <strong>{new Date(v.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</strong>
+                  </td>
+                  <td>
+                    <span style={{ color: "#14d0c1", fontWeight: 600 }}>{v.path}</span>
+                  </td>
+                  <td>{v.referrer || "Acesso Direto"}</td>
+                  <td>
+                    <small style={{ opacity: 0.6 }}>
+                      {v.userAgent ? (v.userAgent.length > 50 ? v.userAgent.substring(0, 50) + "..." : v.userAgent) : "Desconhecido"}
+                    </small>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Main Admin Page ────────────────────────────────────────────────────── */
 const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "leads", label: "Leads", icon: MessageSquare },
+  { id: "analytics", label: "Auditoria de Acessos", icon: Activity },
   { id: "team", label: "Nossos Sócios", icon: Users },
   { id: "logos", label: "Logos", icon: Palette },
   { id: "settings", label: "Configurações", icon: Settings },
@@ -1248,24 +1419,21 @@ export default function AdminPage() {
   }, [auth, tab]);
 
   async function login() {
-    // Validate against settings API
     try {
-      const res = await fetch("/api/settings");
-      const s = await res.json();
-      if (pwInput === s.adminPassword) {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pwInput }),
+      });
+      
+      if (res.ok) {
         setAuth(true);
         setPwError(false);
       } else {
         setPwError(true);
       }
     } catch {
-      // Fallback to default password if API fails
-      if (pwInput === "qmax2025") {
-        setAuth(true);
-        setPwError(false);
-      } else {
-        setPwError(true);
-      }
+      setPwError(true);
     }
   }
 
@@ -1352,6 +1520,8 @@ export default function AdminPage() {
           {tab === "dashboard" && (
             <DashboardTab teamCount={teamCount} onNavigate={setTab} />
           )}
+          {tab === "leads" && <LeadsTab />}
+          {tab === "analytics" && <AnalyticsTab />}
           {tab === "team" && <TeamTab showToast={showToast} />}
           {tab === "logos" && <LogosTab showToast={showToast} />}
           {tab === "settings" && <SettingsTab showToast={showToast} />}

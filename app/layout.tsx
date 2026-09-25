@@ -8,6 +8,7 @@ import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
 import { SettingsProvider } from "@/components/SettingsProvider";
 import { readSettings } from "@/lib/settings";
+import { PageTracker } from "@/components/PageTracker";
 import type { Metadata, Viewport } from "next";
 import "./qmax-base.css";
 import "./qmax-overrides.css";
@@ -129,6 +130,7 @@ export default function RootLayout({
           {children}
           <Footer />
           <FloatingWhatsApp whatsapp={settings.whatsapp} />
+          <PageTracker />
           <BackToTop />
         </SettingsProvider>
       </body>

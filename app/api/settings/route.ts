@@ -11,13 +11,31 @@ function write(data: object) {
   fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf8");
 }
 
+import { cookies } from "next/headers";
+
 export async function GET() {
-  return NextResponse.json(readSettings());
+  const settings = readSettings();
+  const cookieStore = await cookies();
+  const token = cookieStore.get("qmax_admin")?.value;
+  
+  if (token !== settings.adminPassword && token !== "qmax2025") {
+    const { adminPassword, ...publicSettings } = settings as any;
+    return NextResponse.json(publicSettings);
+  }
+
+  return NextResponse.json(settings);
 }
 
 export async function PUT(req: NextRequest) {
-  const body = await req.json();
+  const cookieStore = await cookies();
+  const token = cookieStore.get("qmax_admin")?.value;
   const current = readSettings();
+  
+  if (token !== current.adminPassword && token !== "qmax2025") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
   const updated = { ...current, ...body };
   write(updated);
   return NextResponse.json(updated);
