@@ -39,6 +39,20 @@ export default function TechnologyPage() {
             <div className="tech-hero__video-content">
               <span>EXPLORE A NOSSA VISÃO</span>
               <p>Inovação, Código e Performance em um só lugar.</p>
+              
+              {/* Glassmorphic Terminal Window */}
+              <div className="tech-hero__terminal">
+                <div className="tech-hero__terminal-header">
+                  <span className="dot dot-red"></span>
+                  <span className="dot dot-yellow"></span>
+                  <span className="dot dot-green"></span>
+                </div>
+                <div className="tech-hero__terminal-body">
+                  <p><code><span className="text-blue">const</span> qmax <span className="text-blue">=</span> <span className="text-yellow">new</span> <span className="text-green">Technology</span>();</code></p>
+                  <p><code>qmax.<span className="text-yellow">innovate</span>(<span className="text-orange">"Future"</span>);</code></p>
+                  <p className="terminal-cursor"><code>&gt; System Ready_</code></p>
+                </div>
+              </div>
             </div>
 
             <div className="tech-hero__icon-circle">

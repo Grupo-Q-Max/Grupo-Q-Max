@@ -133,6 +133,59 @@
   margin: 0;
 }
 
+.tech-hero__terminal {
+  margin-top: 24px;
+  background: rgba(5, 6, 10, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+}
+
+.tech-hero__terminal-header {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  gap: 8px;
+  border-radius: 12px 12px 0 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+.tech-hero__terminal-body {
+  padding: 16px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.tech-hero__terminal-body p {
+  margin: 0;
+  color: #e2e8f0;
+}
+
+.text-blue { color: #5fb1f6; }
+.text-yellow { color: #e5c07b; }
+.text-green { color: #98c379; }
+.text-orange { color: #d19a66; }
+
+.terminal-cursor {
+  margin-top: 10px !important;
+  color: #0B15D9 !important; /* Azul Vibrante */
+  font-weight: bold;
+}
+
 .tech-hero__icon-circle {
   position: absolute;
   bottom: -25px;
