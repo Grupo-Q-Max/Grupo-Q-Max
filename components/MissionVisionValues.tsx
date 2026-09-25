@@ -1,6 +1,7 @@
 "use client";
 
 import { Flag, Eye, Diamond } from "lucide-react";
+import { ScrollReveal } from "./ScrollReveal";
 
 export function MissionVisionValues() {
   const pillars = [
@@ -10,7 +11,7 @@ export function MissionVisionValues() {
       icon: Flag,
       description: "Assegurar soluções e serviços de alta qualidade e preservar a nossa reputação e do cliente utilizando-se de atitudes éticas.",
       bullets: ["Ambiente Colaborativo", "Crescimento Sustentável"],
-      delay: "0s",
+      delay: 0,
     },
     {
       id: "vision",
@@ -18,7 +19,7 @@ export function MissionVisionValues() {
       icon: Eye,
       description: "Ser reconhecida como líder em soluções empresariais inovadoras, criando valor real para nossos clientes.",
       bullets: ["Liderança em Inovação", "Valor real para Clientes"],
-      delay: "0.15s",
+      delay: 0.15,
     },
     {
       id: "values",
@@ -31,52 +32,52 @@ export function MissionVisionValues() {
         "Inovação com Propósito",
         "Ética e Transparência",
       ],
-      delay: "0.3s",
+      delay: 0.3,
     },
   ];
 
   return (
     <section className="qprinciples" id="proposito">
       <div className="container">
-        <header className="qprinciples__header">
-          <span className="eyebrow">
-            <Diamond size={13} />
-            NOSSO PROPÓSITO
-          </span>
-          <h2>
-            1. MISSÃO, <em className="qmax-brand-word">VISÃO</em> E VALORES
-          </h2>
-          <p>
-            Fundado em 1998, o Grupo Q-Max é um ecossistema empresarial sustentável que reúne as melhores empresas e profissionais para criar soluções inovadoras e impactantes. Comprometidos com práticas ESG.
-          </p>
-        </header>
+        <ScrollReveal animation="fade-up" delay={0.1}>
+          <header className="qprinciples__header">
+            <span className="eyebrow">
+              <Diamond size={13} />
+              NOSSO PROPÓSITO
+            </span>
+            <h2>
+              1. MISSÃO, <em className="qmax-brand-word">VISÃO</em> E VALORES
+            </h2>
+            <p>
+              Fundado em 1998, o Grupo Q-Max é um ecossistema empresarial sustentável que reúne as melhores empresas e profissionais para criar soluções inovadoras e impactantes. Comprometidos com práticas ESG.
+            </p>
+          </header>
+        </ScrollReveal>
 
         <div className="qprinciples__grid">
           {pillars.map((pillar, index) => {
             const Icon = pillar.icon;
             return (
-              <div
-                key={pillar.id}
-                className="qprinciples__card"
-                style={{ animationDelay: pillar.delay }}
-              >
-                <div className="qprinciples__cardIcon">
-                  <Icon size={32} strokeWidth={1.5} />
+              <ScrollReveal key={pillar.id} animation="fade-up" delay={pillar.delay + 0.2}>
+                <div className="qprinciples__card">
+                  <div className="qprinciples__cardIcon">
+                    <Icon size={32} strokeWidth={1.5} />
+                  </div>
+                  <h3>
+                    {index + 1}. <span className="qmax-brand-word">{pillar.title}</span>
+                  </h3>
+                  <p className="qprinciples__desc">{pillar.description}</p>
+                  <ul className="qprinciples__list">
+                    {pillar.bullets.map((bullet, i) => (
+                      <li key={i}>
+                        <span className="qprinciples__bulletPoint" />
+                        {bullet}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="qprinciples__cardGlow" />
                 </div>
-                <h3>
-                  {index + 1}. <span className="qmax-brand-word">{pillar.title}</span>
-                </h3>
-                <p className="qprinciples__desc">{pillar.description}</p>
-                <ul className="qprinciples__list">
-                  {pillar.bullets.map((bullet, i) => (
-                    <li key={i}>
-                      <span className="qprinciples__bulletPoint" />
-                      {bullet}
-                    </li>
-                  ))}
-                </ul>
-                <div className="qprinciples__cardGlow" />
-              </div>
+              </ScrollReveal>
             );
           })}
         </div>

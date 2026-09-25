@@ -5,7 +5,7 @@ import { Hero } from "@/components/Hero";
 import { SegmentsMarquee } from "@/components/SegmentsMarquee";
 import { MissionVisionValues } from "@/components/MissionVisionValues";
 import { Story } from "@/components/Story";
-import { Team } from "@/components/Team";
+import { Partners } from "@/components/Partners";
 import { Ecosystem } from "@/components/Ecosystem";
 import { Products } from "@/components/Products";
 import { TaxDiagnosticCalculator } from "@/components/TaxDiagnosticCalculator";
@@ -31,7 +31,7 @@ export default function Home() {
         <SegmentsMarquee />
         <Story />
         <MissionVisionValues />
-        <Team />
+        <Partners />
         <Ecosystem />
         <Products />
         <TaxDiagnosticCalculator />

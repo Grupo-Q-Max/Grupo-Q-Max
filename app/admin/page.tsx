@@ -196,7 +196,7 @@ function MemberModal({
     <div className="qadmin-modal-overlay" onClick={onClose}>
       <div className="qadmin-modal qadmin-modal--wide" onClick={(e) => e.stopPropagation()}>
         <div className="qadmin-modal__header">
-          <h3>{initialData ? "Editar Membro" : "Adicionar Membro"}</h3>
+          <h3>{initialData ? "Editar Sócio" : "Adicionar Sócio"}</h3>
           <button className="qadmin-modal__close" onClick={onClose}>
             <X size={20} />
           </button>
@@ -288,7 +288,7 @@ function MemberModal({
                 {sector.trim() || "Ex: Liderança"}
               </div>
               <div className="qadmin-color-preview-info">
-                <strong>{name.trim() || "Nome do Membro"}</strong>
+                <strong>{name.trim() || "Nome do Sócio"}</strong>
                 <span>{role.trim() || "Cargo"}</span>
               </div>
               <span className="qadmin-color-preview-badge">Prévia ao vivo</span>
@@ -452,7 +452,7 @@ function ImageCropModal({
           <div className="qadmin-crop__titleWrap">
             <Crop size={18} className="qadmin-crop__icon" />
             <div>
-              <h3>Ajustar Foto do Membro</h3>
+              <h3>Ajustar Foto do Sócio</h3>
               <p>Arraste para mover · Use a barra para zoom</p>
             </div>
           </div>
@@ -612,11 +612,11 @@ function DashboardTab({
   const cards = [
     {
       icon: Users,
-      label: "Membros no Time",
+      label: "Sócios",
       value: teamCount,
       tab: "team" as Tab,
       accent: "#14d0c1",
-      hint: "Gerenciar equipe",
+      hint: "Gerenciar sócios",
     },
     {
       icon: Palette,
@@ -683,7 +683,7 @@ function DashboardTab({
             <strong>Configurações:</strong> Atualize contatos, endereço e senha de acesso ao admin.
           </li>
           <li>
-            <strong>Carrossel do site:</strong> A seção "Nosso Time" atualiza automaticamente após
+            <strong>Sócios do site:</strong> A seção "Nossos Sócios" atualiza automaticamente após
             salvar no painel.
           </li>
         </ul>
@@ -732,7 +732,7 @@ function TeamTab({
         });
         const updated = await res.json();
         setTeam((p) => p.map((m) => (m.id === modalMember.id ? { ...m, ...updated } : m)));
-        showToast("Membro atualizado!");
+        showToast("Sócio atualizado!");
       } else {
         // Add new
         await fetch("/api/team", {
@@ -741,7 +741,7 @@ function TeamTab({
           body: JSON.stringify(data),
         });
         await fetchTeam();
-        showToast("Membro adicionado!");
+        showToast("Sócio adicionado!");
       }
       setModalMember(null);
     } catch {
@@ -750,11 +750,11 @@ function TeamTab({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Remover este membro?")) return;
+    if (!confirm("Remover este sócio?")) return;
     try {
       await fetch(`/api/team/${id}`, { method: "DELETE" });
       setTeam((p) => p.filter((m) => m.id !== id));
-      showToast("Membro removido.");
+      showToast("Sócio removido.");
     } catch {
       showToast("Erro ao remover", "error");
     }
@@ -851,7 +851,7 @@ function TeamTab({
       ) : team.length === 0 ? (
         <div className="qadmin__empty">
           <Users size={48} />
-          <h3>Nenhum membro ainda</h3>
+          <h3>Nenhum sócio ainda</h3>
           <p>Clique em "Adicionar membro" para começar.</p>
         </div>
       ) : (
@@ -1219,7 +1219,7 @@ function SettingsTab({
 /* ─── Main Admin Page ────────────────────────────────────────────────────── */
 const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "team", label: "Nosso Time", icon: Users },
+  { id: "team", label: "Nossos Sócios", icon: Users },
   { id: "logos", label: "Logos", icon: Palette },
   { id: "settings", label: "Configurações", icon: Settings },
 ];
