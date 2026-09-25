@@ -27,7 +27,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 40px 100px -20px rgba(15, 21, 107, 0.6);
+  box-shadow: 0 40px 100px -20px rgba(7, 14, 140, 0.6); /* Azul Profundo */
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -60,7 +60,7 @@
   position: absolute;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(75, 107, 251, 0.4), transparent 70%);
+  background: radial-gradient(circle, rgba(11, 21, 217, 0.4), transparent 70%); /* Azul Vibrante */
   border-radius: 50%;
   top: 50%;
   left: 30%;
@@ -144,7 +144,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0f156b;
+  color: #070E8C;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   z-index: 2;
 }
@@ -165,7 +165,7 @@
 
 .tech-intro h2 em {
   font-style: normal;
-  color: #4b6bfb;
+  color: #0B15D9; /* Azul Vibrante */
 }
 
 .tech-intro p {
@@ -243,13 +243,13 @@
 
 .tech-services__header p em {
   font-style: normal;
-  color: #4b6bfb;
+  color: #0B15D9;
   font-weight: 700;
 }
 
 .tech-services__line {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(75, 107, 251, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(11, 21, 217, 0.4), transparent);
   margin-bottom: 30px;
 }
 
@@ -290,7 +290,7 @@
   left: 0;
   right: 0;
   height: 60%;
-  background: linear-gradient(to top, rgba(75, 107, 251, 0.25), transparent);
+  background: linear-gradient(to top, rgba(11, 21, 217, 0.25), transparent);
   pointer-events: none;
 }
 
@@ -303,7 +303,7 @@
 .tech-card__toggle {
   width: 48px;
   height: 24px;
-  background: #4b6bfb;
+  background: #0B15D9;
   border-radius: 12px;
   position: relative;
 }
