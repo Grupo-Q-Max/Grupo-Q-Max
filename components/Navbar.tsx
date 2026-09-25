@@ -4,6 +4,7 @@ import { QmaxInline } from "@/components/QmaxBrandText";
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   ArrowUpRight,
   ChevronDown,
@@ -15,31 +16,31 @@ const companies = [
   {
     name: "Q-Max Auditoria",
     label: "Auditoria",
-    href: "/#empresas",
+    href: "/auditoria",
     logo: "/brands/brand-auditoria.png",
   },
   {
     name: "Q-Max Contábil",
     label: "Contabilidade",
-    href: "/#empresas",
+    href: "/contabil",
     logo: "/brands/brand-contabil.png",
   },
   {
     name: "Q-Max Talents",
     label: "Pessoas",
-    href: "/#empresas",
+    href: "/talents",
     logo: "/brands/brand-talents.png",
   },
   {
     name: "Q-Max Technology",
     label: "Tecnologia",
-    href: "/#empresas",
+    href: "/technology",
     logo: "/brands/brand-technology.png",
   },
   {
     name: "Lagerhaus",
     label: "Estrutura",
-    href: "/#empresas",
+    href: "/lagerhaus",
     logo: "/brands/brand-lagerhaus.png",
   },
 ];
@@ -75,6 +76,18 @@ export function Navbar() {
   const [mobileSection, setMobileSection] = useState<
     "empresas" | "produtos" | null
   >(null);
+
+  const pathname = usePathname();
+
+  const brandLogos: Record<string, string> = {
+    "/auditoria": "/brands/auditoria-branco.png",
+    "/contabil": "/brands/qx-contabil-branco.png",
+    "/talents": "/brands/talents-branco.png",
+    "/technology": "/brands/qmax-technology-white.png",
+    "/lagerhaus": "/brands/lagerhaus-branco.png",
+  };
+
+  const currentLogo = brandLogos[pathname || ""] || "/brands/grupo-qmax-white.png";
 
 
   function goToItem(
@@ -224,7 +237,7 @@ export function Navbar() {
           onClick={closeMenu}
         >
           <Image
-            src="/brands/grupo-qmax-white.png"
+            src={currentLogo}
             alt="Grupo Q-Max"
             width={150}
             height={82}
@@ -232,6 +245,7 @@ export function Navbar() {
             style={{
               width: "auto",
               height: "auto",
+              maxHeight: "44px",
             }}
           />
         </a>
@@ -281,13 +295,7 @@ export function Navbar() {
                   <a
                     key={company.name}
                     href={company.href}
-                    onClick={(event) =>
-                      goToItem(
-                        event,
-                        "empresas",
-                        company.name
-                      )
-                    }
+                    onClick={closeMenu}
                   >
                     <span>
                       0{index + 1}
@@ -489,13 +497,7 @@ export function Navbar() {
               <a
                 key={company.name}
                 href={company.href}
-                onClick={(event) =>
-                  goToItem(
-                    event,
-                    "empresas",
-                    company.name
-                  )
-                }
+                onClick={closeMenu}
               >
                 {company.name}
               </a>
