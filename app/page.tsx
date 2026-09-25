@@ -19,6 +19,8 @@ import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { QuickLeadModal } from "@/components/QuickLeadModal";
 import { BackToTop } from "@/components/BackToTop";
 
+import { ScrollReveal } from "@/components/ScrollReveal";
+
 export default function Home() {
   return (
     <>
@@ -29,17 +31,17 @@ export default function Home() {
       <main>
         <Hero />
         <SegmentsMarquee />
-        <Story />
-        <MissionVisionValues />
-        <Partners />
-        <Ecosystem />
-        <Products />
-        <TaxDiagnosticCalculator />
-        <ComparisonSection />
-        <JourneyTimeline />
-        <ConversionBand />
-        <FAQ />
-        <Contact />
+        <ScrollReveal animation="fade-up"><Story /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><MissionVisionValues /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><Partners /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><Ecosystem /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><Products /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><TaxDiagnosticCalculator /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><ComparisonSection /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><JourneyTimeline /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><ConversionBand /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><FAQ /></ScrollReveal>
+        <ScrollReveal animation="fade-up"><Contact /></ScrollReveal>
       </main>
 
       <Footer />
