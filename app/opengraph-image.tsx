@@ -50,7 +50,7 @@ export default function Image() {
             top: -170,
             borderRadius: "50%",
             background:
-              "radial-gradient(circle, rgba(239,25,125,.28) 0%, rgba(239,25,125,.06) 38%, transparent 70%)",
+              "radial-gradient(circle, rgba(217,15,129,.28) 0%, rgba(217,15,129,.06) 38%, transparent 70%)",
           }}
         />
 
@@ -61,7 +61,7 @@ export default function Image() {
             height: 530,
             right: -15,
             top: 50,
-            border: "1px solid rgba(239,25,125,.18)",
+            border: "1px solid rgba(217,15,129,.18)",
             borderRadius: "50%",
           }}
         />
@@ -85,7 +85,7 @@ export default function Image() {
             height: 270,
             right: 115,
             top: 180,
-            border: "1px solid rgba(239,25,125,.09)",
+            border: "1px solid rgba(217,15,129,.09)",
             borderRadius: "50%",
           }}
         />
@@ -98,7 +98,7 @@ export default function Image() {
             right: 0,
             height: 5,
             background:
-              "linear-gradient(90deg, #ef197d 0%, #ef197d 35%, transparent 70%)",
+              "linear-gradient(90deg, #d90f81 0%, #d90f81 35%, transparent 70%)",
           }}
         />
 
@@ -124,7 +124,7 @@ export default function Image() {
                 width: 11,
                 height: 11,
                 borderRadius: "50%",
-                background: "#ef197d",
+                background: "#d90f81",
               }}
             />
 
@@ -164,7 +164,7 @@ export default function Image() {
                 lineHeight: 0.92,
                 fontWeight: 800,
                 letterSpacing: -5,
-                color: "#ef197d",
+                color: "#d90f81",
               }}
             >
               Inovação,
@@ -192,11 +192,11 @@ export default function Image() {
             }}
           >
             <span>Empresas</span>
-            <span style={{ color: "#ef197d" }}>•</span>
+            <span style={{ color: "#d90f81" }}>•</span>
             <span>Pessoas</span>
-            <span style={{ color: "#ef197d" }}>•</span>
+            <span style={{ color: "#d90f81" }}>•</span>
             <span>Tecnologia</span>
-            <span style={{ color: "#ef197d" }}>•</span>
+            <span style={{ color: "#d90f81" }}>•</span>
             <span>Soluções</span>
           </div>
         </div>

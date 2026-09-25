@@ -54,5 +54,5 @@ export const qmaxProducts = [
 export const qmaxGroup = {
   name: "Grupo Q-Max",
   href: "/",
-  accent: "#ef197d",
+  accent: "#d90f81",
 } as const;

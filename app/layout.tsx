@@ -1,3 +1,4 @@
+import { Montserrat } from "next/font/google";
 import Script from "next/script";
 import { QmaxAnalytics } from "@/components/QmaxAnalytics";
 import { OrganizationJsonLd } from "@/components/OrganizationJsonLd";
@@ -75,13 +76,20 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-montserrat",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={montserrat.variable}>
       <body>
         <Script
           id="qmax-ga4-bootstrap"

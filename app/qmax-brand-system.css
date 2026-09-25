@@ -4,7 +4,7 @@
    ========================================================== */
 
 :root {
-  --qmax-magenta: #ef197d;
+  --qmax-magenta: #d90f81;
   --qmax-brand-white: #ffffff;
 }
 
@@ -95,10 +95,10 @@
    ---------------------------------------------------------- */
 
 :root {
-  --qmax-magenta: #ef197d;
+  --qmax-magenta: #d90f81;
   --qmax-magenta-bright: #ff2b91;
-  --qmax-magenta-soft: rgba(239, 25, 125, .14);
-  --qmax-magenta-glow: rgba(239, 25, 125, .34);
+  --qmax-magenta-soft: rgba(217, 15, 129, .14);
+  --qmax-magenta-glow: rgba(217, 15, 129, .34);
 }
 
 /* ----------------------------------------------------------
@@ -149,7 +149,7 @@
 .hero21__signature > span {
   color: var(--qmax-magenta) !important;
   text-shadow:
-    0 0 24px rgba(239,25,125,.18);
+    0 0 24px rgba(217,15,129,.18);
 }
 
 .hero21__signature > i {
@@ -157,7 +157,7 @@
     linear-gradient(
       90deg,
       var(--qmax-magenta),
-      rgba(239,25,125,.08)
+      rgba(217,15,129,.08)
     ) !important;
 }
 
@@ -322,8 +322,8 @@ button:hover .qmax-brand-word {
 
 .qmax-hero-punctuation--magenta,
 .qmax-story-punctuation--magenta {
-  color: #ef197d !important;
-  -webkit-text-fill-color: #ef197d !important;
+  color: #d90f81 !important;
+  -webkit-text-fill-color: #d90f81 !important;
 }
 
 /* MAGENTA -> BRANCO */
@@ -338,8 +338,8 @@ button:hover .qmax-brand-word {
 
 .qmax-brand-word,
 .qeh__qmaxText {
-  color: #ef197d !important;
-  -webkit-text-fill-color: #ef197d !important;
+  color: #d90f81 !important;
+  -webkit-text-fill-color: #d90f81 !important;
 }
 
 /* ==========================================================
@@ -347,8 +347,8 @@ button:hover .qmax-brand-word {
    ========================================================== */
 
 .qmax-brand-word {
-  color: #ef197d !important;
-  -webkit-text-fill-color: #ef197d !important;
+  color: #d90f81 !important;
+  -webkit-text-fill-color: #d90f81 !important;
 }
 
 a .qmax-brand-word,
@@ -356,8 +356,8 @@ button .qmax-brand-word,
 strong .qmax-brand-word,
 small .qmax-brand-word,
 em .qmax-brand-word {
-  color: #ef197d !important;
-  -webkit-text-fill-color: #ef197d !important;
+  color: #d90f81 !important;
+  -webkit-text-fill-color: #d90f81 !important;
 }
 
 /* texto magenta -> pontuação branca */
@@ -373,8 +373,8 @@ em .qmax-punctuation,
 
 .qmax-text-white .qmax-punctuation,
 .qmax-accent-text--white .qmax-punctuation {
-  color: #ef197d !important;
-  -webkit-text-fill-color: #ef197d !important;
+  color: #d90f81 !important;
+  -webkit-text-fill-color: #d90f81 !important;
 }
 
 /* ==========================================================
@@ -471,9 +471,9 @@ button:hover .qmax-company-name .qmax-brand-word,
 
 .hero__badge:hover {
   transform: translateY(-4px) scale(1.02) !important;
-  border-color: rgba(239, 25, 125, 0.4) !important;
+  border-color: rgba(217, 15, 129, 0.4) !important;
   box-shadow: 0 28px 55px -10px rgba(0, 0, 0, 0.7),
-              0 0 25px rgba(239, 25, 125, 0.25),
+              0 0 25px rgba(217, 15, 129, 0.25),
               inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
 }
 
@@ -495,10 +495,10 @@ button:hover .qmax-company-name .qmax-brand-word,
 }
 
 .hero__badgeIcon--magenta {
-  background: radial-gradient(circle at 30% 30%, rgba(239, 25, 125, 0.28), rgba(239, 25, 125, 0.05));
-  color: #ef197d;
-  border-color: rgba(239, 25, 125, 0.35);
-  box-shadow: 0 0 15px rgba(239, 25, 125, 0.25);
+  background: radial-gradient(circle at 30% 30%, rgba(217, 15, 129, 0.28), rgba(217, 15, 129, 0.05));
+  color: #d90f81;
+  border-color: rgba(217, 15, 129, 0.35);
+  box-shadow: 0 0 15px rgba(217, 15, 129, 0.25);
 }
 
 .hero__badgeIcon--violet {
@@ -533,11 +533,11 @@ button:hover .qmax-company-name .qmax-brand-word,
 .nav15__cta,
 .finish-contact__primary,
 .audit67__primary {
-  background: linear-gradient(135deg, #ef197d 0%, #c90b63 100%) !important;
+  background: linear-gradient(135deg, #d90f81 0%, #c90b63 100%) !important;
   color: #ffffff !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 4px 20px rgba(239, 25, 125, 0.35), 
-              0 0 0 1px rgba(239, 25, 125, 0.4),
+  box-shadow: 0 4px 20px rgba(217, 15, 129, 0.35), 
+              0 0 0 1px rgba(217, 15, 129, 0.4),
               inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
   border-radius: 9999px !important;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -550,8 +550,8 @@ button:hover .qmax-company-name .qmax-brand-word,
 .audit67__primary:hover {
   transform: translateY(-2px) scale(1.02) !important;
   background: linear-gradient(135deg, #ff2a8d 0%, #df1272 100%) !important;
-  box-shadow: 0 8px 30px rgba(239, 25, 125, 0.55), 
-              0 0 35px rgba(239, 25, 125, 0.35),
+  box-shadow: 0 8px 30px rgba(217, 15, 129, 0.55), 
+              0 0 35px rgba(217, 15, 129, 0.35),
               inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
 }
 
@@ -604,7 +604,7 @@ button:hover .qmax-company-name .qmax-brand-word,
 
 /* 5. SMOOTH SCROLLBAR & SELECTION */
 ::selection {
-  background: #ef197d !important;
+  background: #d90f81 !important;
   color: #ffffff !important;
 }
 
@@ -643,15 +643,15 @@ button:hover .qmax-company-name .qmax-brand-word,
   background: linear-gradient(145deg, rgba(20, 20, 28, 0.95), rgba(10, 10, 15, 0.98)) !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   box-shadow: 0 35px 80px -20px rgba(0, 0, 0, 0.8),
-              0 0 40px -10px var(--product, rgba(239, 25, 125, 0.2)),
+              0 0 40px -10px var(--product, rgba(217, 15, 129, 0.2)),
               inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
   border-radius: 24px !important;
 }
 
 .products5__chart span {
-  background: linear-gradient(180deg, var(--product, #ef197d) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+  background: linear-gradient(180deg, var(--product, #d90f81) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
   border-radius: 6px 6px 0 0 !important;
-  box-shadow: 0 0 15px var(--product, rgba(239, 25, 125, 0.35)) !important;
+  box-shadow: 0 0 15px var(--product, rgba(217, 15, 129, 0.35)) !important;
   transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -681,15 +681,15 @@ button:hover .qmax-company-name .qmax-brand-word,
 
 .finish-contact__details a:hover {
   background: rgba(255, 255, 255, 0.07) !important;
-  border-color: rgba(239, 25, 125, 0.4) !important;
+  border-color: rgba(217, 15, 129, 0.4) !important;
   transform: translateY(-3px) !important;
-  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(239, 25, 125, 0.2) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(217, 15, 129, 0.2) !important;
 }
 
 .finish-contact__icon {
-  background: radial-gradient(circle, rgba(239, 25, 125, 0.25), rgba(239, 25, 125, 0.05)) !important;
-  border: 1px solid rgba(239, 25, 125, 0.35) !important;
-  color: #ef197d !important;
+  background: radial-gradient(circle, rgba(217, 15, 129, 0.25), rgba(217, 15, 129, 0.05)) !important;
+  border: 1px solid rgba(217, 15, 129, 0.35) !important;
+  color: #d90f81 !important;
   border-radius: 12px !important;
 }
 
@@ -813,7 +813,7 @@ button:hover .qmax-company-name .qmax-brand-word,
 .finish-footer__quickBtn:hover {
   color: #ffffff !important;
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(239, 25, 125, 0.4);
+  border-color: rgba(217, 15, 129, 0.4);
   transform: translateX(4px);
 }
 
@@ -823,8 +823,8 @@ button:hover .qmax-company-name .qmax-brand-word,
 }
 
 .faq43__item.is-open {
-  border-color: rgba(239, 25, 125, 0.45) !important;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(239, 25, 125, 0.15) !important;
+  border-color: rgba(217, 15, 129, 0.45) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(217, 15, 129, 0.15) !important;
 }
 
 .faq43__item .faq43__icon {
@@ -833,7 +833,7 @@ button:hover .qmax-company-name .qmax-brand-word,
 
 .faq43__item.is-open .faq43__icon {
   transform: rotate(180deg) !important;
-  color: #ef197d !important;
+  color: #d90f81 !important;
 }
 
 /* 12. AUDITORIA FOOTER HARMONIZATION */
@@ -857,7 +857,7 @@ button:hover .qmax-company-name .qmax-brand-word,
   position: relative;
   overflow: hidden;
   background: radial-gradient(circle at 50% 10%, rgba(20, 208, 193, 0.07), transparent 60%),
-              radial-gradient(circle at 80% 80%, rgba(239, 25, 125, 0.05), transparent 60%),
+              radial-gradient(circle at 80% 80%, rgba(217, 15, 129, 0.05), transparent 60%),
               #07070a;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -1076,7 +1076,7 @@ button:hover .qmax-company-name .qmax-brand-word,
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   font-weight: 700;
-  color: #ef197d;
+  color: #d90f81;
 }
 
 .qmax-calculator__solutionName {
@@ -1097,21 +1097,21 @@ button:hover .qmax-company-name .qmax-brand-word,
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: linear-gradient(135deg, #ef197d 0%, #d80b6a 100%);
+  background: linear-gradient(135deg, #d90f81 0%, #d80b6a 100%);
   color: #ffffff !important;
   font-weight: 700;
   font-size: 0.95rem;
   padding: 16px 24px;
   border-radius: 9999px;
   text-decoration: none !important;
-  box-shadow: 0 4px 25px rgba(239, 25, 125, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 25px rgba(217, 15, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .qmax-calculator__cta:hover {
   transform: translateY(-2px) scale(1.02);
   background: linear-gradient(135deg, #ff2a8d 0%, #e91379 100%);
-  box-shadow: 0 8px 35px rgba(239, 25, 125, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 35px rgba(217, 15, 129, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 /* 14. INFINITE SEGMENTS MARQUEE */
@@ -1204,7 +1204,7 @@ button:hover .qmax-company-name .qmax-brand-word,
 .qmax-comparison {
   padding: clamp(80px, 8vw, 130px) 0;
   position: relative;
-  background: radial-gradient(circle at 80% 20%, rgba(239, 25, 125, 0.06), transparent 60%),
+  background: radial-gradient(circle at 80% 20%, rgba(217, 15, 129, 0.06), transparent 60%),
               radial-gradient(circle at 20% 80%, rgba(20, 208, 193, 0.06), transparent 60%),
               #060608;
 }
@@ -1356,10 +1356,10 @@ button:hover .qmax-company-name .qmax-brand-word,
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, #ef197d 0%, #14d0c1 50%, #8f3aa8 100%);
+  background: linear-gradient(90deg, #d90f81 0%, #14d0c1 50%, #8f3aa8 100%);
   transform-origin: left center;
   z-index: 9999;
-  box-shadow: 0 0 10px rgba(239, 25, 125, 0.8);
+  box-shadow: 0 0 10px rgba(217, 15, 129, 0.8);
 }
 
 /* 17. JOURNEY TIMELINE */
@@ -1499,7 +1499,7 @@ button:hover .qmax-company-name .qmax-brand-word,
 .qmax-modal-card {
   background: linear-gradient(145deg, rgba(24, 24, 32, 0.95), rgba(14, 14, 20, 0.98));
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 35px 80px -20px rgba(0, 0, 0, 0.9), 0 0 50px rgba(239, 25, 125, 0.15);
+  box-shadow: 0 35px 80px -20px rgba(0, 0, 0, 0.9), 0 0 50px rgba(217, 15, 129, 0.15);
   border-radius: 28px;
   width: 100%;
   max-width: 580px;
@@ -1627,14 +1627,14 @@ button:hover .qmax-company-name .qmax-brand-word,
 }
 
 .qmax-modal-input:focus {
-  border-color: #ef197d;
-  box-shadow: 0 0 15px rgba(239, 25, 125, 0.2);
+  border-color: #d90f81;
+  box-shadow: 0 0 15px rgba(217, 15, 129, 0.2);
 }
 
 .qmax-modal-submit {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #ef197d 0%, #d80b6a 100%);
+  background: linear-gradient(135deg, #d90f81 0%, #d80b6a 100%);
   color: #ffffff;
   border: none;
   border-radius: 9999px;
@@ -1645,13 +1645,13 @@ button:hover .qmax-company-name .qmax-brand-word,
   justify-content: center;
   gap: 10px;
   cursor: pointer;
-  box-shadow: 0 4px 25px rgba(239, 25, 125, 0.4);
+  box-shadow: 0 4px 25px rgba(217, 15, 129, 0.4);
   transition: all 0.3s ease;
 }
 
 .qmax-modal-submit:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 35px rgba(239, 25, 125, 0.6);
+  box-shadow: 0 8px 35px rgba(217, 15, 129, 0.6);
 }
 
 /* =========================================================================
@@ -1685,7 +1685,7 @@ button:hover .qmax-company-name .qmax-brand-word,
   font-size: 1rem !important;
   font-weight: 800 !important;
   letter-spacing: 0.18em !important;
-  color: #ef197d !important;
+  color: #d90f81 !important;
 }
 
 .nav15__mobileTop small,
@@ -1711,7 +1711,7 @@ button:hover .qmax-company-name .qmax-brand-word,
 .qeh__mobileInner > a:not(.qeh__mobileCta):hover,
 .qeh__mobileInner > button:hover {
   background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(239, 25, 125, 0.4) !important;
+  border-color: rgba(217, 15, 129, 0.4) !important;
   transform: translateX(4px) !important;
 }
 
@@ -1721,7 +1721,7 @@ button:hover .qmax-company-name .qmax-brand-word,
 .qeh__mobileInner > button span {
   font-size: 1.1rem !important;
   font-weight: 800 !important;
-  color: #ef197d !important;
+  color: #d90f81 !important;
 }
 
 .nav15__mobileInner > a strong,
@@ -1755,8 +1755,8 @@ button:hover .qmax-company-name .qmax-brand-word,
 .nav15__mobileSub a:hover,
 .qeh__mobileSub a:hover {
   color: #ffffff !important;
-  background: rgba(239, 25, 125, 0.12) !important;
-  border-color: rgba(239, 25, 125, 0.3) !important;
+  background: rgba(217, 15, 129, 0.12) !important;
+  border-color: rgba(217, 15, 129, 0.3) !important;
 }
 
 /* Drawer CTA */
@@ -1767,7 +1767,7 @@ button:hover .qmax-company-name .qmax-brand-word,
   font-size: 1.15rem !important;
   font-weight: 800 !important;
   border-radius: 9999px !important;
-  box-shadow: 0 8px 30px rgba(239, 25, 125, 0.45) !important;
+  box-shadow: 0 8px 30px rgba(217, 15, 129, 0.45) !important;
 }
 
 /* B) GLOBAL TYPOGRAPHY BOOST (LETRAS MAIORES E MAIS LEGÍVEIS) */
@@ -1891,10 +1891,10 @@ small,
 }
 
 .faq43__tabBtn.active {
-  background: rgba(239, 25, 125, 0.14);
-  border-color: #ef197d;
+  background: rgba(217, 15, 129, 0.14);
+  border-color: #d90f81;
   color: #ffffff;
-  box-shadow: 0 0 20px rgba(239, 25, 125, 0.25);
+  box-shadow: 0 0 20px rgba(217, 15, 129, 0.25);
 }
 
 /* 21. BACK TO TOP BUTTON */
@@ -1932,9 +1932,9 @@ small,
 }
 
 .qmax-back-to-top:hover {
-  background: rgba(239, 25, 125, 0.15);
-  border-color: #ef197d;
-  box-shadow: 0 12px 35px rgba(239, 25, 125, 0.35);
+  background: rgba(217, 15, 129, 0.15);
+  border-color: #d90f81;
+  box-shadow: 0 12px 35px rgba(217, 15, 129, 0.35);
   transform: translateY(-3px);
 }
 
@@ -2026,9 +2026,9 @@ small,
 .qmax-signature-rail__items a.active > i {
   width: 12px !important;
   height: 12px !important;
-  background: #ef197d !important;
-  border-color: #ef197d !important;
-  box-shadow: 0 0 14px rgba(239, 25, 125, 0.9) !important;
+  background: #d90f81 !important;
+  border-color: #d90f81 !important;
+  box-shadow: 0 0 14px rgba(217, 15, 129, 0.9) !important;
 }
 
 .qmax-signature-rail__items a:hover > i {

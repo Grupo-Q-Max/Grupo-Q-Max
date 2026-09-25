@@ -6,11 +6,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, MessageCircle } from "lucide-react";
 
 const sections = [
-  { id: "inicio", label: "Início", short: "Q-MAX", color: "#ef197d" },
-  { id: "sobre", label: "Nosso Q", short: "NOSSO Q", color: "#ef197d" },
+  { id: "inicio", label: "Início", short: "Q-MAX", color: "#d90f81" },
+  { id: "sobre", label: "Nosso Q", short: "NOSSO Q", color: "#d90f81" },
   { id: "empresas", label: "Empresas", short: "ECOSSISTEMA", color: "#3156ff" },
   { id: "produtos", label: "Produtos", short: "PRODUTOS", color: "#55ff00" },
-  { id: "contato", label: "Contato", short: "CONTATO", color: "#ef197d" },
+  { id: "contato", label: "Contato", short: "CONTATO", color: "#d90f81" },
 ] as const;
 
 export function CinematicScroll() {

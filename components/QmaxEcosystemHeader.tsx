@@ -36,7 +36,7 @@ type QmaxHeaderProps = {
 export function QmaxEcosystemHeader({
   brand,
   logo,
-  accent = "#ef197d",
+  accent = "#d90f81",
 }: QmaxHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 

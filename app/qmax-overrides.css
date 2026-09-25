@@ -160,7 +160,7 @@
       to bottom,
       transparent,
       rgba(255,255,255,.12) 18%,
-      rgba(239,25,125,.48) 50%,
+      rgba(217,15,129,.48) 50%,
       rgba(255,255,255,.12) 82%,
       transparent
     );
@@ -4127,7 +4127,7 @@ body {
 
 /* CTA final de contato */
 .finish-contact__primary {
-  background: #ef197d !important;
+  background: #d90f81 !important;
   color: #ffffff !important;
 }
 
@@ -4155,8 +4155,8 @@ body {
   outline: 3px solid #ffffff !important;
   outline-offset: 4px !important;
   box-shadow:
-    0 0 0 2px #ef197d,
-    0 0 0 6px rgba(239,25,125,.22) !important;
+    0 0 0 2px #d90f81,
+    0 0 0 6px rgba(217,15,129,.22) !important;
 }
 
 /* ----------------------------------------------------------
@@ -4285,11 +4285,11 @@ body {
     width: 18px !important;
     height: 6px !important;
 
-    background: #ef197d !important;
-    border-color: #ef197d !important;
+    background: #d90f81 !important;
+    border-color: #d90f81 !important;
 
     box-shadow:
-      0 0 10px rgba(239,25,125,.32) !important;
+      0 0 10px rgba(217,15,129,.32) !important;
   }
 }
 

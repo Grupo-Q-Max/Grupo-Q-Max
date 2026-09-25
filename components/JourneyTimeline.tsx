@@ -16,7 +16,7 @@ const steps = [
     title: "Plano de Ação Sob Medida",
     kicker: "ESTRATÉGIA & CONEXÃO",
     icon: Layers,
-    color: "#ef197d",
+    color: "#d90f81",
     description: "Desenhamos uma estratégia personalizada, conectando as empresas e ferramentas do Grupo Q-Max que fazem sentido exato para o seu momento.",
     highlight: "Soluções integradas e sinérgicas",
   },

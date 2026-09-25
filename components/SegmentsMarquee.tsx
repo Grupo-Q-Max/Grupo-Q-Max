@@ -16,7 +16,7 @@ const segments = [
   { name: "Startups & Empresas de Tecnologia", icon: Cpu, color: "#3156ff" },
   { name: "Indústria & Manufatura", icon: Factory, color: "#14d0c1" },
   { name: "Comércio, Varejo & E-commerce", icon: ShoppingBag, color: "#ff8b2a" },
-  { name: "Serviços Corporativos & Advocacia", icon: Scale, color: "#ef197d" },
+  { name: "Serviços Corporativos & Advocacia", icon: Scale, color: "#d90f81" },
   { name: "Logística & Armazenagem", icon: Truck, color: "#fbbf24" },
   { name: "Holdings & Gestão Patrimonial", icon: Building2, color: "#14d0c1" },
   { name: "Educação & Treinamento", icon: GraduationCap, color: "#8f3aa8" },

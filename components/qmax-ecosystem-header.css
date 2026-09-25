@@ -1,6 +1,6 @@
 .qeh {
-  --qeh-magenta: #ef197d;
-  --qeh-accent: #ef197d;
+  --qeh-magenta: #d90f81;
+  --qeh-accent: #d90f81;
 
   position: sticky;
   top: 0;
@@ -407,7 +407,7 @@
     18px;
 
   background:
-    rgba(239,25,125,.045);
+    rgba(217,15,129,.045);
 }
 
 /* ---------------------------------------------------------
