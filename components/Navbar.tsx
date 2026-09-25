@@ -15,31 +15,31 @@ const companies = [
   {
     name: "Q-Max Auditoria",
     label: "Auditoria",
-    href: "#empresas",
+    href: "/#empresas",
     logo: "/brands/brand-auditoria.png",
   },
   {
     name: "Q-Max Contábil",
     label: "Contabilidade",
-    href: "#empresas",
+    href: "/#empresas",
     logo: "/brands/brand-contabil.png",
   },
   {
     name: "Q-Max Talents",
     label: "Pessoas",
-    href: "#empresas",
+    href: "/#empresas",
     logo: "/brands/brand-talents.png",
   },
   {
     name: "Q-Max Technology",
     label: "Tecnologia",
-    href: "#empresas",
+    href: "/#empresas",
     logo: "/brands/brand-technology.png",
   },
   {
     name: "Lagerhaus",
     label: "Estrutura",
-    href: "#empresas",
+    href: "/#empresas",
     logo: "/brands/brand-lagerhaus.png",
   },
 ];
@@ -48,19 +48,19 @@ const products = [
   {
     name: "QXBACK",
     label: "Indicações e bonificação",
-    href: "#produtos",
+    href: "/#produtos",
     logo: "/brands/qxback.png",
   },
   {
     name: "QXSIGN",
     label: "Documentação digital",
-    href: "#produtos",
+    href: "/#produtos",
     logo: "/products/qxsign-dashboard.png",
   },
   {
     name: "FINORA",
     label: "Inteligência financeira",
-    href: "#produtos",
+    href: "/#produtos",
     logo: "/products/finora-dashboard.png",
   },
 ];
@@ -89,7 +89,10 @@ export function Navbar() {
 
     const section = document.getElementById(sectionId);
 
-    if (!section) return;
+    if (!section) {
+      window.location.href = `/#${sectionId}`;
+      return;
+    }
 
     section.scrollIntoView({
       behavior: "smooth",
@@ -215,7 +218,7 @@ export function Navbar() {
     >
       <div className="container nav15__inner">
         <a
-          href="#inicio"
+          href="/#inicio"
           className="nav15__brand"
           aria-label="Grupo Q-Max"
           onClick={closeMenu}
@@ -238,7 +241,7 @@ export function Navbar() {
           aria-label="Navegação principal"
         >
           <a
-            href="#sobre"
+            href="/#sobre"
             className={
               activeSection === "sobre"
                 ? "is-active"
@@ -248,7 +251,7 @@ export function Navbar() {
             Sobre
           </a>
 
-          <a href="#time">
+          <a href="/#time">
             Nosso Time
           </a>
 
@@ -389,7 +392,7 @@ export function Navbar() {
           </div>
 
           <a
-            href="#contato"
+            href="/#contato"
             className={
               activeSection === "contato"
                 ? "is-active"
@@ -401,7 +404,7 @@ export function Navbar() {
         </nav>
 
         <a
-          href="#contato"
+          href="/#contato"
           className="nav15__cta"
           onClick={(e) => {
             e.preventDefault();
@@ -445,7 +448,7 @@ export function Navbar() {
           </div>
 
           <a
-            href="#sobre"
+            href="/#sobre"
             onClick={closeMenu}
           >
             <span>01</span>
@@ -547,7 +550,7 @@ export function Navbar() {
           </div>
 
           <a
-            href="#contato"
+            href="/#contato"
             onClick={closeMenu}
           >
             <span>04</span>
@@ -555,7 +558,7 @@ export function Navbar() {
           </a>
 
           <a
-            href="#contato"
+            href="/#contato"
             onClick={closeMenu}
             className="nav15__mobileCta"
           >

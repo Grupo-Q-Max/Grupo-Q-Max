@@ -21,7 +21,6 @@ import { AuditoriaMotion } from "@/components/AuditoriaMotion";
 import { AuditoriaWhatsApp } from "@/components/AuditoriaWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
 import { QmaxBrandUppercase } from "@/components/QmaxBrandText";
-import { QmaxEcosystemHeader } from "@/components/QmaxEcosystemHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
 import "./auditoria.css";
@@ -94,11 +93,7 @@ export default function AuditoriaPage() {
     <main className="audit67">
       <AuditoriaMotion />
       <AuditoriaWhatsApp />
-      <QmaxEcosystemHeader
-        brand="auditoria"
-        logo="/brands/auditoria-branco.png"
-        accent="#f22b22"
-      />
+
 
       <section className="audit67__hero">
         <div className="audit67__heroGlow audit67__heroGlow--one" />
@@ -541,99 +536,6 @@ export default function AuditoriaPage() {
           </div>
         </section>
       </ScrollReveal>
-
-      <footer className="finish-footer audit67__finishFooter">
-        <div className="container finish-footer__top">
-          <div className="finish-footer__brand">
-            <Link href="/auditoria" aria-label="Q-Max Auditoria">
-              <Image
-                src="/brands/auditoria-branco.png"
-                alt="Q-Max Auditoria"
-                width={180}
-                height={56}
-                sizes="180px"
-                style={{
-                  width: "auto",
-                  height: "44px",
-                }}
-              />
-            </Link>
-
-            <p>
-              Auditoria independente, governança, compliance e controles internos com rigor técnico e visão estratégica.
-            </p>
-
-            <div className="finish-footer__quickContact">
-              <a
-                href="https://wa.me/551128976514"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="finish-footer__quickBtn"
-                aria-label="WhatsApp Q-Max Auditoria"
-              >
-                <span>● WhatsApp: (11) 2897-6514</span>
-              </a>
-              <a
-                href="mailto:contato@grupoqmax.com.br"
-                className="finish-footer__quickBtn"
-                aria-label="E-mail Q-Max Auditoria"
-              >
-                <span>contato@grupoqmax.com.br</span>
-              </a>
-            </div>
-          </div>
-
-          <div className="finish-footer__nav">
-            <div>
-              <strong>NAVEGAÇÃO</strong>
-
-              <a href="#sobre">Sobre</a>
-              <a href="#atuacao">Atuação</a>
-              <a href="#metodo">Metodologia</a>
-              <a href="#contato">Contato</a>
-            </div>
-
-            <div>
-              <strong>ESPECIALIDADES</strong>
-
-              <a href="#atuacao">Demonstrações Contábeis</a>
-              <a href="#atuacao">Controles Internos & Compliance</a>
-              <a href="#atuacao">LGPD e DPO</a>
-              <a href="#atuacao">Gestão de Riscos</a>
-            </div>
-
-            <div>
-              <strong>ECOSSISTEMA</strong>
-
-              <Link href="/">
-                Grupo Q-Max
-              </Link>
-              <a href="https://www.grupoqmax.com.br/contabil/index.php" target="_blank" rel="noopener noreferrer">
-                Q-Max Contábil
-              </a>
-              <a href="https://grupoqmax.com.br/talents/" target="_blank" rel="noopener noreferrer">
-                Q-Max Talents
-              </a>
-              <a href="https://www.grupoqmax.com.br/" target="_blank" rel="noopener noreferrer">
-                Q-Max Technology
-              </a>
-              <a href="https://www.grupoqmax.com.br/" target="_blank" rel="noopener noreferrer">
-                Lagerhaus
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="container finish-footer__bottom">
-          <span>© 2026 Q-Max Auditoria · Uma empresa do Grupo Q-Max<span className="qmax-punctuation">.</span></span>
-
-          <div>
-            <span>São Bernardo do Campo · SP</span>
-            <i />
-            <span>Independência, Rigor Técnico e Visão Estratégica.</span>
-          </div>
-        </div>
-      </footer>
 
       <BackToTop />
     </main>

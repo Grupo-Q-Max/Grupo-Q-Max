@@ -17,7 +17,10 @@ export function Footer() {
     const section =
       document.getElementById(sectionId);
 
-    if (!section) return;
+    if (!section) {
+      window.location.href = `/#${sectionId}`;
+      return;
+    }
 
     section.scrollIntoView({
       behavior: "smooth",
@@ -101,12 +104,12 @@ export function Footer() {
           <div>
             <strong>NAVEGAÇÃO</strong>
 
-            <a href="#inicio">Início</a>
-            <a href="#sobre">Sobre</a>
-            <a href="#time">Nosso Time</a>
-            <a href="#empresas">Empresas</a>
-            <a href="#produtos">Produtos</a>
-            <a href="#contato">Contato</a>
+            <a href="/#inicio">Início</a>
+            <a href="/#sobre">Sobre</a>
+            <a href="/#time">Nosso Time</a>
+            <a href="/#empresas">Empresas</a>
+            <a href="/#produtos">Produtos</a>
+            <a href="/#contato">Contato</a>
           </div>
 
           <div>
@@ -231,9 +234,9 @@ export function Footer() {
         <span>© 2026 Grupo <QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span></span>
 
         <div>
-          <span>São Bernardo do Campo · SP</span>
+          <span>Sede em São Bernardo do Campo - SP</span>
           <i />
-          <span>Tecnologia, Inovação, Atitude.</span>
+          <span>Atendimento Nacional</span>
         </div>
       </div>
     </footer>

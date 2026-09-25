@@ -1,4 +1,3 @@
-import { Navbar } from "@/components/Navbar";
 import { DeferredCinematicScroll } from "@/components/DeferredCinematicScroll";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { Hero } from "@/components/Hero";
@@ -14,7 +13,6 @@ import { JourneyTimeline } from "@/components/JourneyTimeline";
 import { ConversionBand } from "@/components/ConversionBand";
 import { FAQ } from "@/components/FAQ";
 import { Contact } from "@/components/Contact";
-import { Footer } from "@/components/Footer";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { QuickLeadModal } from "@/components/QuickLeadModal";
 import { BackToTop } from "@/components/BackToTop";
@@ -26,7 +24,6 @@ export default function Home() {
     <>
       <ScrollProgressBar />
       <DeferredCinematicScroll />
-      <Navbar />
 
       <main>
         <Hero />
@@ -44,7 +41,6 @@ export default function Home() {
         <ScrollReveal animation="fade-up"><Contact /></ScrollReveal>
       </main>
 
-      <Footer />
       <FloatingWhatsApp />
       <BackToTop />
       <QuickLeadModal />

@@ -2,6 +2,8 @@ import { Montserrat } from "next/font/google";
 import Script from "next/script";
 import { QmaxAnalytics } from "@/components/QmaxAnalytics";
 import { OrganizationJsonLd } from "@/components/OrganizationJsonLd";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import type { Metadata, Viewport } from "next";
 import "./qmax-base.css";
 import "./qmax-overrides.css";
@@ -114,7 +116,12 @@ export default function RootLayout({
           src="https://www.googletagmanager.com/gtag/js?id=G-L5CSV2XQL3"
           strategy="lazyOnload"
         />
-<QmaxAnalytics /><OrganizationJsonLd />{children}</body>
+        <QmaxAnalytics />
+        <OrganizationJsonLd />
+        <Navbar />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }
