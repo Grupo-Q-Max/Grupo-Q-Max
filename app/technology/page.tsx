@@ -30,7 +30,17 @@ export default function TechnologyPage() {
       <ScrollReveal animation="fade-up">
         <section className="tech-hero">
           <div className="tech-hero__video-wrapper">
-            <span>VÍDEO</span>
+            <div className="tech-hero__video-bg">
+              <div className="tech-hero__grid-pattern" />
+              <div className="tech-hero__glow-orb" />
+              <div className="tech-hero__glow-orb tech-hero__glow-orb--2" />
+            </div>
+            
+            <div className="tech-hero__video-content">
+              <span>EXPLORE A NOSSA VISÃO</span>
+              <p>Inovação, Código e Performance em um só lugar.</p>
+            </div>
+
             <div className="tech-hero__icon-circle">
               <PlaySquare size={24} fill="currentColor" strokeWidth={0} />
             </div>
