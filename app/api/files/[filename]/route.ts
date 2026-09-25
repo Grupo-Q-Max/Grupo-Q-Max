@@ -15,29 +15,33 @@ export async function GET(
       return NextResponse.json({ error: "Missing filename" }, { status: 400 });
     }
 
-    // Security: prevent path traversal
-    const safeName = path.basename(filename);
+    // Decode and prevent path traversal
+    const decodedName = decodeURIComponent(filename);
+    const safeName = path.basename(decodedName);
+    const lowerSafeName = safeName.toLowerCase();
 
     // Search locations in priority order:
-    // 1. Persistent cloud uploads: HOME/site/qmax_data/uploads (survives any deploy)
-    // 2. Local/build data/uploads/[filename]
-    // 3. public/team/[filename] (legacy folder)
-    // 4. Brands directories
     const persistentUploads = getUploadsDir();
-    const searchPaths = [
-      path.join(persistentUploads, safeName),
-      path.join(process.cwd(), "data", "uploads", safeName),
-      path.join(process.cwd(), "public", "team", safeName),
-      path.join(persistentUploads, "brands", safeName),
-      path.join(process.cwd(), "data", "uploads", "brands", safeName),
-      path.join(process.cwd(), "public", "brands", safeName),
+    const searchDirs = [
+      persistentUploads,
+      path.join(process.cwd(), "data", "uploads"),
+      path.join(process.cwd(), "public", "team"),
+      path.join(persistentUploads, "brands"),
+      path.join(process.cwd(), "data", "uploads", "brands"),
+      path.join(process.cwd(), "public", "brands"),
     ];
 
     let resolvedPath: string | null = null;
-    for (const p of searchPaths) {
-      if (fs.existsSync(/*turbopackIgnore: true*/ p)) {
-        resolvedPath = p;
-        break;
+    let actualFilename = safeName;
+    for (const dir of searchDirs) {
+      if (fs.existsSync(/*turbopackIgnore: true*/ dir)) {
+        const files = fs.readdirSync(/*turbopackIgnore: true*/ dir);
+        const match = files.find(f => f.toLowerCase() === lowerSafeName);
+        if (match) {
+          resolvedPath = path.join(dir, match);
+          actualFilename = match;
+          break;
+        }
       }
     }
 
