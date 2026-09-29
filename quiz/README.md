@@ -22,7 +22,7 @@ Plataforma interna de quizzes em PHP 8.1+, MySQL, CSS e JavaScript, com autentic
 1. Azure Portal → Microsoft Entra ID → Registros de aplicativo → Novo registro.
 2. Escolha **Somente contas neste diretório organizacional**.
 3. Em Autenticação → Web, adicione exatamente:
-   `https://SEU-DOMINIO/qmax-quiz/auth/callback.php`
+   `https://SEU-DOMINIO/quiz/auth/callback.php`
 4. Em Certificados e segredos, crie um segredo e copie o **valor** para `MS_CLIENT_SECRET`.
 5. Copie os IDs do aplicativo e do diretório para `MS_CLIENT_ID` e `MS_TENANT_ID`.
 6. Em Permissões de API, adicione Microsoft Graph → Delegadas → `User.Read`, `openid`, `profile` e `email`.
