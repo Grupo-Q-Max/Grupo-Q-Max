@@ -1,0 +1,7 @@
+Options -Indexes
+RewriteEngine On
+RewriteRule (^|/)\. - [F]
+<FilesMatch "^(\.env|README\.md)$">
+  Require all denied
+</FilesMatch>
+

@@ -1,0 +1,8 @@
+<?php require_once __DIR__.'/includes/auth.php';require_login();if($_SERVER['REQUEST_METHOD']!=='POST')redirect('index.php');verify_csrf();$attemptId=filter_input(INPUT_POST,'attempt_id',FILTER_VALIDATE_INT);$pdo=db();$pdo->beginTransaction();try{
+$s=$pdo->prepare('SELECT a.*,q.status FROM attempts a JOIN quizzes q ON q.id=a.quiz_id WHERE a.id=? AND a.user_id=? FOR UPDATE');$s->execute([$attemptId,user()['id']]);$a=$s->fetch();if(!$a||$a['submitted_at']||$a['status']!=='published')throw new RuntimeException('Tentativa inválida.');
+$q=$pdo->prepare('SELECT * FROM questions WHERE quiz_id=?');$q->execute([$a['quiz_id']]);$score=0;$max=0;$answers=$_POST['answers']??[];
+foreach($q->fetchAll() as $question){$max+=(int)$question['points'];$value=$answers[$question['id']]??null;$correct=null;$points=0;$option=null;$text=null;if($question['type']==='single'){$option=filter_var($value,FILTER_VALIDATE_INT);$c=$pdo->prepare('SELECT is_correct FROM question_options WHERE id=? AND question_id=?');$c->execute([$option,$question['id']]);$row=$c->fetch();if(!$row)throw new RuntimeException('Resposta inválida.');$correct=(int)$row['is_correct'];$points=$correct?(int)$question['points']:0;}else{$text=trim(substr((string)$value,0,5000));}
+$pdo->prepare('INSERT INTO answers(attempt_id,question_id,selected_option_id,text_answer,is_correct,points_awarded) VALUES(?,?,?,?,?,?)')->execute([$attemptId,$question['id'],$option,$text,$correct,$points]);$score+=$points;}
+$pdo->prepare('UPDATE attempts SET submitted_at=NOW(),score=?,max_score=? WHERE id=?')->execute([$score,$max,$attemptId]);$pdo->commit();redirect('result.php?id='.$attemptId);
+}catch(Throwable $e){$pdo->rollBack();http_response_code(400);exit('Não foi possível enviar: '.e($e->getMessage()));}
+

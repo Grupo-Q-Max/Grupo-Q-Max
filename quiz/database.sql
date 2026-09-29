@@ -1,0 +1,74 @@
+CREATE DATABASE IF NOT EXISTS qmax_quiz CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE qmax_quiz;
+
+CREATE TABLE users (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  microsoft_oid VARCHAR(80) NOT NULL UNIQUE,
+  name VARCHAR(160) NOT NULL,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  role ENUM('admin','participant') NOT NULL DEFAULT 'participant',
+  last_login_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE quizzes (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(180) NOT NULL,
+  description TEXT NULL,
+  status ENUM('draft','published','closed') NOT NULL DEFAULT 'draft',
+  time_limit_minutes SMALLINT UNSIGNED NULL,
+  show_score TINYINT(1) NOT NULL DEFAULT 1,
+  created_by BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_quiz_creator FOREIGN KEY (created_by) REFERENCES users(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE questions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  quiz_id BIGINT UNSIGNED NOT NULL,
+  question_text TEXT NOT NULL,
+  type ENUM('single','text') NOT NULL DEFAULT 'single',
+  points SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+  position SMALLINT UNSIGNED NOT NULL,
+  CONSTRAINT fk_question_quiz FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE question_options (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  question_id BIGINT UNSIGNED NOT NULL,
+  option_text VARCHAR(500) NOT NULL,
+  is_correct TINYINT(1) NOT NULL DEFAULT 0,
+  position SMALLINT UNSIGNED NOT NULL,
+  CONSTRAINT fk_option_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE attempts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  quiz_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  submitted_at DATETIME NULL,
+  score DECIMAL(10,2) NOT NULL DEFAULT 0,
+  max_score DECIMAL(10,2) NOT NULL DEFAULT 0,
+  ip_address VARCHAR(45) NULL,
+  user_agent VARCHAR(500) NULL,
+  UNIQUE KEY uq_one_attempt (quiz_id, user_id),
+  CONSTRAINT fk_attempt_quiz FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_attempt_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE answers (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  attempt_id BIGINT UNSIGNED NOT NULL,
+  question_id BIGINT UNSIGNED NOT NULL,
+  selected_option_id BIGINT UNSIGNED NULL,
+  text_answer TEXT NULL,
+  is_correct TINYINT(1) NULL,
+  points_awarded DECIMAL(10,2) NOT NULL DEFAULT 0,
+  UNIQUE KEY uq_attempt_question (attempt_id, question_id),
+  CONSTRAINT fk_answer_attempt FOREIGN KEY (attempt_id) REFERENCES attempts(id) ON DELETE CASCADE,
+  CONSTRAINT fk_answer_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_answer_option FOREIGN KEY (selected_option_id) REFERENCES question_options(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
