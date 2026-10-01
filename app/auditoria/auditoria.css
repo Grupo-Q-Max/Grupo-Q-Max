@@ -8186,3 +8186,33 @@ main.audit67,
       1 !important;
   }
 }
+
+/* ==========================================================
+   AJUSTES DE LEGIBILIDADE
+   ========================================================== */
+
+/* A coluna do CTA de contato (0.55fr) ficava com ~178px em telas perto
+   de 900px e "Fale com nosso time" quebrava em várias linhas */
+@media (min-width: 901px) {
+  .audit67__contactGrid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(260px, .55fr) !important;
+  }
+}
+
+.audit67__contactAction > a {
+  white-space: nowrap;
+}
+
+/* Rótulos com 7–9px: mínimo de 11px para leitura */
+.audit67__heroSignals > span,
+.audit67__eyebrowLabel,
+.audit67__panelTop > span,
+.audit67__serviceTop > span,
+.audit67__intelligenceCardTop > span,
+.audit67__intelligenceTags > span,
+.audit67__scope > span,
+.audit67__contactIndex,
+.audit67__contactMeta > span,
+.audit67__principles article > div > span {
+  font-size: 11px !important;
+}

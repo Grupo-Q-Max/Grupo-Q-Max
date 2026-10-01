@@ -169,6 +169,14 @@ export function Navbar() {
 
 
   useEffect(() => {
+    // Os links do menu apontam para seções da home (/#sobre, /#contato…).
+    // Nas páginas internas há seções com os mesmos ids (ex.: /auditoria
+    // tem #sobre e #contato), e o menu destacava itens que não são dali.
+    if (pathname !== "/") {
+      setActiveSection("inicio");
+      return;
+    }
+
     const ids = [
       "inicio",
       "sobre",
@@ -213,7 +221,7 @@ export function Navbar() {
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [pathname]);
   function closeMenu() {
     setMobileOpen(false);
     setMobileSection(null);
