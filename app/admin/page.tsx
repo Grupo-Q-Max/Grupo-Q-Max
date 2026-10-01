@@ -317,6 +317,11 @@ function MemberModal({
 }
 
 /* ─── Image Crop & Adjust Modal ─────────────────────────────────────────── */
+const PHOTO_ASPECT_W = 296;
+const PHOTO_ASPECT_H = 495;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 3;
+
 function ImageCropModal({
   file,
   member,
@@ -368,7 +373,7 @@ function ImageCropModal({
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault();
     const delta = -e.deltaY * 0.0015;
-    setZoom((prev) => Math.min(3, Math.max(1, +(prev + delta).toFixed(2))));
+    setZoom((prev) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(prev + delta).toFixed(2))));
   }
 
   function resetAdjustments() {
@@ -382,10 +387,11 @@ function ImageCropModal({
     setSubmitting(true);
     try {
       const img = imgRef.current;
-      const TARGET_W = 720;
-      const TARGET_H = 780;
-      const viewRect = viewportRef.current.getBoundingClientRect();
-      const viewW = viewRect.width || 340;
+      // Mesma proporção da cápsula do site (Partners.tsx: aspect-ratio 296 / 495)
+      const TARGET_W = 600;
+      const TARGET_H = Math.round((TARGET_W * PHOTO_ASPECT_H) / PHOTO_ASPECT_W);
+      // clientWidth = área interna (sem a borda), onde a <img> é desenhada
+      const viewW = viewportRef.current.clientWidth || 220;
 
       const canvas = document.createElement("canvas");
       canvas.width = TARGET_W;
@@ -396,34 +402,22 @@ function ImageCropModal({
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
-      // Dark background matching the card
-      ctx.fillStyle = "#0d0d18";
-      ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+      // Fundo transparente: o site desenha o fundo da cápsula por trás da foto.
+
+      // Reproduz o CSS do preview: object-fit: contain + object-position: center bottom,
+      // e transform: translate() scale() rotate() com origem no centro.
+      const scaleFactor = TARGET_W / viewW;
+      const fit = Math.min(TARGET_W / img.naturalWidth, TARGET_H / img.naturalHeight);
+      const drawW = img.naturalWidth * fit;
+      const drawH = img.naturalHeight * fit;
+      const drawX = (TARGET_W - drawW) / 2;
+      const drawY = TARGET_H - drawH;
 
       ctx.save();
-      // Translate to center
-      ctx.translate(TARGET_W / 2, TARGET_H / 2);
-      ctx.rotate((rotation * Math.PI) / 180);
-
-      // Scale factor
-      const scaleFactor = TARGET_W / viewW;
+      ctx.translate(TARGET_W / 2 + offset.x * scaleFactor, TARGET_H / 2 + offset.y * scaleFactor);
       ctx.scale(zoom, zoom);
-      ctx.translate((offset.x * scaleFactor) / zoom, (offset.y * scaleFactor) / zoom);
-
-      // Fit aspect
-      const imgAspect = img.naturalWidth / img.naturalHeight;
-      const targetAspect = TARGET_W / TARGET_H;
-      let baseW = TARGET_W;
-      let baseH = TARGET_H;
-      if (imgAspect > targetAspect) {
-        baseH = TARGET_H;
-        baseW = TARGET_H * imgAspect;
-      } else {
-        baseW = TARGET_W;
-        baseH = TARGET_W / imgAspect;
-      }
-
-      ctx.drawImage(img, -baseW / 2, -baseH / 2, baseW, baseH);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.drawImage(img, drawX - TARGET_W / 2, drawY - TARGET_H / 2, drawW, drawH);
       ctx.restore();
 
       canvas.toBlob(
@@ -435,8 +429,7 @@ function ImageCropModal({
           await onConfirm(blob);
           setSubmitting(false);
         },
-        "image/jpeg",
-        0.92
+        "image/png"
       );
     } catch (err) {
       console.error(err);
@@ -495,20 +488,11 @@ function ImageCropModal({
               <span className="qadmin-crop__gridV2" />
             </div>
 
-            {/* Bottom overlay preview matching the real site card */}
-            <div className="qadmin-crop__liveOverlay">
-              <span
-                className="qadmin-crop__liveSector"
-                style={{
-                  borderColor: member.accentColor ? `${member.accentColor}66` : undefined,
-                  color: member.accentColor || undefined,
-                }}
-              >
-                {member.sector}
-              </span>
-              <h4 className="qadmin-crop__liveName">{member.name}</h4>
-              <p className="qadmin-crop__liveRole">{member.role}</p>
-            </div>
+            {/* Liner magenta na base, igual ao card do site */}
+            <span className="qadmin-crop__liner" aria-hidden="true" />
+
+            {/* Selo de cargo, igual ao card do site */}
+            {member.role && <span className="qadmin-crop__liveBadge">{member.role}</span>}
 
             {/* Drag hint badge */}
             <div className="qadmin-crop__dragHint">
@@ -523,15 +507,15 @@ function ImageCropModal({
               <button
                 type="button"
                 className="qadmin-crop__ctrlBtn"
-                onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
+                onClick={() => setZoom((z) => Math.max(ZOOM_MIN, +(z - 0.1).toFixed(2)))}
                 title="Diminuir zoom"
               >
                 <ZoomOut size={16} />
               </button>
               <input
                 type="range"
-                min="1"
-                max="3"
+                min={ZOOM_MIN}
+                max={ZOOM_MAX}
                 step="0.02"
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
@@ -541,7 +525,7 @@ function ImageCropModal({
               <button
                 type="button"
                 className="qadmin-crop__ctrlBtn"
-                onClick={() => setZoom((z) => Math.min(3, +(z + 0.1).toFixed(2)))}
+                onClick={() => setZoom((z) => Math.min(ZOOM_MAX, +(z + 0.1).toFixed(2)))}
                 title="Aumentar zoom"
               >
                 <ZoomIn size={16} />
@@ -767,7 +751,7 @@ function TeamTab({
     const { member, file } = cropTarget;
     const fd = new FormData();
     const cleanName = file.name.replace(/\.[^.]+$/, "") || "photo";
-    const croppedFile = new File([blob], `${cleanName}.jpg`, { type: "image/jpeg" });
+    const croppedFile = new File([blob], `${cleanName}.png`, { type: "image/png" });
     fd.append("file", croppedFile);
     fd.append("memberId", member.id);
     try {
@@ -891,7 +875,7 @@ function TeamTab({
                       src={member.image}
                       alt={member.name}
                       fill
-                      style={{ objectFit: "cover" }}
+                      style={{ objectFit: "contain", objectPosition: "center bottom" }}
                       sizes="160px"
                       unoptimized
                     />
