@@ -98,7 +98,9 @@ export default function RootLayout({
   const settings = readSettings();
 
   return (
-    <html lang="pt-BR" className={montserrat.variable}>
+    // suppressHydrationWarning: extensões do navegador (ex.: réguas/grids) injetam
+    // atributos como style="--lineColor:..." no <html> antes do React hidratar.
+    <html lang="pt-BR" className={montserrat.variable} suppressHydrationWarning>
       <body>
         <SettingsProvider settings={settings}>
           <Script
