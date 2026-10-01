@@ -2136,6 +2136,21 @@ small,
     font-size: 11px !important;
   }
 
+  /* Menu mobile: o botão de fechar do header ficava por cima do
+     "GRUPO Q-MAX" do topo da gaveta */
+  .nav15__mobileTop {
+    padding-right: 64px !important;
+  }
+
+  /* Submenu fechado mantinha o padding (22px) e, com o gap da gaveta,
+     deixava um buraco abaixo de Empresas/Produtos; os links invisíveis
+     também continuavam alcançáveis pelo Tab */
+  .nav15__mobileSub:not(.open) {
+    padding: 0 !important;
+    margin-top: -16px !important;
+    visibility: hidden;
+  }
+
   /* As etiquetas dos cards de missão/visão ficavam em position:absolute no
      rodapé do card, por cima do parágrafo; no celular entram no fluxo */
   .qprinciples__tags {

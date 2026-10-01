@@ -466,6 +466,14 @@ export function Navbar() {
             <strong>Sobre</strong>
           </a>
 
+          <a
+            href="/#socios"
+            onClick={closeMenu}
+          >
+            <span>02</span>
+            <strong>Nosso Time</strong>
+          </a>
+
           <button
             type="button"
             onClick={() =>
@@ -476,7 +484,7 @@ export function Navbar() {
               )
             }
           >
-            <span>02</span>
+            <span>03</span>
             <strong>Empresas</strong>
 
             <ChevronDown
@@ -517,7 +525,7 @@ export function Navbar() {
               )
             }
           >
-            <span>03</span>
+            <span>04</span>
             <strong>Produtos</strong>
 
             <ChevronDown
@@ -558,7 +566,7 @@ export function Navbar() {
             href="/#contato"
             onClick={closeMenu}
           >
-            <span>04</span>
+            <span>05</span>
             <strong>Contato</strong>
           </a>
 

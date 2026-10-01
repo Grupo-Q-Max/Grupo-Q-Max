@@ -41,25 +41,43 @@ export function CinematicScroll() {
       .map((item) => document.getElementById(item.id))
       .filter((node): node is HTMLElement => Boolean(node));
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+    // Ativa a última seção (na ordem da página) cujo topo já passou de 46%
+    // da tela. Calculado no scroll, e não com IntersectionObserver: a
+    // intersectionRatio de uma seção alta (Produtos tem ~2400px) nunca
+    // passava do threshold e ela não era marcada; e num salto direto
+    // (âncora, "Topo") nenhuma seção observada cruzava a faixa.
+    let frame = 0;
 
-        if (visible[0]?.target.id) {
-          setActiveSection(visible[0].target.id);
-        }
-      },
-      {
-        rootMargin: "-22% 0px -54% 0px",
-        threshold: [0.08, 0.2, 0.4, 0.62],
+    const pickActive = () => {
+      frame = 0;
+
+      const line = window.innerHeight * 0.46;
+      const current = nodes.filter(
+        (node) => node.getBoundingClientRect().top < line
+      ).at(-1);
+
+      setActiveSection(current?.id ?? sections[0].id);
+    };
+
+    const onScroll = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(pickActive);
       }
-    );
+    };
 
-    nodes.forEach((node) => observer.observe(node));
+    pickActive();
 
-    return () => observer.disconnect();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
   }, []);
 
   useEffect(() => {
