@@ -4,6 +4,7 @@ import { QmaxAnalytics } from "@/components/QmaxAnalytics";
 import { OrganizationJsonLd } from "@/components/OrganizationJsonLd";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { ClientLayoutElements } from "@/components/ClientLayoutElements";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
 import { SettingsProvider } from "@/components/SettingsProvider";
@@ -128,9 +129,9 @@ export default function RootLayout({
           />
           <QmaxAnalytics />
           <OrganizationJsonLd />
-          <Navbar />
+          <ClientLayoutElements type="navbar" />
           {children}
-          <Footer />
+          <ClientLayoutElements type="footer" />
           <FloatingWhatsApp whatsapp={settings.whatsapp} />
           <PageTracker />
           <BackToTop />

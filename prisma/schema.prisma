@@ -46,3 +46,52 @@ model PageVisit {
   userAgent String?
   createdAt DateTime @default(now())
 }
+
+// ==========================================
+// CRM MODULE
+// ==========================================
+
+model CrmPipeline {
+  id           String     @id @default(cuid())
+  name         String
+  stages       CrmStage[]
+  fieldsConfig Json?      // Array of field definitions
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model CrmStage {
+  id          String          @id @default(cuid())
+  name        String
+  order       Int             @default(0)
+  pipelineId  String
+  pipeline    CrmPipeline     @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  cards       CrmCard[]
+  automations CrmAutomation[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model CrmCard {
+  id         String    @id @default(cuid())
+  title      String
+  company    String?
+  value      Decimal   @default(0.00) @db.Decimal(10, 2)
+  order      Int       @default(0)
+  customData Json?     // JSON object storing dynamic field values
+  stageId    String
+  stage      CrmStage  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model CrmAutomation {
+  id         String   @id @default(cuid())
+  name       String
+  actionType String   // ex: 'WEBHOOK', 'SEND_EMAIL', 'CREATE_TASK'
+  config     Json?    // config json
+  stageId    String
+  stage      CrmStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
