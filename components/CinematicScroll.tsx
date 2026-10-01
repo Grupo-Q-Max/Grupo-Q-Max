@@ -3,7 +3,7 @@
 import { QmaxInline } from "@/components/QmaxBrandText";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 
 const sections = [
   { id: "inicio", label: "Início", short: "Q-MAX", color: "#d90f81" },
@@ -18,7 +18,6 @@ export function CinematicScroll() {
   const cursorRef = useRef<HTMLDivElement>(null);
 
   const [activeSection, setActiveSection] = useState("inicio");
-  const [showTop, setShowTop] = useState(false);
   const [finePointer, setFinePointer] = useState(false);
 
   const active = useMemo(
@@ -80,8 +79,6 @@ export function CinematicScroll() {
       if (progressRef.current) {
         progressRef.current.style.transform = `scaleX(${progress})`;
       }
-
-      setShowTop(window.scrollY > window.innerHeight * 1.25);
     };
 
     const onScroll = () => {
@@ -234,20 +231,6 @@ export function CinematicScroll() {
         <MessageCircle size={18} />
         <span>Fale com a <QmaxInline>Q-Max</QmaxInline></span>
       </a>
-
-      <button
-        type="button"
-        className={`qmax-backtop ${showTop ? "visible" : ""}`}
-        aria-label="Voltar ao topo"
-        onClick={() =>
-          window.scrollTo({
-            top: 0,
-            behavior: "smooth",
-          })
-        }
-      >
-        <ArrowUp size={18} />
-      </button>
     </>
   );
 }

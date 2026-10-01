@@ -18,12 +18,14 @@ import { QuickLeadModal } from "@/components/QuickLeadModal";
 
 
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { HashScrollFix } from "@/components/HashScrollFix";
 
 export default function Home() {
   return (
     <>
       <ScrollProgressBar />
       <DeferredCinematicScroll />
+      <HashScrollFix />
 
       <main>
         <Hero />

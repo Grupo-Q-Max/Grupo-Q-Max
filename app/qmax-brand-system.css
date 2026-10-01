@@ -1901,8 +1901,8 @@ small,
 /* 21. BACK TO TOP BUTTON */
 .qmax-back-to-top {
   position: fixed;
-  bottom: 32px;
-  left: 32px;
+  bottom: 104px;
+  right: 24px;
   z-index: 1000;
   display: inline-flex;
   align-items: center;
@@ -1941,8 +1941,8 @@ small,
 
 @media (max-width: 768px) {
   .qmax-back-to-top {
-    bottom: 24px;
-    left: 20px;
+    bottom: 96px;
+    right: 20px;
     padding: 10px 14px;
     font-size: 0.8rem;
   }
@@ -2073,3 +2073,14 @@ small,
 
 
 
+
+/* =========================================================
+   CTA MAGENTA: "Q-Max" branco para não sumir no fundo magenta
+   ========================================================= */
+
+.nav15__cta .qmax-brand-word,
+.nav15__mobileCta .qmax-brand-word,
+.button--primary .qmax-brand-word {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}

@@ -21,6 +21,13 @@ export function ScrollReveal({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // Já visível ou acima da viewport ao montar (ex.: link direto /#sobre):
+    // revela na hora para a seção não aparecer vazia.
+    if (ref.current && ref.current.getBoundingClientRect().top < window.innerHeight) {
+      setIsVisible(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
