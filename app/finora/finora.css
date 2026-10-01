@@ -20,6 +20,12 @@ main.fnr {
   padding-top: 0 !important;
 }
 
+/* Sem a moldura global (linhas verticais fixas nas laterais) nesta página. */
+body:has(main.fnr)::before,
+body:has(main.fnr)::after {
+  display: none !important;
+}
+
 .fnr h1,
 .fnr h2,
 .fnr h3,
