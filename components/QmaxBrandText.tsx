@@ -67,9 +67,9 @@ export function QmaxInline({
 }: {
   children: string;
 }) {
-  const parts = children.split(
-    /(Q-Max|Q-MAX|QMAX|\bQ\b)/g
-  );
+  const parts = children
+    .split(/(Q-Max|Q-MAX|QMAX|\bQ\b)/g)
+    .filter(Boolean);
 
   return (
     <>
