@@ -19,13 +19,35 @@ export function ScrollReveal({
 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [instant, setInstant] = useState(false);
 
   useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    // Antes de revelar, o wrapper fica com translateY(120px) e o navegador
+    // calcula a posição da âncora com esse deslocamento: a seção para 120px
+    // acima do lugar. Se a âncora clicada está aqui dentro, revela sem
+    // transição, direto no DOM, antes de a rolagem nativa começar.
+    const revealForAnchor = (event: MouseEvent) => {
+      const link = (event.target as Element | null)?.closest?.("a[href*='#']") as HTMLAnchorElement | null;
+      if (!link || link.pathname !== window.location.pathname || link.hash.length < 2) return;
+      const target = document.getElementById(decodeURIComponent(link.hash.slice(1)));
+      if (!target || !el.contains(target)) return;
+      el.style.transition = "none";
+      el.style.opacity = "1";
+      el.style.transform = "none";
+      setInstant(true);
+      setIsVisible(true);
+    };
+    document.addEventListener("click", revealForAnchor, true);
+    const removeListener = () => document.removeEventListener("click", revealForAnchor, true);
+
     // Já visível ou acima da viewport ao montar (ex.: link direto /#sobre):
     // revela na hora para a seção não aparecer vazia.
-    if (ref.current && ref.current.getBoundingClientRect().top < window.innerHeight) {
+    if (el.getBoundingClientRect().top < window.innerHeight) {
       setIsVisible(true);
-      return;
+      return removeListener;
     }
 
     const observer = new IntersectionObserver(
@@ -47,13 +69,14 @@ export function ScrollReveal({
     }
 
     return () => {
-      if (ref.current) observer.unobserve(ref.current);
+      removeListener();
+      observer.disconnect();
     };
   }, []);
 
   // Set up the CSS variables for the inline style
   const style: React.CSSProperties = {
-    transition: `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+    transition: instant ? "none" : `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
   };
 
   if (!isVisible) {

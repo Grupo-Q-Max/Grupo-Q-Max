@@ -71,7 +71,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const [activeSection, setActiveSection] = useState<
-    "inicio" | "sobre" | "empresas" | "produtos" | "contato"
+    "inicio" | "sobre" | "socios" | "empresas" | "produtos" | "contato"
   >("inicio");
   const [mobileSection, setMobileSection] = useState<
     "empresas" | "produtos" | null
@@ -172,6 +172,7 @@ export function Navbar() {
     const ids = [
       "inicio",
       "sobre",
+      "socios",
       "empresas",
       "produtos",
       "contato",
@@ -194,12 +195,7 @@ export function Navbar() {
 
         if (!visible.length) return;
 
-        const id = visible[0].target.id as
-          | "inicio"
-          | "sobre"
-          | "empresas"
-          | "produtos"
-          | "contato";
+        const id = visible[0].target.id as (typeof ids)[number];
 
         setActiveSection(id);
       },
@@ -265,7 +261,14 @@ export function Navbar() {
             Sobre
           </a>
 
-          <a href="/#time">
+          <a
+            href="/#socios"
+            className={
+              activeSection === "socios"
+                ? "is-active"
+                : undefined
+            }
+          >
             Nosso Time
           </a>
 
