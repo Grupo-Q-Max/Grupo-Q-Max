@@ -11,7 +11,6 @@ const socials = [
 export function FinoraFooter() {
   const settings = useSettings();
   const whatsappDigits = settings.whatsapp.replace(/\D/g, "");
-  const phoneDigits = settings.phone.replace(/\D/g, "");
 
   return (
     <footer className="fnr-footer">
@@ -25,16 +24,13 @@ export function FinoraFooter() {
             Um produto <strong>Q-MAX</strong>
           </p>
           <p>
-            Tel: <a href={`tel:+${phoneDigits}`}>{settings.phone}</a>
-          </p>
-          <p>
-            Email: <a href={`mailto:${settings.email}`}>{settings.email}</a>
-          </p>
-          <p>
-            WhatsApp:{" "}
+            WhatsApp/Tel:{" "}
             <a href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noopener noreferrer">
               {settings.whatsapp}
             </a>
+          </p>
+          <p>
+            Email: <a href={`mailto:${settings.email}`}>{settings.email}</a>
           </p>
         </div>
 
