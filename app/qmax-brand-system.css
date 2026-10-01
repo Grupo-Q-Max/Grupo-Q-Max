@@ -2208,3 +2208,92 @@ button.button--primary:hover .qmax-brand-word,
     justify-content: center !important;
   }
 }
+
+/* =========================================================
+   HERO: indicadores em cards acima dos botões
+   ========================================================= */
+
+.hero__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 620px;
+  margin-top: 32px;
+}
+
+.hero__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: rgba(14, 14, 20, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
+}
+
+.hero__stat:hover {
+  transform: translateY(-4px);
+  border-color: rgba(217, 15, 129, 0.4);
+  box-shadow: 0 28px 55px -10px rgba(0, 0, 0, 0.7),
+              0 0 25px rgba(217, 15, 129, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.hero__stat .hero__badgeIcon {
+  margin-bottom: 8px;
+}
+
+.hero__stat b {
+  font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero__stat > span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  color: #a1a1aa;
+}
+
+@media (max-width: 700px) {
+  .hero__stats {
+    gap: 6px;
+    margin-top: 26px;
+  }
+
+  .hero__stat {
+    padding: 14px 8px 14px 10px;
+    border-radius: 16px;
+  }
+
+  .hero__stat .hero__badgeIcon {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+
+  .hero__stat > span {
+    font-size: 0.58rem;
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__stat {
+    transition: none;
+  }
+}
