@@ -109,7 +109,7 @@ export function Footer() {
 
             <a href="/#inicio">Início</a>
             <a href="/#sobre">Sobre</a>
-            <a href="/#time">Nosso Time</a>
+            <a href="/#socios">Nosso Time</a>
             <a href="/#empresas">Empresas</a>
             <a href="/#produtos">Produtos</a>
             <a href="/#contato">Contato</a>
@@ -119,7 +119,7 @@ export function Footer() {
             <strong>EMPRESAS</strong>
 
             <a
-              href="#empresas"
+              href="/#empresas"
               onClick={(event) =>
                 goToFooterItem(
                   event,
@@ -131,7 +131,7 @@ export function Footer() {
               Q-Max Auditoria
             </a>
             <a
-              href="#empresas"
+              href="/#empresas"
               onClick={(event) =>
                 goToFooterItem(
                   event,
@@ -143,7 +143,7 @@ export function Footer() {
               Q-Max Contábil
             </a>
             <a
-              href="#empresas"
+              href="/#empresas"
               onClick={(event) =>
                 goToFooterItem(
                   event,
@@ -155,7 +155,7 @@ export function Footer() {
               Q-Max Talents
             </a>
             <a
-              href="#empresas"
+              href="/#empresas"
               onClick={(event) =>
                 goToFooterItem(
                   event,
@@ -193,7 +193,7 @@ export function Footer() {
               QXSIGN
             </a>
             <a
-              href="#produtos"
+              href="/#produtos"
               onClick={(event) =>
                 goToFooterItem(
                   event,

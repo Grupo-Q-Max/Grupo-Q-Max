@@ -96,7 +96,7 @@ export function FAQ() {
           </div>
 
           <p>
-            Respostas rápidas para entender como o ecossistema{" "}<QmaxInline>Q-Max</QmaxInline>
+            Respostas rápidas para entender como o ecossistema{" "}<QmaxInline>Q-Max</QmaxInline>{" "}
             pode se conectar ao seu negócio.
           </p>
         </div>

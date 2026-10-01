@@ -144,7 +144,7 @@ export default function TalentsPage() {
 
               <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: 16, borderRadius: 16, border: "1px solid rgba(255, 255, 255, 0.06)" }}>
                 <small style={{ color: "#a1a1aa", fontSize: "0.7rem", textTransform: "uppercase" }}>INTEGRAÇÃO</small>
-                <strong style={{ display: "block", fontSize: "1.4rem", color: "#c084fc", marginTop: 4 }}>Grupo Q-Max</strong>
+                <strong style={{ display: "block", fontSize: "1.4rem", color: "#c084fc", marginTop: 4 }}>{"Grupo Q\u2011Max"}</strong>
               </div>
             </div>
           </div>

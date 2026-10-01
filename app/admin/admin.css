@@ -1042,23 +1042,44 @@
   padding: 20px;
 }
 
-/* Viewport frame matching exactly the card ratio 12:13 */
+/*
+ * Moldura igual ao card do site (Partners.tsx / Figma grupo 6:134), em escala
+ * 220/296: raio 137px -> 101.8px, contorno 6px -> 4.46px.
+ */
 .qadmin-crop__viewport {
   position: relative;
-  width: 320px;
-  height: 350px;
-  border-radius: 20px;
+  width: 220px;
+  aspect-ratio: 296 / 503.087;
+  border-radius: 101.8px;
   overflow: hidden;
-  background: #090912;
+  background: #050506; /* fundo da seção de sócios */
   cursor: grab;
   user-select: none;
   touch-action: none;
-  border: 2px solid rgba(20, 208, 193, 0.4);
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(20, 208, 193, 0.15);
+  /* contorno branco (abaixo da foto, como no Figma) + sombra externa */
+  box-shadow: inset 0 0 0 4.46px #ffffff, 0 0 30px rgba(0, 0, 0, 0.8);
+}
+/* Liner magenta da base (Figma 6:138) */
+.qadmin-crop__liner {
+  position: absolute;
+  top: 1.566%;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  border-radius: 101.8px;
+  background: linear-gradient(
+    180deg,
+    rgba(217, 15, 129, 0) 0%,
+    rgba(217, 15, 129, 0.1) 50%,
+    rgba(217, 15, 129, 0.2) 71.76%,
+    rgba(217, 15, 129, 0.4) 93.52%
+  );
+  pointer-events: none;
 }
 .qadmin-crop__viewport.dragging {
   cursor: grabbing;
-  border-color: #14d0c1;
+  box-shadow: inset 0 0 0 4.46px #ffffff, 0 0 0 3px rgba(20, 208, 193, 0.6);
 }
 
 .qadmin-crop__image {
@@ -1067,7 +1088,9 @@
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* Foto inteira por padrão; o canvas em handleApply reproduz este mesmo encaixe */
+  object-fit: contain;
+  object-position: center bottom;
   pointer-events: none;
   user-select: none;
   will-change: transform;
@@ -1101,51 +1124,34 @@
 .qadmin-crop__gridV1 { left: 33.33%; }
 .qadmin-crop__gridV2 { left: 66.66%; }
 
-/* Bottom live overlay simulating real site preview */
-.qadmin-crop__liveOverlay {
+/* Selo de cargo simulando o card do site */
+/* Selo de cargo simulando o card do site */
+.qadmin-crop__liveBadge {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 30px 18px 16px;
-  background: linear-gradient(to top, rgba(4, 4, 10, 0.95) 0%, rgba(4, 4, 10, 0.7) 60%, transparent 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  pointer-events: none;
-}
-
-.qadmin-crop__liveSector {
-  display: inline-flex;
-  align-self: flex-start;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #14d0c1;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 2px 8px;
-  border-radius: 100px;
-  border: 1px solid rgba(20, 208, 193, 0.3);
-}
-
-.qadmin-crop__liveName {
-  font-size: 1.15rem;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 4;
+  max-width: 88%;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: #d90f81;
+  color: #fff;
+  font-size: 0.7rem;
   font-weight: 800;
-  color: #f9f9fb;
-  margin: 0;
-  line-height: 1.15;
-}
-
-.qadmin-crop__liveRole {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 0;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 .qadmin-crop__dragHint {
   position: absolute;
-  top: 12px;
+  top: 18%;
+  white-space: nowrap;
   left: 50%;
   transform: translateX(-50%);
   display: flex;

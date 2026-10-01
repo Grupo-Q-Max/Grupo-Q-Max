@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Building2, Check, ShieldCheck, Sparkles, Stethoscope, Users2, X, Zap } from "lucide-react";
 import { QmaxInline } from "@/components/QmaxBrandText";
 
@@ -18,52 +18,65 @@ export function QuickLeadModal() {
   const [selectedCompany, setSelectedCompany] = useState(companies[0]);
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
+  // Quem abriu o modal, para devolver o foco ao fechar (guardado na
+  // abertura: o autoFocus do campo de nome muda o foco antes dos efeitos)
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const handleOpen = () => setIsOpen(true);
+    const handleOpen = () => {
+      openerRef.current = document.activeElement as HTMLElement | null;
+      setIsOpen(true);
+    };
     window.addEventListener("open-qmax-modal", handleOpen);
     return () => window.removeEventListener("open-qmax-modal", handleOpen);
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!isOpen) return;
+
+    const opener = openerRef.current;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+      opener?.focus?.();
     };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanNumber = whatsapp.replace(/\D/g, "");
     const text = encodeURIComponent(
       `Olá! Meu nome é ${name || "Visitante"}${companyName ? ` (Empresa: ${companyName})` : ""}. Gostaria de solicitar um diagnóstico com a unidade ${selectedCompany.name} (${selectedCompany.category}).`
     );
 
-    // Salvar o Lead no Banco de Dados
-    try {
-      await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name || "Visitante",
-          email: "Não informado", // Adicionar campo no form se quiser
-          phone: "WhatsApp Chat", // Adicionar campo se quiser capturar
-          company: companyName,
-          message: `Deseja diagnóstico com ${selectedCompany.name}`,
-        }),
-      });
-    } catch (error) {
-      console.error("Failed to save lead:", error);
-    }
-
+    // Abre o WhatsApp antes de salvar: depois de um await lento o navegador
+    // já não considera a abertura parte do clique e bloqueia como pop-up
     window.open(`https://wa.me/551128976514?text=${text}`, "_blank");
+
+    // Salvar o Lead no Banco de Dados (keepalive: conclui mesmo se a aba mudar)
+    fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        name: name || "Visitante",
+        email: "Não informado", // Adicionar campo no form se quiser
+        phone: "WhatsApp Chat", // Adicionar campo se quiser capturar
+        company: companyName,
+        message: `Deseja diagnóstico com ${selectedCompany.name}`,
+      }),
+    }).catch((error) => {
+      console.error("Failed to save lead:", error);
+    });
+
     setIsOpen(false);
   };
 
@@ -135,6 +148,10 @@ export function QuickLeadModal() {
           <div className="qmax-modal-fields">
             <input
               type="text"
+              name="name"
+              autoComplete="name"
+              aria-label="Seu nome completo"
+              autoFocus
               placeholder="Seu nome completo"
               required
               value={name}
@@ -143,6 +160,9 @@ export function QuickLeadModal() {
             />
             <input
               type="text"
+              name="company"
+              autoComplete="organization"
+              aria-label="Nome da sua empresa (opcional)"
               placeholder="Nome da sua empresa (opcional)"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}

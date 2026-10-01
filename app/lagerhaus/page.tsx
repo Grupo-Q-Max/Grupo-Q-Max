@@ -103,8 +103,7 @@ export default function LagerhausPage() {
                 href="https://wa.me/551128976514?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20o%20endereço%20fiscal%20e%20armazenagem%20da%20Lagerhaus."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="lagerhaus-hero__primary"
-                style={{ background: "rgba(255, 255, 255, 0.06)", border: "1px solid rgba(255, 139, 42, 0.3)", boxShadow: "none" }}
+                className="lagerhaus-hero__primary lagerhaus-hero__primary--ghost"
               >
                 Falar no WhatsApp
                 <ArrowUpRight size={16} />
@@ -120,7 +119,7 @@ export default function LagerhausPage() {
               <ShieldCheck size={20} color="#ff8b2a" />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div className="lagerhaus-hero__metrics">
               <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: 16, borderRadius: 16, border: "1px solid rgba(255, 255, 255, 0.06)" }}>
                 <small style={{ color: "#a1a1aa", fontSize: "0.7rem", textTransform: "uppercase" }}>EMPRESAS SEDIADAS</small>
                 <strong style={{ display: "block", fontSize: "1.4rem", color: "#ffffff", marginTop: 4 }}>
@@ -140,7 +139,7 @@ export default function LagerhausPage() {
 
               <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: 16, borderRadius: 16, border: "1px solid rgba(255, 255, 255, 0.06)" }}>
                 <small style={{ color: "#a1a1aa", fontSize: "0.7rem", textTransform: "uppercase" }}>INTEGRAÇÃO</small>
-                <strong style={{ display: "block", fontSize: "1.4rem", color: "#fbbf24", marginTop: 4 }}>Grupo Q-Max</strong>
+                <strong style={{ display: "block", fontSize: "1.4rem", color: "#fbbf24", marginTop: 4 }}>{"Grupo Q\u2011Max"}</strong>
               </div>
             </div>
           </div>

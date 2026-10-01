@@ -152,51 +152,79 @@ function PartnerCard({ partner, variant }: { partner: TeamMember, variant: "larg
   const isLarge = variant === "large";
   return (
     <div className={`partner-card ${isLarge ? 'partner-card--large' : 'partner-card--small'}`}>
-      <div className="partner-card__image-wrap">
-        {partner.image ? (
-          <Image
-            src={partner.image}
-            alt={partner.name}
-            fill
-            unoptimized
-            style={{ objectFit: "cover", objectPosition: "top center" }}
-          />
-        ) : (
-          <div className="partner-card__fallback">
-            <UserCircle2 size={isLarge ? 64 : 40} />
-          </div>
-        )}
-        <div className="partner-card__overlay" />
+      {/* Moldura em cápsula (Figma: Protótipo Grupo, nó 6-138) */}
+      <div className="partner-card__frame">
+        <div className="partner-card__image-wrap">
+          {partner.image ? (
+            <Image
+              src={partner.image}
+              alt={partner.name}
+              fill
+              unoptimized
+              style={{ objectFit: "contain", objectPosition: "bottom center" }}
+            />
+          ) : (
+            <div className="partner-card__fallback">
+              <UserCircle2 size={isLarge ? 64 : 40} />
+            </div>
+          )}
+          {/* Liner magenta na base da foto (Figma) */}
+          <span className="partner-card__liner" aria-hidden="true" />
+        </div>
+        {partner.role && <span className="partner-card__badge">{partner.role}</span>}
       </div>
-      <div className="partner-card__info">
-        <h3>{partner.name}</h3>
-        <p>{partner.role}</p>
-      </div>
+      <h3 className="partner-card__name">{partner.name}</h3>
 
       <style jsx>{`
         .partner-card {
-          position: relative;
-          border-radius: 20px;
-          overflow: hidden;
-          background: #0d0d14;
-          border: 1px solid rgba(255,255,255,0.06);
-          transition: transform 0.4s ease, border-color 0.4s ease;
           display: flex;
           flex-direction: column;
+          align-items: center;
+          gap: ${isLarge ? '24px' : '16px'};
+          transition: transform 0.4s ease;
         }
         .partner-card:hover {
           transform: translateY(-8px);
-          border-color: rgba(217, 15, 129, 0.4);
+        }
+        /*
+         * Medidas do Figma (Protótipo Grupo, grupo 6:134) numa base de 296px de
+         * largura; em cqw para escalar junto com o card (100cqw = 296px).
+         */
+        .partner-card__frame {
+          position: relative;
+          container-type: inline-size;
+          width: ${isLarge ? 'min(100%, 296px)' : 'min(100%, 190px)'};
         }
         .partner-card__image-wrap {
           position: relative;
           width: 100%;
+          aspect-ratio: 296 / 503.087;
+          border-radius: 46.28cqw; /* 137px */
+          overflow: hidden;
+          /* Contorno branco de 6px (6:136), abaixo da foto */
+          box-shadow: inset 0 0 0 2.027cqw #ffffff;
+          transition: filter 0.4s ease;
         }
-        .partner-card--large .partner-card__image-wrap {
-          aspect-ratio: 4/5;
+        /* Liner magenta da base (6:138) */
+        .partner-card__liner {
+          position: absolute;
+          top: 1.566%; /* 7.878px */
+          right: 0;
+          bottom: 0;
+          left: 0;
+          z-index: 1;
+          border-radius: 46.28cqw;
+          background: linear-gradient(
+            180deg,
+            rgba(217, 15, 129, 0) 0%,
+            rgba(217, 15, 129, 0.1) 50%,
+            rgba(217, 15, 129, 0.2) 71.76%,
+            rgba(217, 15, 129, 0.4) 93.52%
+          );
+          pointer-events: none;
         }
-        .partner-card--small .partner-card__image-wrap {
-          aspect-ratio: 1/1;
+        .partner-card:hover .partner-card__image-wrap {
+          filter: drop-shadow(0 18px 40px rgba(217, 15, 129, 0.35));
         }
         .partner-card__fallback {
           position: absolute;
@@ -204,40 +232,35 @@ function PartnerCard({ partner, variant }: { partner: TeamMember, variant: "larg
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #111118;
-          color: rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.15);
         }
-        .partner-card__overlay {
+        .partner-card__badge {
           position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 60%;
-          background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-          pointer-events: none;
+          left: 50%;
+          bottom: ${isLarge ? '16px' : '10px'};
+          transform: translateX(-50%);
+          z-index: 3;
+          max-width: 90%;
+          padding: ${isLarge ? '8px 18px' : '6px 12px'};
+          border-radius: 9999px;
+          background: #d90f81;
+          color: #fff;
+          font-size: ${isLarge ? '16px' : '11px'};
+          font-weight: 800;
+          letter-spacing: 0.02em;
+          line-height: 1.1;
+          text-transform: uppercase;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
-        .partner-card__info {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          padding: ${isLarge ? '32px' : '20px'};
-          z-index: 2;
-        }
-        .partner-card__info h3 {
+        .partner-card__name {
+          margin: 0;
           font-size: ${isLarge ? '28px' : '18px'};
           font-weight: 800;
           letter-spacing: -0.02em;
-          margin: 0 0 4px;
-          color: #fff;
-        }
-        .partner-card__info p {
-          font-size: ${isLarge ? '16px' : '11px'};
-          color: rgba(217, 15, 129, 1);
-          font-weight: 700;
-          margin: 0;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
+          color: #d90f81;
+          text-align: center;
         }
       `}</style>
     </div>

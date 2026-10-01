@@ -37,6 +37,38 @@ export function Hero() {
               criar soluções inovadoras e impactantes.
             </p>
 
+            <div className="hero__stats">
+              <div className="hero__stat">
+                <div className="hero__badgeIcon hero__badgeIcon--cyan">
+                  <Users size={16} />
+                </div>
+                <b>
+                  <CountUp end={400} prefix="+" duration={1800} />
+                </b>
+                <span>clientes atendidos</span>
+              </div>
+
+              <div className="hero__stat">
+                <div className="hero__badgeIcon hero__badgeIcon--magenta">
+                  <Users2 size={16} />
+                </div>
+                <b>
+                  <CountUp end={30} prefix="+" duration={1500} />
+                </b>
+                <span>colaboradores</span>
+              </div>
+
+              <div className="hero__stat">
+                <div className="hero__badgeIcon hero__badgeIcon--violet">
+                  <Building2 size={16} />
+                </div>
+                <b>
+                  <CountUp end={5} prefix="0" duration={1200} />
+                </b>
+                <span>empresas conectadas</span>
+              </div>
+            </div>
+
             <div className="hero__actions">
               <a href="#empresas" className="button button--primary">
                 Explorar o ecossistema
@@ -75,42 +107,6 @@ export function Hero() {
                 className="hero__logo"
                 priority
               />
-
-              <div className="hero__badge hero__badge--a">
-                <div className="hero__badgeIcon hero__badgeIcon--cyan">
-                  <Users size={16} />
-                </div>
-                <div className="hero__badgeText">
-                  <b>
-                    <CountUp end={400} prefix="+" duration={1800} />
-                  </b>
-                  <span>clientes atendidos</span>
-                </div>
-              </div>
-
-              <div className="hero__badge hero__badge--b">
-                <div className="hero__badgeIcon hero__badgeIcon--magenta">
-                  <Users2 size={16} />
-                </div>
-                <div className="hero__badgeText">
-                  <b>
-                    <CountUp end={32} duration={1500} />
-                  </b>
-                  <span>colaboradores</span>
-                </div>
-              </div>
-
-              <div className="hero__badge hero__badge--c">
-                <div className="hero__badgeIcon hero__badgeIcon--violet">
-                  <Building2 size={16} />
-                </div>
-                <div className="hero__badgeText">
-                  <b>
-                    <CountUp end={5} prefix="0" duration={1200} />
-                  </b>
-                  <span>empresas conectadas</span>
-                </div>
-              </div>
             </div>
           </div>
         </ScrollReveal>

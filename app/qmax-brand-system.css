@@ -550,8 +550,24 @@ button:hover .qmax-company-name .qmax-brand-word,
 .audit67__primary:hover {
   transform: translateY(-2px) scale(1.02) !important;
   background: linear-gradient(135deg, #ff2a8d 0%, #df1272 100%) !important;
-  box-shadow: 0 8px 30px rgba(217, 15, 129, 0.55), 
+  box-shadow: 0 8px 30px rgba(217, 15, 129, 0.55),
               0 0 35px rgba(217, 15, 129, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Auditoria: CTA na cor da marca (vermelho do logo), como as outras
+   páginas de empresa usam a própria cor */
+.audit67 .audit67__primary {
+  background: linear-gradient(135deg, #f22b22 0%, #c81d15 100%) !important;
+  box-shadow: 0 4px 20px rgba(242, 43, 34, 0.35),
+              0 0 0 1px rgba(242, 43, 34, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+}
+
+.audit67 .audit67__primary:hover {
+  background: linear-gradient(135deg, #ff4a3d 0%, #e0261c 100%) !important;
+  box-shadow: 0 8px 30px rgba(242, 43, 34, 0.55),
+              0 0 35px rgba(242, 43, 34, 0.35),
               inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
 }
 
@@ -560,6 +576,7 @@ button:hover .qmax-company-name .qmax-brand-word,
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   backdrop-filter: blur(12px) !important;
   border-radius: 9999px !important;
+  padding-inline: 24px !important;
   color: #e4e4e7 !important;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
@@ -1900,8 +1917,8 @@ small,
 /* 21. BACK TO TOP BUTTON */
 .qmax-back-to-top {
   position: fixed;
-  bottom: 32px;
-  left: 32px;
+  bottom: 104px;
+  right: 24px;
   z-index: 1000;
   display: inline-flex;
   align-items: center;
@@ -1940,8 +1957,8 @@ small,
 
 @media (max-width: 768px) {
   .qmax-back-to-top {
-    bottom: 24px;
-    left: 20px;
+    bottom: 96px;
+    right: 20px;
     padding: 10px 14px;
     font-size: 0.8rem;
   }
@@ -2072,3 +2089,211 @@ small,
 
 
 
+
+/* =========================================================
+   CTA MAGENTA: "Q-Max" branco para não sumir no fundo magenta
+   ========================================================= */
+
+.nav15__cta .qmax-brand-word,
+.nav15__mobileCta .qmax-brand-word,
+.button--primary .qmax-brand-word,
+.finish-contact__primary .qmax-brand-word,
+.conversion18__right > a .qmax-brand-word,
+.faq43__cta > a .qmax-brand-word,
+/* hover: vence "a:hover .qmax-brand-word", que deixaria magenta de novo */
+a.nav15__cta:hover .qmax-brand-word,
+a.nav15__mobileCta:hover .qmax-brand-word,
+a.button--primary:hover .qmax-brand-word,
+button.nav15__cta:hover .qmax-brand-word,
+button.nav15__mobileCta:hover .qmax-brand-word,
+button.button--primary:hover .qmax-brand-word,
+.finish-contact__primary:hover .qmax-brand-word,
+.conversion18__right > a:hover .qmax-brand-word,
+.faq43__cta > a:hover .qmax-brand-word {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-shadow: none;
+}
+
+/* =========================================================================
+   AJUSTES DE LAYOUT DA HOME
+   ========================================================================= */
+
+/* "Q-Max" nunca quebra no hífen ("Q-" / "MAX") */
+.qmax-brand-word {
+  white-space: nowrap;
+}
+
+/* Botão flutuante "Fale com a Q-Max": fica no canto inferior esquerdo,
+   já que o canto direito é do WhatsApp e do "Topo" */
+.qmax-floating-contact {
+  right: auto !important;
+  left: clamp(16px, 2.2vw, 36px) !important;
+}
+
+/* A barra lateral de pontos (visível acima de 1100px) ficava por cima do
+   começo dos títulos; o conteúdo deixa espaço para ela */
+@media (min-width: 1101px) {
+  body:has(.qmax-signature-rail) main .container,
+  body:has(.qmax-signature-rail) footer .container {
+    max-width: calc(100% - 192px) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  /* .hero__actions a usa space-between para o texto + seta do botão
+     principal; no ghost separava "Conheça o Grupo" de "Q-Max" */
+  .hero__actions a.button--ghost {
+    justify-content: center !important;
+  }
+}
+
+/* Rótulos com 7–9px no celular: mínimo de 11px para leitura */
+@media (max-width: 900px) {
+  .hero21__signature span,
+  .qstory__statement > span,
+  .qstory__manifestoCopy > span,
+  .qprinciples__cardTop > span,
+  .qprinciples__tags > span,
+  .qvalues__title > span,
+  .qvalues__item > span,
+  .qesg__core > span,
+  .ecosystem8__detailTop > span,
+  .ecosystem8__footer > span,
+  .products5__navigation button > span,
+  .products5__productMeta > span,
+  .products5__counter > * {
+    font-size: 11px !important;
+  }
+
+  /* Menu mobile: o botão de fechar do header ficava por cima do
+     "GRUPO Q-MAX" do topo da gaveta */
+  .nav15__mobileTop {
+    padding-right: 64px !important;
+  }
+
+  /* Submenu fechado mantinha o padding (22px) e, com o gap da gaveta,
+     deixava um buraco abaixo de Empresas/Produtos; os links invisíveis
+     também continuavam alcançáveis pelo Tab */
+  .nav15__mobileSub:not(.open) {
+    padding: 0 !important;
+    margin-top: -16px !important;
+    visibility: hidden;
+  }
+
+  /* As etiquetas dos cards de missão/visão ficavam em position:absolute no
+     rodapé do card, por cima do parágrafo; no celular entram no fluxo */
+  .qprinciples__tags {
+    position: static !important;
+    margin-top: 20px !important;
+  }
+}
+
+/* Itens do menu desktop em uma linha só ("Nosso Time" quebrava em
+   larguras perto de 900px) */
+.nav15__desktop > a,
+.nav15__item > button {
+  white-space: nowrap;
+}
+
+/* Entre 901px e 1100px as colunas fixas do header (190px + 220px) não
+   cabiam e o botão "Fale com a Q-Max" saía da tela */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .nav15__inner {
+    grid-template-columns: auto 1fr auto !important;
+  }
+
+  .nav15__desktop {
+    gap: 26px !important;
+    justify-content: center !important;
+  }
+}
+
+/* =========================================================
+   HERO: indicadores em cards acima dos botões
+   ========================================================= */
+
+.hero__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 620px;
+  margin-top: 32px;
+}
+
+.hero__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: rgba(14, 14, 20, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
+}
+
+.hero__stat:hover {
+  transform: translateY(-4px);
+  border-color: rgba(217, 15, 129, 0.4);
+  box-shadow: 0 28px 55px -10px rgba(0, 0, 0, 0.7),
+              0 0 25px rgba(217, 15, 129, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.hero__stat .hero__badgeIcon {
+  margin-bottom: 8px;
+}
+
+.hero__stat b {
+  font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero__stat > span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  color: #a1a1aa;
+}
+
+@media (max-width: 700px) {
+  .hero__stats {
+    gap: 6px;
+    margin-top: 26px;
+  }
+
+  .hero__stat {
+    padding: 14px 8px 14px 10px;
+    border-radius: 16px;
+  }
+
+  .hero__stat .hero__badgeIcon {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+
+  .hero__stat > span {
+    font-size: 0.58rem;
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__stat {
+    transition: none;
+  }
+}

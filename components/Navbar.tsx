@@ -71,7 +71,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const [activeSection, setActiveSection] = useState<
-    "inicio" | "sobre" | "empresas" | "produtos" | "contato"
+    "inicio" | "sobre" | "socios" | "empresas" | "produtos" | "contato"
   >("inicio");
   const [mobileSection, setMobileSection] = useState<
     "empresas" | "produtos" | null
@@ -175,9 +175,18 @@ export function Navbar() {
 
 
   useEffect(() => {
+    // Os links do menu apontam para seções da home (/#sobre, /#contato…).
+    // Nas páginas internas há seções com os mesmos ids (ex.: /auditoria
+    // tem #sobre e #contato), e o menu destacava itens que não são dali.
+    if (pathname !== "/") {
+      setActiveSection("inicio");
+      return;
+    }
+
     const ids = [
       "inicio",
       "sobre",
+      "socios",
       "empresas",
       "produtos",
       "contato",
@@ -200,12 +209,7 @@ export function Navbar() {
 
         if (!visible.length) return;
 
-        const id = visible[0].target.id as
-          | "inicio"
-          | "sobre"
-          | "empresas"
-          | "produtos"
-          | "contato";
+        const id = visible[0].target.id as (typeof ids)[number];
 
         setActiveSection(id);
       },
@@ -223,7 +227,7 @@ export function Navbar() {
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [pathname]);
   function closeMenu() {
     setMobileOpen(false);
     setMobileSection(null);
@@ -271,7 +275,14 @@ export function Navbar() {
             Sobre
           </a>
 
-          <a href="/#time">
+          <a
+            href="/#socios"
+            className={
+              activeSection === "socios"
+                ? "is-active"
+                : undefined
+            }
+          >
             Nosso Time
           </a>
 
@@ -473,6 +484,14 @@ export function Navbar() {
             <strong>Sobre</strong>
           </a>
 
+          <a
+            href="/#socios"
+            onClick={closeMenu}
+          >
+            <span>02</span>
+            <strong>Nosso Time</strong>
+          </a>
+
           <button
             type="button"
             onClick={() =>
@@ -483,7 +502,7 @@ export function Navbar() {
               )
             }
           >
-            <span>02</span>
+            <span>03</span>
             <strong>Empresas</strong>
 
             <ChevronDown
@@ -526,7 +545,7 @@ export function Navbar() {
               )
             }
           >
-            <span>03</span>
+            <span>04</span>
             <strong>Produtos</strong>
 
             <ChevronDown
@@ -569,7 +588,7 @@ export function Navbar() {
             href="/#contato"
             onClick={closeMenu}
           >
-            <span>04</span>
+            <span>05</span>
             <strong>Contato</strong>
           </a>
 

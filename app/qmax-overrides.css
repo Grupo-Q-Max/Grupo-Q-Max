@@ -2888,12 +2888,20 @@ footer a,
     manipulation;
 }
 
-/* ancora + header fixo */
+/* ancora + header fixo
+   O desconto do header fica só no scroll-margin das seções; o
+   scroll-padding-top do html (qmax-base.css) somava com ele e a âncora
+   parava ~90px abaixo. */
+html {
+  scroll-padding-top: 0 !important;
+}
+
 #inicio,
 #sobre,
 #empresas,
 #produtos,
-#contato {
+#contato,
+main section[id] {
   scroll-margin-top:
     105px;
 }

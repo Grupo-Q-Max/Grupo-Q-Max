@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowUpRight, PlaySquare, Share2, Globe, TrendingUp, Layers, PenTool, MonitorSmartphone, Code, Cpu, Database, Shield, Zap, Sparkles, Server } from "lucide-react";
+import { ArrowUpRight, Share2, Globe, TrendingUp, Layers, PenTool, MonitorSmartphone, Code, Cpu, Database, Shield, Zap, Sparkles, Server } from "lucide-react";
 
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { TechPreloader } from "@/components/TechPreloader";
@@ -25,6 +24,56 @@ export const metadata: Metadata = {
     type: "website",
   },
 };
+
+const WHATSAPP_URL = "https://wa.me/551128976514";
+
+const whatsappLink = (message: string) =>
+  `${WHATSAPP_URL}?text=${encodeURIComponent(message)}`;
+
+const services = [
+  {
+    name: "Sites e Landing Pages",
+    title: ["SITES E", "LANDING PAGES"],
+    description:
+      "Criamos sites profissionais, responsivos e otimizados focados em conversão, gerando credibilidade e mais vendas para o seu negócio.",
+    Icon: Globe,
+  },
+  {
+    name: "Bitrix e outros CRMs",
+    title: ["BITRIX E", "OUTROS CRMs"],
+    description:
+      "Maximize seu potencial com integrações inteligentes e automações. Conectamos ferramentas para garantir a máxima eficiência da equipe.",
+    Icon: Layers,
+  },
+  {
+    name: "Marketing Digital",
+    title: ["MARKETING", "DIGITAL"],
+    description:
+      "Atraímos, engajamos e convertemos o público online em clientes. Estratégias completas para mais visibilidade e crescimento.",
+    Icon: TrendingUp,
+  },
+  {
+    name: "Gestão de Mídias",
+    title: ["GESTÃO DE", "MÍDIAS"],
+    description:
+      "Estratégias completas de postagens e gestão de redes sociais, fortalecendo sua marca, aumentando engajamento e presença online.",
+    Icon: Share2,
+  },
+  {
+    name: "Identidade Visual",
+    title: ["IDENTIDADE", "VISUAL"],
+    description:
+      "Construímos marcas fortes e memoráveis. Design moderno que transmite os valores e o propósito real da sua empresa para o mercado.",
+    Icon: PenTool,
+  },
+  {
+    name: "Sistemas sob Medida",
+    title: ["SISTEMAS", "SOB MEDIDA"],
+    description:
+      "Desenvolvimento de plataformas web exclusivas para resolver os gargalos da sua operação e escalar a sua capacidade de atendimento.",
+    Icon: MonitorSmartphone,
+  },
+];
 
 export default function TechnologyPage() {
   return (
@@ -278,83 +327,35 @@ export default function TechnologyPage() {
           </div>
 
           <div className="tech-services__grid">
-            <TiltWrapper className="tech-card">
-              <div className="tech-card__icon-wrap">
-                <Globe size={32} className="tech-card__icon" />
-              </div>
-              <div className="tech-card__content">
-                <h4>SITES E<br />LANDING PAGES</h4>
-                <p>Criamos sites profissionais, responsivos e otimizados focados em conversão, gerando credibilidade e mais vendas para o seu negócio.</p>
-              </div>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </TiltWrapper>
-
-            <TiltWrapper className="tech-card">
-              <div className="tech-card__icon-wrap">
-                <Layers size={32} className="tech-card__icon" />
-              </div>
-              <div className="tech-card__content">
-                <h4>BITRIX E<br />OUTROS CRMs</h4>
-                <p>Maximize seu potencial com integrações inteligentes e automações. Conectamos ferramentas para garantir a máxima eficiência da equipe.</p>
-              </div>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </TiltWrapper>
-
-            <TiltWrapper className="tech-card">
-              <div className="tech-card__icon-wrap">
-                <TrendingUp size={32} className="tech-card__icon" />
-              </div>
-              <div className="tech-card__content">
-                <h4>MARKETING<br />DIGITAL</h4>
-                <p>Atraímos, engajamos e convertemos o público online em clientes. Estratégias completas para mais visibilidade e crescimento.</p>
-              </div>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </TiltWrapper>
-
-            <TiltWrapper className="tech-card">
-              <div className="tech-card__icon-wrap">
-                <Share2 size={32} className="tech-card__icon" />
-              </div>
-              <div className="tech-card__content">
-                <h4>GESTÃO DE<br />MÍDIAS</h4>
-                <p>Estratégias completas de postagens e gestão de redes sociais, fortalecendo sua marca, aumentando engajamento e presença online.</p>
-              </div>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </TiltWrapper>
-
-            <TiltWrapper className="tech-card">
-              <div className="tech-card__icon-wrap">
-                <PenTool size={32} className="tech-card__icon" />
-              </div>
-              <div className="tech-card__content">
-                <h4>IDENTIDADE<br />VISUAL</h4>
-                <p>Construímos marcas fortes e memoráveis. Design moderno que transmite os valores e o propósito real da sua empresa para o mercado.</p>
-              </div>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </TiltWrapper>
-
-            <TiltWrapper className="tech-card">
-              <div className="tech-card__icon-wrap">
-                <MonitorSmartphone size={32} className="tech-card__icon" />
-              </div>
-              <div className="tech-card__content">
-                <h4>SISTEMAS<br />SOB MEDIDA</h4>
-                <p>Desenvolvimento de plataformas web exclusivas para resolver os gargalos da sua operação e escalar a sua capacidade de atendimento.</p>
-              </div>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </TiltWrapper>
+            {services.map(({ name, title, description, Icon }) => (
+              <a
+                key={name}
+                className="tech-services__link"
+                href={whatsappLink(
+                  `Olá! Tenho interesse em ${name} da Q-Max Technology.`
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${name}: falar com a Q-Max Technology pelo WhatsApp`}
+              >
+                <TiltWrapper className="tech-card">
+                  <div className="tech-card__icon-wrap">
+                    <Icon size={32} className="tech-card__icon" />
+                  </div>
+                  <div className="tech-card__content">
+                    <h4>
+                      {title[0]}
+                      <br />
+                      {title[1]}
+                    </h4>
+                    <p>{description}</p>
+                  </div>
+                  <div className="tech-card__arrow" aria-hidden="true">
+                    <ArrowUpRight size={20} strokeWidth={3} />
+                  </div>
+                </TiltWrapper>
+              </a>
+            ))}
           </div>
         </section>
       </ScrollReveal>
@@ -379,6 +380,18 @@ export default function TechnologyPage() {
                 criadas sob medida para aumentar a eficiência e multiplicar as oportunidades 
                 da sua empresa no ambiente digital.
               </p>
+
+              <a
+                className="tech-cta__button"
+                href={whatsappLink(
+                  "Olá! Gostaria de conversar com um especialista da Q-Max Technology."
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Falar com um especialista
+                <ArrowUpRight size={18} strokeWidth={2.5} />
+              </a>
               
               <div className="tech-cta__footer">
                 <div className="tech-cta__badge"><Sparkles size={16} className="tech-cta-sparkle" /> COMPROMISSO QMAX</div>
@@ -391,7 +404,8 @@ export default function TechnologyPage() {
             <div className="tech-cta__visual">
                <Image 
                   src="/technology/shape-2.png" 
-                  alt="Decoração" 
+                  alt=""
+                  aria-hidden="true"
                   fill
                   style={{ objectFit: 'contain', objectPosition: 'center', opacity: 0.9, filter: 'drop-shadow(0 0 40px rgba(11,21,217,0.3))' }}
                />
