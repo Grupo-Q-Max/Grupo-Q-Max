@@ -2096,9 +2096,23 @@ small,
 
 .nav15__cta .qmax-brand-word,
 .nav15__mobileCta .qmax-brand-word,
-.button--primary .qmax-brand-word {
+.button--primary .qmax-brand-word,
+.finish-contact__primary .qmax-brand-word,
+.conversion18__right > a .qmax-brand-word,
+.faq43__cta > a .qmax-brand-word,
+/* hover: vence "a:hover .qmax-brand-word", que deixaria magenta de novo */
+a.nav15__cta:hover .qmax-brand-word,
+a.nav15__mobileCta:hover .qmax-brand-word,
+a.button--primary:hover .qmax-brand-word,
+button.nav15__cta:hover .qmax-brand-word,
+button.nav15__mobileCta:hover .qmax-brand-word,
+button.button--primary:hover .qmax-brand-word,
+.finish-contact__primary:hover .qmax-brand-word,
+.conversion18__right > a:hover .qmax-brand-word,
+.faq43__cta > a:hover .qmax-brand-word {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
+  text-shadow: none;
 }
 
 /* =========================================================================
