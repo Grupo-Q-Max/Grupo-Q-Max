@@ -2084,3 +2084,62 @@ small,
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
 }
+
+/* =========================================================================
+   AJUSTES DE LAYOUT DA HOME
+   ========================================================================= */
+
+/* "Q-Max" nunca quebra no hífen ("Q-" / "MAX") */
+.qmax-brand-word {
+  white-space: nowrap;
+}
+
+/* Botão flutuante "Fale com a Q-Max": fica no canto inferior esquerdo,
+   já que o canto direito é do WhatsApp e do "Topo" */
+.qmax-floating-contact {
+  right: auto !important;
+  left: clamp(16px, 2.2vw, 36px) !important;
+}
+
+/* A barra lateral de pontos (visível acima de 1100px) ficava por cima do
+   começo dos títulos; o conteúdo deixa espaço para ela */
+@media (min-width: 1101px) {
+  body:has(.qmax-signature-rail) main .container,
+  body:has(.qmax-signature-rail) footer .container {
+    max-width: calc(100% - 192px) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  /* .hero__actions a usa space-between para o texto + seta do botão
+     principal; no ghost separava "Conheça o Grupo" de "Q-Max" */
+  .hero__actions a.button--ghost {
+    justify-content: center !important;
+  }
+}
+
+/* Rótulos com 7–9px no celular: mínimo de 11px para leitura */
+@media (max-width: 900px) {
+  .hero21__signature span,
+  .qstory__statement > span,
+  .qstory__manifestoCopy > span,
+  .qprinciples__cardTop > span,
+  .qprinciples__tags > span,
+  .qvalues__title > span,
+  .qvalues__item > span,
+  .qesg__core > span,
+  .ecosystem8__detailTop > span,
+  .ecosystem8__footer > span,
+  .products5__navigation button > span,
+  .products5__productMeta > span,
+  .products5__counter > * {
+    font-size: 11px !important;
+  }
+
+  /* As etiquetas dos cards de missão/visão ficavam em position:absolute no
+     rodapé do card, por cima do parágrafo; no celular entram no fluxo */
+  .qprinciples__tags {
+    position: static !important;
+    margin-top: 20px !important;
+  }
+}
