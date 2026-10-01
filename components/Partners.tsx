@@ -186,49 +186,45 @@ function PartnerCard({ partner, variant }: { partner: TeamMember, variant: "larg
         .partner-card:hover {
           transform: translateY(-8px);
         }
+        /*
+         * Medidas do Figma (Protótipo Grupo, grupo 6:134) numa base de 296px de
+         * largura; em cqw para escalar junto com o card (100cqw = 296px).
+         */
         .partner-card__frame {
           position: relative;
-          width: ${isLarge ? 'min(100%, 300px)' : 'min(100%, 190px)'};
+          container-type: inline-size;
+          width: ${isLarge ? 'min(100%, 296px)' : 'min(100%, 190px)'};
         }
         .partner-card__image-wrap {
           position: relative;
           width: 100%;
-          aspect-ratio: 296 / 495;
-          border-radius: 9999px;
+          aspect-ratio: 296 / 503.087;
+          border-radius: 46.28cqw; /* 137px */
           overflow: hidden;
-          background:
-            radial-gradient(120% 55% at 50% 100%, rgba(217, 15, 129, 0.55), transparent 70%),
-            linear-gradient(180deg, #120c14 0%, #1a0f19 100%);
-          transition: box-shadow 0.4s ease;
+          /* Contorno branco de 6px (6:136), abaixo da foto */
+          box-shadow: inset 0 0 0 2.027cqw #ffffff;
+          transition: filter 0.4s ease;
         }
-        /* Contorno branco que some em degradê antes da base (Figma) */
-        .partner-card__image-wrap::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          z-index: 2;
-          border-radius: inherit;
-          padding: ${isLarge ? '3px' : '2px'};
-          background: linear-gradient(180deg, #ffffff 0%, #ffffff 50%, rgba(255, 255, 255, 0) 82%);
-          -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-        }
+        /* Liner magenta da base (6:138) */
         .partner-card__liner {
           position: absolute;
-          inset: 0;
+          top: 1.566%; /* 7.878px */
+          right: 0;
+          bottom: 0;
+          left: 0;
           z-index: 1;
+          border-radius: 46.28cqw;
           background: linear-gradient(
             180deg,
-            rgba(217, 15, 129, 0) 48%,
-            rgba(217, 15, 129, 0.35) 72%,
-            rgba(217, 15, 129, 0.9) 100%
+            rgba(217, 15, 129, 0) 0%,
+            rgba(217, 15, 129, 0.1) 50%,
+            rgba(217, 15, 129, 0.2) 71.76%,
+            rgba(217, 15, 129, 0.4) 93.52%
           );
           pointer-events: none;
         }
         .partner-card:hover .partner-card__image-wrap {
-          box-shadow: 0 18px 50px rgba(217, 15, 129, 0.35);
+          filter: drop-shadow(0 18px 40px rgba(217, 15, 129, 0.35));
         }
         .partner-card__fallback {
           position: absolute;

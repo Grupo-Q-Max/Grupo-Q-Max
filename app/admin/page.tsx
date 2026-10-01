@@ -318,7 +318,7 @@ function MemberModal({
 
 /* ─── Image Crop & Adjust Modal ─────────────────────────────────────────── */
 const PHOTO_ASPECT_W = 296;
-const PHOTO_ASPECT_H = 495;
+const PHOTO_ASPECT_H = 503.087;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 3;
 
@@ -387,7 +387,7 @@ function ImageCropModal({
     setSubmitting(true);
     try {
       const img = imgRef.current;
-      // Mesma proporção da cápsula do site (Partners.tsx: aspect-ratio 296 / 495)
+      // Mesma proporção da cápsula do site (Partners.tsx: aspect-ratio 296 / 503.087)
       const TARGET_W = 600;
       const TARGET_H = Math.round((TARGET_W * PHOTO_ASPECT_H) / PHOTO_ASPECT_W);
       // clientWidth = área interna (sem a borda), onde a <img> é desenhada
