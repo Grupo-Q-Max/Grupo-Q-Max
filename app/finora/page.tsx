@@ -1,219 +1,305 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  CheckCircle2,
-  HeartPulse,
-  Scale,
-  ShieldCheck,
-  Sparkles,
-  Stethoscope,
-  TrendingUp,
-  FileCheck2,
-  Users,
-} from "lucide-react";
-
 
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { TaxDiagnosticCalculator } from "@/components/TaxDiagnosticCalculator";
-import { QmaxInline } from "@/components/QmaxBrandText";
-import { CountUp } from "@/components/CountUp";
+import { FinoraHeader } from "@/components/FinoraHeader";
+import { FinoraFooter } from "@/components/FinoraFooter";
+import { FinoraFaq, RotatingHeadline, TestimonialCardArt } from "@/components/FinoraInteractive";
 import "./finora.css";
 
 export const metadata: Metadata = {
   title: "FINORA | Gestão Financeira & Planejamento para Clínicas Odontológicas",
   description:
-    "Inteligência financeira, redução legal de impostos, regularização documental e liberdade profissional para dentistas e clínicas odontológicas.",
+    "Inteligência financeira, planejamento tributário e gestão para dentistas e clínicas odontológicas. Economize até 70% nos impostos de forma legal.",
   alternates: {
     canonical: "/finora",
   },
   openGraph: {
-    title: "FINORA | Liberdade Profissional para sua Clínica",
+    title: "FINORA | Inteligência financeira para o crescimento da sua clínica",
     description:
-      "Solução do Grupo Q-Max especializada em planejamento tributário e gestão para profissionais da saúde e odontologia.",
+      "Solução do Grupo Q-Max especializada em planejamento tributário e gestão para dentistas e clínicas odontológicas.",
     url: "/finora",
     type: "website",
   },
 };
 
-const pillars = [
+const WHATSAPP_URL = "https://wa.me/551128976514";
+
+const whatsappLink = (message: string) =>
+  `${WHATSAPP_URL}?text=${encodeURIComponent(message)}`;
+
+const findings = [
+  (
+    <>
+      O melhor <strong>regime<br />tributário</strong> para o seu<br />faturamento
+    </>
+  ),
+  (
+    <>
+      Deduções e benefícios fiscais que você <strong>não</strong> está utilizando
+    </>
+  ),
+  (
+    <>
+      Estratégias <strong>legais</strong>
+      <br />para <strong>reduzir</strong> a carga
+      <br />tributária
+    </>
+  ),
+];
+
+const plans = [
   {
-    number: "01",
-    title: "Planejamento Tributário Especializado",
-    icon: Scale,
-    text: "Enquadramento tributário cirúrgico (Equiparação Hospitalar / Livro Caixa / Simples vs Presumido) para reduzir legalmente até 60% dos impostos da sua clínica odontológica.",
-    tags: ["Equiparação Hospitalar", "Economia Legal", "Redução de Alíquota"],
+    title: "Diagnóstico Financeiro",
+    icon: "/finora/icon-diagnostico.png",
+    iconSize: [94, 88],
+    titleWidth: 336,
+    items: [] as string[],
   },
   {
-    number: "02",
-    title: "BPO Financeiro & Fluxo de Caixa",
-    icon: TrendingUp,
-    text: "Gestão profissional das contas da clínica, controle de recebíveis de cartões e convênios, conciliação diária e relatórios de lucratividade por procedimento.",
-    tags: ["Gestão de Convênios", "Conciliação de Cartão", "Lucro Real por Cadeira"],
+    title: "Gestão Financeira",
+    icon: "/finora/icon-gestao-financeira.png",
+    iconSize: [109, 107],
+    titleWidth: 304,
+    items: [] as string[],
   },
   {
-    number: "03",
-    title: "Regularização Documental & CRO",
-    icon: FileCheck2,
-    text: "Apoio completo para emissão de alvarás da Vigilância Sanitária, registro no CRO/CRM, adequação de contratos com dentistas parceiros (Lei do Salão-Parceiro/Clínica).",
-    tags: ["Vigilância Sanitária", "Contratos Seguros", "Compliance CRO"],
+    title: "Gestão Empresarial",
+    icon: "/finora/icon-gestao-empresarial.png",
+    iconSize: [99, 98],
+    titleWidth: 336,
+    items: ["Gestão Financeira e Administrativa Completa"],
+  },
+];
+
+const testimonials = [
+  { name: "Nome cliente", text: "Descrição", location: "Cidade - Estado" },
+  { name: "Nome cliente", text: "Descrição", location: "Cidade - Estado" },
+  { name: "Nome cliente", text: "Descrição", location: "Cidade - Estado" },
+];
+
+const faqs = [
+  {
+    question: "Como a FINORA reduz impostos da minha clínica?",
+    answer:
+      "Analisamos o faturamento e a estrutura da clínica para aplicar estratégias legais — como a escolha do regime tributário ideal, equiparação hospitalar e segregação de receitas — que podem reduzir significativamente a carga tributária.",
   },
   {
-    number: "04",
-    title: "Liberdade Profissional",
-    icon: HeartPulse,
-    text: "Mais tempo para você se dedicar aos seus pacientes e à sua vida pessoal, com a certeza de que os números da sua clínica estão sendo cuidados por especialistas.",
-    tags: ["Mais Tempo Livre", "Segurança Fiscal", "Crescimento Previsível"],
+    question: "Qual o melhor regime tributário para dentistas?",
+    answer:
+      "Depende do faturamento, da folha de pagamento e dos procedimentos realizados. Comparamos Simples Nacional, Lucro Presumido e outras alternativas para indicar o enquadramento mais vantajoso para o seu caso.",
+  },
+  {
+    question: "Atendo como pessoa física. A FINORA também pode me ajudar?",
+    answer:
+      "Sim. Avaliamos o uso do Livro Caixa e das deduções permitidas e, quando faz sentido, orientamos a abertura de um CNPJ para reduzir os impostos de forma segura.",
+  },
+  {
+    question: "Como funciona o diagnóstico financeiro?",
+    answer:
+      "Reunimos as informações fiscais e financeiras da clínica, identificamos oportunidades de economia e apresentamos um plano de ação claro, com os próximos passos e a economia estimada.",
   },
 ];
 
 export default function FinoraPage() {
   return (
-    <main className="finora-page">
-      {/* HERO SECTION */}
-      <ScrollReveal animation="fade-up">
-      <section className="finora-hero">
-        <div className="finora-hero__glow finora-hero__glow--violet" />
-        <div className="finora-hero__glow finora-hero__glow--magenta" />
+    <main className="fnr">
+      <FinoraHeader
+        contactHref={whatsappLink("Olá! Tenho uma clínica odontológica e gostaria de falar com a FINORA.")}
+      />
 
-        <div className="container finora-hero__grid">
-          <div className="finora-hero__copy">
-            <span className="eyebrow" style={{ color: "#c084fc", borderColor: "rgba(164, 92, 255, 0.3)" }}>
-              <Stethoscope size={14} />
-              EXCLUSIVO PARA CLÍNICAS ODONTOLÓGICAS
-            </span>
+      {/* HERO */}
+      <section id="inicio" className="fnr-hero">
+        <Image
+          src="/finora/ativo-10.png"
+          alt=""
+          width={857}
+          height={554}
+          className="fnr-hero__decor"
+          aria-hidden
+        />
 
-            <h1>
-              Menos impostos.
-              <br />
-              Mais <em>liberdade profissional.</em>
-            </h1>
+        <ScrollReveal animation="fade-up">
+          <h1 className="fnr-hero__title">
+            Inteligência financeira para o
+            <RotatingHeadline />
+          </h1>
+        </ScrollReveal>
 
-            <p>
-              Gestão contábil, financeira e tributária desenhada sob medida para dentistas e gestores de clínicas que buscam lucro máximo e conformidade absoluta.
-            </p>
-
-            <div className="finora-hero__actions">
-              <a href="#pilares" className="finora-hero__primary">
-                Conheça a FINORA
-                <ArrowRight size={17} />
-              </a>
-
-              <a
-                href="https://wa.me/551128976514?text=Olá!%20Tenho%20uma%20clínica%20odontológica%20e%20gostaria%20de%20um%20diagnóstico%20com%20a%20FINORA."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="finora-hero__primary"
-                style={{ background: "rgba(255, 255, 255, 0.06)", border: "1px solid rgba(164, 92, 255, 0.3)", boxShadow: "none" }}
-              >
-                Falar no WhatsApp
-                <ArrowUpRight size={16} />
-              </a>
-            </div>
-          </div>
-
-          <div className="finora-hero__card">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <span style={{ fontSize: "0.72rem", letterSpacing: "0.16em", fontWeight: 700, color: "#c084fc" }}>
-                FINORA · DIAGNÓSTICO ODONTO
-              </span>
-              <ShieldCheck size={20} color="#a45cff" />
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: 18, borderRadius: 16, border: "1px solid rgba(255, 255, 255, 0.06)" }}>
-                <small style={{ color: "#a1a1aa", fontSize: "0.72rem", textTransform: "uppercase" }}>REDUÇÃO TRIBUTÁRIA ESTIMADA</small>
-                <strong style={{ display: "block", fontSize: "1.8rem", color: "#c084fc", marginTop: 4 }}>
-                  Até <CountUp end={60} suffix="%" duration={1600} />
-                </strong>
-                <span style={{ fontSize: "0.82rem", color: "#71717a" }}>Através de equiparação hospitalar e segregação de receitas</span>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: 14, borderRadius: 14, border: "1px solid rgba(255, 255, 255, 0.06)" }}>
-                  <small style={{ color: "#a1a1aa", fontSize: "0.7rem" }}>SEGURANÇA JURÍDICA</small>
-                  <strong style={{ display: "block", fontSize: "1.2rem", color: "#ffffff" }}>100% Legal</strong>
-                </div>
-                <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: 14, borderRadius: 14, border: "1px solid rgba(255, 255, 255, 0.06)" }}>
-                  <small style={{ color: "#a1a1aa", fontSize: "0.7rem" }}>FOCO TOTAL</small>
-                  <strong style={{ display: "block", fontSize: "1.2rem", color: "#ffffff" }}>Odontologia</strong>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="fnr-hero__media">
+          <Image
+            className="fnr-hero__mediaImg"
+            src="/finora/hero-media.png"
+            alt="Vídeo de apresentação da FINORA"
+            width={1800}
+            height={1384}
+            priority
+          />
         </div>
       </section>
-      </ScrollReveal>
 
-      {/* PILARES SECTION */}
-      <ScrollReveal animation="slide-left" delay={0.2}>
-      <section id="pilares" style={{ padding: "clamp(80px, 8vw, 130px) 0" }}>
-        <div className="container">
-          <header className="text-center" style={{ maxWidth: 740, margin: "0 auto" }}>
-            <span className="eyebrow" style={{ color: "#c084fc", borderColor: "rgba(164, 92, 255, 0.3)" }}>
-              <Sparkles size={13} />
-              COMO TRANSFORMAMOS SUA CLÍNICA
-            </span>
+      {/* GERENCIAMENTO PARA DENTISTAS */}
+      <section id="sobre" className="fnr-intro">
+        <ScrollReveal animation="fade-up">
+          <h2 className="fnr-ruled fnr-ruled--solid">
+            Gerenciamento eficiente para <span>dentistas</span>
+          </h2>
+          <p>
+            Muitos dentistas pagam mais impostos do que o necessário por falta de orientação
+            especializada. Escolher o regime tributário errado ou deixar de aproveitar deduções
+            legais pode estar reduzindo drasticamente sua lucratividade.
+          </p>
+        </ScrollReveal>
+      </section>
 
-            <h2 style={{ fontSize: "clamp(2rem, 3.5vw, 3.2rem)", fontWeight: 800, margin: "16px 0", letterSpacing: "-0.04em" }}>
-              Inteligência que cuida das contas enquanto você cuida dos sorrisos.
+      {/* PLANEJAMENTO TRIBUTÁRIO */}
+      <div className="fnr-band-wrap">
+        <ScrollReveal animation="zoom-in">
+          <section className="fnr-band">
+            <Image
+              src="/finora/ativo-10.png"
+              alt=""
+              width={857}
+              height={554}
+              className="fnr-band__decor"
+              aria-hidden
+            />
+            <Image
+              src="/finora/band-shape.svg"
+              alt=""
+              width={634}
+              height={639}
+              className="fnr-band__shape"
+              aria-hidden
+            />
+
+            <h2 className="fnr-band__title">
+              Com o planejamento tributário <mark>certo</mark>, é possível{" "}
+              <mark>economizar</mark> até 70% nos impostos.
             </h2>
 
-            <p style={{ color: "#a1a1aa", fontSize: "1.1rem", lineHeight: 1.6 }}>
-              Uma estrutura contábil e financeira que protege seu patrimônio e maximiza seus lucros.
+            <Image
+              src="/finora/band-line.svg"
+              alt=""
+              width={966}
+              height={1}
+              className="fnr-band__line"
+              aria-hidden
+            />
+
+            <p className="fnr-band__text">
+              Seja optando pelo Simples Nacional, Lucro Presumido ou outras estratégias fiscais
+              seguras.
             </p>
-          </header>
+          </section>
+        </ScrollReveal>
+      </div>
 
-          <div className="finora-benefits-grid">
-            {pillars.map((pillar) => {
-              const Icon = pillar.icon;
-              return (
-                <article key={pillar.number} className="finora-card">
-                  <div>
-                    <div className="finora-card__icon">
-                      <Icon size={24} />
-                    </div>
+      {/* O QUE IDENTIFICAMOS */}
+      <section className="fnr-analysis">
+        <ScrollReveal animation="fade-up">
+          <h2 className="fnr-ruled fnr-ruled--dashed">O que identificamos na Análise?</h2>
+        </ScrollReveal>
 
-                    <h3 style={{ fontSize: "1.35rem", fontWeight: 800, color: "#ffffff", marginBottom: 12 }}>{pillar.title}</h3>
-                    <p style={{ color: "#a1a1aa", fontSize: "0.92rem", lineHeight: 1.6 }}>{pillar.text}</p>
-                  </div>
-
-                  <div style={{ marginTop: 24, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {pillar.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        style={{
-                          fontSize: "0.72rem",
-                          fontWeight: 700,
-                          color: "#c084fc",
-                          background: "rgba(164, 92, 255, 0.1)",
-                          padding: "4px 10px",
-                          borderRadius: 6,
-                        }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+        <div className="fnr-analysis__grid">
+          {findings.map((finding, index) => (
+            <ScrollReveal key={index} animation="fade-up" delay={index * 0.1}>
+              <article className="fnr-finding">
+                <p>{finding}</p>
+              </article>
+            </ScrollReveal>
+          ))}
         </div>
       </section>
-      </ScrollReveal>
 
-      {/* DIAGNOSTIC CALCULATOR */}
-      <ScrollReveal animation="fade-up" delay={0.1}>
-        <TaxDiagnosticCalculator />
-      </ScrollReveal>
+      {/* SEÇÃO CLARA */}
+      <div className="fnr-light">
+        {/* INVESTIMENTOS */}
+        <section id="especialidades" className="fnr-plans">
+          <ScrollReveal animation="fade-up">
+            <h2 className="fnr-plans__title">
+              Investimentos para
+              <span>sua Clínica</span>
+            </h2>
+            <p className="fnr-plans__lead">
+              Sabemos que cada clínica tem necessidades diferentes, por isso oferecemos planos
+              personalizados que se adaptam ao seu faturamento e complexidade.
+            </p>
+          </ScrollReveal>
 
+          <div className="fnr-plans__grid">
+            {plans.map((plan, index) => (
+              <ScrollReveal key={plan.title} animation="fade-up" delay={index * 0.1}>
+                <article className={`fnr-plan${plan.items.length > 0 ? " fnr-plan--detailed" : ""}`}>
+                  <div className="fnr-plan__icon">
+                    <Image
+                      src={plan.icon}
+                      alt=""
+                      width={plan.iconSize[0]}
+                      height={plan.iconSize[1]}
+                    />
+                  </div>
 
+                  <h3 style={{ maxWidth: plan.titleWidth }}>{plan.title}</h3>
 
-      
-      
+                  {plan.items.length > 0 && (
+                    <ul>
+                      {plan.items.map((item) => (
+                        <li key={item}>
+                          <Image src="/finora/check.svg" alt="" width={17} height={18} />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <a
+                    href={whatsappLink(
+                      `Olá! Tenho uma clínica odontológica e gostaria de saber mais sobre o plano ${plan.title} da FINORA.`,
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="fnr-plan__cta"
+                  >
+                    Saiba Mais
+                  </a>
+                </article>
+              </ScrollReveal>
+            ))}
+          </div>
+        </section>
+
+        {/* DEPOIMENTOS */}
+        <section className="fnr-testimonials">
+          <ScrollReveal animation="fade-up">
+            <h2 className="fnr-testimonials__title">Recomendações de Nossos Clientes</h2>
+          </ScrollReveal>
+
+          <div className="fnr-testimonials__grid">
+            {testimonials.map((testimonial, index) => (
+              <ScrollReveal key={index} animation="fade-up" delay={index * 0.1}>
+                <figure className="fnr-testimonial">
+                  <TestimonialCardArt />
+                  <figcaption className="fnr-testimonial__name">{testimonial.name}</figcaption>
+                  <blockquote>“{testimonial.text}”</blockquote>
+                  <span className="fnr-testimonial__location">{testimonial.location}</span>
+                </figure>
+              </ScrollReveal>
+            ))}
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="duvidas" className="fnr-faq">
+          <ScrollReveal animation="fade-up">
+            <h2 className="fnr-faq__title">Perguntas frequentes</h2>
+          </ScrollReveal>
+
+          <FinoraFaq items={faqs} />
+        </section>
+      </div>
+
+      <FinoraFooter />
     </main>
   );
 }

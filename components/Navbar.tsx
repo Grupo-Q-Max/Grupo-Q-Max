@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 
-const companies = [
+export const companies = [
   {
     name: "Q-Max Auditoria",
     label: "Auditoria",
@@ -45,7 +45,7 @@ const companies = [
   },
 ];
 
-const products = [
+export const products = [
   {
     name: "QXBACK",
     label: "Indicações e bonificação",
@@ -55,7 +55,7 @@ const products = [
   {
     name: "FINORA",
     label: "Inteligência financeira",
-    href: "/#produtos",
+    href: "/finora",
     logo: "/brands/finora-logo-horizontal.png",
   },
   {
@@ -96,7 +96,9 @@ export function Navbar() {
     itemName: string
   ) {
     const href = event.currentTarget.getAttribute('href');
-    if (href && href.startsWith('http')) {
+    // Links externos e páginas internas (ex.: /finora) navegam normalmente;
+    // só âncoras da home (/#...) rolam até a seção.
+    if (href && !href.startsWith('/#')) {
       setMobileOpen(false);
       return;
     }
@@ -232,6 +234,9 @@ export function Navbar() {
     setMobileOpen(false);
     setMobileSection(null);
   }
+
+  // A FINORA tem cabeçalho próprio (components/FinoraHeader).
+  if (pathname === "/finora") return null;
 
   return (
     <header
