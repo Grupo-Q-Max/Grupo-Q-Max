@@ -133,3 +133,13 @@
   place-items: center;
   margin-bottom: 20px;
 }
+
+/* Selos (.eyebrow) vêm do Grupo com ponto e linha em magenta; aqui
+   seguem o roxo da Q-Max Talents, como o texto do selo */
+.talents-page {
+  --active-section-color: #c084fc;
+}
+
+.talents-page .eyebrow::after {
+  background: linear-gradient(90deg, rgba(192, 132, 252, 0.6), transparent);
+}
