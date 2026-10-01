@@ -53,7 +53,7 @@ export function Hero() {
                   <Users2 size={16} />
                 </div>
                 <b>
-                  <CountUp end={32} duration={1500} />
+                  <CountUp end={30} prefix="+" duration={1500} />
                 </b>
                 <span>colaboradores</span>
               </div>
