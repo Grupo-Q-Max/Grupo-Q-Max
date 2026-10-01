@@ -6,6 +6,7 @@ import type { MouseEvent } from "react";
 
 import { useSettings } from "@/components/SettingsProvider";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 export function Footer() {
   function goToFooterItem(
@@ -62,6 +63,10 @@ export function Footer() {
 
   const settings = useSettings();
   const phoneOnly = settings.whatsapp.replace(/\D/g, "");
+  const pathname = usePathname();
+
+  // A FINORA tem rodapé próprio (components/FinoraFooter).
+  if (pathname === "/finora") return null;
 
   return (
     <footer className="finish-footer">
