@@ -8,6 +8,23 @@
   overflow-x: hidden;
 }
 
+/* HEADER CTA OVERRIDES FOR TALENTS PAGE */
+.nav15--talents .nav15__cta {
+  background: linear-gradient(135deg, #8F3AA8, #67257d) !important;
+  box-shadow: 0 4px 15px rgba(143, 58, 168, 0.4) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+.nav15--talents .nav15__cta:hover {
+  background: linear-gradient(135deg, #67257d, #8F3AA8) !important;
+  box-shadow: 0 6px 20px rgba(103, 37, 125, 0.6) !important;
+  transform: translateY(-2px);
+}
+.nav15--talents .nav15__mobileCta {
+  background: linear-gradient(135deg, #8F3AA8, #67257d) !important;
+  color: #fff !important;
+}
+
 .talents-hero {
   position: relative;
   padding: clamp(120px, 12vw, 180px) 0 clamp(80px, 8vw, 120px);

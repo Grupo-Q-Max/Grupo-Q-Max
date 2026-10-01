@@ -8,6 +8,13 @@
   min-height: 100vh;
 }
 
+/* GLOBAL HEADER CTA FIXES */
+.nav15__cta svg,
+.nav15__mobileCta svg {
+  color: #fff !important;
+  stroke: #fff !important;
+}
+
 #empresas [class*="ecosystem21"] {
   box-sizing: border-box;
 }
@@ -4946,3 +4953,35 @@ body {
     height: 36px;
   }
 }
+
+/* ==========================================================
+   ULTRA PREMIUM MOBILE MENU OVERRIDES
+   ========================================================== */
+.nav15__mobile {
+  background: rgba(4, 4, 6, 0.65) !important;
+  backdrop-filter: blur(40px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(150%) !important;
+  transform: translateY(-20px) scale(0.98) !important;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.nav15__mobile.is-open {
+  transform: translateY(0) scale(1) !important;
+}
+
+/* Stagger animations for all menu items */
+.nav15__mobileInner > * {
+  opacity: 0 !important;
+  transform: translateY(20px) !important;
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.nav15__mobile.is-open .nav15__mobileInner > *:nth-child(1) { transition-delay: 0.05s !important; opacity: 1 !important; transform: translateY(0) !important; }
+.nav15__mobile.is-open .nav15__mobileInner > *:nth-child(2) { transition-delay: 0.10s !important; opacity: 1 !important; transform: translateY(0) !important; }
+.nav15__mobile.is-open .nav15__mobileInner > *:nth-child(3) { transition-delay: 0.15s !important; opacity: 1 !important; transform: translateY(0) !important; }
+.nav15__mobile.is-open .nav15__mobileInner > *:nth-child(4) { transition-delay: 0.20s !important; opacity: 1 !important; transform: translateY(0) !important; }
+.nav15__mobile.is-open .nav15__mobileInner > *:nth-child(5) { transition-delay: 0.25s !important; opacity: 1 !important; transform: translateY(0) !important; }
+.nav15__mobile.is-open .nav15__mobileInner > *:nth-child(6) { transition-delay: 0.30s !important; opacity: 1 !important; transform: translateY(0) !important; }
+.nav15__mobile.is-open .nav15__mobileInner > *:nth-child(7) { transition-delay: 0.35s !important; opacity: 1 !important; transform: translateY(0) !important; }
+.nav15__mobile.is-open .nav15__mobileInner > *:nth-child(8) { transition-delay: 0.40s !important; opacity: 1 !important; transform: translateY(0) !important; }
+.nav15__mobile.is-open .nav15__mobileInner > *:nth-child(9) { transition-delay: 0.45s !important; opacity: 1 !important; transform: translateY(0) !important; }

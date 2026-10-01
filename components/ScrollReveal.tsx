@@ -25,8 +25,8 @@ export function ScrollReveal({
     const el = ref.current;
     if (!el) return;
 
-    // Antes de revelar, o wrapper fica com translateY(120px) e o navegador
-    // calcula a posição da âncora com esse deslocamento: a seção para 120px
+    // Antes de revelar, o wrapper fica com translateY(80px) e o navegador
+    // calcula a posição da âncora com esse deslocamento: a seção para 80px
     // acima do lugar. Se a âncora clicada está aqui dentro, revela sem
     // transição, direto no DOM, antes de a rolagem nativa começar.
     const revealForAnchor = (event: MouseEvent) => {
@@ -37,6 +37,7 @@ export function ScrollReveal({
       el.style.transition = "none";
       el.style.opacity = "1";
       el.style.transform = "none";
+      el.style.filter = "none";
       setInstant(true);
       setIsVisible(true);
     };
@@ -76,17 +77,19 @@ export function ScrollReveal({
 
   // Set up the CSS variables for the inline style
   const style: React.CSSProperties = {
-    transition: instant ? "none" : `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+    transition: instant ? "none" : `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, filter ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
   };
 
   if (!isVisible) {
     style.opacity = 0;
-    if (animation === "fade-up") style.transform = "translateY(120px)";
-    else if (animation === "zoom-in") style.transform = "scale(0.8)";
-    else if (animation === "slide-left") style.transform = "translateX(-120px)";
-    else if (animation === "slide-right") style.transform = "translateX(120px)";
+    style.filter = "blur(12px)";
+    if (animation === "fade-up") style.transform = "translateY(80px)";
+    else if (animation === "zoom-in") style.transform = "scale(0.9) translateY(40px)";
+    else if (animation === "slide-left") style.transform = "translateX(-80px)";
+    else if (animation === "slide-right") style.transform = "translateX(80px)";
   } else {
     style.opacity = 1;
+    style.filter = "blur(0px)";
     style.transform = "translate(0, 0) scale(1)";
   }
 

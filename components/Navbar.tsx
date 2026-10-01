@@ -40,7 +40,7 @@ const companies = [
   {
     name: "Lagerhaus",
     label: "Estrutura",
-    href: "/lagerhaus",
+    href: "https://lagerhaus.work",
     logo: "/brands/brand-lagerhaus.png",
   },
 ];
@@ -49,20 +49,20 @@ const products = [
   {
     name: "QXBACK",
     label: "Indicações e bonificação",
-    href: "/#produtos",
+    href: "https://qxback.com.br",
     logo: "/brands/qxback.png",
-  },
-  {
-    name: "QXSIGN",
-    label: "Documentação digital",
-    href: "/#produtos",
-    logo: "/products/qxsign-dashboard.png",
   },
   {
     name: "FINORA",
     label: "Inteligência financeira",
     href: "/#produtos",
-    logo: "/products/finora-dashboard.png",
+    logo: "/brands/finora-logo-horizontal.png",
+  },
+  {
+    name: "QXSIGN",
+    label: "Documentação digital",
+    href: "https://qxsign.com.br",
+    logo: null,
   },
 ];
 
@@ -95,6 +95,12 @@ export function Navbar() {
     sectionId: "empresas" | "produtos",
     itemName: string
   ) {
+    const href = event.currentTarget.getAttribute('href');
+    if (href && href.startsWith('http')) {
+      setMobileOpen(false);
+      return;
+    }
+    
     event.preventDefault();
 
     setMobileOpen(false);
@@ -231,7 +237,7 @@ export function Navbar() {
     <header
       className={`nav15 ${
         scrolled ? "nav15--scrolled" : ""
-      }`}
+      } nav15--${pathname?.replace("/", "") || "home"}`}
     >
       <div className="container nav15__inner">
         <a
@@ -306,6 +312,8 @@ export function Navbar() {
                   <a
                     key={company.name}
                     href={company.href}
+                    target={company.href.startsWith("http") ? "_blank" : undefined}
+                    rel={company.href.startsWith("http") ? "noopener noreferrer" : undefined}
                     onClick={closeMenu}
                   >
                     <span>
@@ -364,6 +372,8 @@ export function Navbar() {
                   <a
                     key={product.name}
                     href={product.href}
+                    target={product.href.startsWith("http") ? "_blank" : undefined}
+                    rel={product.href.startsWith("http") ? "noopener noreferrer" : undefined}
                     onClick={(event) =>
                       goToItem(
                         event,
@@ -430,7 +440,7 @@ export function Navbar() {
             window.dispatchEvent(new CustomEvent("open-qmax-modal"));
           }}
         >
-          <span>Fale com a <QmaxInline>Q-Max</QmaxInline></span>
+          <span>Fale com a Q-Max</span>
           <ArrowUpRight size={16} />
         </a>
 
@@ -516,6 +526,8 @@ export function Navbar() {
               <a
                 key={company.name}
                 href={company.href}
+                target={company.href.startsWith("http") ? "_blank" : undefined}
+                rel={company.href.startsWith("http") ? "noopener noreferrer" : undefined}
                 onClick={closeMenu}
               >
                 {company.name}
@@ -557,6 +569,8 @@ export function Navbar() {
               <a
                 key={product.name}
                 href={product.href}
+                target={product.href.startsWith("http") ? "_blank" : undefined}
+                rel={product.href.startsWith("http") ? "noopener noreferrer" : undefined}
                 onClick={(event) =>
                   goToItem(
                     event,
@@ -583,7 +597,7 @@ export function Navbar() {
             onClick={closeMenu}
             className="nav15__mobileCta"
           >
-            Fale com a <QmaxInline>Q-Max</QmaxInline>
+            Fale com a Q-Max
             <ArrowUpRight size={17} />
           </a>
         </div>

@@ -1,3 +1,20 @@
+/* HEADER CTA OVERRIDES FOR AUDITORIA PAGE */
+.nav15--auditoria .nav15__cta {
+  background: linear-gradient(135deg, #f22b22, #a80e09) !important;
+  box-shadow: 0 4px 15px rgba(242, 43, 34, 0.4) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+.nav15--auditoria .nav15__cta:hover {
+  background: linear-gradient(135deg, #a80e09, #f22b22) !important;
+  box-shadow: 0 6px 20px rgba(168, 14, 9, 0.6) !important;
+  transform: translateY(-2px);
+}
+.nav15--auditoria .nav15__mobileCta {
+  background: linear-gradient(135deg, #f22b22, #a80e09) !important;
+  color: #fff !important;
+}
+
 .audit67 {
   --red: #f22b22;
   --red-deep: #a80e09;

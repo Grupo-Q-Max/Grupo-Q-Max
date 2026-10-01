@@ -8,6 +8,23 @@
   overflow-x: hidden;
 }
 
+/* HEADER CTA OVERRIDES FOR CONTABIL PAGE */
+.nav15--contabil .nav15__cta {
+  background: linear-gradient(135deg, #14D0C1, #0d968b) !important;
+  box-shadow: 0 4px 15px rgba(20, 208, 193, 0.4) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+.nav15--contabil .nav15__cta:hover {
+  background: linear-gradient(135deg, #0d968b, #14D0C1) !important;
+  box-shadow: 0 6px 20px rgba(13, 150, 139, 0.6) !important;
+  transform: translateY(-2px);
+}
+.nav15--contabil .nav15__mobileCta {
+  background: linear-gradient(135deg, #14D0C1, #0d968b) !important;
+  color: #fff !important;
+}
+
 .contabil-hero {
   position: relative;
   padding: clamp(120px, 12vw, 180px) 0 clamp(80px, 8vw, 120px);
