@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowUpRight, PlaySquare } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 
 import { ScrollReveal } from "@/components/ScrollReveal";
@@ -22,6 +21,38 @@ export const metadata: Metadata = {
     type: "website",
   },
 };
+
+const WHATSAPP_URL = "https://wa.me/551128976514";
+
+const whatsappLink = (message: string) =>
+  `${WHATSAPP_URL}?text=${encodeURIComponent(message)}`;
+
+const services = [
+  {
+    title: ["GESTÃO DE", "MÍDIAS"],
+    name: "Gestão de Mídias",
+    description:
+      "Estratégias completas para suas redes sociais, fortalecendo sua marca, aumentando engajamento e ampliando sua presença online.",
+  },
+  {
+    title: ["SOLUÇÕES", "WEB"],
+    name: "Soluções Web",
+    description:
+      "Criamos sites profissionais, responsivos e otimizados, que representam sua marca e geram credibilidade para o seu negócio.",
+  },
+  {
+    title: ["MARKETING", "DIGITAL"],
+    name: "Marketing Digital",
+    description:
+      "Atraímos, engajamos e convertemos o público online em clientes. Mais visibilidade, resultados e crescimento para sua empresa.",
+  },
+  {
+    title: ["INTEGRAÇÕES", "BITRIX"],
+    name: "Integrações Bitrix",
+    description:
+      "Maximize seu potencial com integrações inteligentes do Bitrix24. Automatizamos processos e conectamos ferramentas para mais eficiência e produtividade.",
+  },
+];
 
 export default function TechnologyPage() {
   return (
@@ -54,10 +85,6 @@ export default function TechnologyPage() {
                 </div>
               </div>
             </div>
-
-            <div className="tech-hero__icon-circle">
-              <PlaySquare size={24} fill="currentColor" strokeWidth={0} />
-            </div>
           </div>
         </section>
       </ScrollReveal>
@@ -65,7 +92,7 @@ export default function TechnologyPage() {
       {/* INTRO SECTION */}
       <ScrollReveal animation="fade-up" delay={0.1}>
         <section className="tech-intro">
-          <h2>Uma nova <em>era</em> para sua marca.</h2>
+          <h1>Uma nova <em>era</em> para sua marca.</h1>
           <p>
             Somos uma empresa movida por <strong>inovação</strong>, <strong>tecnologia</strong> e <strong>desenvolvimento</strong> de soluções digitais.
           </p>
@@ -112,49 +139,31 @@ export default function TechnologyPage() {
           </div>
 
           <div className="tech-services__grid">
-            <article className="tech-card">
-              <div className="tech-card__top">
-                <div className="tech-card__toggle" />
-              </div>
-              <h4>GESTÃO DE<br />MÍDIAS</h4>
-              <p>Estratégias completas para suas redes sociais, fortalecendo sua marca, aumentando engajamento e ampliando sua presença online.</p>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </article>
-
-            <article className="tech-card">
-              <div className="tech-card__top">
-                <div className="tech-card__toggle" />
-              </div>
-              <h4>SOLUÇÕES<br />WEB</h4>
-              <p>Criamos sites profissionais, responsivos e otimizados, que representam sua marca e geram credibilidade para o seu negócio.</p>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </article>
-
-            <article className="tech-card">
-              <div className="tech-card__top">
-                <div className="tech-card__toggle" />
-              </div>
-              <h4>MARKETING<br />DIGITAL</h4>
-              <p>Atraímos, engajamos e convertemos o público online em clientes. Mais visibilidade, resultados e crescimento para sua empresa.</p>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </article>
-
-            <article className="tech-card">
-              <div className="tech-card__top">
-                <div className="tech-card__toggle" />
-              </div>
-              <h4>INTEGRAÇÕES<br />BITRIX</h4>
-              <p>Maximize seu potencial com integrações inteligentes do Bitrix24. Automatizamos processos e conectamos ferramentas para mais eficiência e produtividade.</p>
-              <div className="tech-card__arrow">
-                <ArrowUpRight size={20} strokeWidth={3} />
-              </div>
-            </article>
+            {services.map((service) => (
+              <a
+                key={service.name}
+                className="tech-card"
+                href={whatsappLink(
+                  `Olá! Tenho interesse em ${service.name} da Q-Max Technology.`
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${service.name}: falar com a Q-Max Technology pelo WhatsApp`}
+              >
+                <div className="tech-card__top">
+                  <div className="tech-card__toggle" />
+                </div>
+                <h4>
+                  {service.title[0]}
+                  <br />
+                  {service.title[1]}
+                </h4>
+                <p>{service.description}</p>
+                <div className="tech-card__arrow" aria-hidden="true">
+                  <ArrowUpRight size={20} strokeWidth={3} />
+                </div>
+              </a>
+            ))}
           </div>
         </section>
       </ScrollReveal>
@@ -172,12 +181,24 @@ export default function TechnologyPage() {
             <p>
               Desenvolvimento de sistemas, automações, integrações e soluções digitais criadas para aumentar a eficiência e gerar mais oportunidades para sua empresa.
             </p>
+            <a
+              className="tech-cta__button"
+              href={whatsappLink(
+                "Olá! Gostaria de conversar com um especialista da Q-Max Technology."
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Falar com um especialista
+              <ArrowUpRight size={18} strokeWidth={2.5} />
+            </a>
           </div>
           
           <Image 
             src="/technology/shape-2.png" 
-            alt="Decoração" 
-            width={400} 
+            alt=""
+            aria-hidden="true"
+            width={400}
             height={400} 
             className="tech-cta__shape"
           />

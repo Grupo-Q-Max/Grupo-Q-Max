@@ -186,21 +186,6 @@
   font-weight: bold;
 }
 
-.tech-hero__icon-circle {
-  position: absolute;
-  bottom: -25px;
-  right: 40px;
-  width: 50px;
-  height: 50px;
-  background: #ffffff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #070E8C;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  z-index: 2;
-}
 
 /* INTRO SECTION */
 .tech-intro {
@@ -210,13 +195,15 @@
   padding: 0 20px;
 }
 
-.tech-intro h2 {
+/* h1 da página (antes h2): margem de cima explícita para manter a do h2 */
+.tech-intro h1 {
   font-size: clamp(2rem, 4vw, 2.8rem);
   font-weight: 700;
+  margin-top: 0.83em;
   margin-bottom: 24px;
 }
 
-.tech-intro h2 em {
+.tech-intro h1 em {
   font-style: normal;
   color: #0B15D9; /* Azul Vibrante */
 }
@@ -334,6 +321,27 @@
 
 .tech-card:hover {
   transform: translateY(-8px);
+}
+
+/* O card é um link para o WhatsApp com o serviço na mensagem */
+a.tech-card {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.tech-card:focus-visible {
+  outline: 2px solid #0B15D9;
+  outline-offset: 4px;
+}
+
+.tech-card__arrow {
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+a.tech-card:hover .tech-card__arrow,
+a.tech-card:focus-visible .tech-card__arrow {
+  background: #0B15D9;
+  color: #ffffff;
 }
 
 .tech-card::before {
@@ -457,6 +465,36 @@
   color: #a1a1aa;
   font-size: 1rem;
   line-height: 1.7;
+}
+
+.tech-cta__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 32px;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #0B15D9 0%, #070E8C 100%);
+  color: #ffffff !important;
+  font-weight: 700;
+  border-radius: 9999px;
+  text-decoration: none !important;
+  box-shadow: 0 4px 25px rgba(11, 21, 217, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 480px) {
+  /* Cabe em uma linha no celular (~294px disponíveis) */
+  .tech-cta__button {
+    padding: 15px 20px;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+}
+
+.tech-cta__button:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, #2a33ff 0%, #0B15D9 100%);
+  box-shadow: 0 8px 35px rgba(11, 21, 217, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .tech-cta__shape {
