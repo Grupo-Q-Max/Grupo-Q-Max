@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
 
 import { companies, products } from "@/components/Navbar";
@@ -23,10 +23,32 @@ const groups = [
 
 export function FinoraHeader({ contactHref }: FinoraHeaderProps) {
   const [open, setOpen] = useState(false);
-  const close = () => setOpen(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const close = () => {
+    setOpen(false);
+    setOpenGroup(null);
+  };
+
+  // Fecha o menu Empresas/Produtos ao clicar fora ou apertar Esc.
+  useEffect(() => {
+    if (!openGroup) return;
+    const onPointer = (event: PointerEvent) => {
+      if (!headerRef.current?.contains(event.target as Node)) setOpenGroup(null);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenGroup(null);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openGroup]);
 
   return (
-    <header className={`fnr-header${open ? " is-open" : ""}`}>
+    <header ref={headerRef} className={`fnr-header${open ? " is-open" : ""}`}>
       <a href="#inicio" className="fnr-header__logo" aria-label="FINORA — início" onClick={close}>
         {/* Composição do logo exatamente como no Figma: "F", símbolo e "nora". */}
         <span className="fnr-header__logoF">
@@ -48,16 +70,26 @@ export function FinoraHeader({ contactHref }: FinoraHeaderProps) {
         ))}
 
         {groups.map((group) => (
-          <div key={group.label} className="fnr-header__group">
-            <button type="button" className="fnr-header__groupToggle">
+          <div
+            key={group.label}
+            className={`fnr-header__group${openGroup === group.label ? " is-open" : ""}`}
+          >
+            <button
+              type="button"
+              className="fnr-header__groupToggle"
+              aria-expanded={openGroup === group.label}
+              onClick={() => setOpenGroup((current) => (current === group.label ? null : group.label))}
+            >
               {group.label}
-              <img src="/finora/nav-chevron.svg" alt="" width={8} height={4} />
+              <svg width="8" height="4" viewBox="0 0 8 4" fill="none" aria-hidden>
+                <path d="M0.5 0.5L4 3.5L7.5 0.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
             <div className="fnr-header__dropdown">
               {group.items.map((item) => {
                 const external = item.href.startsWith("http");
                 return external ? (
-                  <a key={item.name} href={item.href} target="_blank" rel="noopener noreferrer">
+                  <a key={item.name} href={item.href} target="_blank" rel="noopener noreferrer" onClick={close}>
                     {item.name}
                   </a>
                 ) : (

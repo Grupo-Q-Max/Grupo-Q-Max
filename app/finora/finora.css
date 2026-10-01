@@ -8,6 +8,10 @@
   --fnr-lilac: #a75fee;
   --fnr-teal: #066;
   --fnr-teal-deep: #003636;
+  --fnr-magenta: #d90f81;
+  /* Smart Animate do protótipo: 300ms */
+  --fnr-ease-out: 0.3s ease-out;
+  --fnr-ease-in: 0.3s ease-in;
 
   background: #111;
   color: #fff;
@@ -18,6 +22,14 @@
 /* O CSS global dá padding-top ao <main> por causa do navbar fixo do grupo. */
 main.fnr {
   padding-top: 0 !important;
+}
+
+/* O CSS global encolhe links e botões ao pressionar (a:active, button:active
+   { scale(.975) }). No protótipo não há esse efeito, e na pergunta do FAQ ele
+   fazia o título "pular" ao abrir. */
+.fnr a:active,
+.fnr button:active {
+  transform: none;
 }
 
 /* Sem a moldura global (linhas verticais fixas nas laterais) nesta página. */
@@ -74,6 +86,14 @@ body:has(main.fnr)::after {
 .fnr-hero__title span {
   display: block;
   color: var(--fnr-teal-deep);
+}
+
+.fnr-hero__rotating {
+  transition: opacity 0.15s ease-out;
+}
+
+.fnr-hero__rotating[data-visible="false"] {
+  opacity: 0;
 }
 
 .fnr-hero__media {
@@ -265,6 +285,12 @@ body:has(main.fnr)::after {
   background: var(--fnr-mint);
   box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
   filter: drop-shadow(0 4px 2px rgba(0, 0, 0, 0.25));
+  transition: background-color var(--fnr-ease-out), box-shadow var(--fnr-ease-out);
+}
+
+.fnr-finding:hover {
+  background: #004646;
+  box-shadow: 0 0 15px #004646;
 }
 
 .fnr-finding p {
@@ -273,6 +299,11 @@ body:has(main.fnr)::after {
   line-height: 1.22 !important;
   text-align: center;
   color: var(--fnr-violet-deep) !important;
+  transition: color var(--fnr-ease-out);
+}
+
+.fnr-finding:hover p {
+  color: #fff !important;
 }
 
 .fnr-finding strong {
@@ -416,12 +447,12 @@ body:has(main.fnr)::after {
   font-weight: 600;
   letter-spacing: 0.01em;
   text-decoration: none;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: background-color var(--fnr-ease-out);
 }
 
-.fnr-plan__cta:hover {
-  background: #9447e0;
-  transform: translateY(-2px);
+.fnr-plan__cta:hover,
+.fnr-plan__cta:focus-visible {
+  background: var(--fnr-violet);
 }
 
 /* DEPOIMENTOS */
@@ -467,6 +498,26 @@ body:has(main.fnr)::after {
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+.fnr-testimonial__glow {
+  transform-box: view-box;
+  transform-origin: 465.66px 337px;
+  transition: transform var(--fnr-ease-in), opacity var(--fnr-ease-in);
+}
+
+.fnr-testimonial__stars {
+  opacity: 0.7;
+  transition: opacity var(--fnr-ease-in);
+}
+
+.fnr-testimonial:hover .fnr-testimonial__glow {
+  transform: scale(1.4627);
+  opacity: 0.81;
+}
+
+.fnr-testimonial:hover .fnr-testimonial__stars {
+  opacity: 1;
 }
 
 .fnr-testimonial__name,
@@ -522,39 +573,68 @@ body:has(main.fnr)::after {
   background: var(--fnr-mint-soft);
 }
 
-.fnr-faq__item summary {
+.fnr-faq__question {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  width: 100%;
   min-height: 84px;
   padding: 16px 50px 16px 36px;
+  border: 0;
+  background: none;
   cursor: pointer;
-  list-style: none;
+  font: inherit;
   font-size: clamp(1.15rem, 2.05vw, 1.94rem);
   font-weight: 500;
+  letter-spacing: 0.01em;
+  text-align: left;
   color: var(--fnr-violet-deep);
+  transition: color var(--fnr-ease-in);
 }
 
-.fnr-faq__item summary::-webkit-details-marker {
-  display: none;
+/* Aberta (variante 2): pergunta e resposta em #003636. */
+.fnr-faq__item[data-open="true"] .fnr-faq__question {
+  color: var(--fnr-teal-deep);
 }
 
 .fnr-faq__chevron {
   flex: none;
   transform: rotate(180deg);
-  transition: transform 0.25s ease;
+  transition: transform var(--fnr-ease-in);
 }
 
-.fnr-faq__item[open] .fnr-faq__chevron {
+.fnr-faq__item[data-open="true"] .fnr-faq__chevron {
   transform: rotate(0deg);
 }
 
-.fnr-faq__item p {
-  padding: 0 50px 28px 36px;
-  font-size: clamp(1rem, 1.3vw, 1.25rem) !important;
-  line-height: 1.6 !important;
-  color: var(--fnr-violet-deep) !important;
+/* Abre de 84px até a resposta (variante 2), Smart Animate 300ms ease-in.
+   A altura vem medida do conteúdo (FaqPanel em components/FinoraInteractive). */
+.fnr-faq__panel {
+  overflow: hidden;
+  transition: height var(--fnr-ease-in);
+}
+
+/* Na variante 2 o card tem 265px: 84px da pergunta + 181px da resposta. */
+.fnr-faq__panel p {
+  min-height: 181px;
+  margin: 0 12px 0 0 !important;
+  padding: 18px 38px 40px 36px;
+  border-top: 1px solid rgba(0, 0, 0, 0.03);
+  font-size: clamp(1.1rem, 2.05vw, 1.94rem) !important;
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1.22 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--fnr-teal-deep) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fnr *,
+  .fnr *::before,
+  .fnr *::after {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* RESPONSIVO */
@@ -717,12 +797,21 @@ body:has(main.fnr)::after {
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: color 0.2s ease;
 }
 
 .fnr-header__nav > a:hover,
-.fnr-header__group:hover .fnr-header__groupToggle {
-  color: var(--fnr-mint);
+.fnr-header__groupToggle:hover,
+.fnr-header__group.is-open .fnr-header__groupToggle {
+  color: var(--fnr-magenta);
+}
+
+.fnr-header__groupToggle svg {
+  flex: none;
+}
+
+/* Clique abre o menu (variante 3: seta virada). */
+.fnr-header__group.is-open .fnr-header__groupToggle svg {
+  transform: rotate(180deg);
 }
 
 .fnr-header__group {
@@ -763,8 +852,7 @@ body:has(main.fnr)::after {
   inset: -22px 0 100%;
 }
 
-.fnr-header__group:hover .fnr-header__dropdown,
-.fnr-header__group:focus-within .fnr-header__dropdown {
+.fnr-header__group.is-open .fnr-header__dropdown {
   opacity: 1;
   visibility: visible;
   transform: none;
@@ -780,8 +868,8 @@ body:has(main.fnr)::after {
 }
 
 .fnr-header__dropdown a:hover {
-  background: rgba(213, 239, 214, 0.12);
-  color: var(--fnr-mint);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fnr-magenta);
 }
 
 .fnr-header__cta {
@@ -798,11 +886,6 @@ body:has(main.fnr)::after {
   font-size: 1.25rem;
   font-weight: 600;
   text-decoration: none;
-  transition: background 0.2s ease;
-}
-
-.fnr-header__cta:hover {
-  background: #008080;
 }
 
 .fnr-header__menu {

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { FinoraHeader } from "@/components/FinoraHeader";
 import { FinoraFooter } from "@/components/FinoraFooter";
+import { FinoraFaq, RotatingHeadline, TestimonialCardArt } from "@/components/FinoraInteractive";
 import "./finora.css";
 
 export const metadata: Metadata = {
@@ -121,7 +122,7 @@ export default function FinoraPage() {
         <ScrollReveal animation="fade-up">
           <h1 className="fnr-hero__title">
             Inteligência financeira para o
-            <span>crescimento da sua clínica_</span>
+            <RotatingHeadline />
           </h1>
         </ScrollReveal>
 
@@ -278,14 +279,7 @@ export default function FinoraPage() {
             {testimonials.map((testimonial, index) => (
               <ScrollReveal key={index} animation="fade-up" delay={index * 0.1}>
                 <figure className="fnr-testimonial">
-                  <Image
-                    src="/finora/testimonial-card.svg"
-                    alt=""
-                    width={460}
-                    height={300}
-                    className="fnr-testimonial__bg"
-                    aria-hidden
-                  />
+                  <TestimonialCardArt />
                   <figcaption className="fnr-testimonial__name">{testimonial.name}</figcaption>
                   <blockquote>“{testimonial.text}”</blockquote>
                   <span className="fnr-testimonial__location">{testimonial.location}</span>
@@ -301,23 +295,7 @@ export default function FinoraPage() {
             <h2 className="fnr-faq__title">Perguntas frequentes</h2>
           </ScrollReveal>
 
-          <div className="fnr-faq__list">
-            {faqs.map((faq) => (
-              <details key={faq.question} className="fnr-faq__item">
-                <summary>
-                  <span>{faq.question}</span>
-                  <Image
-                    src="/finora/chevron.svg"
-                    alt=""
-                    width={27}
-                    height={18}
-                    className="fnr-faq__chevron"
-                  />
-                </summary>
-                <p>{faq.answer}</p>
-              </details>
-            ))}
-          </div>
+          <FinoraFaq items={faqs} />
         </section>
       </div>
 
