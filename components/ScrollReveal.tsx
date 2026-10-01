@@ -46,17 +46,19 @@ export function ScrollReveal({
 
   // Set up the CSS variables for the inline style
   const style: React.CSSProperties = {
-    transition: `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+    transition: `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, filter ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
   };
 
   if (!isVisible) {
     style.opacity = 0;
-    if (animation === "fade-up") style.transform = "translateY(120px)";
-    else if (animation === "zoom-in") style.transform = "scale(0.8)";
-    else if (animation === "slide-left") style.transform = "translateX(-120px)";
-    else if (animation === "slide-right") style.transform = "translateX(120px)";
+    style.filter = "blur(12px)";
+    if (animation === "fade-up") style.transform = "translateY(80px)";
+    else if (animation === "zoom-in") style.transform = "scale(0.9) translateY(40px)";
+    else if (animation === "slide-left") style.transform = "translateX(-80px)";
+    else if (animation === "slide-right") style.transform = "translateX(80px)";
   } else {
     style.opacity = 1;
+    style.filter = "blur(0px)";
     style.transform = "translate(0, 0) scale(1)";
   }
 

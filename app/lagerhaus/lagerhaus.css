@@ -8,6 +8,23 @@
   overflow-x: hidden;
 }
 
+/* HEADER CTA OVERRIDES FOR LAGERHAUS PAGE */
+.nav15--lagerhaus .nav15__cta {
+  background: linear-gradient(135deg, #FF8B2A, #d96b14) !important;
+  box-shadow: 0 4px 15px rgba(255, 139, 42, 0.4) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+.nav15--lagerhaus .nav15__cta:hover {
+  background: linear-gradient(135deg, #d96b14, #FF8B2A) !important;
+  box-shadow: 0 6px 20px rgba(217, 107, 20, 0.6) !important;
+  transform: translateY(-2px);
+}
+.nav15--lagerhaus .nav15__mobileCta {
+  background: linear-gradient(135deg, #FF8B2A, #d96b14) !important;
+  color: #fff !important;
+}
+
 .lagerhaus-hero {
   position: relative;
   padding: clamp(120px, 12vw, 180px) 0 clamp(80px, 8vw, 120px);

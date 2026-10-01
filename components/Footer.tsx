@@ -167,14 +167,9 @@ export function Footer() {
               Q-Max Technology
             </a>
             <a
-              href="#empresas"
-              onClick={(event) =>
-                goToFooterItem(
-                  event,
-                  "empresas",
-                  "Lagerhaus"
-                )
-              }
+              href="https://lagerhaus.work"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Lagerhaus
             </a>
@@ -184,26 +179,16 @@ export function Footer() {
             <strong>PRODUTOS</strong>
 
             <a
-              href="#produtos"
-              onClick={(event) =>
-                goToFooterItem(
-                  event,
-                  "produtos",
-                  "QXBACK"
-                )
-              }
+              href="https://qxback.com.br"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               QXBACK
             </a>
             <a
-              href="#produtos"
-              onClick={(event) =>
-                goToFooterItem(
-                  event,
-                  "produtos",
-                  "QXSIGN"
-                )
-              }
+              href="https://qxsign.com.br"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               QXSIGN
             </a>
