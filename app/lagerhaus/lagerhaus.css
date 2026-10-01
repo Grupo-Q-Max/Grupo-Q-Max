@@ -40,8 +40,24 @@
 }
 
 @media (max-width: 900px) {
+  /* minmax(0, …): com "1fr" a coluna não encolhia abaixo da largura
+     mínima do painel e o texto do hero era cortado no celular */
   .lagerhaus-hero__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lagerhaus-hero__metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* No celular os cards de métrica têm ~135px e "Disponível" /
+   "São Paulo/ABC" (1.4rem) vazavam; empilha em uma coluna */
+@media (max-width: 480px) {
+  .lagerhaus-hero__metrics {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -88,6 +104,21 @@
   box-shadow: 0 8px 35px rgba(255, 139, 42, 0.65);
 }
 
+/* Variação secundária ("Falar no WhatsApp"): reaproveitava a classe do
+   botão principal só trocando o fundo inline, e herdava o texto escuro
+   (#080604 !important) da principal — invisível sobre o fundo da página */
+.lagerhaus-hero__primary.lagerhaus-hero__primary--ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 139, 42, 0.3);
+  box-shadow: none;
+  color: #ffffff !important;
+}
+
+.lagerhaus-hero__primary.lagerhaus-hero__primary--ghost:hover {
+  border-color: rgba(255, 139, 42, 0.6);
+  box-shadow: none;
+}
+
 .lagerhaus-hero__card {
   background: linear-gradient(145deg, rgba(28, 20, 14, 0.85), rgba(16, 12, 8, 0.95));
   border: 1px solid rgba(255, 139, 42, 0.28);
@@ -132,4 +163,14 @@
   display: grid;
   place-items: center;
   margin-bottom: 20px;
+}
+
+/* Selos (.eyebrow) vêm do Grupo com ponto e linha em magenta; aqui
+   seguem o âmbar da Lagerhaus, como o texto do selo */
+.lagerhaus-page {
+  --active-section-color: #fbbf24;
+}
+
+.lagerhaus-page .eyebrow::after {
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.6), transparent);
 }
