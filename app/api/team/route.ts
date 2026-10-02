@@ -6,12 +6,17 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
-  const team = await prisma.teamMember.findMany({ orderBy: [{ order: "asc" }, { createdAt: "asc" }] });
-  return NextResponse.json(team.map(toTeamDto), {
-    headers: {
-      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-    },
-  });
+  try {
+    const team = await prisma.teamMember.findMany({ orderBy: [{ order: "asc" }, { createdAt: "asc" }] });
+    return NextResponse.json(team.map(toTeamDto), {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json([], { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
