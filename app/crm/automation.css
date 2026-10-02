@@ -847,3 +847,18 @@
     padding-left: 8px;
   }
 }
+
+/* ---- flow path in "Registros" ---- */
+
+.auto-run-path {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.auto-run-path li + li {
+  margin-top: 6px;
+}
+
+.auto-run-path .auto-status {
+  margin: 0 6px;
+}

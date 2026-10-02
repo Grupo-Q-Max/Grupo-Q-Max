@@ -23,7 +23,12 @@ export async function GET(req: Request) {
         skip: page * PAGE_SIZE,
         take: PAGE_SIZE,
         include: {
-          automation: { select: { name: true, stage: { select: { name: true } } } },
+          automation: { select: { name: true, actionType: true, stage: { select: { name: true } } } },
+          // FLOW runs: the path taken, plus the next step to run
+          steps: { orderBy: { seq: "asc" } },
+          step: {
+            select: { type: true, waitAmount: true, waitUnit: true, actions: { take: 1, select: { name: true, actionType: true } } },
+          },
           card: { select: { number: true, title: true } },
         },
       }),
