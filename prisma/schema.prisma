@@ -1,16 +1,16 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+ 
 // Get a free hosted Postgres database in seconds: `npx create-db`
-
+ 
 generator client {
   provider = "prisma-client-js"
 }
-
+ 
 datasource db {
   provider = "mysql"
 }
-
+ 
 model ContactLead {
   id        String   @id @default(cuid())
   name      String
@@ -21,13 +21,13 @@ model ContactLead {
   status    String   @default("NEW") // NEW, CONTACTED, CLOSED
   createdAt DateTime @default(now())
 }
-
+ 
 model SiteSetting {
   key       String   @id
   value     String   @db.Text
   updatedAt DateTime @updatedAt
 }
-
+ 
 model TeamMember {
   id          String   @id @default(cuid())
   name        String
@@ -38,15 +38,15 @@ model TeamMember {
   linkedin    String?
   bio         String?  @db.Text
   order       Int      @default(0)
-
+ 
   responsibleDeals CrmCard[]         @relation("DealResponsible")
   observedDeals    CrmDealObserver[]
   activities       CrmActivity[]
-
+ 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
+ 
 model PageVisit {
   id        String   @id @default(cuid())
   path      String   // qual pagina acessou (ex: /auditoria, /technology)
@@ -54,11 +54,11 @@ model PageVisit {
   userAgent String?
   createdAt DateTime @default(now())
 }
-
+ 
 // ==========================================
 // CRM MODULE
 // ==========================================
-
+ 
 model CrmPipeline {
   id           String     @id @default(cuid())
   name         String
@@ -67,7 +67,7 @@ model CrmPipeline {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
-
+ 
 model CrmStage {
   id             String             @id @default(cuid())
   name           String
@@ -81,13 +81,13 @@ model CrmStage {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }
-
+ 
 enum CrmDealStatus {
   OPEN
   WON
   LOST
 }
-
+ 
 enum CrmRecurrence {
   NONE
   DAILY
@@ -95,7 +95,7 @@ enum CrmRecurrence {
   MONTHLY
   YEARLY
 }
-
+ 
 /// A deal (negócio) shown as a card on the kanban.
 model CrmCard {
   id          String        @id @default(cuid())
@@ -117,30 +117,30 @@ model CrmCard {
   recurrence  CrmRecurrence @default(NONE)
   utm         Json?         // { source, medium, campaign, content, term } captured from forms
   customData  Json?         // values of the pipeline's user-defined fields (fieldsConfig)
-
+ 
   stageId       String
   stage         CrmStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)
   companyId     String?
   company       CrmCompany? @relation(fields: [companyId], references: [id], onDelete: SetNull)
   responsibleId String?
   responsible   TeamMember? @relation("DealResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
-
+ 
   contacts   CrmDealContact[]
   observers  CrmDealObserver[]
   products   CrmDealProduct[]
   activities CrmActivity[]
   history    CrmHistory[]
-
+ 
   automationRuns CrmAutomationRun[]
-
+ 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ 
   @@index([stageId, order])
   @@index([companyId])
   @@index([responsibleId])
 }
-
+ 
 /// Companies are shared between deals: editing one updates every deal linked to it.
 model CrmCompany {
   id        String       @id @default(cuid())
@@ -154,10 +154,10 @@ model CrmCompany {
   contacts  CrmContact[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
-
+ 
   @@index([name])
 }
-
+ 
 model CrmContact {
   id        String           @id @default(cuid())
   name      String
@@ -170,11 +170,11 @@ model CrmContact {
   deals     CrmDealContact[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
-
+ 
   @@index([name])
   @@index([companyId])
 }
-
+ 
 /// Contacts (participantes) of a deal; the lowest `order` is the main contact.
 model CrmDealContact {
   dealId    String
@@ -182,21 +182,21 @@ model CrmDealContact {
   contactId String
   contact   CrmContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
   order     Int        @default(0)
-
+ 
   @@id([dealId, contactId])
   @@index([contactId])
 }
-
+ 
 model CrmDealObserver {
   dealId   String
   deal     CrmCard    @relation(fields: [dealId], references: [id], onDelete: Cascade)
   memberId String
   member   TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
+ 
   @@id([dealId, memberId])
   @@index([memberId])
 }
-
+ 
 /// Product/service catalog.
 model CrmProduct {
   id        String           @id @default(cuid())
@@ -206,7 +206,7 @@ model CrmProduct {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 }
-
+ 
 /// Product line of a deal. Name and price are a snapshot of the sale, so later
 /// catalog changes don't rewrite closed deals.
 model CrmDealProduct {
@@ -219,11 +219,11 @@ model CrmDealProduct {
   price     Decimal     @default(0.00) @db.Decimal(10, 2)
   quantity  Int         @default(1)
   order     Int         @default(0)
-
+ 
   @@index([dealId])
   @@index([productId])
 }
-
+ 
 enum CrmActivityType {
   TODO
   TASK
@@ -231,7 +231,7 @@ enum CrmActivityType {
   MEETING
   COMMENT
 }
-
+ 
 model CrmActivity {
   id            String          @id @default(cuid())
   cardId        String
@@ -246,11 +246,11 @@ model CrmActivity {
   completedAt   DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-
+ 
   @@index([cardId])
   @@index([responsibleId])
 }
-
+ 
 /// Append-only audit log of the deal timeline. `data` is a snapshot of the change
 /// (names, old/new values) so entries stay readable after related rows change.
 model CrmHistory {
@@ -260,32 +260,32 @@ model CrmHistory {
   type      String   // CREATED, STAGE_CHANGED, FIELD_CHANGED, STATUS_CHANGED, RECURRENCE_CREATED, AUTOMATION_RUN, TRIGGER_FIRED
   data      Json?
   createdAt DateTime @default(now())
-
+ 
   @@index([cardId])
 }
-
+ 
 enum CrmAutomationAction {
   WEBHOOK
 }
-
+ 
 enum CrmTriggerType {
   WEBHOOK_IN
   FIELD_CHANGED
   ACTIVITY_COMPLETED
   DEAL_CREATED
 }
-
+ 
 enum CrmDelayUnit {
   MINUTES
   HOURS
   DAYS
 }
-
+ 
 enum CrmHttpMethod {
   GET
   POST
 }
-
+ 
 enum CrmConditionOperator {
   eq
   neq
@@ -295,7 +295,7 @@ enum CrmConditionOperator {
   gt
   lt
 }
-
+ 
 /// Automation rule ("regra de automação"): runs when a deal enters `stage`.
 model CrmAutomation {
   id            String              @id @default(cuid())
@@ -313,17 +313,17 @@ model CrmAutomation {
   active        Boolean             @default(true)
   stageId       String
   stage         CrmStage            @relation(fields: [stageId], references: [id], onDelete: Cascade)
-
+ 
   headers    CrmAutomationHeader[]
   conditions CrmAutomationCondition[]
   runs       CrmAutomationRun[]
-
+ 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ 
   @@index([stageId, order])
 }
-
+ 
 /// HTTP header sent by a webhook rule.
 model CrmAutomationHeader {
   id           String        @id @default(cuid())
@@ -332,10 +332,10 @@ model CrmAutomationHeader {
   key          String
   value        String        @db.Text
   order        Int           @default(0)
-
+ 
   @@index([automationId, order])
 }
-
+ 
 /// Condition of a rule; all of a rule's conditions must match (AND).
 model CrmAutomationCondition {
   id           String               @id @default(cuid())
@@ -346,10 +346,10 @@ model CrmAutomationCondition {
   operator     CrmConditionOperator
   value        String?              @db.Text
   order        Int                  @default(0)
-
+ 
   @@index([automationId, order])
 }
-
+ 
 /// Trigger ("gatilho"): an event that moves a deal into `stage`.
 model CrmTrigger {
   id             String           @id @default(cuid())
@@ -367,16 +367,16 @@ model CrmTrigger {
   active         Boolean          @default(true)
   stageId        String
   stage          CrmStage         @relation(fields: [stageId], references: [id], onDelete: Cascade)
-
+ 
   conditions CrmTriggerCondition[]
-
+ 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ 
   @@index([stageId, order])
   @@index([type])
 }
-
+ 
 /// Condition of a trigger; all of a trigger's conditions must match (AND).
 model CrmTriggerCondition {
   id        String               @id @default(cuid())
@@ -386,10 +386,10 @@ model CrmTriggerCondition {
   operator  CrmConditionOperator
   value     String?              @db.Text
   order     Int                  @default(0)
-
+ 
   @@index([triggerId, order])
 }
-
+ 
 enum CrmAutomationRunStatus {
   PENDING
   RUNNING
@@ -397,7 +397,7 @@ enum CrmAutomationRunStatus {
   FAILED
   SKIPPED
 }
-
+ 
 /// Queue + log of automation executions (one row per deal entering a stage that has a rule).
 model CrmAutomationRun {
   id           String                 @id @default(cuid())
@@ -418,7 +418,7 @@ model CrmAutomationRun {
   error        String?                @db.Text
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
-
+ 
   @@index([status, runAt])
   @@index([cardId])
   @@index([automationId])
