@@ -30,7 +30,8 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
     });
     
     if (res.ok) {
-      window.location.reload();
+      const created = await res.json();
+      window.location.href = `/crm?pipelineId=${created.id}`;
     } else {
       setIsLoading(false);
     }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
 export async function POST(req: Request) {
   try {
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
       include: {
         stages: {
           orderBy: { order: "asc" },
-          include: { cards: true }
+          include: { cards: { include: cardListInclude } }
         }
       }
     });
@@ -47,7 +48,8 @@ export async function GET(req: Request) {
           orderBy: { order: "asc" },
           include: {
             cards: {
-              orderBy: { order: "asc" }
+              orderBy: { order: "asc" },
+              include: cardListInclude
             }
           }
         }
@@ -61,10 +63,7 @@ export async function GET(req: Request) {
       ...pipeline,
       stages: pipeline.stages.map(stage => ({
         ...stage,
-        cards: stage.cards.map(card => ({
-          ...card,
-          value: card.value.toNumber()
-        }))
+        cards: stage.cards.map(serializeListCard)
       }))
     };
 

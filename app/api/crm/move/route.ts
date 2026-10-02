@@ -10,12 +10,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
     }
 
+    const current = await prisma.crmCard.findUnique({
+      where: { id: cardId },
+      select: { stageId: true, stage: { select: { name: true } } },
+    });
+    if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    // Record the stage change in the deal timeline
+    const stageHistory = async () => {
+      if (current.stageId === newStageId) return;
+      const stage = await prisma.crmStage.findUnique({ where: { id: newStageId }, select: { name: true } });
+      await prisma.crmHistory.create({
+        data: { cardId, type: "STAGE_CHANGED", data: { from: current.stage.name, to: stage?.name ?? "" } },
+      });
+    };
+
     // Without an index, just move the card to the stage (appended by its current order)
     if (typeof index !== "number") {
       const updatedCard = await prisma.crmCard.update({
         where: { id: cardId },
         data: { stageId: newStageId },
       });
+      await stageHistory();
       await notifyStageChanged(newStageId);
       return NextResponse.json({ success: true, card: updatedCard });
     }
@@ -42,6 +58,7 @@ export async function POST(req: Request) {
         data: { stageId: newStageId, order: ids.indexOf(cardId) },
       });
     });
+    await stageHistory();
     await notifyStageChanged(newStageId);
 
     return NextResponse.json({ success: true, card: updatedCard });

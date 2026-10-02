@@ -29,13 +29,20 @@ model SiteSetting {
 }
 
 model TeamMember {
-  id        String   @id @default(cuid())
-  name      String
-  role      String
-  photo     String
-  linkedin  String?
-  bio       String?  @db.Text
-  order     Int      @default(0)
+  id          String   @id @default(cuid())
+  name        String
+  role        String
+  sector      String   @default("")
+  photo       String?  // public path or /api/files/<upload>
+  accentColor String   @default("#14d0c1")
+  linkedin    String?
+  bio         String?  @db.Text
+  order       Int      @default(0)
+
+  responsibleDeals CrmCard[]         @relation("DealResponsible")
+  observedDeals    CrmDealObserver[]
+  activities       CrmActivity[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -73,40 +80,182 @@ model CrmStage {
   updatedAt   DateTime        @updatedAt
 }
 
+enum CrmDealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum CrmRecurrence {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+/// A deal (negócio) shown as a card on the kanban.
 model CrmCard {
-  id         String    @id @default(cuid())
-  title      String
-  company    String?
-  value      Decimal   @default(0.00) @db.Decimal(10, 2)
-  order      Int       @default(0)
-  customData Json?     // JSON object storing dynamic field values
-  stageId    String
-  stage      CrmStage  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  id          String        @id @default(cuid())
+  title       String
+  /// Cached sum of the deal products (kept in sync by the API) so the board doesn't aggregate on every load
+  value       Decimal       @default(0.00) @db.Decimal(10, 2)
+  currency    String        @default("BRL") @db.VarChar(3)
+  status      CrmDealStatus @default(OPEN)
+  order       Int           @default(0)
+  startDate   DateTime?     @db.Date
+  closeDate   DateTime?     @db.Date
+  dealType    String?
+  source      String?
+  sourceInfo  String?       @db.Text
+  isPublic    Boolean       @default(true)
+  comment     String?       @db.Text
+  recurrence  CrmRecurrence @default(NONE)
+  utm         Json?         // { source, medium, campaign, content, term } captured from forms
+  customData  Json?         // values of the pipeline's user-defined fields (fieldsConfig)
+
+  stageId       String
+  stage         CrmStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  companyId     String?
+  company       CrmCompany? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  responsibleId String?
+  responsible   TeamMember? @relation("DealResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+
+  contacts   CrmDealContact[]
+  observers  CrmDealObserver[]
+  products   CrmDealProduct[]
   activities CrmActivity[]
-  products   CrmProduct[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  history    CrmHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stageId, order])
+  @@index([companyId])
+  @@index([responsibleId])
+}
+
+/// Companies are shared between deals: editing one updates every deal linked to it.
+model CrmCompany {
+  id        String       @id @default(cuid())
+  name      String
+  document  String?      @unique // CNPJ
+  phone     String?
+  email     String?
+  address   String?
+  info      String?      @db.Text
+  deals     CrmCard[]
+  contacts  CrmContact[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([name])
+}
+
+model CrmContact {
+  id        String           @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  info      String?          @db.Text
+  companyId String?
+  company   CrmCompany?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  deals     CrmDealContact[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([name])
+  @@index([companyId])
+}
+
+/// Contacts (participantes) of a deal; the lowest `order` is the main contact.
+model CrmDealContact {
+  dealId    String
+  deal      CrmCard    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   CrmContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  order     Int        @default(0)
+
+  @@id([dealId, contactId])
+  @@index([contactId])
+}
+
+model CrmDealObserver {
+  dealId   String
+  deal     CrmCard    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  memberId String
+  member   TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([dealId, memberId])
+  @@index([memberId])
+}
+
+/// Product/service catalog.
+model CrmProduct {
+  id        String           @id @default(cuid())
+  name      String           @unique
+  price     Decimal          @default(0.00) @db.Decimal(10, 2)
+  dealItems CrmDealProduct[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+/// Product line of a deal. Name and price are a snapshot of the sale, so later
+/// catalog changes don't rewrite closed deals.
+model CrmDealProduct {
+  id        String      @id @default(cuid())
+  dealId    String
+  deal      CrmCard     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  productId String?
+  product   CrmProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name      String
+  price     Decimal     @default(0.00) @db.Decimal(10, 2)
+  quantity  Int         @default(1)
+  order     Int         @default(0)
+
+  @@index([dealId])
+  @@index([productId])
+}
+
+enum CrmActivityType {
+  TODO
+  TASK
+  CALL
+  MEETING
+  COMMENT
 }
 
 model CrmActivity {
-  id        String   @id @default(cuid())
-  type      String   // 'COMMENT', 'TASK', 'MEETING', 'SYSTEM'
-  content   String   @db.Text
-  dueDate   DateTime?
-  isDone    Boolean  @default(false)
-  cardId    String
-  card      CrmCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String          @id @default(cuid())
+  cardId        String
+  card          CrmCard         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  type          CrmActivityType
+  title         String          @db.Text
+  description   String?         @db.Text
+  deadline      DateTime?
+  responsibleId String?
+  responsible   TeamMember?     @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  completed     Boolean         @default(false)
+  completedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([cardId])
+  @@index([responsibleId])
 }
 
-model CrmProduct {
+/// Append-only audit log of the deal timeline. `data` is a snapshot of the change
+/// (names, old/new values) so entries stay readable after related rows change.
+model CrmHistory {
   id        String   @id @default(cuid())
-  name      String
-  price     Decimal  @db.Decimal(10, 2)
-  quantity  Int      @default(1)
   cardId    String
   card      CrmCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  type      String   // CREATED, STAGE_CHANGED, FIELD_CHANGED, STATUS_CHANGED, RECURRENCE_CREATED
+  data      Json?
+  createdAt DateTime @default(now())
+
+  @@index([cardId])
 }
 
 model CrmAutomation {
