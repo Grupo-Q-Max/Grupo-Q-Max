@@ -741,3 +741,9 @@
   text-decoration: underline;
   padding: 0;
 }
+
+.deal-header__number {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--deal-subtle);
+}

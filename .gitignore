@@ -20,3 +20,4 @@ backup-*
 # Admin generated files (passwords)
 data/settings.json
 /lib/generated/prisma
+.env*.local

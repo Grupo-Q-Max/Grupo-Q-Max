@@ -26,6 +26,7 @@ export type DealHistory = {
 
 export type DealDetails = {
   id: string;
+  number: number;
   title: string;
   company: DealCompany | null;
   value: number;

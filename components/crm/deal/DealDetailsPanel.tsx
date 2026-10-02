@@ -12,6 +12,8 @@ type Tab = "general" | "products" | "history";
 
 type Props = {
   dealId: string;
+  /** Called with the loaded deal (e.g. to show its number in the URL). */
+  onLoad?: (deal: DealDetails) => void;
   onClose: () => void;
   /** Called after the deal is changed or deleted so the board can refresh. */
   onChanged: () => void;
@@ -45,7 +47,7 @@ function changedFields(draft: DealDraft, deal: DealDetails) {
   return (Object.keys(current) as (keyof DealDraft)[]).filter((key) => !sameValue(current[key], original[key]));
 }
 
-export function DealDetailsPanel({ dealId, onClose, onChanged }: Props) {
+export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) {
   const [deal, setDeal] = useState<DealDetails | null>(null);
   const [draft, setDraft] = useState<DealDraft | null>(null);
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -55,6 +57,9 @@ export function DealDetailsPanel({ dealId, onClose, onChanged }: Props) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [closeMenuOpen, setCloseMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  // The panel can be open on the first render (/crm/deal/details/<n>); portal only after hydration
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const dirtyFields = deal && draft ? changedFields(draft, deal) : [];
   const isDirty = dirtyFields.length > 0;
@@ -82,6 +87,16 @@ export function DealDetailsPanel({ dealId, onClose, onChanged }: Props) {
       .then(setTeam)
       .catch(() => setTeam([]));
   }, [load]);
+
+  // Report the first load only (e.g. to fix the URL of a legacy ?deal= link)
+  const onLoadRef = useRef(onLoad);
+  onLoadRef.current = onLoad;
+  const reportedRef = useRef(false);
+  useEffect(() => {
+    if (!deal || reportedRef.current) return;
+    reportedRef.current = true;
+    onLoadRef.current?.(deal);
+  }, [deal]);
 
   // Realtime: reflect changes made by other users while the panel is open
   const pipelineId = deal?.pipeline.id;
@@ -172,7 +187,8 @@ export function DealDetailsPanel({ dealId, onClose, onChanged }: Props) {
   };
 
   const copyLink = async () => {
-    const url = `${window.location.origin}/crm?deal=${dealId}`;
+    if (!deal) return;
+    const url = `${window.location.origin}/crm/deal/details/${deal.number}`;
     await navigator.clipboard?.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
@@ -217,6 +233,7 @@ export function DealDetailsPanel({ dealId, onClose, onChanged }: Props) {
                 <button type="button" className="deal-icon-btn" title="Copiar link do negócio" onClick={copyLink}>
                   {copied ? <Check size={15} /> : <Link2 size={15} />}
                 </button>
+                <span className="deal-header__number">#{deal.number}</span>
                 {deal.status !== "OPEN" && (
                   <span className={`deal-status deal-status--${deal.status.toLowerCase()}`}>
                     {deal.status === "WON" ? "Ganho" : "Perdido"}
@@ -301,7 +318,7 @@ export function DealDetailsPanel({ dealId, onClose, onChanged }: Props) {
     </div>
   );
 
-  return typeof document !== "undefined" ? createPortal(content, document.body) : null;
+  return mounted ? createPortal(content, document.body) : null;
 }
 
 function ContactActions({ deal }: { deal: DealDetails }) {
