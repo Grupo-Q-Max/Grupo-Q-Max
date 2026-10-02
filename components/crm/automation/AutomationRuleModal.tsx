@@ -18,6 +18,7 @@ import {
   type DealUpdateAction,
   type DelayUnit,
   type HttpMethod,
+  type NotifyAction,
   type WebhookHeader,
 } from "@/lib/crm-automation-shared";
 import { AutomationModal, ModalRow } from "./AutomationModal";
@@ -36,6 +37,7 @@ export type RuleDraft = {
   headers: WebhookHeader[];
   activity: ActivityAction;
   dealUpdate: DealUpdateAction;
+  notify: NotifyAction;
   conditions: AutomationCondition[];
   active: boolean;
 };
@@ -65,6 +67,11 @@ function ruleDraft(rule: AutomationRule | null, stageId: string, actionType: Act
     headers: rule?.headers.map(({ key, value }) => ({ key, value })) ?? [],
     activity: { ...DEFAULT_ACTIVITY, ...rule?.activity },
     dealUpdate: { ...DEFAULT_DEAL_UPDATE, ...rule?.dealUpdate },
+    notify: {
+      message: rule?.notify?.message ?? "",
+      notifyResponsible: rule?.notify?.notifyResponsible ?? true,
+      memberIds: rule?.notify?.memberIds ?? [],
+    },
     conditions: rule?.conditions.map(({ field, operator, value }) => ({ field, operator, value })) ?? [],
     active: rule?.active ?? true,
   };
@@ -134,15 +141,20 @@ export function AutomationRuleModal({
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   const set = (patch: Partial<RuleDraft>) => setDraft((d) => ({ ...d, ...patch }));
   const setActivity = (patch: Partial<ActivityAction>) => setDraft((d) => ({ ...d, activity: { ...d.activity, ...patch } }));
   const setDealUpdate = (patch: Partial<DealUpdateAction>) =>
     setDraft((d) => ({ ...d, dealUpdate: { ...d.dealUpdate, ...patch } }));
+  const setNotify = (patch: Partial<NotifyAction>) => {
+    setDraft((d) => ({ ...d, notify: { ...d.notify, ...patch } }));
+    setError("");
+  };
   const setHeader = (index: number, patch: Partial<WebhookHeader>) =>
     set({ headers: draft.headers.map((h, i) => (i === index ? { ...h, ...patch } : h)) });
 
-  const { activity, dealUpdate } = draft;
+  const { activity, dealUpdate, notify } = draft;
   const action = draft.actionType;
 
   // Custom fields changed by an UPDATE_DEAL rule, edited as rows
@@ -162,6 +174,10 @@ export function AutomationRuleModal({
     if (action === "UPDATE_DEAL") {
       if (!hasDealUpdate(dealUpdate)) return "Escolha ao menos uma alteração";
       if (dealUpdate.stageId === draft.stageId) return "A etapa de destino deve ser diferente da etapa da regra";
+    }
+    if (action === "NOTIFY") {
+      if (!notify.message.trim()) return "Informe a mensagem";
+      if (!notify.notifyResponsible && notify.memberIds.length === 0) return "Escolha quem será avisado";
     }
     return "";
   };
@@ -551,6 +567,55 @@ export function AutomationRuleModal({
                   </button>
                 )
               )}
+            </div>
+          </ModalRow>
+        </>
+      )}
+
+      {action === "NOTIFY" && (
+        <>
+          <ModalRow label="Mensagem">
+            <div className="auto-body">
+              <textarea
+                ref={messageRef}
+                rows={4}
+                value={notify.message}
+                placeholder="Comentário adicionado ao negócio e enviado aos membros"
+                onChange={(e) => setNotify({ message: e.target.value })}
+              />
+              <PlaceholderMenu
+                customFields={customFields}
+                onInsert={(text) => setNotify({ message: insertAt(messageRef.current, notify.message, text) })}
+              />
+            </div>
+          </ModalRow>
+
+          <ModalRow label="Avisar">
+            <div className="auto-checks">
+              <label className="auto-switch">
+                <input
+                  type="checkbox"
+                  checked={notify.notifyResponsible}
+                  onChange={(e) => setNotify({ notifyResponsible: e.target.checked })}
+                />
+                <span>Responsável do negócio</span>
+              </label>
+              {members.map((m) => (
+                <label key={m.id} className="auto-switch">
+                  <input
+                    type="checkbox"
+                    checked={notify.memberIds.includes(m.id)}
+                    onChange={(e) =>
+                      setNotify({
+                        memberIds: e.target.checked
+                          ? [...notify.memberIds, m.id]
+                          : notify.memberIds.filter((id) => id !== m.id),
+                      })
+                    }
+                  />
+                  <span>{m.name}</span>
+                </label>
+              ))}
             </div>
           </ModalRow>
         </>

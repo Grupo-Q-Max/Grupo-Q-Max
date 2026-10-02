@@ -2,12 +2,13 @@ import type {
   CrmActivityType,
   CrmAutomationActivity,
   CrmAutomationDealUpdate,
+  CrmAutomationNotify,
   CrmTrigger,
   CrmTriggerType,
   Prisma,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { notifyPipelineChanged } from "@/lib/crm-realtime";
+import { notifyMember, notifyPipelineChanged } from "@/lib/crm-realtime";
 import { updateDeal } from "@/lib/crm-deal";
 import {
   DEAL_STATUSES,
@@ -186,6 +187,7 @@ async function processRun(id: string) {
           conditions: { orderBy: { order: "asc" } },
           activity: { include: { responsible: { select: { name: true } } } },
           dealUpdate: true,
+          notify: true,
         },
       },
     },
@@ -211,6 +213,8 @@ async function processRun(id: string) {
     outcome = automation.dealUpdate
       ? await updateDealAction(automation.dealUpdate, run.cardId, deal)
       : "Alterações da regra não configuradas";
+  } else if (automation.actionType === "NOTIFY") {
+    outcome = automation.notify ? await notifyAction(automation.notify, run.cardId, deal) : "Notificação da regra não configurada";
   } else {
     outcome = await sendWebhook(automation, deal.ctx);
   }
@@ -387,6 +391,33 @@ async function updateDealAction(config: CrmAutomationDealUpdate, cardId: string,
     };
   } catch (e) {
     return { request: { changes: [] }, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * NOTIFY action ("Adicionar notificação" in Bitrix24): adds the message as a
+ * comment in the deal timeline and notifies the deal's responsible and/or the
+ * configured members in the CRM bell.
+ */
+async function notifyAction(config: CrmAutomationNotify, cardId: string, deal: Deal): Promise<ActionOutcome> {
+  const message = fillPlaceholders(config.message, deal.ctx).trim();
+  if (!message) return { request: { message, notified: [] }, error: "Mensagem vazia", final: true };
+
+  const ids = new Set(Array.isArray(config.memberIds) ? (config.memberIds as string[]) : []);
+  if (config.notifyResponsible && deal.responsibleId) ids.add(deal.responsibleId);
+
+  try {
+    const { comment, members } = await prisma.$transaction(async (tx) => {
+      // Members removed after the rule was saved are ignored
+      const members = await tx.teamMember.findMany({ where: { id: { in: [...ids] } }, select: { id: true, name: true } });
+      const comment = await tx.crmActivity.create({ data: { cardId, type: "COMMENT", title: message } });
+      await tx.crmNotification.createMany({ data: members.map((m) => ({ memberId: m.id, cardId, message })) });
+      return { comment, members };
+    });
+    members.forEach((m) => notifyMember(m.id));
+    return { request: { commentId: comment.id, message, notified: members.map((m) => m.name) }, error: null };
+  } catch (e) {
+    return { request: { message, notified: [] }, error: e instanceof Error ? e.message : String(e) };
   }
 }
 

@@ -1,4 +1,4 @@
-import { subscribeToPipeline } from "@/lib/crm-realtime";
+import { subscribeToMember, subscribeToPipeline } from "@/lib/crm-realtime";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -7,13 +7,16 @@ export const runtime = "nodejs";
 const HEARTBEAT_MS = 25_000;
 
 /**
- * Server-Sent Events stream for a pipeline. Emits a `data:` message every time
- * the pipeline changes; clients refetch the pipeline when they receive one.
+ * Server-Sent Events stream for a pipeline (`?pipelineId=`) or for the notifications
+ * of a team member (`?memberId=`). Emits a `data:` message every time
+ * something changes; clients refetch when they receive one.
  */
 export async function GET(req: Request) {
-  const pipelineId = new URL(req.url).searchParams.get("pipelineId");
-  if (!pipelineId) {
-    return Response.json({ error: "Missing pipelineId" }, { status: 400 });
+  const params = new URL(req.url).searchParams;
+  const pipelineId = params.get("pipelineId");
+  const memberId = params.get("memberId");
+  if (!pipelineId && !memberId) {
+    return Response.json({ error: "Missing pipelineId or memberId" }, { status: 400 });
   }
 
   const encoder = new TextEncoder();
@@ -32,9 +35,8 @@ export async function GET(req: Request) {
         }
       };
 
-      const unsubscribe = subscribeToPipeline(pipelineId, (event) => {
-        send(`data: ${JSON.stringify(event)}\n\n`);
-      });
+      const forward = (event: unknown) => send(`data: ${JSON.stringify(event)}\n\n`);
+      const unsubscribe = pipelineId ? subscribeToPipeline(pipelineId, forward) : subscribeToMember(memberId!, forward);
       const heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);
 
       cleanup = () => {

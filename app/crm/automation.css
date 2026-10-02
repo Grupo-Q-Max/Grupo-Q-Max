@@ -674,3 +674,14 @@
     flex-wrap: wrap;
   }
 }
+
+.auto-checks {
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.auto-checks .auto-switch {
+  padding-top: 6px;
+}

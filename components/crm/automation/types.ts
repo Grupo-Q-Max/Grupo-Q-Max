@@ -6,6 +6,7 @@ import type {
   DealUpdateAction,
   DelayUnit,
   HttpMethod,
+  NotifyAction,
   TriggerType,
   WebhookHeader,
 } from "@/lib/crm-automation-shared";
@@ -24,6 +25,8 @@ export type AutomationRule = {
   activity: ActivityAction | null;
   /** Only for UPDATE_DEAL rules */
   dealUpdate: DealUpdateAction | null;
+  /** Only for NOTIFY rules */
+  notify: NotifyAction | null;
   conditions: AutomationCondition[];
   active: boolean;
   order: number;

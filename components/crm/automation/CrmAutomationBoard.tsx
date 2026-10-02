@@ -12,7 +12,7 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useBoardSensors, vibrateOnTouchDrag } from "@/components/kanban/sensors";
-import { ArrowLeft, ChevronDown, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, X, Zap } from "lucide-react";
+import { ArrowLeft, Bell, ChevronDown, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, X, Zap } from "lucide-react";
 import {
   ACTION_TYPES,
   ACTIVITY_TYPES,
@@ -78,6 +78,18 @@ function ruleDetail(rule: AutomationRule, stages: AutomationStage[], members: Me
   if (rule.actionType === "UPDATE_DEAL") {
     return <span className="auto-card__target">{dealUpdateSummary(rule, stages, members) || "nenhuma alteração"}</span>;
   }
+  if (rule.actionType === "NOTIFY" && rule.notify) {
+    const { notify } = rule;
+    const targets = [
+      notify.notifyResponsible && "responsável do negócio",
+      ...(notify.memberIds ?? []).map((id) => members.find((m) => m.id === id)?.name ?? "membro removido"),
+    ].filter(Boolean);
+    return (
+      <>
+        Comentário · para: <span className="auto-card__target">{targets.join(", ") || "ninguém"}</span>
+      </>
+    );
+  }
   if (rule.actionType === "CREATE_ACTIVITY" && rule.activity) {
     const { activity } = rule;
     const target =
@@ -101,6 +113,7 @@ const RULE_ACTIONS: { type: ActionType; icon: ReactNode }[] = [
   { type: "WEBHOOK", icon: <Webhook size={14} /> },
   { type: "CREATE_ACTIVITY", icon: <ListTodo size={14} /> },
   { type: "UPDATE_DEAL", icon: <PencilLine size={14} /> },
+  { type: "NOTIFY", icon: <Bell size={14} /> },
 ];
 
 function triggerDetail(trigger: AutomationTrigger) {
@@ -146,7 +159,7 @@ export function CrmAutomationBoard({
     return stages.map((s) => ({
       ...s,
       automations: s.automations.filter((a) =>
-        match(a.name, a.webhookUrl ?? undefined, a.activity?.title, dealUpdateSummary(a, stages, members))
+        match(a.name, a.webhookUrl ?? undefined, a.activity?.title, a.notify?.message, dealUpdateSummary(a, stages, members))
       ),
       triggers: s.triggers.filter((t) => match(t.name, TRIGGER_TYPES[t.type]?.label)),
     }));

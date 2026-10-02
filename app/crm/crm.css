@@ -720,3 +720,141 @@ body:has(.crm-layout) .qmax-floating-whatsapp {
     justify-content: center;
   }
 }
+
+/* ---- Notification bell (sidebar) -------------------------------------- */
+
+.crm-bell {
+  position: relative;
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.crm-bell__badge {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: #d90f81;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.crm-bell__panel {
+  position: fixed;
+  left: 272px;
+  bottom: 24px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  max-height: min(520px, calc(100dvh - 48px));
+  background: #141416;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  color: #e8e4ec;
+  font-size: 13px;
+}
+
+.crm-bell__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.crm-bell__head select {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+}
+
+.crm-bell__head select option {
+  background: #141416;
+}
+
+.crm-bell__link,
+.crm-bell__close {
+  background: none;
+  border: none;
+  color: #a5a0aa;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.crm-bell__link:hover,
+.crm-bell__close:hover {
+  color: #fff;
+}
+
+.crm-bell__close {
+  display: flex;
+}
+
+.crm-bell__list {
+  overflow-y: auto;
+}
+
+.crm-bell__empty {
+  margin: 0;
+  padding: 24px 16px;
+  color: #a5a0aa;
+  text-align: center;
+}
+
+.crm-bell__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #a5a0aa;
+  text-decoration: none;
+}
+
+.crm-bell__item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.crm-bell__item.is-unread {
+  border-left-color: #d90f81;
+  color: #e8e4ec;
+}
+
+.crm-bell__item strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.crm-bell__item span {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.crm-bell__item time {
+  font-size: 11px;
+  color: #7d7884;
+}
+
+@media (max-width: 900px) {
+  .crm-bell__panel {
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+}

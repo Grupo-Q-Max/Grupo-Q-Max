@@ -8,7 +8,7 @@ export type HttpMethod = "GET" | "POST";
 export type ConditionOperator = "eq" | "neq" | "contains" | "empty" | "notEmpty" | "gt" | "lt";
 export type TriggerType = "WEBHOOK_IN" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DEAL_CREATED";
 export type ActivityType = "TODO" | "TASK" | "CALL" | "MEETING" | "COMMENT";
-export type ActionType = "WEBHOOK" | "CREATE_ACTIVITY" | "UPDATE_DEAL";
+export type ActionType = "WEBHOOK" | "CREATE_ACTIVITY" | "UPDATE_DEAL" | "NOTIFY";
 export type DealStatus = "OPEN" | "WON" | "LOST";
 export type ActivityAssignee = "DEAL_RESPONSIBLE" | "MEMBER";
 
@@ -35,10 +35,19 @@ export type DealUpdateAction = {
   customData: Record<string, string> | null;
 };
 
-export const ACTION_TYPES: Record<ActionType, { label: string }> = {
+/** NOTIFY configuration of a rule (CrmAutomationNotify). */
+export type NotifyAction = {
+  /** Comment text, with placeholders */
+  message: string;
+  notifyResponsible: boolean;
+  memberIds: string[];
+};
+
+export const ACTION_TYPES:Record<ActionType, { label: string }> = {
   WEBHOOK: { label: "Webhook de saída" },
   CREATE_ACTIVITY: { label: "Criar atividade" },
   UPDATE_DEAL: { label: "Modificar negócio" },
+  NOTIFY: { label: "Adicionar notificação" },
 };
 
 export const isActionType = (value: unknown): value is ActionType => typeof value === "string" && value in ACTION_TYPES;
@@ -200,6 +209,19 @@ export function parseDealUpdateAction(value: unknown): DealUpdateAction {
 /** Whether an UPDATE_DEAL configuration changes anything. */
 export const hasDealUpdate = (a: DealUpdateAction) =>
   Boolean(a.stageId || a.status || a.responsibleId || (a.customData && Object.keys(a.customData).length));
+
+/** Validates the NOTIFY configuration coming from the client. */
+export function parseNotifyAction(value: unknown): NotifyAction {
+  const input = (value ?? {}) as Partial<Record<keyof NotifyAction, unknown>>;
+  const memberIds = Array.isArray(input.memberIds)
+    ? [...new Set(input.memberIds.filter((id): id is string => typeof id === "string" && id.trim() !== ""))]
+    : [];
+  return {
+    message: String(input.message ?? "").trim(),
+    notifyResponsible: input.notifyResponsible !== false,
+    memberIds,
+  };
+}
 
 /** Fields that can be watched by a FIELD_CHANGED trigger (keys of SCALAR/RELATION_FIELDS in lib/crm-deal). */
 export const WATCHABLE_FIELDS: Record<string, string> = {

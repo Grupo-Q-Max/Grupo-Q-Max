@@ -12,7 +12,7 @@ type Run = {
   updatedAt: string;
   attempts: number;
   error: string | null;
-  /** Webhook: the request sent. Create activity: the activity created. Update deal: the changes made */
+  /** Webhook: the request sent. Create activity: the activity created. Update deal: the changes made. Notify: the comment and who was notified */
   request: {
     method?: string;
     url?: string;
@@ -22,6 +22,8 @@ type Run = {
     responsible?: string | null;
     deadline?: string | null;
     changes?: { label: string; from: string | null; to: string | null }[];
+    message?: string;
+    notified?: string[];
   } | null;
   httpStatus: number | null;
   responseBody: string | null;
@@ -143,6 +145,11 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
                             .join(" · ")}
                         </>
                       )
+                    ) : run.request?.notified ? (
+                      <>
+                        <b>{run.status === "SUCCESS" ? "Comentário adicionado" : "Comentário não adicionado"}:</b>{" "}
+                        {run.request.message} · avisados: {run.request.notified.join(", ") || "ninguém"}
+                      </>
                     ) : (
                       "A ação não foi executada."
                     )}

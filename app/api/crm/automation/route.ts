@@ -8,6 +8,7 @@ import {
   parseActivityAction,
   parseConditions,
   parseDealUpdateAction,
+  parseNotifyAction,
   type ActionType,
 } from "@/lib/crm-automation-shared";
 
@@ -16,6 +17,7 @@ const automationInclude = {
   conditions: { orderBy: { order: "asc" as const } },
   activity: true,
   dealUpdate: true,
+  notify: true,
 };
 
 /** CREATE_ACTIVITY config; a member that no longer exists falls back to the deal's responsible. */
@@ -55,7 +57,19 @@ async function dealUpdateData(value: unknown, ruleStageId: string) {
   };
 }
 
-const parseHeaders = (value: unknown) =>
+/** NOTIFY config; members that no longer exist are dropped. */
+async function notifyData(value: unknown) {
+  const notify = parseNotifyAction(value);
+  const members = await prisma.teamMember.findMany({ where: { id: { in: notify.memberIds } }, select: { id: true } });
+  const memberIds = notify.memberIds.filter((id) => members.some((m) => m.id === id));
+  return {
+    message: notify.message || "{{deal.title}}",
+    notifyResponsible: notify.notifyResponsible,
+    memberIds: memberIds.length ? memberIds : Prisma.DbNull,
+  };
+}
+
+const parseHeaders =(value: unknown) =>
   (Array.isArray(value) ? value : [])
     .filter((h) => h && String(h.key ?? "").trim())
     .map((h, order) => ({ key: String(h.key).trim(), value: String(h.value ?? ""), order }));
@@ -114,6 +128,7 @@ export async function POST(req: Request) {
         ...(actionType === "WEBHOOK" && { headers: { create: parseHeaders(body.headers) } }),
         ...(actionType === "CREATE_ACTIVITY" && { activity: { create: await activityData(body.activity) } }),
         ...(actionType === "UPDATE_DEAL" && { dealUpdate: { create: await dealUpdateData(body.dealUpdate, body.stageId) } }),
+        ...(actionType === "NOTIFY" && { notify: { create: await notifyData(body.notify) } }),
         conditions: { create: conditionRows(body.conditions) },
       },
       include: automationInclude,
@@ -126,7 +141,7 @@ export async function POST(req: Request) {
 }
 
 /**
- * Updates a rule (`{ id, ...fields }`; `headers`/`conditions`/`activity`/`dealUpdate`, when sent, replace
+ * Updates a rule (`{ id, ...fields }`; `headers`/`conditions`/`activity`/`dealUpdate`/`notify`, when sent, replace
  * the current ones; the action type never changes), or reorders rules after a drag and drop (`{ items: [{ id, stageId, order }] }`).
  */
 export async function PUT(req: Request) {
@@ -152,6 +167,7 @@ export async function PUT(req: Request) {
       actionType === "UPDATE_DEAL" && body.dealUpdate !== undefined
         ? await dealUpdateData(body.dealUpdate, typeof body.stageId === "string" ? body.stageId : current.stageId)
         : null;
+    const notify = actionType === "NOTIFY" && body.notify !== undefined ? await notifyData(body.notify) : null;
     const automation = await prisma.crmAutomation.update({
       where: { id: body.id },
       data: {
@@ -160,6 +176,7 @@ export async function PUT(req: Request) {
           body.headers !== undefined && { headers: { deleteMany: {}, create: parseHeaders(body.headers) } }),
         ...(activity && { activity: { upsert: { create: activity, update: activity } } }),
         ...(dealUpdate && { dealUpdate: { upsert: { create: dealUpdate, update: dealUpdate } } }),
+        ...(notify && { notify: { upsert: { create: notify, update: notify } } }),
         ...(body.conditions !== undefined && { conditions: { deleteMany: {}, create: conditionRows(body.conditions) } }),
       },
       include: automationInclude,

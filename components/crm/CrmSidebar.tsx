@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X } from "lucide-react";
+import { CrmNotificationBell } from "./CrmNotificationBell";
 
 /** Below this width the sidebar becomes an overlay that starts closed (see crm.css). */
 const MOBILE_QUERY = "(max-width: 900px)";
@@ -50,6 +51,7 @@ export function CrmSidebar() {
             <PieChart size={18} />
             Relatórios
           </a>
+          <CrmNotificationBell />
           <a href="#" className="crm-nav__item" style={{ marginTop: "auto" }}>
             <Settings size={18} />
             Configurações

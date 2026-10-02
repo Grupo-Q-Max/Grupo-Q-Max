@@ -23,6 +23,7 @@ export default async function AutomationPage({ params }: { params: Promise<{ pip
                 conditions: { orderBy: { order: "asc" } },
                 activity: true,
                 dealUpdate: true,
+                notify: true,
               },
             },
             triggers: { orderBy: { order: "asc" }, include: { conditions: { orderBy: { order: "asc" } } } },

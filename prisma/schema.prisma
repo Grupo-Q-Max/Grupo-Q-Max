@@ -44,6 +44,7 @@ model TeamMember {
   activities           CrmActivity[]
   automationActivities CrmAutomationActivity[]
   automationDealUpdates CrmAutomationDealUpdate[]
+  notifications        CrmNotification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -136,6 +137,7 @@ model CrmCard {
   history    CrmHistory[]
 
   automationRuns CrmAutomationRun[]
+  notifications  CrmNotification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -272,6 +274,7 @@ enum CrmAutomationAction {
   WEBHOOK
   CREATE_ACTIVITY
   UPDATE_DEAL
+  NOTIFY
 }
 
 /// Who receives an activity created by an automation rule
@@ -330,6 +333,8 @@ model CrmAutomation {
   activity   CrmAutomationActivity?
   /// UPDATE_DEAL action
   dealUpdate CrmAutomationDealUpdate?
+  /// NOTIFY action
+  notify     CrmAutomationNotify?
   headers   CrmAutomationHeader[]
   conditions CrmAutomationCondition[]
   runs       CrmAutomationRun[]
@@ -374,6 +379,33 @@ model CrmAutomationDealUpdate {
 
   @@index([stageId])
   @@index([responsibleId])
+}
+
+/// NOTIFY action of a rule: a comment added to the deal timeline and a notification to team members.
+model CrmAutomationNotify {
+  automationId      String        @id
+  automation        CrmAutomation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  /// Accepts {{deal.<field>}} placeholders
+  message           String        @db.Text
+  /// Also notify whoever is the deal's responsible when the rule runs
+  notifyResponsible Boolean       @default(true)
+  /// TeamMember ids notified on every run
+  memberIds         Json?
+}
+
+/// In-app notification shown in the CRM bell of a team member.
+model CrmNotification {
+  id        String     @id @default(cuid())
+  memberId  String
+  member    TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  cardId    String
+  card      CrmCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  message   String     @db.Text
+  readAt    DateTime?
+  createdAt DateTime   @default(now())
+
+  @@index([memberId, readAt])
+  @@index([cardId])
 }
 
 /// HTTP header sent by a webhook rule.
