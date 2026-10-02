@@ -1,4 +1,4 @@
-import type { CrmActivityType, CrmTrigger, CrmTriggerType } from "@prisma/client";
+import type { CrmActivityType, CrmAutomationActivity, CrmTrigger, CrmTriggerType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notifyPipelineChanged } from "@/lib/crm-realtime";
 import { type DealContext, customFieldKey, delayMs, fillPlaceholders, matchesConditions } from "@/lib/crm-automation-shared";
@@ -70,7 +70,7 @@ export async function dealContext(cardId: string) {
   const custom = (deal.customData ?? {}) as Record<string, unknown>;
   for (const [key, value] of Object.entries(custom)) ctx[customFieldKey(key)] = toText(value);
 
-  return { ctx, stage: deal.stage };
+  return { ctx, stage: deal.stage, responsibleId: deal.responsibleId };
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +162,11 @@ async function processRun(id: string) {
     where: { id },
     include: {
       automation: {
-        include: { headers: { orderBy: { order: "asc" } }, conditions: { orderBy: { order: "asc" } } },
+        include: {
+          headers: { orderBy: { order: "asc" } },
+          conditions: { orderBy: { order: "asc" } },
+          activity: { include: { responsible: { select: { name: true } } } },
+        },
       },
     },
   });
@@ -171,32 +175,23 @@ async function processRun(id: string) {
   const skip = (reason: string) =>
     prisma.crmAutomationRun.update({ where: { id }, data: { status: "SKIPPED", error: reason } });
 
+  const { automation } = run;
   const deal = await dealContext(run.cardId);
   if (!deal) return skip("Negócio não encontrado");
   if (deal.stage.id !== run.stageId) return skip("O negócio saiu da etapa antes da execução");
-  if (!run.automation.active) return skip("Regra desativada");
-  if (!matchesConditions(run.automation.conditions, deal.ctx)) return skip("Condições não atendidas");
+  if (!automation.active) return skip("Regra desativada");
+  if (!matchesConditions(automation.conditions, deal.ctx)) return skip("Condições não atendidas");
 
-  const request = buildWebhookRequest(run.automation, deal.ctx);
-  if (!request) return skip("URL do webhook não configurada");
-
-  let httpStatus: number | null = null;
-  let responseBody: string | null = null;
-  let error: string | null = null;
-  try {
-    const res = await fetch(request.url, {
-      method: request.method,
-      headers: request.headers,
-      body: request.body,
-      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
-      cache: "no-store",
-    });
-    httpStatus = res.status;
-    responseBody = (await res.text()).slice(0, 2000);
-    if (!res.ok) error = `HTTP ${res.status}`;
-  } catch (e) {
-    error = e instanceof Error ? (e.name === "TimeoutError" ? "Tempo limite excedido" : e.message) : String(e);
+  let outcome: ActionOutcome | string;
+  if (automation.actionType === "CREATE_ACTIVITY") {
+    outcome = automation.activity
+      ? await createActivity(automation.activity, run.cardId, deal)
+      : "Atividade da regra não configurada";
+  } else {
+    outcome = await sendWebhook(automation, deal.ctx);
   }
+  if (typeof outcome === "string") return skip(outcome);
+  const { request, httpStatus = null, responseBody = null, error } = outcome;
 
   const retry = error && run.attempts < MAX_ATTEMPTS;
   const status = error ? (retry ? "PENDING" : "FAILED") : "SUCCESS";
@@ -213,29 +208,94 @@ async function processRun(id: string) {
     },
   });
 
-  if (status !== "PENDING") {
+  // A created activity already shows in the deal timeline; log the run there only when it failed
+  const logInTimeline = automation.actionType === "WEBHOOK" || status === "FAILED";
+  if (status !== "PENDING" && logInTimeline) {
     await prisma.crmHistory.create({
       data: {
         cardId: run.cardId,
         type: "AUTOMATION_RUN",
-        data: { name: run.automation.name, status, httpStatus, error },
+        data: { name: automation.name, status, httpStatus, error },
       },
     });
-    notifyPipelineChanged(deal.stage.pipelineId);
+  }
+  if (status !== "PENDING") notifyPipelineChanged(deal.stage.pipelineId);
+}
+
+/** Result of an action: what was done (kept in the run log) and the error, if any. */
+type ActionOutcome = {
+  request: Prisma.InputJsonValue;
+  httpStatus?: number | null;
+  responseBody?: string | null;
+  error: string | null;
+};
+
+type Deal = NonNullable<Awaited<ReturnType<typeof dealContext>>>;
+
+/** WEBHOOK action. Returns a skip reason when the URL is not usable. */
+async function sendWebhook(rule: WebhookRule, ctx: DealContext): Promise<ActionOutcome | string> {
+  const request = buildWebhookRequest(rule, ctx);
+  if (!request) return "URL do webhook não configurada";
+
+  try {
+    const res = await fetch(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
+      cache: "no-store",
+    });
+    const responseBody = (await res.text()).slice(0, 2000);
+    return { request, httpStatus: res.status, responseBody, error: res.ok ? null : `HTTP ${res.status}` };
+  } catch (e) {
+    const error = e instanceof Error ? (e.name === "TimeoutError" ? "Tempo limite excedido" : e.message) : String(e);
+    return { request, error };
+  }
+}
+
+type ActivityConfig = CrmAutomationActivity & { responsible: { name: string } | null };
+
+/** CREATE_ACTIVITY action: adds an activity to the deal, assigned and dated as configured. */
+async function createActivity(config: ActivityConfig, cardId: string, deal: Deal): Promise<ActionOutcome> {
+  const responsibleId = config.assignee === "MEMBER" ? config.responsibleId : deal.responsibleId;
+  const deadline =
+    config.deadlineAmount && config.deadlineUnit
+      ? new Date(Date.now() + delayMs(config.deadlineAmount, config.deadlineUnit))
+      : null;
+  const title = fillPlaceholders(config.title, deal.ctx).trim() || "Atividade";
+  const description = config.description ? fillPlaceholders(config.description, deal.ctx) : null;
+
+  try {
+    const activity = await prisma.crmActivity.create({
+      data: { cardId, type: config.type, title, description, deadline, responsibleId },
+      include: { responsible: { select: { name: true } } },
+    });
+    return {
+      request: {
+        activityId: activity.id,
+        type: activity.type,
+        title,
+        responsible: activity.responsible?.name ?? null,
+        deadline: deadline?.toISOString() ?? null,
+      },
+      error: null,
+    };
+  } catch (e) {
+    return { request: { type: config.type, title }, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
 type WebhookRule = {
   id: string;
   name: string;
-  webhookUrl: string;
+  webhookUrl: string | null;
   webhookMethod: "GET" | "POST";
   webhookBody: string | null;
   headers: { key: string; value: string }[];
 };
 
 function buildWebhookRequest(rule: WebhookRule, ctx: DealContext) {
-  const url = fillPlaceholders(rule.webhookUrl.trim(), ctx, true);
+  const url = fillPlaceholders(rule.webhookUrl?.trim() ?? "", ctx, true);
   if (!/^https?:\/\//i.test(url)) return null;
 
   const method = rule.webhookMethod;

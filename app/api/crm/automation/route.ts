@@ -1,26 +1,45 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isDelayUnit, parseConditions } from "@/lib/crm-automation-shared";
+import {
+  ACTION_TYPES,
+  isActionType,
+  isDelayUnit,
+  parseActivityAction,
+  parseConditions,
+  type ActionType,
+} from "@/lib/crm-automation-shared";
 
 const automationInclude = {
   headers: { orderBy: { order: "asc" as const } },
   conditions: { orderBy: { order: "asc" as const } },
+  activity: true,
 };
+
+/** CREATE_ACTIVITY config; a member that no longer exists falls back to the deal's responsible. */
+async function activityData(value: unknown) {
+  const activity = parseActivityAction(value);
+  if (activity.assignee === "MEMBER") {
+    const member = await prisma.teamMember.findUnique({ where: { id: activity.responsibleId! }, select: { id: true } });
+    if (!member) return { ...activity, assignee: "DEAL_RESPONSIBLE" as const, responsibleId: null };
+  }
+  return activity;
+}
 
 const parseHeaders = (value: unknown) =>
   (Array.isArray(value) ? value : [])
     .filter((h) => h && String(h.key ?? "").trim())
     .map((h, order) => ({ key: String(h.key).trim(), value: String(h.value ?? ""), order }));
 
-/** Scalar fields of a rule that can be set from the board. */
-function ruleFields(body: Record<string, unknown>) {
+/** Scalar fields of a rule that can be set from the board (webhook columns only for webhook rules). */
+function ruleFields(body: Record<string, unknown>, actionType: ActionType) {
+  const webhook = actionType === "WEBHOOK";
   return {
-    ...(body.name !== undefined && { name: String(body.name).trim() || "Webhook de saída" }),
+    ...(body.name !== undefined && { name: String(body.name).trim() || ACTION_TYPES[actionType].label }),
     ...(body.delayAmount !== undefined && { delayAmount: Math.max(0, Math.round(Number(body.delayAmount) || 0)) }),
     ...(isDelayUnit(body.delayUnit) && { delayUnit: body.delayUnit }),
-    ...(body.webhookUrl !== undefined && { webhookUrl: String(body.webhookUrl).trim() }),
-    ...(body.webhookMethod !== undefined && { webhookMethod: body.webhookMethod === "GET" ? ("GET" as const) : ("POST" as const) }),
-    ...(body.webhookBody !== undefined && { webhookBody: String(body.webhookBody ?? "").trim() ? String(body.webhookBody) : null }),
+    ...(webhook && body.webhookUrl !== undefined && { webhookUrl: String(body.webhookUrl).trim() }),
+    ...(webhook && body.webhookMethod !== undefined && { webhookMethod: body.webhookMethod === "GET" ? ("GET" as const) : ("POST" as const) }),
+    ...(webhook && body.webhookBody !== undefined && { webhookBody: String(body.webhookBody ?? "").trim() ? String(body.webhookBody) : null }),
     ...(body.active !== undefined && { active: Boolean(body.active) }),
   };
 }
@@ -53,15 +72,18 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     if (!body.stageId) return NextResponse.json({ error: "Missing stageId" }, { status: 400 });
+    const actionType: ActionType = isActionType(body.actionType) ? body.actionType : "WEBHOOK";
 
     const automation = await prisma.crmAutomation.create({
       data: {
-        name: "Webhook de saída",
-        webhookUrl: "",
-        ...ruleFields(body),
+        name: ACTION_TYPES[actionType].label,
+        actionType,
+        ...ruleFields(body, actionType),
         stageId: body.stageId,
         order: await prisma.crmAutomation.count({ where: { stageId: body.stageId } }),
-        headers: { create: parseHeaders(body.headers) },
+        ...(actionType === "WEBHOOK"
+          ? { headers: { create: parseHeaders(body.headers) } }
+          : { activity: { create: await activityData(body.activity) } }),
         conditions: { create: conditionRows(body.conditions) },
       },
       include: automationInclude,
@@ -74,8 +96,8 @@ export async function POST(req: Request) {
 }
 
 /**
- * Updates a rule (`{ id, ...fields }`; `headers`/`conditions`, when sent, replace
- * the current ones), or reorders rules after a drag and drop (`{ items: [{ id, stageId, order }] }`).
+ * Updates a rule (`{ id, ...fields }`; `headers`/`conditions`/`activity`, when sent, replace
+ * the current ones; the action type never changes), or reorders rules after a drag and drop (`{ items: [{ id, stageId, order }] }`).
  */
 export async function PUT(req: Request) {
   try {
@@ -91,11 +113,18 @@ export async function PUT(req: Request) {
     }
 
     if (!body.id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const current = await prisma.crmAutomation.findUnique({ where: { id: body.id }, select: { actionType: true } });
+    if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const { actionType } = current;
+    const activity = actionType === "CREATE_ACTIVITY" && body.activity !== undefined ? await activityData(body.activity) : null;
     const automation = await prisma.crmAutomation.update({
       where: { id: body.id },
       data: {
-        ...ruleFields(body),
-        ...(body.headers !== undefined && { headers: { deleteMany: {}, create: parseHeaders(body.headers) } }),
+        ...ruleFields(body, actionType),
+        ...(actionType === "WEBHOOK" &&
+          body.headers !== undefined && { headers: { deleteMany: {}, create: parseHeaders(body.headers) } }),
+        ...(activity && { activity: { upsert: { create: activity, update: activity } } }),
         ...(body.conditions !== undefined && { conditions: { deleteMany: {}, create: conditionRows(body.conditions) } }),
       },
       include: automationInclude,

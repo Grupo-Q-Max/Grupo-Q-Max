@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AutomationPage({ params }: { params: Promise<{ pipelineId: string }> }) {
   const { pipelineId } = await params;
 
-  const [pipeline, pipelines] = await Promise.all([
+  const [pipeline, pipelines, members] = await Promise.all([
     prisma.crmPipeline.findUnique({
       where: { id: pipelineId },
       include: {
@@ -18,7 +18,11 @@ export default async function AutomationPage({ params }: { params: Promise<{ pip
           include: {
             automations: {
               orderBy: { order: "asc" },
-              include: { headers: { orderBy: { order: "asc" } }, conditions: { orderBy: { order: "asc" } } },
+              include: {
+                headers: { orderBy: { order: "asc" } },
+                conditions: { orderBy: { order: "asc" } },
+                activity: true,
+              },
             },
             triggers: { orderBy: { order: "asc" }, include: { conditions: { orderBy: { order: "asc" } } } },
           },
@@ -26,6 +30,7 @@ export default async function AutomationPage({ params }: { params: Promise<{ pip
       },
     }),
     prisma.crmPipeline.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
+    prisma.teamMember.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
   ]);
   if (!pipeline) notFound();
 
@@ -40,6 +45,7 @@ export default async function AutomationPage({ params }: { params: Promise<{ pip
       pipelines={pipelines}
       initialStages={stages}
       customFields={customFields}
+      members={members}
     />
   );
 }

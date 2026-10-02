@@ -178,6 +178,7 @@
 
 .auto-add {
   display: flex;
+  width: 100%;
   align-items: center;
   justify-content: center;
   height: 32px;

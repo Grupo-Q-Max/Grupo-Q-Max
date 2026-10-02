@@ -8,9 +8,29 @@ export type HttpMethod = "GET" | "POST";
 export type ConditionOperator = "eq" | "neq" | "contains" | "empty" | "notEmpty" | "gt" | "lt";
 export type TriggerType = "WEBHOOK_IN" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DEAL_CREATED";
 export type ActivityType = "TODO" | "TASK" | "CALL" | "MEETING" | "COMMENT";
+export type ActionType = "WEBHOOK" | "CREATE_ACTIVITY";
+export type ActivityAssignee = "DEAL_RESPONSIBLE" | "MEMBER";
 
 export type AutomationCondition = { field: string; operator: ConditionOperator; value: string | null };
 export type WebhookHeader = { key: string; value: string };
+
+/** CREATE_ACTIVITY configuration of a rule (CrmAutomationActivity). */
+export type ActivityAction = {
+  type: ActivityType;
+  title: string;
+  description: string | null;
+  assignee: ActivityAssignee;
+  responsibleId: string | null;
+  deadlineAmount: number | null;
+  deadlineUnit: DelayUnit | null;
+};
+
+export const ACTION_TYPES: Record<ActionType, { label: string }> = {
+  WEBHOOK: { label: "Webhook de saída" },
+  CREATE_ACTIVITY: { label: "Criar atividade" },
+};
+
+export const isActionType = (value: unknown): value is ActionType => typeof value === "string" && value in ACTION_TYPES;
 
 export const DELAY_UNITS: Record<DelayUnit, { label: string; ms: number }> = {
   MINUTES: { label: "minutos", ms: 60_000 },
@@ -123,6 +143,24 @@ export const ACTIVITY_TYPES: Partial<Record<ActivityType, string>> = {
   CALL: "Ligação",
   MEETING: "Reunião",
 };
+
+/** Validates the CREATE_ACTIVITY configuration coming from the client. */
+export function parseActivityAction(value: unknown): ActivityAction {
+  const input = (value ?? {}) as Partial<Record<keyof ActivityAction, unknown>>;
+  const type = String(input.type ?? "") as ActivityType;
+  const assignee: ActivityAssignee = input.assignee === "MEMBER" && input.responsibleId ? "MEMBER" : "DEAL_RESPONSIBLE";
+  const deadlineAmount = Math.round(Number(input.deadlineAmount) || 0);
+  const hasDeadline = deadlineAmount > 0 && isDelayUnit(input.deadlineUnit);
+  return {
+    type: type in ACTIVITY_TYPES ? type : "TASK",
+    title: String(input.title ?? "").trim() || "Atividade de {{deal.title}}",
+    description: String(input.description ?? "").trim() || null,
+    assignee,
+    responsibleId: assignee === "MEMBER" ? String(input.responsibleId) : null,
+    deadlineAmount: hasDeadline ? deadlineAmount : null,
+    deadlineUnit: hasDeadline ? (input.deadlineUnit as DelayUnit) : null,
+  };
+}
 
 /** Fields that can be watched by a FIELD_CHANGED trigger (keys of SCALAR/RELATION_FIELDS in lib/crm-deal). */
 export const WATCHABLE_FIELDS: Record<string, string> = {

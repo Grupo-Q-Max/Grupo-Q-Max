@@ -1,4 +1,6 @@
 import type {
+  ActionType,
+  ActivityAction,
   ActivityType,
   AutomationCondition,
   DelayUnit,
@@ -10,13 +12,15 @@ import type {
 export type AutomationRule = {
   id: string;
   name: string;
-  actionType: "WEBHOOK";
+  actionType: ActionType;
   delayAmount: number;
   delayUnit: DelayUnit;
-  webhookUrl: string;
+  webhookUrl: string | null;
   webhookMethod: HttpMethod;
   webhookBody: string | null;
   headers: WebhookHeader[];
+  /** Only for CREATE_ACTIVITY rules */
+  activity: ActivityAction | null;
   conditions: AutomationCondition[];
   active: boolean;
   order: number;
@@ -45,6 +49,8 @@ export type AutomationStage = {
 };
 
 export type CustomField = { id: string; name: string; type: string };
+
+export type Member = { id: string; name: string };
 
 /** Fixed palette for stage headers (stages have no color of their own yet). */
 export const STAGE_COLORS = ["#8bc34a", "#f8bbd0", "#fff176", "#ffe0a3", "#4fc3f7", "#2e7d32", "#ef5350", "#b388ff", "#4db6ac", "#ffb74d"];

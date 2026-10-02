@@ -39,9 +39,10 @@ model TeamMember {
   bio         String?  @db.Text
   order       Int      @default(0)
 
-  responsibleDeals CrmCard[]         @relation("DealResponsible")
-  observedDeals    CrmDealObserver[]
-  activities       CrmActivity[]
+  responsibleDeals     CrmCard[]               @relation("DealResponsible")
+  observedDeals        CrmDealObserver[]
+  activities           CrmActivity[]
+  automationActivities CrmAutomationActivity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -266,6 +267,13 @@ model CrmHistory {
 
 enum CrmAutomationAction {
   WEBHOOK
+  CREATE_ACTIVITY
+}
+
+/// Who receives an activity created by an automation rule
+enum CrmActivityAssignee {
+  DEAL_RESPONSIBLE
+  MEMBER
 }
 
 enum CrmTriggerType {
@@ -305,7 +313,7 @@ model CrmAutomation {
   delayAmount   Int                 @default(0)
   delayUnit     CrmDelayUnit        @default(MINUTES)
   /// WEBHOOK action. URL and body accept {{deal.<field>}} placeholders
-  webhookUrl    String              @db.Text
+  webhookUrl    String?             @db.Text
   webhookMethod CrmHttpMethod       @default(POST)
   /// Empty: the deal snapshot is sent as JSON
   webhookBody   String?             @db.Text
@@ -314,6 +322,8 @@ model CrmAutomation {
   stageId       String
   stage         CrmStage            @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
+  /// CREATE_ACTIVITY action
+  activity   CrmAutomationActivity?
   headers    CrmAutomationHeader[]
   conditions CrmAutomationCondition[]
   runs       CrmAutomationRun[]
@@ -322,6 +332,25 @@ model CrmAutomation {
   updatedAt DateTime @updatedAt
 
   @@index([stageId, order])
+}
+
+/// CREATE_ACTIVITY action of a rule: the activity added to the deal.
+model CrmAutomationActivity {
+  automationId   String              @id
+  automation     CrmAutomation       @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  type           CrmActivityType
+  /// Title and description accept {{deal.<field>}} placeholders
+  title          String              @db.Text
+  description    String?             @db.Text
+  assignee       CrmActivityAssignee @default(DEAL_RESPONSIBLE)
+  /// Used when assignee = MEMBER
+  responsibleId  String?
+  responsible    TeamMember?         @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  /// Deadline counted from the moment the activity is created; null = no deadline
+  deadlineAmount Int?
+  deadlineUnit   CrmDelayUnit?
+
+  @@index([responsibleId])
 }
 
 /// HTTP header sent by a webhook rule.

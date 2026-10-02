@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { RefreshCw } from "lucide-react";
-import { RUN_STATUS_LABELS } from "@/lib/crm-automation-shared";
+import { ACTIVITY_TYPES, RUN_STATUS_LABELS, type ActivityType } from "@/lib/crm-automation-shared";
 
 type Run = {
   id: string;
@@ -12,7 +12,16 @@ type Run = {
   updatedAt: string;
   attempts: number;
   error: string | null;
-  request: { method?: string; url?: string } | null;
+  /** Webhook: the request sent. Create activity: the activity created */
+  request: {
+    method?: string;
+    url?: string;
+    activityId?: string;
+    type?: ActivityType;
+    title?: string;
+    responsible?: string | null;
+    deadline?: string | null;
+  } | null;
   httpStatus: number | null;
   responseBody: string | null;
   automation: { name: string; stage: { name: string } };
@@ -115,8 +124,15 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
                         <b>{run.request.method}</b> {run.request.url}
                         {run.responseBody && <pre>{run.responseBody}</pre>}
                       </>
+                    ) : run.request?.title ? (
+                      <>
+                        <b>{run.request.activityId ? "Atividade criada" : "Atividade não criada"}:</b>{" "}
+                        {(run.request.type && ACTIVITY_TYPES[run.request.type]) ?? "Atividade"} · {run.request.title} · para{" "}
+                        {run.request.responsible ?? "ninguém"}
+                        {run.request.deadline && ` · prazo ${formatDateTime(run.request.deadline)}`}
+                      </>
                     ) : (
-                      "A requisição não foi enviada."
+                      "A ação não foi executada."
                     )}
                   </td>
                 </tr>
