@@ -97,6 +97,8 @@ enum CrmRecurrence {
 /// A deal (negócio) shown as a card on the kanban.
 model CrmCard {
   id          String        @id @default(cuid())
+  /// Short sequential number used in the URL: /crm/deal/details/<number>
+  number      Int           @unique @default(autoincrement())
   title       String
   /// Cached sum of the deal products (kept in sync by the API) so the board doesn't aggregate on every load
   value       Decimal       @default(0.00) @db.Decimal(10, 2)

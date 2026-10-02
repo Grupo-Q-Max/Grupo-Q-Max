@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CrmKanban } from "./CrmKanban";
 import { Search, Kanban, List, Calendar, TrendingUp } from "lucide-react";
 
-export function CrmWorkspace({ pipeline }: { pipeline: any }) {
+export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initialDealId?: string }) {
   const [view, setView] = useState<"kanban" | "list" | "activities">("kanban");
 
   // Collect all cards across all stages for list and activity views
@@ -42,7 +42,7 @@ export function CrmWorkspace({ pipeline }: { pipeline: any }) {
       </div>
 
       <div className="crm-content">
-        {view === "kanban" && <CrmKanban pipeline={pipeline} />}
+        {view === "kanban" && <CrmKanban pipeline={pipeline} initialDealId={initialDealId} />}
 
         {view === "list" && (
           <div className="crm-list-view">

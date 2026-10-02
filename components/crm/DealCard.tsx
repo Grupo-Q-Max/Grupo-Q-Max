@@ -2,6 +2,8 @@ import { Calendar, ListTodo, Trash2 } from "lucide-react";
 
 export type CrmDeal = {
   id: string;
+  /** Short sequential id shown in the URL (/crm/deal/details/<number>) */
+  number: number;
   title: string;
   company: string | null;
   value: number;
