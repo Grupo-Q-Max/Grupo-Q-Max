@@ -78,6 +78,9 @@ steps:
     if [ -d "data" ]; then
       cp -R data/. deploy/data/
     fi
+    if [ -d "public/team" ]; then
+      cp -R public/team/. deploy/public/team/
+    fi
  
     echo ""
     echo "4. Validando logos obrigatorias..."
