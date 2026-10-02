@@ -12,7 +12,7 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useBoardSensors, vibrateOnTouchDrag } from "@/components/kanban/sensors";
-import { ArrowLeft, Bell, ChevronDown, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, X, Zap } from "lucide-react";
+import { ArrowLeft, Bell, ChevronDown, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, Workflow, X, Zap } from "lucide-react";
 import {
   ACTION_TYPES,
   ACTIVITY_TYPES,
@@ -75,6 +75,10 @@ function dealUpdateSummary(rule: AutomationRule, stages: AutomationStage[], memb
 
 /** "para: ..." line of a rule card (who receives the action, like Bitrix24). */
 function ruleDetail(rule: AutomationRule, stages: AutomationStage[], members: Member[]) {
+  if (rule.actionType === "FLOW") {
+    const count = rule.steps.length;
+    return <span className="auto-card__target">{count} {count === 1 ? "passo" : "passos"}</span>;
+  }
   if (rule.actionType === "UPDATE_DEAL") {
     return <span className="auto-card__target">{dealUpdateSummary(rule, stages, members) || "nenhuma alteração"}</span>;
   }
@@ -114,6 +118,7 @@ const RULE_ACTIONS: { type: ActionType; icon: ReactNode }[] = [
   { type: "CREATE_ACTIVITY", icon: <ListTodo size={14} /> },
   { type: "UPDATE_DEAL", icon: <PencilLine size={14} /> },
   { type: "NOTIFY", icon: <Bell size={14} /> },
+  { type: "FLOW", icon: <Workflow size={14} /> },
 ];
 
 function triggerDetail(trigger: AutomationTrigger) {

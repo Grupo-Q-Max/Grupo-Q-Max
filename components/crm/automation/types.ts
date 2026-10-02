@@ -3,18 +3,42 @@ import type {
   ActivityAction,
   ActivityType,
   AutomationCondition,
+  Branch,
   DealUpdateAction,
   DelayUnit,
   HttpMethod,
   NotifyAction,
+  StepActionType,
+  StepType,
   TriggerType,
   WebhookHeader,
 } from "@/lib/crm-automation-shared";
+
+/** Action of a flow step (a child rule holding only the action fields). */
+export type StepActionRule = Pick<
+  AutomationRule,
+  "id" | "name" | "webhookUrl" | "webhookMethod" | "webhookBody" | "headers" | "activity" | "dealUpdate" | "notify"
+> & { actionType: StepActionType };
+
+/** Saved step of a FLOW rule, as a flat row (the editor builds the tree). */
+export type AutomationStepRow = {
+  id: string;
+  parentId: string | null;
+  branch: Branch | null;
+  order: number;
+  type: StepType;
+  waitAmount: number | null;
+  waitUnit: DelayUnit | null;
+  conditions: AutomationCondition[];
+  actions: StepActionRule[];
+};
 
 export type AutomationRule = {
   id: string;
   name: string;
   actionType: ActionType;
+  /** Only for FLOW rules */
+  steps: AutomationStepRow[];
   delayAmount: number;
   delayUnit: DelayUnit;
   webhookUrl: string | null;

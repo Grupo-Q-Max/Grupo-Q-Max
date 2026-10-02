@@ -10,11 +10,14 @@ export function AutomationModal({
   onClose,
   children,
   footer,
+  wide = false,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer: ReactNode;
+  /** Wider dialog (flow editor) */
+  wide?: boolean;
 }) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -24,7 +27,7 @@ export function AutomationModal({
 
   return createPortal(
     <div className="crm-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="crm-modal auto-modal" role="dialog" aria-label={title}>
+      <div className={`crm-modal auto-modal${wide ? " auto-modal--wide" : ""}`} role="dialog" aria-label={title}>
         <button type="button" className="crm-modal-close" onClick={onClose} aria-label="Fechar">
           <X size={20} />
         </button>
