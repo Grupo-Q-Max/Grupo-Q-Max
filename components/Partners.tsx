@@ -12,6 +12,7 @@ interface TeamMember {
   sector: string;
   image: string | null;
   order: number;
+  bio?: string | null;
 }
 
 export function Partners() {
@@ -173,7 +174,10 @@ function PartnerCard({ partner, variant }: { partner: TeamMember, variant: "larg
         </div>
         {partner.role && <span className="partner-card__badge">{partner.role}</span>}
       </div>
-      <h3 className="partner-card__name">{partner.name}</h3>
+      <div className="partner-card__text-wrap">
+        <h3 className="partner-card__name">{partner.name}</h3>
+        {partner.bio && <p className="partner-card__bio">{partner.bio}</p>}
+      </div>
 
       <style jsx>{`
         .partner-card {
@@ -185,6 +189,19 @@ function PartnerCard({ partner, variant }: { partner: TeamMember, variant: "larg
         }
         .partner-card:hover {
           transform: translateY(-8px);
+        }
+        .partner-card__text-wrap {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          text-align: center;
+        }
+        .partner-card__bio {
+          font-size: 14px;
+          line-height: 1.5;
+          color: rgba(255, 255, 255, 0.7);
+          max-width: 90%;
         }
         /*
          * Medidas do Figma (Protótipo Grupo, grupo 6:134) numa base de 296px de

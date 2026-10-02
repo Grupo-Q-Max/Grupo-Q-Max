@@ -93,7 +93,7 @@ const companies = [
     category: "ESTRUTURA & COWORKING",
     color: "#ff8b2a",
     icon: Building2,
-    logo: "/brands/lagerhaus-full.png",
+    logo: "/brands/lagerhaus-v2.png",
     url: "/lagerhaus",
     description:
       "Endereço fiscal, comercial, armazenagem/estocagem e espaços de coworking modernos para apoiar a operação do seu negócio.",

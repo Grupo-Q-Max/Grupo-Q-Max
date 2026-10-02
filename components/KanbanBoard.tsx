@@ -21,7 +21,7 @@ import {
 import { Column } from "./crm/Column";
 import { Card } from "./crm/Card";
 
-export default function KanbanBoard({ pipeline }: { pipeline: any }) {
+export default function KanbanBoard({ pipeline, onCardClick }: { pipeline: any, onCardClick?: (id: string) => void }) {
   const router = useRouter();
   const [stages, setStages] = useState(pipeline.stages || []);
   const [activeCard, setActiveCard] = useState<any | null>(null);
@@ -173,7 +173,8 @@ export default function KanbanBoard({ pipeline }: { pipeline: any }) {
             <Column 
               key={stage.id} 
               stage={stage} 
-              cards={stage.cards} 
+              cards={stage.cards}
+              onCardClick={onCardClick}
               onAddCard={async (title: string) => {
                 const res = await fetch('/api/crm/card', {
                   method: 'POST',

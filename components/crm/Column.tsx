@@ -9,13 +9,15 @@ export function Column({
   cards, 
   onAddCard, 
   onDeleteCard, 
-  onDeleteStage 
+  onDeleteStage,
+  onCardClick
 }: { 
   stage: any; 
   cards: any[]; 
   onAddCard?: (title: string) => void;
   onDeleteCard?: (id: string) => void;
   onDeleteStage?: (id: string) => void;
+  onCardClick?: (id: string) => void;
 }) {
   const [isAdding, setIsAdding] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
@@ -104,7 +106,7 @@ export function Column({
       <div className="kanban-column__body">
         <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
           {cards.map(card => (
-            <Card key={card.id} card={card} onDeleteCard={onDeleteCard} />
+            <Card key={card.id} card={card} onDeleteCard={onDeleteCard} onClick={() => onCardClick?.(card.id)} />
           ))}
         </SortableContext>
         

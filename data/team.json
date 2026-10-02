@@ -1,11 +1,22 @@
 [
   {
-    "id": "1",
-    "name": "Rodrigo Sante",
-    "role": "CEO & Founder",
+    "id": "2",
+    "name": "Hugo Ludwig Werninghaus",
+    "role": "Contador (CEO-CMO)",
     "sector": "Liderança",
-    "image": "/team/team-1-1790110533761.png",
-    "order": 0,
-    "accentColor": "#14d0c1"
+    "image": "/team/hugo.png",
+    "order": 1,
+    "accentColor": "#14d0c1",
+    "bio": "PUC-SP, MBA em Finanças, Controladoria e Auditoria pela FGV e Mestre em Ciências Contábeis, Controladoria e Finanças pela PUC-SP, CNAI e CISI (Anti-Bribery & Corruption). Experiência de 28 anos nas áreas contábil, auditoria, assessoria e perícia contábil, financeira e tributária."
+  },
+  {
+    "id": "3",
+    "name": "Alessandra Passos",
+    "role": "Contadora, (COO)",
+    "sector": "Liderança",
+    "image": "/team/alessandra.png",
+    "order": 2,
+    "accentColor": "#d90f81",
+    "bio": "MBA em Perícia Contábil. 20 anos de experiência nas áreas de assessoria contábil, fiscal e departamento pessoal. Avaliação tributária, impostos diretos e indiretos. Participação em projetos de reestruturação societária e perícias judiciais."
   }
 ]

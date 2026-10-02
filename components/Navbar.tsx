@@ -41,7 +41,7 @@ export const companies = [
     name: "Lagerhaus",
     label: "Estrutura",
     href: "https://lagerhaus.work",
-    logo: "/brands/brand-lagerhaus.png",
+    logo: "/brands/lagerhaus-v2.png",
   },
 ];
 
@@ -84,7 +84,7 @@ export function Navbar() {
     "/contabil": "/brands/qx-contabil-branco.png",
     "/talents": "/brands/talents-branco.png",
     "/technology": "/brands/qmax-technology-white.png",
-    "/lagerhaus": "/brands/lagerhaus-branco.png",
+    "/lagerhaus": "/brands/lagerhaus-v2.png",
   };
 
   const currentLogo = brandLogos[pathname || ""] || "/brands/grupo-qmax-white.png";

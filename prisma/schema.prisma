@@ -34,6 +34,7 @@ model TeamMember {
   role      String
   photo     String
   linkedin  String?
+  bio       String?  @db.Text
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,8 +82,31 @@ model CrmCard {
   customData Json?     // JSON object storing dynamic field values
   stageId    String
   stage      CrmStage  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  activities CrmActivity[]
+  products   CrmProduct[]
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+}
+
+model CrmActivity {
+  id        String   @id @default(cuid())
+  type      String   // 'COMMENT', 'TASK', 'MEETING', 'SYSTEM'
+  content   String   @db.Text
+  dueDate   DateTime?
+  isDone    Boolean  @default(false)
+  cardId    String
+  card      CrmCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CrmProduct {
+  id        String   @id @default(cuid())
+  name      String
+  price     Decimal  @db.Decimal(10, 2)
+  quantity  Int      @default(1)
+  cardId    String
+  card      CrmCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
 }
 
 model CrmAutomation {

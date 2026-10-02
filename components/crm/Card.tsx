@@ -2,7 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Trash2 } from "lucide-react";
 
-export function Card({ card, onDeleteCard }: { card: any, onDeleteCard?: (id: string) => void }) {
+export function Card({ card, onDeleteCard, onClick }: { card: any, onDeleteCard?: (id: string) => void, onClick?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: "Card", card },
@@ -15,7 +15,7 @@ export function Card({ card, onDeleteCard }: { card: any, onDeleteCard?: (id: st
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="kanban-card">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="kanban-card" onClick={onClick}>
       <div className="kanban-card__glow" />
       <h3 className="kanban-card__title">{card.title}</h3>
       {card.company && <div className="kanban-card__company">{card.company}</div>}

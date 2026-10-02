@@ -8,10 +8,23 @@ import { useRouter } from "next/navigation";
 export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [fields, setFields] = useState<any[]>(
-    pipeline.fieldsConfig && Array.isArray(pipeline.fieldsConfig) ? pipeline.fieldsConfig : []
-  );
+  const parseFields = (config: any) => {
+    if (!config) return [];
+    if (Array.isArray(config)) return config;
+    if (typeof config === 'string') {
+      try { return JSON.parse(config); } catch (e) { return []; }
+    }
+    return [];
+  };
+
+  const [fields, setFields] = useState<any[]>(parseFields(pipeline.fieldsConfig));
+  const [pipelineName, setPipelineName] = useState(pipeline.name || "");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setFields(parseFields(pipeline.fieldsConfig));
+    setPipelineName(pipeline.name || "");
+  }, [pipeline.fieldsConfig, pipeline.name]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -49,7 +62,7 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
     const res = await fetch('/api/crm/pipeline/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: pipeline.id, fieldsConfig: fields })
+      body: JSON.stringify({ id: pipeline.id, fieldsConfig: fields, name: pipelineName })
     });
 
     if (res.ok) {
@@ -68,8 +81,19 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
           <X size={20} />
         </button>
         <h2>Configurações do Pipeline</h2>
-        <p>Defina os campos personalizados que serão solicitados ao criar ou editar um negócio neste pipeline.</p>
+        <p>Defina o nome do pipeline e os campos personalizados.</p>
+
+        <div className="crm-modal-group" style={{ marginTop: '24px' }}>
+          <label>Nome do Pipeline</label>
+          <input 
+            type="text" 
+            value={pipelineName}
+            onChange={(e) => setPipelineName(e.target.value)}
+            style={{ width: '100%', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', padding: '12px', color: '#fff', borderRadius: '4px' }}
+          />
+        </div>
         
+        <h4 style={{ color: '#fff', marginBottom: '16px', marginTop: '24px' }}>Campos Dinâmicos dos Cards</h4>
         <div className="crm-fields-config">
           {fields.map((field, index) => (
             <div key={field.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px', background: '#1a1a1c', padding: '12px', borderRadius: '8px' }}>
