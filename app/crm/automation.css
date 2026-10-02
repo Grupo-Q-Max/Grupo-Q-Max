@@ -747,6 +747,7 @@
 }
 
 .auto-flow__toggle {
+  flex-wrap: nowrap;
   min-height: 32px;
   padding: 0;
   background: none;
@@ -845,6 +846,19 @@
   .auto-flow__branch {
     margin-left: 2px;
     padding-left: 8px;
+  }
+
+  /* Condition rows: field and operator side by side, value below */
+  .auto-flow .auto-conditions__row {
+    flex-wrap: wrap;
+  }
+
+  .auto-flow .auto-conditions__row > select {
+    flex: 1 1 40%;
+  }
+
+  .auto-flow .auto-conditions__row > input {
+    flex: 1 1 70%;
   }
 }
 
