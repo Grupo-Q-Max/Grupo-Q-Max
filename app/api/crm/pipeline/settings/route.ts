@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyPipelineChanged } from "@/lib/crm-realtime";
 
 export async function PUT(req: Request) {
   try {
@@ -12,6 +13,7 @@ export async function PUT(req: Request) {
       where: { id },
       data: { fieldsConfig }
     });
+    notifyPipelineChanged(id);
 
     return NextResponse.json(updated);
   } catch (error) {

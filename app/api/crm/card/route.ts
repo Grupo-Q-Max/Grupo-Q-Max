@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyStageChanged } from "@/lib/crm-realtime";
 
 export async function POST(req: Request) {
   try {
@@ -16,6 +17,8 @@ export async function POST(req: Request) {
         order: await prisma.crmCard.count({ where: { stageId } })
       }
     });
+
+    await notifyStageChanged(card.stageId);
 
     // We must return a serialized object for the client
     return NextResponse.json({
@@ -35,9 +38,10 @@ export async function DELETE(req: Request) {
     
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    await prisma.crmCard.delete({
+    const card = await prisma.crmCard.delete({
       where: { id }
     });
+    await notifyStageChanged(card.stageId);
 
     return NextResponse.json({ success: true });
   } catch (error) {
