@@ -29,6 +29,11 @@ steps:
   env:
     DATABASE_URL: "mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website"
  
+- script: node scripts/seed-prod-team.cjs
+  displayName: 'Seed Sócios no Banco de Dados'
+  env:
+    DATABASE_URL: "mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website"
+
 - script: node test-db.js
   displayName: 'Robô de Testes Automatizados'
   env:
