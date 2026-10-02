@@ -69,15 +69,17 @@ model CrmPipeline {
 }
 
 model CrmStage {
-  id          String          @id @default(cuid())
-  name        String
-  order       Int             @default(0)
-  pipelineId  String
-  pipeline    CrmPipeline     @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
-  cards       CrmCard[]
-  automations CrmAutomation[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id             String             @id @default(cuid())
+  name           String
+  order          Int                @default(0)
+  pipelineId     String
+  pipeline       CrmPipeline        @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  cards        CrmCard[]
+  automations    CrmAutomation[]
+  triggers       CrmTrigger[]
+  automationRuns CrmAutomationRun[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 }
 
 enum CrmDealStatus {
@@ -128,6 +130,8 @@ model CrmCard {
   products   CrmDealProduct[]
   activities CrmActivity[]
   history    CrmHistory[]
+
+  automationRuns CrmAutomationRun[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -253,20 +257,170 @@ model CrmHistory {
   id        String   @id @default(cuid())
   cardId    String
   card      CrmCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  type      String   // CREATED, STAGE_CHANGED, FIELD_CHANGED, STATUS_CHANGED, RECURRENCE_CREATED
+  type      String   // CREATED, STAGE_CHANGED, FIELD_CHANGED, STATUS_CHANGED, RECURRENCE_CREATED, AUTOMATION_RUN, TRIGGER_FIRED
   data      Json?
   createdAt DateTime @default(now())
 
   @@index([cardId])
 }
 
+enum CrmAutomationAction {
+  WEBHOOK
+}
+
+enum CrmTriggerType {
+  WEBHOOK_IN
+  FIELD_CHANGED
+  ACTIVITY_COMPLETED
+  DEAL_CREATED
+}
+
+enum CrmDelayUnit {
+  MINUTES
+  HOURS
+  DAYS
+}
+
+enum CrmHttpMethod {
+  GET
+  POST
+}
+
+enum CrmConditionOperator {
+  eq
+  neq
+  contains
+  empty
+  notEmpty
+  gt
+  lt
+}
+
+/// Automation rule ("regra de automação"): runs when a deal enters `stage`.
 model CrmAutomation {
-  id         String   @id @default(cuid())
-  name       String
-  actionType String   // ex: 'WEBHOOK', 'SEND_EMAIL', 'CREATE_TASK'
-  config     Json?    // config json
-  stageId    String
-  stage      CrmStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String              @id @default(cuid())
+  name          String
+  actionType    CrmAutomationAction @default(WEBHOOK)
+  /// Wait before running; 0 = immediately
+  delayAmount   Int                 @default(0)
+  delayUnit     CrmDelayUnit        @default(MINUTES)
+  /// WEBHOOK action. URL and body accept {{deal.<field>}} placeholders
+  webhookUrl    String              @db.Text
+  webhookMethod CrmHttpMethod       @default(POST)
+  /// Empty: the deal snapshot is sent as JSON
+  webhookBody   String?             @db.Text
+  order         Int                 @default(0)
+  active        Boolean             @default(true)
+  stageId       String
+  stage         CrmStage            @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  headers    CrmAutomationHeader[]
+  conditions CrmAutomationCondition[]
+  runs       CrmAutomationRun[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stageId, order])
+}
+
+/// HTTP header sent by a webhook rule.
+model CrmAutomationHeader {
+  id           String        @id @default(cuid())
+  automationId String
+  automation   CrmAutomation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  key          String
+  value        String        @db.Text
+  order        Int           @default(0)
+
+  @@index([automationId, order])
+}
+
+/// Condition of a rule; all of a rule's conditions must match (AND).
+model CrmAutomationCondition {
+  id           String               @id @default(cuid())
+  automationId String
+  automation   CrmAutomation        @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  /// Deal field key (see DEAL_FIELDS in lib/crm-automation-shared) or custom.<fieldId>
+  field        String
+  operator     CrmConditionOperator
+  value        String?              @db.Text
+  order        Int                  @default(0)
+
+  @@index([automationId, order])
+}
+
+/// Trigger ("gatilho"): an event that moves a deal into `stage`.
+model CrmTrigger {
+  id             String           @id @default(cuid())
+  name           String
+  type           CrmTriggerType
+  /// WEBHOOK_IN: secret of the incoming URL /api/crm/hook/<token>
+  webhookToken   String?          @unique
+  /// FIELD_CHANGED: watched deal field (null = any field)
+  watchedField   String?
+  /// ACTIVITY_COMPLETED: activity type (null = any type)
+  activityType   CrmActivityType?
+  /// By default (like Bitrix24) a trigger only moves the deal forward in the pipeline
+  allowBackwards Boolean          @default(false)
+  order          Int              @default(0)
+  active         Boolean          @default(true)
+  stageId        String
+  stage          CrmStage         @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  conditions CrmTriggerCondition[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stageId, order])
+  @@index([type])
+}
+
+/// Condition of a trigger; all of a trigger's conditions must match (AND).
+model CrmTriggerCondition {
+  id        String               @id @default(cuid())
+  triggerId String
+  trigger   CrmTrigger           @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  field     String
+  operator  CrmConditionOperator
+  value     String?              @db.Text
+  order     Int                  @default(0)
+
+  @@index([triggerId, order])
+}
+
+enum CrmAutomationRunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+/// Queue + log of automation executions (one row per deal entering a stage that has a rule).
+model CrmAutomationRun {
+  id           String                 @id @default(cuid())
+  automationId String
+  automation   CrmAutomation          @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  cardId       String
+  card         CrmCard                @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  /// Stage the deal entered; the run is skipped if the deal left it before running
+  stageId      String
+  stage        CrmStage               @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  status       CrmAutomationRunStatus @default(PENDING)
+  runAt        DateTime
+  attempts     Int                    @default(0)
+  /// Snapshot of the request actually sent ({ url, method, headers, body }), kept as a log
+  request      Json?
+  httpStatus   Int?
+  responseBody String?                @db.Text
+  error        String?                @db.Text
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@index([status, runAt])
+  @@index([cardId])
+  @@index([automationId])
+  @@index([stageId])
 }

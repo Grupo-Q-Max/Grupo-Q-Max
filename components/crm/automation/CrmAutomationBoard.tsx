@@ -1,0 +1,501 @@
+"use client";
+
+import { useCallback, useId, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCorners,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { ArrowLeft, ChevronDown, Pencil, Plus, Search, Webhook, X, Zap } from "lucide-react";
+import { TRIGGER_TYPES, WATCHABLE_FIELDS, ACTIVITY_TYPES, describeDelay } from "@/lib/crm-automation-shared";
+import { AutomationRuleModal, type RuleDraft } from "./AutomationRuleModal";
+import { TriggerModal, type TriggerDraft } from "./TriggerModal";
+import { AutomationRunsTab } from "./AutomationRunsTab";
+import { stageColor, textOn, type AutomationRule, type AutomationStage, type AutomationTrigger, type CustomField } from "./types";
+
+type Kind = "rule" | "trigger";
+type Editing =
+  | { kind: "rule"; stageId: string; item: AutomationRule | null }
+  | { kind: "trigger"; stageId: string; item: AutomationTrigger | null }
+  | null;
+
+const listKey = (kind: Kind) => (kind === "rule" ? "automations" : "triggers");
+const containerId = (kind: Kind, stageId: string) => `${kind}s:${stageId}`;
+const itemId = (kind: Kind, id: string) => `${kind}:${id}`;
+const parseDndId = (value: string) => {
+  const [prefix, id] = value.split(":");
+  if (prefix === "rules" || prefix === "triggers") return { kind: prefix.slice(0, -1) as Kind, stageId: id, itemId: null };
+  return { kind: prefix as Kind, stageId: null, itemId: id };
+};
+
+const urlHost = (url?: string) => {
+  try {
+    return url ? new URL(url.replace(/\{\{[^}]*\}\}/g, "x")).host : "";
+  } catch {
+    return url ?? "";
+  }
+};
+
+function triggerDetail(trigger: AutomationTrigger) {
+  const { watchedField, activityType } = trigger;
+  if (trigger.type === "FIELD_CHANGED") return watchedField ? `campo: ${WATCHABLE_FIELDS[watchedField] ?? watchedField}` : "qualquer campo";
+  if (trigger.type === "ACTIVITY_COMPLETED") return activityType ? ACTIVITY_TYPES[activityType] : "qualquer atividade";
+  if (trigger.type === "WEBHOOK_IN") return "chamada externa";
+  return "ao criar";
+}
+
+export function CrmAutomationBoard({
+  pipeline,
+  pipelines,
+  initialStages,
+  customFields,
+}: {
+  pipeline: { id: string; name: string };
+  pipelines: { id: string; name: string }[];
+  initialStages: AutomationStage[];
+  customFields: CustomField[];
+}) {
+  const router = useRouter();
+  const dndId = useId();
+  const [stages, setStages] = useState(initialStages);
+  const [tab, setTab] = useState<"rules" | "runs">("rules");
+  const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<Editing>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const reload = useCallback(async () => {
+    const res = await fetch(`/api/crm/automation?pipelineId=${pipeline.id}`, { cache: "no-store" });
+    if (res.ok) setStages(await res.json());
+  }, [pipeline.id]);
+
+  const query = search.trim().toLowerCase();
+  const visible = useMemo(() => {
+    if (!query) return stages;
+    const match = (...texts: (string | undefined)[]) => texts.some((t) => t?.toLowerCase().includes(query));
+    return stages.map((s) => ({
+      ...s,
+      automations: s.automations.filter((a) => match(a.name, a.webhookUrl)),
+      triggers: s.triggers.filter((t) => match(t.name, TRIGGER_TYPES[t.type]?.label)),
+    }));
+  }, [stages, query]);
+
+  // ---- persistence --------------------------------------------------------
+
+  const saveRule = async (draft: RuleDraft, rule: AutomationRule | null) => {
+    const res = await fetch("/api/crm/automation", {
+      method: rule ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...(rule && { id: rule.id }), ...draft }),
+    });
+    if (!res.ok) return false;
+    // Moving a rule to another stage from the dialog puts it at the end of that stage
+    if (rule && draft.stageId !== rule.stageId) {
+      const target = stages.find((s) => s.id === draft.stageId);
+      await persistOrder("rule", [{ id: rule.id, stageId: draft.stageId, order: target?.automations.length ?? 0 }]);
+    }
+    await reload();
+    return true;
+  };
+
+  const saveTrigger = async (draft: TriggerDraft, trigger: AutomationTrigger | null) => {
+    const res = await fetch("/api/crm/trigger", {
+      method: trigger ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...(trigger && { id: trigger.id }), ...draft }),
+    });
+    if (!res.ok) return false;
+    if (trigger && draft.stageId !== trigger.stageId) {
+      const target = stages.find((s) => s.id === draft.stageId);
+      await persistOrder("trigger", [{ id: trigger.id, stageId: draft.stageId, order: target?.triggers.length ?? 0 }]);
+    }
+    await reload();
+    return true;
+  };
+
+  const remove = async (kind: Kind, id: string, name: string) => {
+    if (!window.confirm(`Excluir ${kind === "rule" ? "a regra" : "o gatilho"} "${name}"?`)) return;
+    await fetch(`/api/crm/${kind === "rule" ? "automation" : "trigger"}?id=${id}`, { method: "DELETE" });
+    await reload();
+  };
+
+  const rename = async (kind: Kind, id: string, name: string) => {
+    await fetch(`/api/crm/${kind === "rule" ? "automation" : "trigger"}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, name }),
+    });
+    await reload();
+  };
+
+  const persistOrder = (kind: Kind, items: { id: string; stageId: string; order: number }[]) =>
+    fetch(`/api/crm/${kind === "rule" ? "automation" : "trigger"}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    });
+
+  // ---- drag and drop (reorder within a stage or move to another stage) ----
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || query) return;
+    const from = parseDndId(String(active.id));
+    const to = parseDndId(String(over.id));
+    if (from.kind !== to.kind || !from.itemId) return;
+    const kind = from.kind;
+    const key = listKey(kind);
+
+    type Item = { id: string; stageId: string };
+    const list = (stageId: string) => stages.find((s) => s.id === stageId)![key] as Item[];
+    const sourceStage = stages.find((s) => (s[key] as Item[]).some((i) => i.id === from.itemId));
+    const targetStageId = to.stageId ?? stages.find((s) => (s[key] as Item[]).some((i) => i.id === to.itemId))?.id;
+    if (!sourceStage || !targetStageId) return;
+
+    const source = list(sourceStage.id);
+    const oldIndex = source.findIndex((i) => i.id === from.itemId);
+    let next: Record<string, Item[]>;
+
+    if (sourceStage.id === targetStageId) {
+      const newIndex = to.itemId ? source.findIndex((i) => i.id === to.itemId) : source.length - 1;
+      if (oldIndex === newIndex) return;
+      next = { [targetStageId]: arrayMove(source, oldIndex, newIndex) };
+    } else {
+      const target = [...list(targetStageId)];
+      const overIndex = to.itemId ? target.findIndex((i) => i.id === to.itemId) : target.length;
+      target.splice(overIndex < 0 ? target.length : overIndex, 0, { ...source[oldIndex], stageId: targetStageId });
+      next = { [sourceStage.id]: source.filter((_, i) => i !== oldIndex), [targetStageId]: target };
+    }
+
+    setStages((prev) => prev.map((s) => (next[s.id] ? { ...s, [key]: next[s.id].map((i, order) => ({ ...i, order })) } : s)));
+    const items = Object.entries(next).flatMap(([stageId, list]) => list.map((i, order) => ({ id: i.id, stageId, order })));
+    persistOrder(kind, items).then((res) => {
+      if (!res.ok) reload();
+    });
+  };
+
+  // ---- render ---------------------------------------------------------------
+
+  const columns = { gridTemplateColumns: `repeat(${stages.length}, minmax(220px, 1fr))` };
+
+  return (
+    <>
+      <header className="crm-header auto-header">
+        <div className="auto-header__title">
+          <Link href={`/crm?pipelineId=${pipeline.id}`} className="auto-back" title="Voltar ao Kanban">
+            <ArrowLeft size={18} />
+          </Link>
+          <h1 className="crm-header__title">Regras de automação e gatilhos</h1>
+          <div className="auto-create">
+            <button type="button" className="btn-primary" onClick={() => setCreateOpen(!createOpen)}>
+              <Plus size={16} /> Criar <ChevronDown size={14} />
+            </button>
+            {createOpen && (
+              <div className="auto-menu" onMouseLeave={() => setCreateOpen(false)}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateOpen(false);
+                    setEditing({ kind: "rule", stageId: stages[0]?.id, item: null });
+                  }}
+                >
+                  <Webhook size={14} /> Regra: Webhook de saída
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateOpen(false);
+                    setEditing({ kind: "trigger", stageId: stages[0]?.id, item: null });
+                  }}
+                >
+                  <Zap size={14} /> Gatilho
+                </button>
+              </div>
+            )}
+          </div>
+          <select
+            className="auto-pipeline"
+            value={pipeline.id}
+            onChange={(e) => router.push(`/crm/automation/${e.target.value}`)}
+          >
+            {pipelines.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="crm-toolbar__search">
+          <Search size={16} />
+          <input value={search} placeholder="Buscar regras e gatilhos" onChange={(e) => setSearch(e.target.value)} />
+          {search && (
+            <button type="button" className="auto-icon-btn" onClick={() => setSearch("")} aria-label="Limpar busca">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </header>
+
+      <nav className="auto-tabs">
+        <button type="button" className={`view-btn ${tab === "rules" ? "is-active" : ""}`} onClick={() => setTab("rules")}>
+          Regras de automação
+        </button>
+        <button type="button" className={`view-btn ${tab === "runs" ? "is-active" : ""}`} onClick={() => setTab("runs")}>
+          Registros
+        </button>
+      </nav>
+
+      <div className="crm-content auto-content">
+        {tab === "runs" ? (
+          <AutomationRunsTab pipelineId={pipeline.id} />
+        ) : (
+          <DndContext id={dndId} sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+            <div className="auto-board">
+              <div className="auto-grid" style={columns}>
+                {stages.map((stage, index) => {
+                  const color = stageColor(index);
+                  return (
+                    <div key={stage.id} className="auto-stage" style={{ background: color, color: textOn(color) }} title={stage.name}>
+                      <span>{stage.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Section title="Gatilhos" hint="Eventos que movem o negócio para a etapa">
+                <div className="auto-grid" style={columns}>
+                  {visible.map((stage) => (
+                    <Column
+                      key={stage.id}
+                      id={containerId("trigger", stage.id)}
+                      items={stage.triggers.map((t) => itemId("trigger", t.id))}
+                      onAdd={() => setEditing({ kind: "trigger", stageId: stage.id, item: null })}
+                      addLabel="Adicionar gatilho"
+                    >
+                      {stage.triggers.map((trigger) => (
+                        <SortableCard key={trigger.id} id={itemId("trigger", trigger.id)}>
+                          <ItemCard
+                            className="auto-card--trigger"
+                            active={trigger.active}
+                            top={<span className="auto-card__type"><Zap size={12} /> {TRIGGER_TYPES[trigger.type]?.label}</span>}
+                            name={trigger.name}
+                            detail={triggerDetail(trigger)}
+                            conditions={trigger.conditions.length}
+                            onEdit={() => setEditing({ kind: "trigger", stageId: stage.id, item: trigger })}
+                            onRename={(name) => rename("trigger", trigger.id, name)}
+                            onDelete={() => remove("trigger", trigger.id, trigger.name)}
+                          />
+                        </SortableCard>
+                      ))}
+                    </Column>
+                  ))}
+                </div>
+              </Section>
+
+              <Section title="Regras de automação" hint="Executadas quando o negócio entra na etapa">
+                <div className="auto-grid" style={columns}>
+                  {visible.map((stage) => (
+                    <Column
+                      key={stage.id}
+                      id={containerId("rule", stage.id)}
+                      items={stage.automations.map((a) => itemId("rule", a.id))}
+                      onAdd={() => setEditing({ kind: "rule", stageId: stage.id, item: null })}
+                      addLabel="Adicionar regra"
+                    >
+                      {stage.automations.map((rule) => (
+                        <SortableCard key={rule.id} id={itemId("rule", rule.id)}>
+                          <ItemCard
+                            active={rule.active}
+                            top={
+                              <button
+                                type="button"
+                                className="auto-card__delay"
+                                onClick={() => setEditing({ kind: "rule", stageId: stage.id, item: rule })}
+                              >
+                                {describeDelay(rule.delayAmount, rule.delayUnit)}
+                              </button>
+                            }
+                            name={rule.name}
+                            detail={
+                              <>
+                                para: <span className="auto-card__target">{rule.webhookMethod} {urlHost(rule.webhookUrl) || "sem URL"}</span>
+                              </>
+                            }
+                            conditions={rule.conditions.length}
+                            onEdit={() => setEditing({ kind: "rule", stageId: stage.id, item: rule })}
+                            onRename={(name) => rename("rule", rule.id, name)}
+                            onDelete={() => remove("rule", rule.id, rule.name)}
+                          />
+                        </SortableCard>
+                      ))}
+                    </Column>
+                  ))}
+                </div>
+              </Section>
+            </div>
+          </DndContext>
+        )}
+      </div>
+
+      {editing?.kind === "rule" && (
+        <AutomationRuleModal
+          rule={editing.item}
+          stageId={editing.stageId}
+          stages={stages}
+          customFields={customFields}
+          onClose={() => setEditing(null)}
+          onSave={(draft) => saveRule(draft, editing.item)}
+        />
+      )}
+      {editing?.kind === "trigger" && (
+        <TriggerModal
+          trigger={editing.item}
+          stageId={editing.stageId}
+          stages={stages}
+          customFields={customFields}
+          onClose={() => setEditing(null)}
+          onSave={(draft) => saveTrigger(draft, editing.item)}
+        />
+      )}
+    </>
+  );
+}
+
+function Section({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
+  return (
+    <section className="auto-section">
+      <h3 className="auto-section__title" title={hint}>
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function Column({
+  id,
+  items,
+  onAdd,
+  addLabel,
+  children,
+}: {
+  id: string;
+  items: string[];
+  onAdd: () => void;
+  addLabel: string;
+  children: ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <SortableContext id={id} items={items} strategy={verticalListSortingStrategy}>
+      <div ref={setNodeRef} className={`auto-column ${isOver ? "is-over" : ""}`}>
+        {children}
+        <button type="button" className="auto-add" onClick={onAdd} title={addLabel}>
+          <Plus size={16} />
+        </button>
+      </div>
+    </SortableContext>
+  );
+}
+
+function SortableCard({ id, children }: { id: string; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+      {...attributes}
+      {...listeners}
+    >
+      {children}
+    </div>
+  );
+}
+
+function ItemCard({
+  className = "",
+  active,
+  top,
+  name,
+  detail,
+  conditions,
+  onEdit,
+  onRename,
+  onDelete,
+}: {
+  className?: string;
+  active: boolean;
+  top: ReactNode;
+  name: string;
+  detail: ReactNode;
+  conditions: number;
+  onEdit: () => void;
+  onRename: (name: string) => void;
+  onDelete: () => void;
+}) {
+  const [renaming, setRenaming] = useState(false);
+  const [value, setValue] = useState(name);
+
+  const commit = () => {
+    setRenaming(false);
+    if (value.trim() && value.trim() !== name) onRename(value.trim());
+    else setValue(name);
+  };
+
+  return (
+    <div className={`auto-card ${className} ${active ? "" : "is-paused"}`}>
+      <div className="auto-card__top">
+        {top}
+        <button type="button" className="auto-icon-btn" title="Excluir" onClick={onDelete}>
+          <X size={14} />
+        </button>
+      </div>
+      {renaming ? (
+        <input
+          className="auto-card__rename"
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") {
+              setValue(name);
+              setRenaming(false);
+            }
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <div className="auto-card__name">
+          <span>{name}</span>
+          <button type="button" className="auto-icon-btn" title="Renomear" onClick={() => setRenaming(true)}>
+            <Pencil size={12} />
+          </button>
+        </div>
+      )}
+      <div className="auto-card__detail">{detail}</div>
+      <div className="auto-card__footer">
+        <span>
+          {!active && <span className="auto-tag">pausada</span>}
+          {conditions > 0 && <span className="auto-tag">{conditions} condição(ões)</span>}
+        </span>
+        <button type="button" className="auto-link-btn" onClick={onEdit}>
+          alterar
+        </button>
+      </div>
+    </div>
+  );
+}

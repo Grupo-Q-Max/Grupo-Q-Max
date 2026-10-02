@@ -19,6 +19,8 @@ import {
   Trash2,
   Trophy,
   Users,
+  Webhook,
+  Zap,
 } from "lucide-react";
 import {
   ACTIVITY_LABELS,
@@ -642,6 +644,23 @@ function FeedItem({
         <Repeat size={14} />,
         "Negócio recorrente criado",
         <p className="deal-feed__text">{data.title}</p>
+      );
+    case "AUTOMATION_RUN":
+      return frame(
+        <Webhook size={14} />,
+        data.status === "SUCCESS" ? "Regra de automação executada" : "Regra de automação falhou",
+        <>
+          <p className="deal-feed__text">{data.name}</p>
+          {data.status !== "SUCCESS" && data.error && <span className="deal-feed__meta">{data.error}</span>}
+        </>
+      );
+    case "TRIGGER_FIRED":
+      return frame(
+        <Zap size={14} />,
+        "Gatilho acionado",
+        <p className="deal-feed__text">
+          {data.name} → {data.to}
+        </p>
       );
     case "FIELD_CHANGED":
     default:

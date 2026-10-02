@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Zap } from "lucide-react";
 import { CrmButtons } from "@/components/crm/CrmButtons";
 import { CrmWorkspace } from "@/components/crm/CrmWorkspace";
 import { CrmPipelineSettings } from "@/components/crm/CrmPipelineSettings";
@@ -59,6 +61,14 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
             pipeline.name
           )}
           <CrmPipelineSettings pipeline={serializedPipeline} />
+          <Link
+            href={`/crm/automation/${pipeline.id}`}
+            className="btn-secondary"
+            style={{ padding: '8px 12px', fontSize: '13px', whiteSpace: 'nowrap', textDecoration: 'none', background: 'transparent', borderColor: 'rgba(255,255,255,0.1)' }}
+            title="Regras de automação e gatilhos"
+          >
+            <Zap size={16} /> Regras de automação
+          </Link>
         </h1>
         <CrmButtons pipeline={serializedPipeline} />
       </header>

@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import type { CrmDealStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notifyStageChanged } from "@/lib/crm-realtime";
+import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import {
   DealValidationError,
   STATUSES,
@@ -48,6 +49,10 @@ export async function POST(req: Request) {
     );
 
     await notifyStageChanged(card.stageId);
+    // A "negócio criado" trigger may move the deal right away; otherwise run the first stage's rules
+    after(async () => {
+      if (!(await fireTriggers(card.id, { type: "DEAL_CREATED" }))) await onDealEnteredStage(card.id, card.stageId);
+    });
 
     return NextResponse.json(serializeListCard(card));
   } catch (error) {
@@ -87,15 +92,31 @@ export async function PATCH(req: Request) {
         history.push({ type: "STATUS_CHANGED", data: { from: current.status, to: status } });
       }
 
+      let recurringCopy = null;
       if (history.length > 0) {
         await tx.crmCard.update({ where: { id }, data: { ...data, history: { createMany: { data: history } } } });
-        if (data.status === "WON") await createRecurringCopy(tx, id);
+        if (data.status === "WON") recurringCopy = await createRecurringCopy(tx, id);
       }
 
-      return { changed: history.length > 0, stageId: current.stageId };
+      const changedFields = history.flatMap((h) =>
+        h.type === "STATUS_CHANGED" ? ["status"] : h.type === "FIELD_CHANGED" ? [(h.data as { field?: string }).field ?? ""] : []
+      );
+      return {
+        changed: history.length > 0,
+        stageId: current.stageId,
+        movedTo: typeof data.stageId === "string" ? data.stageId : null,
+        changedFields: changedFields.filter(Boolean),
+        recurringCopy,
+      };
     }, { timeout: 15_000 });
 
     if (result.changed) await notifyStageChanged(result.stageId);
+    after(async () => {
+      if (result.recurringCopy) await onDealEnteredStage(result.recurringCopy.id, result.recurringCopy.stageId);
+      // A manual stage change runs the new stage's rules; other changes may fire a "campo alterado" trigger
+      if (result.movedTo) await onDealEnteredStage(id, result.movedTo);
+      else if (result.changedFields.length) await fireTriggers(id, { type: "FIELD_CHANGED", fields: result.changedFields });
+    });
     return NextResponse.json(await getDealDetails(id));
   } catch (error) {
     if (error instanceof DealValidationError) {
