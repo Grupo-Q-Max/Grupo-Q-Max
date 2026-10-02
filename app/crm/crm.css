@@ -74,6 +74,16 @@
   min-width: 0;
 }
 
+/* The site's global CSS pads every <main> for its public navbar and forces
+   height:auto / overflow:visible on it; the CRM has no navbar and must stay a
+   fixed-height app shell (same approach as main.fnr in finora.css) */
+main.crm-main {
+  padding-top: 0 !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+}
+
 .crm-header {
   height: 80px;
   display: flex;
@@ -155,6 +165,7 @@
 
 .crm-content {
   flex: 1;
+  min-height: 0;
   padding: 40px;
   overflow-x: auto;
   overflow-y: hidden;
@@ -221,8 +232,11 @@
 }
 
 /* LIST & ACTIVITIES VIEW */
+/* Bounded by .crm-content (which clips vertically), so long lists scroll inside */
 .crm-list-view, .crm-activities-view {
   flex: 1;
+  height: 100%;
+  box-sizing: border-box;
   padding: 40px;
   overflow-y: auto;
 }
@@ -232,7 +246,8 @@
   border-collapse: collapse;
   background: rgba(20, 20, 22, 0.5);
   border-radius: 12px;
-  overflow: hidden;
+  /* clip (not hidden) keeps the rounded corners without breaking the sticky header */
+  overflow: clip;
 }
 
 .crm-table th, .crm-table td {
@@ -246,7 +261,11 @@
   color: #a5a0aa;
   font-weight: 500;
   text-transform: uppercase;
-  background: rgba(11, 11, 12, 0.8);
+  background: #0b0b0c;
+  /* stays visible while the list scrolls */
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .crm-table tr:hover td {
@@ -442,4 +461,9 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* The site's floating WhatsApp button has no place inside the CRM */
+body:has(.crm-layout) .qmax-floating-whatsapp {
+  display: none;
 }
