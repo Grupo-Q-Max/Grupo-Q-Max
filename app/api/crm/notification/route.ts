@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sessionMemberId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-/** Latest notifications of a team member (`?memberId=`) and how many are unread. */
+/** Latest notifications of the signed-in member and how many are unread. */
 export async function GET(req: Request) {
-  const memberId = new URL(req.url).searchParams.get("memberId");
-  if (!memberId) return NextResponse.json({ error: "Missing memberId" }, { status: 400 });
+  const memberId = sessionMemberId(req);
+  if (!memberId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const [items, unread] = await Promise.all([
@@ -25,11 +26,13 @@ export async function GET(req: Request) {
   }
 }
 
-/** Marks one notification (`{ memberId, id }`) or all of the member's (`{ memberId }`) as read. */
+/** Marks one notification (`{ id }`) or all of the signed-in member's (`{}`) as read. */
 export async function PATCH(req: Request) {
+  const memberId = sessionMemberId(req);
+  if (!memberId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
-    const { memberId, id } = await req.json();
-    if (!memberId) return NextResponse.json({ error: "Missing memberId" }, { status: 400 });
+    const { id } = await req.json();
     await prisma.crmNotification.updateMany({
       where: { memberId, readAt: null, ...(id && { id }) },
       data: { readAt: new Date() },

@@ -1,4 +1,5 @@
 import { subscribeToMember, subscribeToPipeline } from "@/lib/crm-realtime";
+import { sessionMemberId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -8,15 +9,15 @@ const HEARTBEAT_MS = 25_000;
 
 /**
  * Server-Sent Events stream for a pipeline (`?pipelineId=`) or for the notifications
- * of a team member (`?memberId=`). Emits a `data:` message every time
+ * of the signed-in member (`?notifications=1`). Emits a `data:` message every time
  * something changes; clients refetch when they receive one.
  */
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const pipelineId = params.get("pipelineId");
-  const memberId = params.get("memberId");
+  const memberId = params.has("notifications") ? sessionMemberId(req) : null;
   if (!pipelineId && !memberId) {
-    return Response.json({ error: "Missing pipelineId or memberId" }, { status: 400 });
+    return Response.json({ error: "Missing pipelineId or notifications" }, { status: 400 });
   }
 
   const encoder = new TextEncoder();

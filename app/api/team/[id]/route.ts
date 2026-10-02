@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { prisma } from "@/lib/prisma";
 import { getUploadsDir } from "@/lib/storage";
-import { parseTeamInput, toTeamDto } from "@/lib/team";
+import { emailTakenResponse, parseTeamInput, toTeamDto } from "@/lib/team";
 
 export async function DELETE(
   _req: NextRequest,
@@ -37,6 +37,7 @@ export async function PUT(
   const exists = await prisma.teamMember.findUnique({ where: { id }, select: { id: true } });
   if (!exists) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const member = await prisma.teamMember.update({ where: { id }, data: parseTeamInput(body) });
+  const member = await prisma.teamMember.update({ where: { id }, data: parseTeamInput(body) }).catch(emailTakenResponse);
+  if (member instanceof Response) return member;
   return NextResponse.json(toTeamDto(member));
 }

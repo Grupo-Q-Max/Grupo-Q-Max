@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X } from "lucide-react";
+import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 
 /** Below this width the sidebar becomes an overlay that starts closed (see crm.css). */
@@ -16,6 +16,11 @@ export function CrmSidebar() {
   const toggle = () => {
     const isOpen = open ?? !window.matchMedia(MOBILE_QUERY).matches;
     setOpen(!isOpen);
+  };
+
+  const logout = async () => {
+    await fetch("/api/auth", { method: "DELETE" }).catch(() => {});
+    location.href = "/login";
   };
 
   return (
@@ -56,6 +61,10 @@ export function CrmSidebar() {
             <Settings size={18} />
             Configurações
           </a>
+          <button type="button" className="crm-nav__item" onClick={logout}>
+            <LogOut size={18} />
+            Sair
+          </button>
         </nav>
       </aside>
     </>

@@ -19,11 +19,13 @@
         "lucide-react": "^0.468.0",
         "mariadb": "^3.5.4",
         "next": "^16.0.0",
+        "nodemailer": "^10.0.13",
         "react": "^19.1.1",
         "react-dom": "^19.1.1"
     },
     "devDependencies": {
         "@types/node": "^22.10.5",
+        "@types/nodemailer": "^8.0.2",
         "@types/react": "^19.0.3",
         "@types/react-dom": "^19.0.2",
         "dotenv": "^18.0.4",

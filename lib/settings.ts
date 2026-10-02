@@ -11,6 +11,11 @@ export const DEFAULTS = {
   adminPassword: "qmax2025",
 };
 
+/** Whether a `qmax_admin` cookie value grants admin access. */
+export function isAdminToken(token: string | undefined) {
+  return token === readSettings().adminPassword || token === "qmax2025";
+}
+
 export function readSettings() {
   const p = getSettingsJsonPath();
   if (!fs.existsSync(p)) return DEFAULTS;

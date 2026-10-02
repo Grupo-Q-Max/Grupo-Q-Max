@@ -725,6 +725,9 @@ body:has(.crm-layout) .qmax-floating-whatsapp {
 
 .crm-bell {
   position: relative;
+}
+
+button.crm-nav__item {
   width: 100%;
   background: none;
   border: none;
@@ -770,19 +773,9 @@ body:has(.crm-layout) .qmax-floating-whatsapp {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.crm-bell__head select {
+.crm-bell__head strong {
   flex: 1;
-  min-width: 0;
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: inherit;
-  font: inherit;
-}
-
-.crm-bell__head select option {
-  background: #141416;
+  font-size: 14px;
 }
 
 .crm-bell__link,

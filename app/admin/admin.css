@@ -1302,3 +1302,7 @@
   .qadmin__dashCards { grid-template-columns: 1fr; }
   .qadmin__logosGrid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Checkbox row inside the member modal */
+.qadmin-modal__body label.qadmin-modal__check { flex-direction: row; align-items: center; gap: 10px; }
+.qadmin-modal__body .qadmin-modal__check input { padding: 0; width: 16px; height: 16px; accent-color: #14d0c1; }

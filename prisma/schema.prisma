@@ -38,6 +38,13 @@ model TeamMember {
   linkedin    String?
   bio         String?  @db.Text
   order       Int      @default(0)
+  /// CRM login (/login): members without email + password can't sign in
+  email        String?  @unique
+  passwordHash String?
+  /// Set by the confirmation link (or when the admin sets the login); login requires it
+  emailVerifiedAt DateTime?
+  /// Listed on the public "Nossos Sócios" section; self-registered CRM users start hidden
+  showOnSite   Boolean  @default(true)
 
   responsibleDeals     CrmCard[]               @relation("DealResponsible")
   observedDeals        CrmDealObserver[]
