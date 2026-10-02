@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import KanbanBoard from "@/components/KanbanBoard";
+import { CrmKanban } from "./CrmKanban";
 import { Search, Kanban, List, Calendar, TrendingUp } from "lucide-react";
 
 export function CrmWorkspace({ pipeline }: { pipeline: any }) {
@@ -42,7 +42,7 @@ export function CrmWorkspace({ pipeline }: { pipeline: any }) {
       </div>
 
       <div className="crm-content">
-        {view === "kanban" && <KanbanBoard pipeline={pipeline} />}
+        {view === "kanban" && <CrmKanban pipeline={pipeline} />}
 
         {view === "list" && (
           <div className="crm-list-view">
