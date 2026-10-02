@@ -36,10 +36,6 @@ export function getUploadsDir(): string {
   return dir;
 }
 
-export function getTeamJsonPath(): string {
-  return path.join(getDataDir(), "team.json");
-}
-
 export function getSettingsJsonPath(): string {
   return path.join(getDataDir(), "settings.json");
 }
@@ -57,13 +53,6 @@ function ensureInitialized(persistentDir: string) {
     const persistentUploads = path.join(persistentDir, "uploads");
     if (!fs.existsSync(persistentUploads)) {
       fs.mkdirSync(persistentUploads, { recursive: true });
-    }
-
-    // Seed team.json if not present in persistent storage yet
-    const teamJsonDest = path.join(persistentDir, "team.json");
-    const teamJsonSrc = path.join(process.cwd(), "data", "team.json");
-    if (!fs.existsSync(teamJsonDest) && fs.existsSync(teamJsonSrc)) {
-      fs.copyFileSync(teamJsonSrc, teamJsonDest);
     }
 
     // Seed initial team uploads from package
