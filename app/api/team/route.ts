@@ -15,7 +15,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: String(error), stack: error.stack }, { status: 500 });
+    return NextResponse.json({ error: String(error), stack: error instanceof Error ? error.stack : undefined }, { status: 500 });
   }
 }
 
