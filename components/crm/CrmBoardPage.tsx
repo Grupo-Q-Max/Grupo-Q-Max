@@ -54,7 +54,7 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
   return (
     <>
       <header className="crm-header">
-        <h1 className="crm-header__title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <h1 className="crm-header__title crm-header__title--board">
           {pipelines.length > 1 ? (
             <PipelineSelector pipelines={pipelines} currentPipelineId={pipeline.id} />
           ) : (
@@ -67,7 +67,7 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
             style={{ padding: '8px 12px', fontSize: '13px', whiteSpace: 'nowrap', textDecoration: 'none', background: 'transparent', borderColor: 'rgba(255,255,255,0.1)' }}
             title="Regras de automação e gatilhos"
           >
-            <Zap size={16} /> Regras de automação
+            <Zap size={16} /> <span className="crm-hide-mobile">Regras de automação</span>
           </Link>
         </h1>
         <CrmButtons pipeline={serializedPipeline} />

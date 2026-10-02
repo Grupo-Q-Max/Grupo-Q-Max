@@ -9,6 +9,7 @@ export function PipelineSelector({ pipelines, currentPipelineId }: { pipelines: 
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
       <select 
+        className="crm-pipeline-select"
         value={currentPipelineId}
         onChange={(e) => {
           router.push(`/crm?pipelineId=${e.target.value}`);
@@ -17,7 +18,6 @@ export function PipelineSelector({ pipelines, currentPipelineId }: { pipelines: 
           background: 'transparent', 
           border: 'none', 
           color: '#fff', 
-          fontSize: '24px', 
           fontWeight: 700,
           cursor: 'pointer',
           outline: 'none',

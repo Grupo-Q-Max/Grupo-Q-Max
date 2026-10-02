@@ -607,3 +607,70 @@
 .auto-spin {
   animation: spin 1s linear infinite;
 }
+
+/* ---- tablet / phone ---- */
+
+@media (max-width: 900px) {
+  .auto-header .crm-header__title {
+    font-size: 18px;
+    white-space: normal;
+  }
+
+  .auto-header .crm-toolbar__search {
+    flex: 1 1 100%;
+  }
+
+  .auto-header__title .crm-header__title {
+    flex: 1 1 calc(100% - 60px);
+    font-size: 17px;
+  }
+
+  /* "Criar" and the pipeline select share one row */
+  .auto-pipeline {
+    flex: 1 1 140px;
+    min-width: 0;
+    max-width: 320px;
+  }
+
+  .auto-tabs {
+    padding: 10px 16px 0;
+  }
+
+  .auto-board {
+    padding-right: 16px;
+  }
+
+  .auto-modal__body {
+    padding: 14px;
+  }
+
+  /* Label above the field instead of beside it */
+  .auto-modal__row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .auto-modal__label {
+    padding-top: 0;
+  }
+
+  .auto-inline {
+    flex-wrap: wrap;
+  }
+
+  .auto-inline > input {
+    flex: 1 1 160px;
+  }
+
+  .auto-runs {
+    overflow-x: auto;
+  }
+
+  .auto-runs__table {
+    min-width: 720px;
+  }
+
+  .auto-runs__toolbar {
+    flex-wrap: wrap;
+  }
+}

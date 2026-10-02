@@ -214,7 +214,7 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '16px' }}>
+      <div className="crm-header__actions">
         <button className="btn-secondary" onClick={() => setIsModalOpen(true)}>
           Criar Pipeline
         </button>
