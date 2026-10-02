@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { boardAutomations } from "@/lib/crm-automation";
 import { CrmAutomationBoard } from "@/components/crm/automation/CrmAutomationBoard";
 import type { AutomationStage, CustomField } from "@/components/crm/automation/types";
 
@@ -16,16 +17,7 @@ export default async function AutomationPage({ params }: { params: Promise<{ pip
         stages: {
           orderBy: { order: "asc" },
           include: {
-            automations: {
-              orderBy: { order: "asc" },
-              include: {
-                headers: { orderBy: { order: "asc" } },
-                conditions: { orderBy: { order: "asc" } },
-                activity: true,
-                dealUpdate: true,
-                notify: true,
-              },
-            },
+            automations: boardAutomations,
             triggers: { orderBy: { order: "asc" }, include: { conditions: { orderBy: { order: "asc" } } } },
           },
         },

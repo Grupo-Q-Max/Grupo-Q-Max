@@ -12,12 +12,16 @@ import { notifyMember, notifyPipelineChanged } from "@/lib/crm-realtime";
 import { updateDeal } from "@/lib/crm-deal";
 import {
   DEAL_STATUSES,
+  FLOW_LIMITS,
   type DealContext,
   type DealStatus,
   customFieldKey,
   delayMs,
   fillPlaceholders,
+  firstStep,
   matchesConditions,
+  nextAfter,
+  stepLabel,
 } from "@/lib/crm-automation-shared";
 
 /*
@@ -101,7 +105,8 @@ export async function dealContext(cardId: string) {
 export async function onDealEnteredStage(cardId: string, stageId: string) {
   try {
     const automations = await prisma.crmAutomation.findMany({
-      where: { stageId, active: true },
+      // Rows with flowStepId are the actions of flow steps, run by their flow
+      where: { stageId, active: true, flowStepId: null },
       orderBy: { order: "asc" },
       select: { id: true, delayAmount: true, delayUnit: true },
     });
@@ -177,20 +182,56 @@ export async function processDueRuns(limit = 50) {
   return processed;
 }
 
+/** Action columns and tables of a rule (or of the child rule of a flow step). */
+const actionInclude = {
+  headers: { orderBy: { order: "asc" } },
+  activity: { include: { responsible: { select: { name: true } } } },
+  dealUpdate: true,
+  notify: true,
+} satisfies Prisma.CrmAutomationInclude;
+
+type ActionRule = Prisma.CrmAutomationGetPayload<{ include: typeof actionInclude }>;
+
+/** Rules of a stage as the automation board shows them; flows bring their steps as a flat list. */
+export const boardAutomations = {
+  where: { flowStepId: null },
+  orderBy: { order: "asc" },
+  include: {
+    headers: { orderBy: { order: "asc" } },
+    conditions: { orderBy: { order: "asc" } },
+    activity: true,
+    dealUpdate: true,
+    notify: true,
+    steps: {
+      orderBy: { order: "asc" },
+      include: {
+        conditions: { orderBy: { order: "asc" } },
+        actions: { take: 1, include: { headers: { orderBy: { order: "asc" } }, activity: true, dealUpdate: true, notify: true } },
+      },
+    },
+  },
+} satisfies Prisma.CrmStage$automationsArgs;
+
+/** Runs the action of a rule. Returns a skip reason when the action can't run. */
+async function runAction(rule: ActionRule, cardId: string, deal: Deal): Promise<ActionOutcome | string> {
+  switch (rule.actionType) {
+    case "CREATE_ACTIVITY":
+      return rule.activity ? createActivity(rule.activity, cardId, deal) : "Atividade da regra não configurada";
+    case "UPDATE_DEAL":
+      return rule.dealUpdate ? updateDealAction(rule.dealUpdate, cardId, deal) : "Alterações da regra não configuradas";
+    case "NOTIFY":
+      return rule.notify ? notifyAction(rule.notify, cardId, deal) : "Notificação da regra não configurada";
+    case "WEBHOOK":
+      return sendWebhook(rule, deal.ctx);
+    case "FLOW":
+      return "Um fluxo não pode ser a ação de outro fluxo";
+  }
+}
+
 async function processRun(id: string) {
   const run = await prisma.crmAutomationRun.findUnique({
     where: { id },
-    include: {
-      automation: {
-        include: {
-          headers: { orderBy: { order: "asc" } },
-          conditions: { orderBy: { order: "asc" } },
-          activity: { include: { responsible: { select: { name: true } } } },
-          dealUpdate: true,
-          notify: true,
-        },
-      },
-    },
+    include: { automation: { include: { ...actionInclude, conditions: { orderBy: { order: "asc" } } } } },
   });
   if (!run) return;
 
@@ -202,22 +243,12 @@ async function processRun(id: string) {
   if (!deal) return skip("Negócio não encontrado");
   if (deal.stage.id !== run.stageId) return skip("O negócio saiu da etapa antes da execução");
   if (!automation.active) return skip("Regra desativada");
-  if (!matchesConditions(automation.conditions, deal.ctx)) return skip("Condições não atendidas");
+  // A flow checks its start conditions once, not again when it resumes after a wait
+  if (run.stepCount === 0 && !matchesConditions(automation.conditions, deal.ctx)) return skip("Condições não atendidas");
 
-  let outcome: ActionOutcome | string;
-  if (automation.actionType === "CREATE_ACTIVITY") {
-    outcome = automation.activity
-      ? await createActivity(automation.activity, run.cardId, deal)
-      : "Atividade da regra não configurada";
-  } else if (automation.actionType === "UPDATE_DEAL") {
-    outcome = automation.dealUpdate
-      ? await updateDealAction(automation.dealUpdate, run.cardId, deal)
-      : "Alterações da regra não configuradas";
-  } else if (automation.actionType === "NOTIFY") {
-    outcome = automation.notify ? await notifyAction(automation.notify, run.cardId, deal) : "Notificação da regra não configurada";
-  } else {
-    outcome = await sendWebhook(automation, deal.ctx);
-  }
+  if (automation.actionType === "FLOW") return processFlowRun(run, automation.name, deal);
+
+  const outcome = await runAction(automation, run.cardId, deal);
   if (typeof outcome === "string") return skip(outcome);
   const { request, httpStatus = null, responseBody = null, error } = outcome;
 
@@ -237,18 +268,154 @@ async function processRun(id: string) {
   });
 
   // A created activity / changed field already shows in the deal timeline; log the run there only when it failed
-  const logInTimeline = automation.actionType === "WEBHOOK" || status === "FAILED";
-  if (status !== "PENDING" && logInTimeline) {
-    await prisma.crmHistory.create({
-      data: {
-        cardId: run.cardId,
-        type: "AUTOMATION_RUN",
-        data: { name: automation.name, status, httpStatus, error },
-      },
-    });
+  if (status !== "PENDING" && (automation.actionType === "WEBHOOK" || status === "FAILED")) {
+    await logInTimeline(run.cardId, automation.name, status, httpStatus, error);
   }
   if (status !== "PENDING") notifyPipelineChanged(deal.stage.pipelineId);
   if (status === "SUCCESS") await outcome.followUp?.();
+}
+
+/** Adds a rule execution to the deal timeline. */
+const logInTimeline = (cardId: string, name: string, status: string, httpStatus: number | null, error: string | null) =>
+  prisma.crmHistory.create({ data: { cardId, type: "AUTOMATION_RUN", data: { name, status, httpStatus, error } } });
+
+/**
+ * Claims step `seq` of a flow run by inserting its log row: the (runId, seq)
+ * unique key makes a step run at most once. An existing FAILED row is a retry
+ * and is claimed again; a RUNNING one means the server stopped in the middle of
+ * the step, so it is marked as interrupted instead of being run again.
+ */
+async function claimStep(runId: string, seq: number, data: Omit<Prisma.CrmAutomationRunStepUncheckedCreateInput, "runId" | "seq" | "status">) {
+  try {
+    const row = await prisma.crmAutomationRunStep.create({ data: { ...data, runId, seq, status: "RUNNING" } });
+    return row.id;
+  } catch (e) {
+    if ((e as { code?: string }).code !== "P2002") throw e;
+  }
+  const existing = await prisma.crmAutomationRunStep.findUniqueOrThrow({ where: { runId_seq: { runId, seq } } });
+  if (existing.status === "FAILED") {
+    const claimed = await prisma.crmAutomationRunStep.updateMany({
+      where: { id: existing.id, status: "FAILED" },
+      data: { status: "RUNNING", error: null },
+    });
+    if (claimed.count) return existing.id;
+  }
+  await prisma.crmAutomationRunStep.update({
+    where: { id: existing.id },
+    data: { status: "FAILED", error: "Interrompido: o servidor reiniciou durante o passo" },
+  });
+  return null;
+}
+
+type FlowRunRow = { id: string; automationId: string; cardId: string; stageId: string; stepId: string | null; stepCount: number; attempts: number };
+
+/**
+ * Runs a FLOW rule from its current step until it ends, reaches a wait (the run
+ * goes back to PENDING with runAt = end of the wait and the next step saved) or
+ * fails. Every step is saved as a CrmAutomationRunStep (the path shown in
+ * "Registros") together with the run's next step, so a restart resumes where it
+ * stopped. The deal is checked before every step: if it left the stage the flow stops.
+ */
+async function processFlowRun(run: FlowRunRow, flowName: string, startDeal: Deal) {
+  const steps = await prisma.crmAutomationStep.findMany({
+    where: { flowId: run.automationId },
+    include: { conditions: { orderBy: { order: "asc" } }, actions: { include: actionInclude, take: 1 } },
+  });
+
+  let deal = startDeal;
+  const finish = async (status: "SUCCESS" | "FAILED" | "SKIPPED", error: string | null) => {
+    await prisma.crmAutomationRun.update({ where: { id: run.id }, data: { status, error } });
+    if (status === "FAILED") await logInTimeline(run.cardId, flowName, status, null, error);
+    notifyPipelineChanged(deal.stage.pipelineId);
+  };
+
+  let seq = run.stepCount;
+  let attempts = run.attempts;
+  let step = run.stepId ? steps.find((s) => s.id === run.stepId) ?? null : seq === 0 ? firstStep(steps) : null;
+  if (!step && seq > 0) return finish("SKIPPED", "O passo do fluxo foi removido");
+
+  for (let executed = 0; step; executed++) {
+    if (executed >= FLOW_LIMITS.maxExecuted) {
+      return finish("FAILED", `Limite de ${FLOW_LIMITS.maxExecuted} passos por execução atingido`);
+    }
+    if (executed > 0) {
+      const fresh = await dealContext(run.cardId);
+      if (!fresh) return finish("SKIPPED", "Negócio não encontrado");
+      deal = fresh;
+      if (deal.stage.id !== run.stageId) return finish("SKIPPED", "O negócio saiu da etapa antes da execução");
+    }
+
+    const current = step;
+    const action = current.actions[0] ?? null;
+    const logId = await claimStep(run.id, seq, {
+      stepId: current.id,
+      stepType: current.type,
+      actionType: action?.actionType ?? null,
+      label: stepLabel(current, action),
+    });
+    if (!logId) return finish("FAILED", "Interrompido: o servidor reiniciou durante o passo");
+
+    let next = nextAfter(steps, current);
+    let log: Prisma.CrmAutomationRunStepUpdateInput;
+    let runUntil: Date | null = null;
+    let followUp: (() => Promise<void>) | undefined;
+
+    if (current.type === "CONDITION") {
+      const branch = matchesConditions(current.conditions, deal.ctx) ? "THEN" : "ELSE";
+      next = firstStep(steps, current.id, branch) ?? next;
+      log = { status: "SUCCESS", branch };
+    } else if (current.type === "WAIT") {
+      runUntil = new Date(Date.now() + delayMs(current.waitAmount ?? 0, current.waitUnit ?? "MINUTES"));
+      log = { status: "SUCCESS", request: { until: runUntil.toISOString() } };
+    } else {
+      const outcome = action ? await runAction(action, run.cardId, deal) : "Ação do passo não configurada";
+      if (typeof outcome === "string") {
+        log = { status: "SKIPPED", error: outcome };
+      } else {
+        const { request, httpStatus = null, responseBody = null, error } = outcome;
+        log = { status: error ? "FAILED" : "SUCCESS", request, httpStatus, responseBody, error };
+        if (action?.actionType === "WEBHOOK" && (!error || outcome.final || attempts >= MAX_ATTEMPTS)) {
+          await logInTimeline(run.cardId, `${flowName}: ${stepLabel(current, action)}`, error ? "FAILED" : "SUCCESS", httpStatus, error);
+        }
+        if (error) {
+          await prisma.crmAutomationRunStep.update({ where: { id: logId }, data: log });
+          // Same retry as simple rules; the step is not advanced, so the retry runs it again
+          if (!outcome.final && attempts < MAX_ATTEMPTS) {
+            await prisma.crmAutomationRun.update({
+              where: { id: run.id },
+              data: { status: "PENDING", error, runAt: new Date(Date.now() + attempts ** 2 * 60_000) },
+            });
+            return;
+          }
+          return finish("FAILED", `${stepLabel(current, action)}: ${error}`);
+        }
+        followUp = outcome.followUp;
+      }
+    }
+
+    // Log and next step saved together: a restart resumes after this step, never on it
+    await prisma.$transaction([
+      prisma.crmAutomationRunStep.update({ where: { id: logId }, data: log }),
+      prisma.crmAutomationRun.update({
+        where: { id: run.id },
+        data: {
+          stepId: next?.id ?? null,
+          stepCount: seq + 1,
+          error: null,
+          // The next step starts with a fresh retry budget
+          attempts: runUntil ? 0 : 1,
+          ...(runUntil && next && { status: "PENDING", runAt: runUntil }),
+        },
+      }),
+    ]);
+    seq++;
+    attempts = 1;
+    if (followUp) await followUp();
+    if (runUntil && next) return notifyPipelineChanged(deal.stage.pipelineId);
+    step = next;
+  }
+
+  return finish("SUCCESS", null);
 }
 
 /** Result of an action: what was done (kept in the run log) and the error, if any. */
@@ -324,15 +491,17 @@ async function createActivity(config: ActivityConfig, cardId: string, deal: Deal
  * new stage's rules and other changes may fire "campo alterado" triggers.
  */
 async function updateDealAction(config: CrmAutomationDealUpdate, cardId: string, deal: Deal): Promise<ActionOutcome> {
-  const recentRuns = await prisma.crmAutomationRun.count({
-    where: {
-      cardId,
-      status: "SUCCESS",
-      automation: { actionType: "UPDATE_DEAL" },
-      updatedAt: { gte: new Date(Date.now() - LOOP_WINDOW_MS) },
-    },
-  });
-  if (recentRuns >= LOOP_MAX_RUNS) {
+  const since = new Date(Date.now() - LOOP_WINDOW_MS);
+  const [recentRuns, recentSteps] = await Promise.all([
+    prisma.crmAutomationRun.count({
+      where: { cardId, status: "SUCCESS", automation: { actionType: "UPDATE_DEAL" }, updatedAt: { gte: since } },
+    }),
+    // "Modificar negócio" steps of flows count too
+    prisma.crmAutomationRunStep.count({
+      where: { actionType: "UPDATE_DEAL", status: "SUCCESS", updatedAt: { gte: since }, run: { cardId } },
+    }),
+  ]);
+  if (recentRuns + recentSteps >= LOOP_MAX_RUNS) {
     return {
       request: { changes: [] },
       error: `Possível loop de automações: o negócio foi modificado ${LOOP_MAX_RUNS} vezes em poucos minutos`,

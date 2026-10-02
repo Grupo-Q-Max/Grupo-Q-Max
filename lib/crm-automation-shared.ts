@@ -8,7 +8,11 @@ export type HttpMethod = "GET" | "POST";
 export type ConditionOperator = "eq" | "neq" | "contains" | "empty" | "notEmpty" | "gt" | "lt";
 export type TriggerType = "WEBHOOK_IN" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DEAL_CREATED";
 export type ActivityType = "TODO" | "TASK" | "CALL" | "MEETING" | "COMMENT";
-export type ActionType = "WEBHOOK" | "CREATE_ACTIVITY" | "UPDATE_DEAL" | "NOTIFY";
+export type ActionType = "WEBHOOK" | "CREATE_ACTIVITY" | "UPDATE_DEAL" | "NOTIFY" | "FLOW";
+/** Actions a flow step can run (a flow inside a flow is not allowed) */
+export type StepActionType = Exclude<ActionType, "FLOW">;
+export type StepType = "ACTION" | "WAIT" | "CONDITION";
+export type Branch = "THEN" | "ELSE";
 export type DealStatus = "OPEN" | "WON" | "LOST";
 export type ActivityAssignee = "DEAL_RESPONSIBLE" | "MEMBER";
 
@@ -48,9 +52,12 @@ export const ACTION_TYPES:Record<ActionType, { label: string }> = {
   CREATE_ACTIVITY: { label: "Criar atividade" },
   UPDATE_DEAL: { label: "Modificar negócio" },
   NOTIFY: { label: "Adicionar notificação" },
+  FLOW: { label: "Fluxo (ações de grupo)" },
 };
 
 export const isActionType = (value: unknown): value is ActionType => typeof value === "string" && value in ACTION_TYPES;
+
+export const isStepActionType = (value: unknown): value is StepActionType => isActionType(value) && value !== "FLOW";
 
 export const DELAY_UNITS: Record<DelayUnit, { label: string; ms: number }> = {
   MINUTES: { label: "minutos", ms: 60_000 },
@@ -247,3 +254,109 @@ export const RUN_STATUS_LABELS: Record<string, string> = {
   FAILED: "Falhou",
   SKIPPED: "Ignorada",
 };
+
+// ---------------------------------------------------------------------------
+// Flows ("ações de grupo")
+// ---------------------------------------------------------------------------
+
+/** Protection against huge or endless flows. */
+export const FLOW_LIMITS = {
+  /** Steps a flow can have */
+  maxSteps: 50,
+  /** Nested if/else levels */
+  maxDepth: 5,
+  /** Steps run by one execution of a flow */
+  maxExecuted: 100,
+};
+
+export const STEP_TYPES: Record<StepType, { label: string }> = {
+  ACTION: { label: "Ação" },
+  WAIT: { label: "Esperar" },
+  CONDITION: { label: "Condição (se/senão)" },
+};
+
+export const BRANCHES: Record<Branch, string> = { THEN: "Então", ELSE: "Senão" };
+
+/**
+ * A flow step as edited in the dialog and sent to the API: a tree where a
+ * CONDITION holds its THEN/ELSE steps. `action` holds the rule fields of an
+ * ACTION step (same body as a simple rule, plus its `actionType`).
+ */
+export type FlowStepInput<A = Record<string, unknown>> = {
+  type: StepType;
+  waitAmount: number;
+  waitUnit: DelayUnit;
+  conditions: AutomationCondition[];
+  action: (A & { actionType: StepActionType }) | null;
+  then: FlowStepInput<A>[];
+  else: FlowStepInput<A>[];
+};
+
+export const countSteps = (steps: FlowStepInput<unknown>[]): number =>
+  steps.reduce((total, s) => total + 1 + countSteps(s.then) + countSteps(s.else), 0);
+
+/** Validates a flow coming from the client. Returns the steps or what is wrong. */
+export function parseFlowSteps(value: unknown): { steps: FlowStepInput[]; error: string | null } {
+  let error: string | null = null;
+  const parse = (list: unknown, depth: number): FlowStepInput[] =>
+    (Array.isArray(list) ? list : []).flatMap((raw): FlowStepInput[] => {
+      const input = (raw ?? {}) as Record<string, unknown>;
+      const type = input.type as StepType;
+      if (!(type in STEP_TYPES)) return [];
+      const action = (input.action ?? null) as Record<string, unknown> | null;
+      if (type === "ACTION" && !isStepActionType(action?.actionType)) {
+        error = "Escolha a ação de cada passo";
+        return [];
+      }
+      if (type === "CONDITION" && depth >= FLOW_LIMITS.maxDepth) {
+        error = `No máximo ${FLOW_LIMITS.maxDepth} condições aninhadas`;
+        return [];
+      }
+      return [
+        {
+          type,
+          waitAmount: type === "WAIT" ? Math.max(1, Math.round(Number(input.waitAmount) || 1)) : 0,
+          waitUnit: isDelayUnit(input.waitUnit) ? input.waitUnit : "MINUTES",
+          conditions: type === "CONDITION" ? parseConditions(input.conditions) : [],
+          action: type === "ACTION" ? (action as FlowStepInput["action"]) : null,
+          then: type === "CONDITION" ? parse(input.then, depth + 1) : [],
+          else: type === "CONDITION" ? parse(input.else, depth + 1) : [],
+        },
+      ];
+    });
+
+  const steps = parse(value, 0);
+  if (!error && countSteps(steps) > FLOW_LIMITS.maxSteps) error = `No máximo ${FLOW_LIMITS.maxSteps} passos por fluxo`;
+  if (!error && steps.length === 0) error = "Adicione ao menos um passo";
+  return { steps, error };
+}
+
+/** Saved step, as the engine walks it. */
+export type FlowNode = { id: string; parentId: string | null; branch: Branch | null; order: number };
+
+const siblings = <T extends FlowNode>(steps: T[], parentId: string | null, branch: Branch | null) =>
+  steps.filter((s) => s.parentId === parentId && s.branch === branch).sort((a, b) => a.order - b.order);
+
+/** First step of the flow (no args) or of a branch of a condition. */
+export const firstStep = <T extends FlowNode>(steps: T[], parentId: string | null = null, branch: Branch | null = null) =>
+  siblings(steps, parentId, branch)[0] ?? null;
+
+/** Step that runs after `step` (and after its branches): the next sibling, else the one after its parent condition. */
+export function nextAfter<T extends FlowNode>(steps: T[], step: T): T | null {
+  let current: T | null = step;
+  while (current) {
+    const list = siblings(steps, current.parentId, current.branch);
+    const next = list[list.findIndex((s) => s.id === current!.id) + 1];
+    if (next) return next;
+    const parentId: string | null = current.parentId;
+    current = parentId ? steps.find((s) => s.id === parentId) ?? null : null;
+  }
+  return null;
+}
+
+/** "Esperar 1 minutos" / action label / "Condição": shown in the editor and kept in the run log. */
+export function stepLabel(step: { type: StepType; waitAmount?: number | null; waitUnit?: DelayUnit | null }, action?: { name?: string; actionType: ActionType } | null) {
+  if (step.type === "WAIT") return `Esperar ${step.waitAmount ?? 0} ${DELAY_UNITS[step.waitUnit ?? "MINUTES"].label}`;
+  if (step.type === "CONDITION") return "Condição";
+  return action?.name?.trim() || (action ? ACTION_TYPES[action.actionType].label : "Ação");
+}
