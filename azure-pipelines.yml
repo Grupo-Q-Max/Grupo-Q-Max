@@ -1,31 +1,36 @@
 trigger:
 - main
-
+ 
 pool:
   vmImage: 'ubuntu-latest'
-
+ 
 variables:
 - group: 'CI-CD credenciais'
 - name: NODE_VERSION
   value: '22.x'
 - name: KUDU_URL
   value: 'https://webbd01-app-gybye4gucffsf4fq.scm.brazilsouth-01.azurewebsites.net'
-
+ 
 steps:
-
+ 
 - task: UseNode@1
   displayName: 'Usar Node.js 22'
   inputs:
     version: '$(NODE_VERSION)'
-
+ 
 - script: npm ci
   displayName: 'Instalar dependencias'
-
+ 
 - script: npx prisma generate
   displayName: 'Gerar Prisma Client'
-
+ 
 - script: npx prisma db push
   displayName: 'Sincronizar Banco de Dados (DB Push)'
+  env:
+    DATABASE_URL: "mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website"
+ 
+- script: node scripts/seed-prod-team.cjs
+  displayName: 'Seed Sócios no Banco de Dados'
   env:
     DATABASE_URL: "mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website"
 
@@ -33,39 +38,39 @@ steps:
   displayName: 'Robô de Testes Automatizados'
   env:
     DATABASE_URL: "mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website"
-
+ 
 - script: npm run build
   displayName: 'Build Next.js'
-
+ 
 - bash: |
     set -e
-
+ 
     echo "=========================================="
     echo " MONTANDO PACOTE STANDALONE Q-MAX"
     echo "=========================================="
-
+ 
     rm -rf deploy
     rm -f site.zip
-
+ 
     mkdir -p deploy
-
+ 
     echo ""
     echo "1. Copiando standalone..."
     cp -R .qmax-next/standalone/. deploy/
-
+ 
     echo ""
     echo "2. Copiando PUBLIC..."
     mkdir -p deploy/public
     cp -R public/. deploy/public/
-
+ 
     echo ""
     echo "3. Copiando static do Next..."
     mkdir -p deploy/.qmax-next
-
+ 
     if [ -d ".qmax-next/static" ]; then
       cp -R .qmax-next/static deploy/.qmax-next/static
     fi
-
+ 
     echo ""
     echo "3.1. Copiando DATA (uploads e team)..."
     mkdir -p deploy/data/uploads
@@ -73,25 +78,28 @@ steps:
     if [ -d "data" ]; then
       cp -R data/. deploy/data/
     fi
-
+    if [ -d "public/team" ]; then
+      cp -R public/team/. deploy/public/team/
+    fi
+ 
     echo ""
     echo "4. Validando logos obrigatorias..."
-
+ 
     test -f deploy/public/brands/brand-auditoria.png
     test -f deploy/public/brands/brand-contabil.png
     test -f deploy/public/brands/brand-talents.png
     test -f deploy/public/brands/brand-technology.png
     test -f deploy/public/brands/brand-lagerhaus.png
-
+ 
     echo "Todas as logos principais estao no pacote."
-
+ 
     echo ""
     echo "5. Assets encontrados:"
     find deploy/public/brands -maxdepth 1 -type f -print | sort
-
+ 
     echo ""
     echo "6. Configurando start..."
-
+ 
     node -e "
       const fs = require('fs');
       const p = './deploy/package.json';
@@ -100,29 +108,29 @@ steps:
       pkg.scripts.start = 'node server.js';
       fs.writeFileSync(p, JSON.stringify(pkg, null, 2));
     "
-
+ 
     echo ""
     echo "7. Criando ZIP..."
-
+ 
     cd deploy
     zip -r ../site.zip .
     cd ..
-
+ 
     echo ""
     echo "8. Validando ZIP..."
-
+ 
     unzip -l site.zip | grep "public/brands/brand-auditoria.png"
     unzip -l site.zip | grep "public/brands/brand-contabil.png"
     unzip -l site.zip | grep "public/brands/brand-talents.png"
     unzip -l site.zip | grep "public/brands/brand-technology.png"
     unzip -l site.zip | grep "public/brands/brand-lagerhaus.png"
-
+ 
     echo ""
     echo "PACOTE VALIDADO COM SUCESSO."
     ls -lh site.zip
-
+ 
   displayName: 'Montar pacote standalone'
-
+ 
 - task: PowerShell@2
   displayName: 'Diagnostico das credenciais'
   inputs:
@@ -131,19 +139,19 @@ steps:
     script: |
       $user = $env:PUBLISH_USER
       $pass = $env:PUBLISH_PASS
-
+ 
       if ([string]::IsNullOrWhiteSpace($user)) {
           throw "PUBLISH_USER vazio."
       }
-
+ 
       if ([string]::IsNullOrWhiteSpace($pass)) {
           throw "PUBLISH_PASS vazio."
       }
-
+ 
       Write-Host "PUBLISH_USER carregado."
       Write-Host "Tamanho USER: $($user.Length)"
       Write-Host "Tamanho PASS: $($pass.Length)"
-
+ 
       if ($user -eq '$webbd01-app') {
           Write-Host "USER EXATO: OK"
       }
@@ -153,7 +161,7 @@ steps:
   env:
     PUBLISH_USER: $(PUBLISH_USER)
     PUBLISH_PASS: $(PUBLISH_PASS)
-
+ 
 - task: PowerShell@2
   displayName: 'Deploy Azure App Service'
   inputs:
@@ -161,30 +169,30 @@ steps:
     targetType: 'inline'
     script: |
       $ErrorActionPreference = "Stop"
-
+ 
       $username = $env:PUBLISH_USER
       $password = $env:PUBLISH_PASS
       $kuduBase = "$(KUDU_URL)"
       $zipPath = "$(Build.SourcesDirectory)/site.zip"
-
+ 
       if (!(Test-Path $zipPath)) {
           throw "site.zip nao encontrado."
       }
-
+ 
       $pair = "${username}:${password}"
-
+ 
       $base64 = [Convert]::ToBase64String(
           [Text.Encoding]::ASCII.GetBytes($pair)
       )
-
+ 
       $headers = @{
           Authorization = "Basic $base64"
       }
-
-      $url = "$kuduBase/api/publish?type=zip&clean=false&restart=true"
-
+ 
+      $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true"
+ 
       Write-Host "Publicando Grupo Q-Max..."
-
+ 
       $response = Invoke-WebRequest `
           -Uri $url `
           -Method Post `
@@ -193,20 +201,21 @@ steps:
           -ContentType "application/zip" `
           -UseBasicParsing `
           -TimeoutSec 900
-
+ 
       Write-Host "Status HTTP: $($response.StatusCode)"
-
+ 
       if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
           throw "Deploy falhou com HTTP $($response.StatusCode)"
       }
-
+ 
       Write-Host "Deploy concluido com sucesso."
   env:
     PUBLISH_USER: $(PUBLISH_USER)
     PUBLISH_PASS: $(PUBLISH_PASS)
-
+ 
 - script: |
     echo "=========================================="
     echo " GRUPO Q-MAX - DEPLOY CONCLUIDO"
     echo "=========================================="
   displayName: 'Finalizar'
+ 
