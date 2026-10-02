@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import KanbanBoard from "@/components/KanbanBoard";
+import { CrmKanban } from "./CrmKanban";
 import { Search, Kanban, List, Calendar, TrendingUp } from "lucide-react";
-import { CardDetailsModal } from "./CardDetailsModal";
 
 export function CrmWorkspace({ pipeline }: { pipeline: any }) {
   const [view, setView] = useState<"kanban" | "list" | "activities">("kanban");
-  const [detailedCardId, setDetailedCardId] = useState<string | null>(null);
 
   // Collect all cards across all stages for list and activity views
   const allCards = pipeline.stages.flatMap((stage: any) => 
@@ -44,7 +42,7 @@ export function CrmWorkspace({ pipeline }: { pipeline: any }) {
       </div>
 
       <div className="crm-content">
-        {view === "kanban" && <KanbanBoard pipeline={pipeline} onCardClick={setDetailedCardId} />}
+        {view === "kanban" && <CrmKanban pipeline={pipeline} />}
 
         {view === "list" && (
           <div className="crm-list-view">
@@ -60,7 +58,7 @@ export function CrmWorkspace({ pipeline }: { pipeline: any }) {
               </thead>
               <tbody>
                 {allCards.map((card: any) => (
-                  <tr key={card.id} onClick={() => setDetailedCardId(card.id)} style={{ cursor: 'pointer' }}>
+                  <tr key={card.id}>
                     <td style={{ fontWeight: 600, color: '#fff' }}>{card.title}</td>
                     <td>{card.company || "—"}</td>
                     <td>
@@ -116,14 +114,6 @@ export function CrmWorkspace({ pipeline }: { pipeline: any }) {
           </div>
         )}
       </div>
-
-      {detailedCardId && (
-        <CardDetailsModal 
-          cardId={detailedCardId} 
-          pipeline={pipeline} 
-          onClose={() => setDetailedCardId(null)} 
-        />
-      )}
     </>
   );
 }

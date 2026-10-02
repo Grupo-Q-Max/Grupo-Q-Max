@@ -1,18 +1,13 @@
 import { CrmButtons } from "@/components/crm/CrmButtons";
 import { CrmWorkspace } from "@/components/crm/CrmWorkspace";
 import { CrmPipelineSettings } from "@/components/crm/CrmPipelineSettings";
-import { PipelineSelector } from "@/components/crm/PipelineSelector";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function CRMPage({ searchParams }: { searchParams: { pipelineId?: string } }) {
-  const allPipelines = await prisma.crmPipeline.findMany({
-    select: { id: true, name: true },
-    orderBy: { createdAt: 'asc' }
-  });
+export default async function CRMPage() {
+  // Fetch pipeline with stages and cards
   let pipeline = await prisma.crmPipeline.findFirst({
-    where: searchParams.pipelineId ? { id: searchParams.pipelineId } : undefined,
     include: {
       stages: {
         orderBy: { order: "asc" },
@@ -47,6 +42,7 @@ export default async function CRMPage({ searchParams }: { searchParams: { pipeli
       }
     });
 
+    // Create a demo card so the board isn't empty!
     if (pipeline.stages[0]) {
       await prisma.crmCard.create({
         data: {
@@ -56,38 +52,37 @@ export default async function CRMPage({ searchParams }: { searchParams: { pipeli
           stageId: pipeline.stages[0].id
         }
       });
+      // Refresh to include card
       pipeline = await prisma.crmPipeline.findUnique({
         where: { id: pipeline.id },
         include: { stages: { orderBy: { order: "asc" }, include: { cards: { orderBy: { order: "asc" } } } } }
       });
     }
-    
-    // Add to allPipelines list so dropdown works immediately
-    if (pipeline) {
-      allPipelines.push({ id: pipeline.id, name: pipeline.name });
-    }
   }
+
+  // Serialize Decimal so the pipeline can be passed to Client Components
+  const serializedPipeline = pipeline && {
+    ...pipeline,
+    stages: pipeline.stages.map(stage => ({
+      ...stage,
+      cards: stage.cards.map(card => ({
+        ...card,
+        value: card.value.toNumber()
+      }))
+    }))
+  };
 
   return (
     <>
       <header className="crm-header">
         <h1 className="crm-header__title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <PipelineSelector pipelines={allPipelines} currentPipelineId={pipeline?.id || ""} />
-          {pipeline && <CrmPipelineSettings pipeline={pipeline} />}
+          {serializedPipeline?.name || "Pipeline"}
+          {serializedPipeline && <CrmPipelineSettings pipeline={serializedPipeline} />}
         </h1>
-        <CrmButtons pipeline={pipeline} />
+        <CrmButtons pipeline={serializedPipeline} />
       </header>
 
-      {pipeline && <CrmWorkspace pipeline={{
-        ...pipeline,
-        stages: pipeline.stages.map(stage => ({
-          ...stage,
-          cards: stage.cards.map(card => ({
-            ...card,
-            value: card.value.toNumber()
-          }))
-        }))
-      }} />}
+      {serializedPipeline && <CrmWorkspace pipeline={serializedPipeline} />}
     </>
   );
 }
