@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyStageChanged } from "@/lib/crm-realtime";
 
 export async function POST(req: Request) {
   try {
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
         where: { id: cardId },
         data: { stageId: newStageId },
       });
+      await notifyStageChanged(newStageId);
       return NextResponse.json({ success: true, card: updatedCard });
     }
 
@@ -40,6 +42,7 @@ export async function POST(req: Request) {
         data: { stageId: newStageId, order: ids.indexOf(cardId) },
       });
     });
+    await notifyStageChanged(newStageId);
 
     return NextResponse.json({ success: true, card: updatedCard });
   } catch (error) {

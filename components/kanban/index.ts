@@ -4,6 +4,6 @@ export type {
   KanbanItemBase,
   KanbanItemHelpers,
   KanbanLabels,
-  KanbanPolling,
   KanbanProps,
+  KanbanSync,
 } from "./types";

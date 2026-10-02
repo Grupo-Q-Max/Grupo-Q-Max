@@ -27,11 +27,16 @@ export type KanbanLabels = {
   syncing: string;
 };
 
-export type KanbanPolling<T extends KanbanItemBase> = {
+export type KanbanSync<T extends KanbanItemBase> = {
   /** Returns the full, fresh list of columns. */
   fetchColumns: () => Promise<KanbanColumnData<T>[]>;
-  /** Defaults to 5000ms. */
-  intervalMs?: number;
+  /** Refetch on a timer. Omit to disable polling. */
+  pollingIntervalMs?: number;
+  /**
+   * Push-based sync (SSE, WebSocket...): call `notify` whenever the data changed
+   * and the board refetches. Must return an unsubscribe function.
+   */
+  subscribe?: (notify: () => void) => () => void;
 };
 
 export type KanbanProps<T extends KanbanItemBase> = {
@@ -51,8 +56,8 @@ export type KanbanProps<T extends KanbanItemBase> = {
   /** Enables the "add column" button. Return the created column to show it on the board. */
   onAddColumn?: () => KanbanColumnData<T> | void | Promise<KanbanColumnData<T> | void>;
 
-  /** Optional auto-sync. Paused while an item is being dragged. */
-  polling?: KanbanPolling<T>;
+  /** Optional sync with other clients. Deferred while an item is being dragged or moved. */
+  sync?: KanbanSync<T>;
 
   labels?: Partial<KanbanLabels>;
   className?: string;

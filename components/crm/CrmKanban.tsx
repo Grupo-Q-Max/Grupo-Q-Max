@@ -28,10 +28,29 @@ export function CrmKanban({ pipeline }: { pipeline: CrmPipeline }) {
     return toColumns(data.stages);
   }, [pipeline.id]);
 
+  // Realtime updates from other tabs/users via Server-Sent Events
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      const source = new EventSource(`/api/crm/events?pipelineId=${encodeURIComponent(pipeline.id)}`);
+      let hasConnected = false;
+
+      source.onopen = () => {
+        // EventSource reconnects on its own; resync in case events were missed meanwhile
+        if (hasConnected) notify();
+        hasConnected = true;
+      };
+      source.onmessage = () => notify();
+
+      return () => source.close();
+    },
+    [pipeline.id]
+  );
+
   return (
     <Kanban<CrmDeal>
       columns={columns}
-      polling={{ fetchColumns, intervalMs: 5000 }}
+      // Polling is only a fallback in case the SSE connection is blocked by a proxy
+      sync={{ fetchColumns, subscribe, pollingIntervalMs: 30_000 }}
       labels={{
         addItem: "Novo Negócio",
         addItemPlaceholder: "Nome do negócio...",

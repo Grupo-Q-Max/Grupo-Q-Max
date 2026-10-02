@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyPipelineChanged } from "@/lib/crm-realtime";
 
 export async function POST(req: Request) {
   try {
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
       },
       include: { cards: true }
     });
+    notifyPipelineChanged(stage.pipelineId);
 
     return NextResponse.json(stage);
   } catch (error) {
@@ -35,6 +37,7 @@ export async function PUT(req: Request) {
         ...(order !== undefined && { order })
       }
     });
+    notifyPipelineChanged(stage.pipelineId);
 
     return NextResponse.json(stage);
   } catch (error) {
@@ -50,9 +53,10 @@ export async function DELETE(req: Request) {
     
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    await prisma.crmStage.delete({
+    const stage = await prisma.crmStage.delete({
       where: { id }
     });
+    notifyPipelineChanged(stage.pipelineId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

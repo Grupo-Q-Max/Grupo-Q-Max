@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -26,8 +26,6 @@ const DEFAULT_LABELS: KanbanLabels = {
   syncing: "Sincronizando...",
 };
 
-const DEFAULT_POLLING_INTERVAL = 5000;
-
 /** Returns the id of the column that is `id` itself or contains an item with that id. */
 function findColumnId<T extends KanbanItemBase>(columns: KanbanColumnData<T>[], id: string) {
   if (columns.some((c) => c.id === id)) return id;
@@ -51,7 +49,7 @@ export function Kanban<T extends KanbanItemBase>({
   onRenameColumn,
   onDeleteColumn,
   onAddColumn,
-  polling,
+  sync,
   labels: labelOverrides,
   className,
 }: KanbanProps<T>) {
@@ -62,53 +60,77 @@ export function Kanban<T extends KanbanItemBase>({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const isDraggingRef = useRef(false);
+  // True from drag start until the drop has been persisted (onMoveItem resolved)
+  const isBusyRef = useRef(false);
   const snapshotRef = useRef(initialColumns);
-  const pollingRef = useRef(polling);
-  pollingRef.current = polling;
+  const syncRef = useRef(sync);
+  syncRef.current = sync;
+  const isFetchingRef = useRef(false);
+  const pendingSyncRef = useRef(false);
 
   // Accept new data from the parent (e.g. after router.refresh), unless mid-drag
   useEffect(() => {
-    if (!isDraggingRef.current) setColumns(initialColumns);
+    if (!isBusyRef.current) setColumns(initialColumns);
   }, [initialColumns]);
 
-  const pollingEnabled = Boolean(polling);
-  const pollingInterval = polling?.intervalMs ?? DEFAULT_POLLING_INTERVAL;
+  /**
+   * Refetches the columns. Requests made while dragging or while a fetch is in
+   * flight are coalesced into a single follow-up fetch, so the UI never jumps
+   * under the cursor and bursts of notifications cost one request.
+   */
+  const syncNow = useCallback(async () => {
+    const current = syncRef.current;
+    if (!current) return;
+    if (isBusyRef.current || isFetchingRef.current) {
+      pendingSyncRef.current = true;
+      return;
+    }
 
+    isFetchingRef.current = true;
+    pendingSyncRef.current = false;
+    setIsSyncing(true);
+    try {
+      const fresh = await current.fetchColumns();
+      if (isBusyRef.current) pendingSyncRef.current = true;
+      else setColumns(fresh);
+    } catch (err) {
+      console.error("Kanban sync error:", err);
+    } finally {
+      isFetchingRef.current = false;
+      setIsSyncing(false);
+      if (pendingSyncRef.current && !isBusyRef.current) syncNow();
+    }
+  }, []);
+
+  const flushPendingSync = () => {
+    if (pendingSyncRef.current) syncNow();
+  };
+
+  const pollingInterval = sync?.pollingIntervalMs;
   useEffect(() => {
-    if (!pollingEnabled) return;
-
-    const interval = setInterval(async () => {
-      const current = pollingRef.current;
-      // Don't sync while dragging to avoid the UI jumping under the cursor
-      if (!current || isDraggingRef.current) return;
-
-      try {
-        setIsSyncing(true);
-        const fresh = await current.fetchColumns();
-        if (!isDraggingRef.current) setColumns(fresh);
-      } catch (err) {
-        console.error("Kanban sync error:", err);
-      } finally {
-        setIsSyncing(false);
-      }
-    }, pollingInterval);
-
+    if (!pollingInterval) return;
+    const interval = setInterval(syncNow, pollingInterval);
     return () => clearInterval(interval);
-  }, [pollingEnabled, pollingInterval]);
+  }, [pollingInterval, syncNow]);
+
+  const subscribe = sync?.subscribe;
+  useEffect(() => {
+    if (!subscribe) return;
+    return subscribe(() => syncNow());
+  }, [subscribe, syncNow]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const endDrag = () => {
-    isDraggingRef.current = false;
-    setActiveId(null);
+  const finishDrag = () => {
+    isBusyRef.current = false;
+    flushPendingSync();
   };
 
   const handleDragStart = ({ active }: DragStartEvent) => {
-    isDraggingRef.current = true;
+    isBusyRef.current = true;
     snapshotRef.current = columns;
     setActiveId(String(active.id));
   };
@@ -142,8 +164,16 @@ export function Kanban<T extends KanbanItemBase>({
     });
   };
 
-  const handleDragEnd = async ({ active, over }: DragEndEvent) => {
-    endDrag();
+  const handleDragEnd = async (event: DragEndEvent) => {
+    setActiveId(null);
+    try {
+      await persistDrop(event);
+    } finally {
+      finishDrag();
+    }
+  };
+
+  const persistDrop = async ({ active, over }: DragEndEvent) => {
     const snapshot = snapshotRef.current;
 
     if (!over) {
@@ -180,8 +210,9 @@ export function Kanban<T extends KanbanItemBase>({
   };
 
   const handleDragCancel = () => {
-    endDrag();
+    setActiveId(null);
     setColumns(snapshotRef.current);
+    finishDrag();
   };
 
   const removeItem = async (itemId: string) => {
