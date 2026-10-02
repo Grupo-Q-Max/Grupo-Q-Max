@@ -1,17 +1,14 @@
 import { NextResponse, after } from "next/server";
-import type { CrmDealStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import {
   DealValidationError,
-  STATUSES,
-  applyDealChanges,
   cardListInclude,
   companyIdByName,
-  createRecurringCopy,
   getDealDetails,
   serializeListCard,
+  updateDeal,
 } from "@/lib/crm-deal";
 
 export async function GET(req: Request) {
@@ -68,47 +65,10 @@ export async function POST(req: Request) {
  */
 export async function PATCH(req: Request) {
   try {
-    const { id, stageId, status, ...changes } = await req.json();
+    const { id, ...changes } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-    if (status && !STATUSES.has(status)) return NextResponse.json({ error: "Invalid status" }, { status: 400 });
 
-    const result = await prisma.$transaction(async (tx) => {
-      const { data, history, current } = await applyDealChanges(tx, id, changes);
-
-      if (stageId && stageId !== current.stageId) {
-        const [from, to] = await Promise.all([
-          tx.crmStage.findUniqueOrThrow({ where: { id: current.stageId } }),
-          tx.crmStage.findUnique({ where: { id: stageId } }),
-        ]);
-        if (!to || to.pipelineId !== from.pipelineId) throw new DealValidationError("Etapa inválida");
-
-        data.stageId = to.id;
-        data.order = await tx.crmCard.count({ where: { stageId: to.id } });
-        history.push({ type: "STAGE_CHANGED", data: { from: from.name, to: to.name } });
-      }
-
-      if (status && status !== current.status) {
-        data.status = status as CrmDealStatus;
-        history.push({ type: "STATUS_CHANGED", data: { from: current.status, to: status } });
-      }
-
-      let recurringCopy = null;
-      if (history.length > 0) {
-        await tx.crmCard.update({ where: { id }, data: { ...data, history: { createMany: { data: history } } } });
-        if (data.status === "WON") recurringCopy = await createRecurringCopy(tx, id);
-      }
-
-      const changedFields = history.flatMap((h) =>
-        h.type === "STATUS_CHANGED" ? ["status"] : h.type === "FIELD_CHANGED" ? [(h.data as { field?: string }).field ?? ""] : []
-      );
-      return {
-        changed: history.length > 0,
-        stageId: current.stageId,
-        movedTo: typeof data.stageId === "string" ? data.stageId : null,
-        changedFields: changedFields.filter(Boolean),
-        recurringCopy,
-      };
-    }, { timeout: 15_000 });
+    const result = await updateDeal(id, changes);
 
     if (result.changed) await notifyStageChanged(result.stageId);
     after(async () => {

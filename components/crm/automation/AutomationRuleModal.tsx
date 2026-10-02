@@ -6,12 +6,16 @@ import {
   ACTION_TYPES,
   ACTIVITY_TYPES,
   DEAL_FIELDS,
+  DEAL_STATUSES,
   DELAY_UNITS,
   customFieldKey,
+  hasDealUpdate,
   type ActionType,
   type ActivityAction,
   type ActivityType,
   type AutomationCondition,
+  type DealStatus,
+  type DealUpdateAction,
   type DelayUnit,
   type HttpMethod,
   type WebhookHeader,
@@ -31,6 +35,7 @@ export type RuleDraft = {
   webhookBody: string;
   headers: WebhookHeader[];
   activity: ActivityAction;
+  dealUpdate: DealUpdateAction;
   conditions: AutomationCondition[];
   active: boolean;
 };
@@ -45,6 +50,8 @@ const DEFAULT_ACTIVITY: ActivityAction = {
   deadlineUnit: null,
 };
 
+const DEFAULT_DEAL_UPDATE: DealUpdateAction = { stageId: null, status: null, responsibleId: null, customData: null };
+
 function ruleDraft(rule: AutomationRule | null, stageId: string, actionType: ActionType): RuleDraft {
   return {
     actionType: rule?.actionType ?? actionType,
@@ -57,6 +64,7 @@ function ruleDraft(rule: AutomationRule | null, stageId: string, actionType: Act
     webhookBody: rule?.webhookBody ?? "",
     headers: rule?.headers.map(({ key, value }) => ({ key, value })) ?? [],
     activity: { ...DEFAULT_ACTIVITY, ...rule?.activity },
+    dealUpdate: { ...DEFAULT_DEAL_UPDATE, ...rule?.dealUpdate },
     conditions: rule?.conditions.map(({ field, operator, value }) => ({ field, operator, value })) ?? [],
     active: rule?.active ?? true,
   };
@@ -129,23 +137,39 @@ export function AutomationRuleModal({
 
   const set = (patch: Partial<RuleDraft>) => setDraft((d) => ({ ...d, ...patch }));
   const setActivity = (patch: Partial<ActivityAction>) => setDraft((d) => ({ ...d, activity: { ...d.activity, ...patch } }));
+  const setDealUpdate = (patch: Partial<DealUpdateAction>) =>
+    setDraft((d) => ({ ...d, dealUpdate: { ...d.dealUpdate, ...patch } }));
   const setHeader = (index: number, patch: Partial<WebhookHeader>) =>
     set({ headers: draft.headers.map((h, i) => (i === index ? { ...h, ...patch } : h)) });
 
-  const isWebhook = draft.actionType === "WEBHOOK";
-  const { activity } = draft;
+  const { activity, dealUpdate } = draft;
+  const action = draft.actionType;
+
+  // Custom fields changed by an UPDATE_DEAL rule, edited as rows
+  const customRows = Object.entries(dealUpdate.customData ?? {});
+  const setCustomRows = (rows: [string, string][]) =>
+    setDealUpdate({ customData: rows.length ? Object.fromEntries(rows) : null });
+  const unusedFields = customFields.filter((f) => !(dealUpdate.customData && f.id in dealUpdate.customData));
+
+  const validationError = () => {
+    if (action === "WEBHOOK" && !/^https?:\/\//i.test(draft.webhookUrl.trim())) {
+      return "Informe uma URL começando com http:// ou https://";
+    }
+    if (action === "CREATE_ACTIVITY") {
+      if (!activity.title.trim()) return "Informe o título da atividade";
+      if (activity.assignee === "MEMBER" && !activity.responsibleId) return "Escolha o membro responsável pela atividade";
+    }
+    if (action === "UPDATE_DEAL") {
+      if (!hasDealUpdate(dealUpdate)) return "Escolha ao menos uma alteração";
+      if (dealUpdate.stageId === draft.stageId) return "A etapa de destino deve ser diferente da etapa da regra";
+    }
+    return "";
+  };
 
   const save = async () => {
-    if (isWebhook && !/^https?:\/\//i.test(draft.webhookUrl.trim())) {
-      setError("Informe uma URL começando com http:// ou https://");
-      return;
-    }
-    if (!isWebhook && !activity.title.trim()) {
-      setError("Informe o título da atividade");
-      return;
-    }
-    if (!isWebhook && activity.assignee === "MEMBER" && !activity.responsibleId) {
-      setError("Escolha o membro responsável pela atividade");
+    const message = validationError();
+    if (message) {
+      setError(message);
       return;
     }
     setSaving(true);
@@ -155,7 +179,7 @@ export function AutomationRuleModal({
     else setError("Não foi possível salvar a regra.");
   };
 
-  const label = ACTION_TYPES[draft.actionType].label;
+  const label = ACTION_TYPES[action].label;
 
   return (
     <AutomationModal
@@ -222,7 +246,7 @@ export function AutomationRuleModal({
         <ConditionsEditor value={draft.conditions} customFields={customFields} onChange={(conditions) => set({ conditions })} />
       </ModalRow>
 
-      {isWebhook ? (
+      {action === "WEBHOOK" && (
         <>
           <ModalRow label="URL">
             <div className="auto-inline">
@@ -294,7 +318,9 @@ export function AutomationRuleModal({
             </ModalRow>
           )}
         </>
-      ) : (
+      )}
+
+      {action === "CREATE_ACTIVITY" && (
         <>
           <ModalRow label="Tipo">
             <select value={activity.type} onChange={(e) => setActivity({ type: e.target.value as ActivityType })}>
@@ -409,6 +435,122 @@ export function AutomationRuleModal({
                   </select>
                 </>
               ) : null}
+            </div>
+          </ModalRow>
+        </>
+      )}
+
+      {action === "UPDATE_DEAL" && (
+        <>
+          <ModalRow label="Mover para">
+            <select
+              value={dealUpdate.stageId ?? ""}
+              onChange={(e) => {
+                setDealUpdate({ stageId: e.target.value || null });
+                setError("");
+              }}
+            >
+              <option value="">Não mover</option>
+              {stages
+                .filter((s) => s.id !== draft.stageId || s.id === dealUpdate.stageId)
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+            </select>
+          </ModalRow>
+
+          <ModalRow label="Status">
+            <select
+              value={dealUpdate.status ?? ""}
+              onChange={(e) => {
+                setDealUpdate({ status: (e.target.value || null) as DealStatus | null });
+                setError("");
+              }}
+            >
+              <option value="">Não alterar</option>
+              {Object.entries(DEAL_STATUSES).map(([key, statusLabel]) => (
+                <option key={key} value={key}>
+                  {statusLabel}
+                </option>
+              ))}
+            </select>
+          </ModalRow>
+
+          <ModalRow label="Responsável">
+            <select
+              value={dealUpdate.responsibleId ?? ""}
+              onChange={(e) => {
+                setDealUpdate({ responsibleId: e.target.value || null });
+                setError("");
+              }}
+            >
+              <option value="">Não alterar</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </ModalRow>
+
+          <ModalRow label="Campos">
+            <div className="auto-conditions">
+              {customRows.map(([fieldId, value], index) => {
+                const field = customFields.find((f) => f.id === fieldId);
+                const setRow = (patch: { id?: string; value?: string }) =>
+                  setCustomRows(
+                    customRows.map((row, i) => (i === index ? [patch.id ?? row[0], patch.value ?? row[1]] : row))
+                  );
+                return (
+                  <div key={fieldId} className="auto-conditions__row">
+                    <select value={fieldId} onChange={(e) => setRow({ id: e.target.value })}>
+                      {!field && <option value={fieldId}>Campo removido</option>}
+                      {customFields
+                        .filter((f) => f.id === fieldId || unusedFields.includes(f))
+                        .map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.name}
+                          </option>
+                        ))}
+                    </select>
+                    <input
+                      type={field?.type === "date" ? "date" : "text"}
+                      value={value}
+                      placeholder="Vazio: limpa o campo"
+                      onChange={(e) => setRow({ value: e.target.value })}
+                    />
+                    {field?.type !== "date" && (
+                      <PlaceholderMenu customFields={customFields} onInsert={(text) => setRow({ value: value + text })} />
+                    )}
+                    <button
+                      type="button"
+                      className="auto-icon-btn"
+                      title="Remover campo"
+                      onClick={() => setCustomRows(customRows.filter((_, i) => i !== index))}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                );
+              })}
+              {customFields.length === 0 ? (
+                <span className="auto-hint">Este funil não tem campos personalizados.</span>
+              ) : (
+                unusedFields.length > 0 && (
+                  <button
+                    type="button"
+                    className="auto-link-btn"
+                    onClick={() => {
+                      setCustomRows([...customRows, [unusedFields[0].id, ""]]);
+                      setError("");
+                    }}
+                  >
+                    <Plus size={13} /> Alterar campo
+                  </button>
+                )
+              )}
             </div>
           </ModalRow>
         </>

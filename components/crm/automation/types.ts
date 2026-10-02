@@ -3,6 +3,7 @@ import type {
   ActivityAction,
   ActivityType,
   AutomationCondition,
+  DealUpdateAction,
   DelayUnit,
   HttpMethod,
   TriggerType,
@@ -21,6 +22,8 @@ export type AutomationRule = {
   headers: WebhookHeader[];
   /** Only for CREATE_ACTIVITY rules */
   activity: ActivityAction | null;
+  /** Only for UPDATE_DEAL rules */
+  dealUpdate: DealUpdateAction | null;
   conditions: AutomationCondition[];
   active: boolean;
   order: number;

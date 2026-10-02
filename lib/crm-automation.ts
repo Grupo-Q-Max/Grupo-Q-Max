@@ -1,7 +1,23 @@
-import type { CrmActivityType, CrmAutomationActivity, CrmTrigger, CrmTriggerType, Prisma } from "@prisma/client";
+import type {
+  CrmActivityType,
+  CrmAutomationActivity,
+  CrmAutomationDealUpdate,
+  CrmTrigger,
+  CrmTriggerType,
+  Prisma,
+} from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notifyPipelineChanged } from "@/lib/crm-realtime";
-import { type DealContext, customFieldKey, delayMs, fillPlaceholders, matchesConditions } from "@/lib/crm-automation-shared";
+import { updateDeal } from "@/lib/crm-deal";
+import {
+  DEAL_STATUSES,
+  type DealContext,
+  type DealStatus,
+  customFieldKey,
+  delayMs,
+  fillPlaceholders,
+  matchesConditions,
+} from "@/lib/crm-automation-shared";
 
 /*
  * Automation engine (Bitrix24-style "regras de automação" and "gatilhos").
@@ -21,6 +37,9 @@ const WEBHOOK_TIMEOUT_MS = 10_000;
 const MAX_ATTEMPTS = 3;
 /** RUNNING rows older than this are considered abandoned (server restarted mid-run) */
 const STALE_RUN_MS = 10 * 60_000;
+/** "Modificar negócio" runs allowed per deal within LOOP_WINDOW_MS, so rules that move a deal back and forth stop */
+const LOOP_MAX_RUNS = 10;
+const LOOP_WINDOW_MS = 5 * 60_000;
 
 const toText = (value: unknown) => {
   if (value === null || value === undefined) return "";
@@ -166,6 +185,7 @@ async function processRun(id: string) {
           headers: { orderBy: { order: "asc" } },
           conditions: { orderBy: { order: "asc" } },
           activity: { include: { responsible: { select: { name: true } } } },
+          dealUpdate: true,
         },
       },
     },
@@ -187,13 +207,17 @@ async function processRun(id: string) {
     outcome = automation.activity
       ? await createActivity(automation.activity, run.cardId, deal)
       : "Atividade da regra não configurada";
+  } else if (automation.actionType === "UPDATE_DEAL") {
+    outcome = automation.dealUpdate
+      ? await updateDealAction(automation.dealUpdate, run.cardId, deal)
+      : "Alterações da regra não configuradas";
   } else {
     outcome = await sendWebhook(automation, deal.ctx);
   }
   if (typeof outcome === "string") return skip(outcome);
   const { request, httpStatus = null, responseBody = null, error } = outcome;
 
-  const retry = error && run.attempts < MAX_ATTEMPTS;
+  const retry = error && !outcome.final && run.attempts < MAX_ATTEMPTS;
   const status = error ? (retry ? "PENDING" : "FAILED") : "SUCCESS";
   await prisma.crmAutomationRun.update({
     where: { id },
@@ -208,7 +232,7 @@ async function processRun(id: string) {
     },
   });
 
-  // A created activity already shows in the deal timeline; log the run there only when it failed
+  // A created activity / changed field already shows in the deal timeline; log the run there only when it failed
   const logInTimeline = automation.actionType === "WEBHOOK" || status === "FAILED";
   if (status !== "PENDING" && logInTimeline) {
     await prisma.crmHistory.create({
@@ -220,6 +244,7 @@ async function processRun(id: string) {
     });
   }
   if (status !== "PENDING") notifyPipelineChanged(deal.stage.pipelineId);
+  if (status === "SUCCESS") await outcome.followUp?.();
 }
 
 /** Result of an action: what was done (kept in the run log) and the error, if any. */
@@ -228,6 +253,10 @@ type ActionOutcome = {
   httpStatus?: number | null;
   responseBody?: string | null;
   error: string | null;
+  /** The error would happen again: fail without retrying */
+  final?: boolean;
+  /** Runs after the run is saved (e.g. the rules of the stage the deal was moved to) */
+  followUp?: () => Promise<void>;
 };
 
 type Deal = NonNullable<Awaited<ReturnType<typeof dealContext>>>;
@@ -282,6 +311,82 @@ async function createActivity(config: ActivityConfig, cardId: string, deal: Deal
     };
   } catch (e) {
     return { request: { type: config.type, title }, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * UPDATE_DEAL action: changes the configured fields (custom fields merged into
+ * the current ones), then moves the deal. Like a manual edit, a move runs the
+ * new stage's rules and other changes may fire "campo alterado" triggers.
+ */
+async function updateDealAction(config: CrmAutomationDealUpdate, cardId: string, deal: Deal): Promise<ActionOutcome> {
+  const recentRuns = await prisma.crmAutomationRun.count({
+    where: {
+      cardId,
+      status: "SUCCESS",
+      automation: { actionType: "UPDATE_DEAL" },
+      updatedAt: { gte: new Date(Date.now() - LOOP_WINDOW_MS) },
+    },
+  });
+  if (recentRuns >= LOOP_MAX_RUNS) {
+    return {
+      request: { changes: [] },
+      error: `Possível loop de automações: o negócio foi modificado ${LOOP_MAX_RUNS} vezes em poucos minutos`,
+      final: true,
+    };
+  }
+
+  const card = await prisma.crmCard.findUniqueOrThrow({
+    where: { id: cardId },
+    select: { customData: true, stage: { select: { pipeline: { select: { fieldsConfig: true } } } } },
+  });
+  const fieldsConfig = (Array.isArray(card.stage.pipeline.fieldsConfig) ? card.stage.pipeline.fieldsConfig : []) as {
+    id: string;
+    name: string;
+  }[];
+  const fieldName = (id: string) => fieldsConfig.find((f) => f.id === id)?.name ?? id;
+
+  const changes: Record<string, unknown> = {};
+  const customLog: { label: string; from: string | null; to: string | null }[] = [];
+  const configured = (config.customData ?? {}) as Record<string, string>;
+  if (Object.keys(configured).length) {
+    const before = (card.customData ?? {}) as Record<string, unknown>;
+    const merged: Record<string, unknown> = { ...before };
+    for (const [id, template] of Object.entries(configured)) {
+      const value = fillPlaceholders(template, deal.ctx).trim();
+      if (value) merged[id] = value;
+      else delete merged[id];
+      const from = toText(before[id]) || null;
+      if (from !== (value || null)) customLog.push({ label: fieldName(id), from, to: value || null });
+    }
+    changes.customData = merged;
+  }
+  if (config.responsibleId) changes.responsibleId = config.responsibleId;
+  if (config.status) changes.status = config.status;
+  if (config.stageId) changes.stageId = config.stageId;
+
+  try {
+    const result = await updateDeal(cardId, changes);
+    const statusLabel = (v: unknown) => DEAL_STATUSES[v as DealStatus] ?? String(v ?? "");
+    const log = result.history.flatMap((h) => {
+      const data = (h.data ?? {}) as { field?: string; label?: string; from?: string | null; to?: string | null };
+      if (h.type === "STAGE_CHANGED") return [{ label: "Etapa", from: data.from ?? null, to: data.to ?? null }];
+      if (h.type === "STATUS_CHANGED") return [{ label: "Status", from: statusLabel(data.from), to: statusLabel(data.to) }];
+      if (data.field === "customData") return customLog;
+      return [{ label: data.label ?? data.field ?? "", from: data.from ?? null, to: data.to ?? null }];
+    });
+
+    return {
+      request: { changes: log },
+      error: null,
+      followUp: async () => {
+        if (result.recurringCopy) await onDealEnteredStage(result.recurringCopy.id, result.recurringCopy.stageId);
+        if (result.movedTo) await onDealEnteredStage(cardId, result.movedTo);
+        else if (result.changedFields.length) await fireTriggers(cardId, { type: "FIELD_CHANGED", fields: result.changedFields });
+      },
+    };
+  } catch (e) {
+    return { request: { changes: [] }, error: e instanceof Error ? e.message : String(e) };
   }
 }
 

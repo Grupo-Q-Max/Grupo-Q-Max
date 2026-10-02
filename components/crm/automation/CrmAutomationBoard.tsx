@@ -12,10 +12,11 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useBoardSensors, vibrateOnTouchDrag } from "@/components/kanban/sensors";
-import { ArrowLeft, ChevronDown, ListTodo, Pencil, Plus, Search, Webhook, X, Zap } from "lucide-react";
+import { ArrowLeft, ChevronDown, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, X, Zap } from "lucide-react";
 import {
   ACTION_TYPES,
   ACTIVITY_TYPES,
+  DEAL_STATUSES,
   TRIGGER_TYPES,
   WATCHABLE_FIELDS,
   describeDelay,
@@ -57,8 +58,26 @@ const urlHost = (url?: string) => {
   }
 };
 
+/** Summary of an UPDATE_DEAL rule: "→ Etapa · Ganho · resp.: Fulano · 2 campos". */
+function dealUpdateSummary(rule: AutomationRule, stages: AutomationStage[], members: Member[]) {
+  const update = rule.dealUpdate;
+  if (!update) return "";
+  const fields = Object.keys(update.customData ?? {}).length;
+  return [
+    update.stageId && `→ ${stages.find((s) => s.id === update.stageId)?.name ?? "etapa removida"}`,
+    update.status && DEAL_STATUSES[update.status],
+    update.responsibleId && `resp.: ${members.find((m) => m.id === update.responsibleId)?.name ?? "membro removido"}`,
+    fields > 0 && `${fields} ${fields === 1 ? "campo" : "campos"}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 /** "para: ..." line of a rule card (who receives the action, like Bitrix24). */
-function ruleDetail(rule: AutomationRule, members: Member[]) {
+function ruleDetail(rule: AutomationRule, stages: AutomationStage[], members: Member[]) {
+  if (rule.actionType === "UPDATE_DEAL") {
+    return <span className="auto-card__target">{dealUpdateSummary(rule, stages, members) || "nenhuma alteração"}</span>;
+  }
   if (rule.actionType === "CREATE_ACTIVITY" && rule.activity) {
     const { activity } = rule;
     const target =
@@ -81,6 +100,7 @@ function ruleDetail(rule: AutomationRule, members: Member[]) {
 const RULE_ACTIONS: { type: ActionType; icon: ReactNode }[] = [
   { type: "WEBHOOK", icon: <Webhook size={14} /> },
   { type: "CREATE_ACTIVITY", icon: <ListTodo size={14} /> },
+  { type: "UPDATE_DEAL", icon: <PencilLine size={14} /> },
 ];
 
 function triggerDetail(trigger: AutomationTrigger) {
@@ -125,10 +145,12 @@ export function CrmAutomationBoard({
     const match = (...texts: (string | undefined)[]) => texts.some((t) => t?.toLowerCase().includes(query));
     return stages.map((s) => ({
       ...s,
-      automations: s.automations.filter((a) => match(a.name, a.webhookUrl ?? undefined, a.activity?.title)),
+      automations: s.automations.filter((a) =>
+        match(a.name, a.webhookUrl ?? undefined, a.activity?.title, dealUpdateSummary(a, stages, members))
+      ),
       triggers: s.triggers.filter((t) => match(t.name, TRIGGER_TYPES[t.type]?.label)),
     }));
-  }, [stages, query]);
+  }, [stages, query, members]);
 
   // ---- persistence --------------------------------------------------------
 
@@ -372,7 +394,7 @@ export function CrmAutomationBoard({
                               </button>
                             }
                             name={rule.name}
-                            detail={ruleDetail(rule, members)}
+                            detail={ruleDetail(rule, stages, members)}
                             conditions={rule.conditions.length}
                             onEdit={() => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType })}
                             onRename={(name) => rename("rule", rule.id, name)}

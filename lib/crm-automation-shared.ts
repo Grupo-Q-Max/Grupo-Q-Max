@@ -8,7 +8,8 @@ export type HttpMethod = "GET" | "POST";
 export type ConditionOperator = "eq" | "neq" | "contains" | "empty" | "notEmpty" | "gt" | "lt";
 export type TriggerType = "WEBHOOK_IN" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DEAL_CREATED";
 export type ActivityType = "TODO" | "TASK" | "CALL" | "MEETING" | "COMMENT";
-export type ActionType = "WEBHOOK" | "CREATE_ACTIVITY";
+export type ActionType = "WEBHOOK" | "CREATE_ACTIVITY" | "UPDATE_DEAL";
+export type DealStatus = "OPEN" | "WON" | "LOST";
 export type ActivityAssignee = "DEAL_RESPONSIBLE" | "MEMBER";
 
 export type AutomationCondition = { field: string; operator: ConditionOperator; value: string | null };
@@ -25,9 +26,19 @@ export type ActivityAction = {
   deadlineUnit: DelayUnit | null;
 };
 
+/** UPDATE_DEAL configuration of a rule (CrmAutomationDealUpdate); null = leave unchanged. */
+export type DealUpdateAction = {
+  stageId: string | null;
+  status: DealStatus | null;
+  responsibleId: string | null;
+  /** { [customFieldId]: value with placeholders }; "" clears the field */
+  customData: Record<string, string> | null;
+};
+
 export const ACTION_TYPES: Record<ActionType, { label: string }> = {
   WEBHOOK: { label: "Webhook de saída" },
   CREATE_ACTIVITY: { label: "Criar atividade" },
+  UPDATE_DEAL: { label: "Modificar negócio" },
 };
 
 export const isActionType = (value: unknown): value is ActionType => typeof value === "string" && value in ACTION_TYPES;
@@ -161,6 +172,34 @@ export function parseActivityAction(value: unknown): ActivityAction {
     deadlineUnit: hasDeadline ? (input.deadlineUnit as DelayUnit) : null,
   };
 }
+
+export const DEAL_STATUSES: Record<DealStatus, string> = {
+  OPEN: "Em andamento",
+  WON: "Ganho",
+  LOST: "Perdido",
+};
+
+/** Validates the UPDATE_DEAL configuration coming from the client. */
+export function parseDealUpdateAction(value: unknown): DealUpdateAction {
+  const input = (value ?? {}) as Partial<Record<keyof DealUpdateAction, unknown>>;
+  const id = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+  const customData: Record<string, string> = {};
+  if (input.customData && typeof input.customData === "object" && !Array.isArray(input.customData)) {
+    for (const [fieldId, fieldValue] of Object.entries(input.customData)) {
+      if (fieldId) customData[fieldId] = String(fieldValue ?? "").trim();
+    }
+  }
+  return {
+    stageId: id(input.stageId),
+    status: typeof input.status === "string" && input.status in DEAL_STATUSES ? (input.status as DealStatus) : null,
+    responsibleId: id(input.responsibleId),
+    customData: Object.keys(customData).length ? customData : null,
+  };
+}
+
+/** Whether an UPDATE_DEAL configuration changes anything. */
+export const hasDealUpdate = (a: DealUpdateAction) =>
+  Boolean(a.stageId || a.status || a.responsibleId || (a.customData && Object.keys(a.customData).length));
 
 /** Fields that can be watched by a FIELD_CHANGED trigger (keys of SCALAR/RELATION_FIELDS in lib/crm-deal). */
 export const WATCHABLE_FIELDS: Record<string, string> = {

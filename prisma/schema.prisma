@@ -43,6 +43,7 @@ model TeamMember {
   observedDeals        CrmDealObserver[]
   activities           CrmActivity[]
   automationActivities CrmAutomationActivity[]
+  automationDealUpdates CrmAutomationDealUpdate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -79,6 +80,8 @@ model CrmStage {
   automations    CrmAutomation[]
   triggers       CrmTrigger[]
   automationRuns CrmAutomationRun[]
+  /// UPDATE_DEAL rules that move deals into this stage
+  automationMoves CrmAutomationDealUpdate[] @relation("AutomationTargetStage")
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }
@@ -268,6 +271,7 @@ model CrmHistory {
 enum CrmAutomationAction {
   WEBHOOK
   CREATE_ACTIVITY
+  UPDATE_DEAL
 }
 
 /// Who receives an activity created by an automation rule
@@ -324,7 +328,9 @@ model CrmAutomation {
 
   /// CREATE_ACTIVITY action
   activity   CrmAutomationActivity?
-  headers    CrmAutomationHeader[]
+  /// UPDATE_DEAL action
+  dealUpdate CrmAutomationDealUpdate?
+  headers   CrmAutomationHeader[]
   conditions CrmAutomationCondition[]
   runs       CrmAutomationRun[]
 
@@ -350,6 +356,23 @@ model CrmAutomationActivity {
   deadlineAmount Int?
   deadlineUnit   CrmDelayUnit?
 
+  @@index([responsibleId])
+}
+
+/// UPDATE_DEAL action of a rule: changes applied to the deal; null = leave unchanged.
+model CrmAutomationDealUpdate {
+  automationId  String         @id
+  automation    CrmAutomation  @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  /// Stage of the same pipeline the deal is moved to (after the other changes)
+  stageId       String?
+  stage         CrmStage?      @relation("AutomationTargetStage", fields: [stageId], references: [id], onDelete: SetNull)
+  status        CrmDealStatus?
+  responsibleId String?
+  responsible   TeamMember?    @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  /// { [customFieldId]: value }; values accept {{deal.<field>}} placeholders, "" clears the field
+  customData    Json?
+
+  @@index([stageId])
   @@index([responsibleId])
 }
 

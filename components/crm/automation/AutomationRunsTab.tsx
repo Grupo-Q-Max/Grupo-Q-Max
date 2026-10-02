@@ -12,7 +12,7 @@ type Run = {
   updatedAt: string;
   attempts: number;
   error: string | null;
-  /** Webhook: the request sent. Create activity: the activity created */
+  /** Webhook: the request sent. Create activity: the activity created. Update deal: the changes made */
   request: {
     method?: string;
     url?: string;
@@ -21,6 +21,7 @@ type Run = {
     title?: string;
     responsible?: string | null;
     deadline?: string | null;
+    changes?: { label: string; from: string | null; to: string | null }[];
   } | null;
   httpStatus: number | null;
   responseBody: string | null;
@@ -131,6 +132,17 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
                         {run.request.responsible ?? "ninguém"}
                         {run.request.deadline && ` · prazo ${formatDateTime(run.request.deadline)}`}
                       </>
+                    ) : run.request?.changes ? (
+                      run.request.changes.length === 0 ? (
+                        run.status === "SUCCESS" ? "Nenhuma alteração: o negócio já estava assim." : "A ação não foi executada."
+                      ) : (
+                        <>
+                          <b>Negócio alterado:</b>{" "}
+                          {run.request.changes
+                            .map((c) => `${c.label}: ${c.from ?? "vazio"} → ${c.to ?? "vazio"}`)
+                            .join(" · ")}
+                        </>
+                      )
                     ) : (
                       "A ação não foi executada."
                     )}

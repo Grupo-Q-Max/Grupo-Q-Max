@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   ACTION_TYPES,
@@ -6,6 +7,7 @@ import {
   isDelayUnit,
   parseActivityAction,
   parseConditions,
+  parseDealUpdateAction,
   type ActionType,
 } from "@/lib/crm-automation-shared";
 
@@ -13,6 +15,7 @@ const automationInclude = {
   headers: { orderBy: { order: "asc" as const } },
   conditions: { orderBy: { order: "asc" as const } },
   activity: true,
+  dealUpdate: true,
 };
 
 /** CREATE_ACTIVITY config; a member that no longer exists falls back to the deal's responsible. */
@@ -23,6 +26,33 @@ async function activityData(value: unknown) {
     if (!member) return { ...activity, assignee: "DEAL_RESPONSIBLE" as const, responsibleId: null };
   }
   return activity;
+}
+
+/**
+ * UPDATE_DEAL config of a rule in `ruleStageId`: drops a target stage outside the
+ * rule's pipeline (or the rule's own stage), a member that no longer exists
+ * and custom fields that are not in the pipeline.
+ */
+async function dealUpdateData(value: unknown, ruleStageId: string) {
+  const update = parseDealUpdateAction(value);
+  const ruleStage = await prisma.crmStage.findUniqueOrThrow({
+    where: { id: ruleStageId },
+    select: { pipelineId: true, pipeline: { select: { fieldsConfig: true } } },
+  });
+  const [target, member] = await Promise.all([
+    update.stageId ? prisma.crmStage.findUnique({ where: { id: update.stageId }, select: { pipelineId: true } }) : null,
+    update.responsibleId ? prisma.teamMember.findUnique({ where: { id: update.responsibleId }, select: { id: true } }) : null,
+  ]);
+  const fieldIds = new Set(
+    (Array.isArray(ruleStage.pipeline.fieldsConfig) ? ruleStage.pipeline.fieldsConfig : []).map((f) => (f as { id?: string })?.id)
+  );
+  const customData = Object.fromEntries(Object.entries(update.customData ?? {}).filter(([id]) => fieldIds.has(id)));
+  return {
+    stageId: target && target.pipelineId === ruleStage.pipelineId && update.stageId !== ruleStageId ? update.stageId : null,
+    status: update.status,
+    responsibleId: member ? update.responsibleId : null,
+    customData: Object.keys(customData).length ? customData : Prisma.DbNull,
+  };
 }
 
 const parseHeaders = (value: unknown) =>
@@ -81,9 +111,9 @@ export async function POST(req: Request) {
         ...ruleFields(body, actionType),
         stageId: body.stageId,
         order: await prisma.crmAutomation.count({ where: { stageId: body.stageId } }),
-        ...(actionType === "WEBHOOK"
-          ? { headers: { create: parseHeaders(body.headers) } }
-          : { activity: { create: await activityData(body.activity) } }),
+        ...(actionType === "WEBHOOK" && { headers: { create: parseHeaders(body.headers) } }),
+        ...(actionType === "CREATE_ACTIVITY" && { activity: { create: await activityData(body.activity) } }),
+        ...(actionType === "UPDATE_DEAL" && { dealUpdate: { create: await dealUpdateData(body.dealUpdate, body.stageId) } }),
         conditions: { create: conditionRows(body.conditions) },
       },
       include: automationInclude,
@@ -96,7 +126,7 @@ export async function POST(req: Request) {
 }
 
 /**
- * Updates a rule (`{ id, ...fields }`; `headers`/`conditions`/`activity`, when sent, replace
+ * Updates a rule (`{ id, ...fields }`; `headers`/`conditions`/`activity`/`dealUpdate`, when sent, replace
  * the current ones; the action type never changes), or reorders rules after a drag and drop (`{ items: [{ id, stageId, order }] }`).
  */
 export async function PUT(req: Request) {
@@ -113,11 +143,15 @@ export async function PUT(req: Request) {
     }
 
     if (!body.id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-    const current = await prisma.crmAutomation.findUnique({ where: { id: body.id }, select: { actionType: true } });
+    const current = await prisma.crmAutomation.findUnique({ where: { id: body.id }, select: { actionType: true, stageId: true } });
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { actionType } = current;
     const activity = actionType === "CREATE_ACTIVITY" && body.activity !== undefined ? await activityData(body.activity) : null;
+    const dealUpdate =
+      actionType === "UPDATE_DEAL" && body.dealUpdate !== undefined
+        ? await dealUpdateData(body.dealUpdate, typeof body.stageId === "string" ? body.stageId : current.stageId)
+        : null;
     const automation = await prisma.crmAutomation.update({
       where: { id: body.id },
       data: {
@@ -125,6 +159,7 @@ export async function PUT(req: Request) {
         ...(actionType === "WEBHOOK" &&
           body.headers !== undefined && { headers: { deleteMany: {}, create: parseHeaders(body.headers) } }),
         ...(activity && { activity: { upsert: { create: activity, update: activity } } }),
+        ...(dealUpdate && { dealUpdate: { upsert: { create: dealUpdate, update: dealUpdate } } }),
         ...(body.conditions !== undefined && { conditions: { deleteMany: {}, create: conditionRows(body.conditions) } }),
       },
       include: automationInclude,
