@@ -29,29 +29,29 @@ model SiteSetting {
 }
 
 model TeamMember {
-  id          String   @id @default(cuid())
-  name        String
-  role        String
-  sector      String   @default("")
-  photo       String?  // public path or /api/files/<upload>
-  accentColor String   @default("#14d0c1")
-  linkedin    String?
-  bio         String?  @db.Text
-  order       Int      @default(0)
+  id              String    @id @default(cuid())
+  name            String
+  role            String
+  sector          String    @default("")
+  photo           String? // public path or /api/files/<upload>
+  accentColor     String    @default("#14d0c1")
+  linkedin        String?
+  bio             String?   @db.Text
+  order           Int       @default(0)
   /// CRM login (/login): members without email + password can't sign in
-  email        String?  @unique
-  passwordHash String?
+  email           String?   @unique
+  passwordHash    String?
   /// Set by the confirmation link (or when the admin sets the login); login requires it
   emailVerifiedAt DateTime?
   /// Listed on the public "Nossos Sócios" section; self-registered CRM users start hidden
-  showOnSite   Boolean  @default(true)
+  showOnSite      Boolean   @default(true)
 
-  responsibleDeals     CrmCard[]               @relation("DealResponsible")
-  observedDeals        CrmDealObserver[]
-  activities           CrmActivity[]
-  automationActivities CrmAutomationActivity[]
+  responsibleDeals      CrmCard[]                 @relation("DealResponsible")
+  observedDeals         CrmDealObserver[]
+  activities            CrmActivity[]
+  automationActivities  CrmAutomationActivity[]
   automationDealUpdates CrmAutomationDealUpdate[]
-  notifications        CrmNotification[]
+  notifications         CrmNotification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -59,8 +59,8 @@ model TeamMember {
 
 model PageVisit {
   id        String   @id @default(cuid())
-  path      String   // qual pagina acessou (ex: /auditoria, /technology)
-  referrer  String?  // de onde veio (ex: google.com)
+  path      String // qual pagina acessou (ex: /auditoria, /technology)
+  referrer  String? // de onde veio (ex: google.com)
   userAgent String?
   createdAt DateTime @default(now())
 }
@@ -73,25 +73,25 @@ model CrmPipeline {
   id           String     @id @default(cuid())
   name         String
   stages       CrmStage[]
-  fieldsConfig Json?      // Array of field definitions
+  fieldsConfig Json? // Array of field definitions
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
 
 model CrmStage {
-  id             String             @id @default(cuid())
-  name           String
-  order          Int                @default(0)
-  pipelineId     String
-  pipeline       CrmPipeline        @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
-  cards        CrmCard[]
-  automations    CrmAutomation[]
-  triggers       CrmTrigger[]
-  automationRuns CrmAutomationRun[]
+  id              String                    @id @default(cuid())
+  name            String
+  order           Int                       @default(0)
+  pipelineId      String
+  pipeline        CrmPipeline               @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  cards           CrmCard[]
+  automations     CrmAutomation[]
+  triggers        CrmTrigger[]
+  automationRuns  CrmAutomationRun[]
   /// UPDATE_DEAL rules that move deals into this stage
   automationMoves CrmAutomationDealUpdate[] @relation("AutomationTargetStage")
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
 }
 
 enum CrmDealStatus {
@@ -110,25 +110,25 @@ enum CrmRecurrence {
 
 /// A deal (negócio) shown as a card on the kanban.
 model CrmCard {
-  id          String        @id @default(cuid())
+  id         String        @id @default(cuid())
   /// Short sequential number used in the URL: /crm/deal/details/<number>
-  number      Int           @unique @default(autoincrement())
-  title       String
+  number     Int           @unique @default(autoincrement())
+  title      String
   /// Cached sum of the deal products (kept in sync by the API) so the board doesn't aggregate on every load
-  value       Decimal       @default(0.00) @db.Decimal(10, 2)
-  currency    String        @default("BRL") @db.VarChar(3)
-  status      CrmDealStatus @default(OPEN)
-  order       Int           @default(0)
-  startDate   DateTime?     @db.Date
-  closeDate   DateTime?     @db.Date
-  dealType    String?
-  source      String?
-  sourceInfo  String?       @db.Text
-  isPublic    Boolean       @default(true)
-  comment     String?       @db.Text
-  recurrence  CrmRecurrence @default(NONE)
-  utm         Json?         // { source, medium, campaign, content, term } captured from forms
-  customData  Json?         // values of the pipeline's user-defined fields (fieldsConfig)
+  value      Decimal       @default(0.00) @db.Decimal(10, 2)
+  currency   String        @default("BRL") @db.VarChar(3)
+  status     CrmDealStatus @default(OPEN)
+  order      Int           @default(0)
+  startDate  DateTime?     @db.Date
+  closeDate  DateTime?     @db.Date
+  dealType   String?
+  source     String?
+  sourceInfo String?       @db.Text
+  isPublic   Boolean       @default(true)
+  comment    String?       @db.Text
+  recurrence CrmRecurrence @default(NONE)
+  utm        Json? // { source, medium, campaign, content, term } captured from forms
+  customData Json? // values of the pipeline's user-defined fields (fieldsConfig)
 
   stageId       String
   stage         CrmStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)
@@ -270,7 +270,7 @@ model CrmHistory {
   id        String   @id @default(cuid())
   cardId    String
   card      CrmCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  type      String   // CREATED, STAGE_CHANGED, FIELD_CHANGED, STATUS_CHANGED, RECURRENCE_CREATED, AUTOMATION_RUN, TRIGGER_FIRED
+  type      String // CREATED, STAGE_CHANGED, FIELD_CHANGED, STATUS_CHANGED, RECURRENCE_CREATED, AUTOMATION_RUN, TRIGGER_FIRED
   data      Json?
   createdAt DateTime @default(now())
 
@@ -282,6 +282,20 @@ enum CrmAutomationAction {
   CREATE_ACTIVITY
   UPDATE_DEAL
   NOTIFY
+  /// Several steps (actions, waits, if/else) run in order ("ações de grupo")
+  FLOW
+}
+
+enum CrmAutomationStepType {
+  ACTION
+  WAIT
+  CONDITION
+}
+
+/// Branch of a CONDITION step a child step belongs to
+enum CrmAutomationBranch {
+  THEN
+  ELSE
 }
 
 /// Who receives an activity created by an automation rule
@@ -342,14 +356,65 @@ model CrmAutomation {
   dealUpdate CrmAutomationDealUpdate?
   /// NOTIFY action
   notify     CrmAutomationNotify?
-  headers   CrmAutomationHeader[]
+  headers    CrmAutomationHeader[]
   conditions CrmAutomationCondition[]
   runs       CrmAutomationRun[]
+
+  /// FLOW rules: their steps
+  steps      CrmAutomationStep[] @relation("FlowSteps")
+  /// Set when this row is not a rule of the board but the action of a flow step
+  /// (reusing the action columns/tables); such rows are never queued on their own.
+  /// At most one per step, kept by the API: a UNIQUE added to this existing table
+  /// would make the deploy's `prisma db push` stop on a data-loss warning.
+  flowStepId String?
+  flowStep   CrmAutomationStep?  @relation("StepAction", fields: [flowStepId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([stageId, order])
+  @@index([flowStepId])
+}
+
+/// Step of a FLOW rule. Root steps have no parent; steps inside a CONDITION have
+/// the condition as parent and the branch they belong to.
+model CrmAutomationStep {
+  id         String                @id @default(cuid())
+  flowId     String
+  flow       CrmAutomation         @relation("FlowSteps", fields: [flowId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     CrmAutomationStep?    @relation("StepChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children   CrmAutomationStep[]   @relation("StepChildren")
+  /// Set only when parentId is set
+  branch     CrmAutomationBranch?
+  order      Int                   @default(0)
+  type       CrmAutomationStepType
+  /// WAIT step
+  waitAmount Int?
+  waitUnit   CrmDelayUnit?
+
+  /// ACTION step: the action, stored as a child CrmAutomation (exactly one)
+  actions    CrmAutomation[]              @relation("StepAction")
+  /// CONDITION step: all must match (AND) to follow THEN, otherwise ELSE
+  conditions CrmAutomationStepCondition[]
+  runs       CrmAutomationRun[]
+  runSteps   CrmAutomationRunStep[]
+
+  @@index([flowId, parentId, branch, order])
+  @@index([parentId])
+}
+
+/// Condition of a CONDITION step (same shape as CrmAutomationCondition).
+model CrmAutomationStepCondition {
+  id       String               @id @default(cuid())
+  stepId   String
+  step     CrmAutomationStep    @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  field    String
+  operator CrmConditionOperator
+  value    String?              @db.Text
+  order    Int                  @default(0)
+
+  @@index([stepId, order])
 }
 
 /// CREATE_ACTIVITY action of a rule: the activity added to the deal.
@@ -507,6 +572,12 @@ model CrmAutomationRun {
   httpStatus   Int?
   responseBody String?                @db.Text
   error        String?                @db.Text
+  /// FLOW runs: next step to run (null + stepCount 0 = start)
+  stepId       String?
+  step         CrmAutomationStep?     @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  /// FLOW runs: steps already run; also the seq of the next CrmAutomationRunStep
+  stepCount    Int                    @default(0)
+  steps        CrmAutomationRunStep[]
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
 
@@ -514,4 +585,34 @@ model CrmAutomationRun {
   @@index([cardId])
   @@index([automationId])
   @@index([stageId])
+  @@index([stepId])
+}
+
+/// Path taken by a FLOW run: one row per step run. Type/action/label are a snapshot
+/// so the log stays readable after the flow is edited. The (runId, seq) unique key
+/// is the claim that keeps a step from running twice.
+model CrmAutomationRunStep {
+  id           String                 @id @default(cuid())
+  runId        String
+  run          CrmAutomationRun       @relation(fields: [runId], references: [id], onDelete: Cascade)
+  seq          Int
+  stepId       String?
+  step         CrmAutomationStep?     @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  stepType     CrmAutomationStepType
+  actionType   CrmAutomationAction?
+  label        String
+  status       CrmAutomationRunStatus
+  /// CONDITION step: branch taken
+  branch       CrmAutomationBranch?
+  /// Same content as CrmAutomationRun.request for the action
+  request      Json?
+  httpStatus   Int?
+  responseBody String?                @db.Text
+  error        String?                @db.Text
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@unique([runId, seq])
+  @@index([stepId])
+  @@index([actionType, status, updatedAt])
 }
