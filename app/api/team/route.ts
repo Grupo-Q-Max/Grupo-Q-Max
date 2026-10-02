@@ -15,7 +15,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json([], { status: 500 });
+    return NextResponse.json({ error: String(error), stack: error.stack }, { status: 500 });
   }
 }
 
