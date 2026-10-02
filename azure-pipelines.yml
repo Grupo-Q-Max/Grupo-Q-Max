@@ -83,6 +83,10 @@ steps:
     fi
  
     echo ""
+    echo "3.2. Criando .env para o servidor..."
+    echo "DATABASE_URL=mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website" > deploy/.env
+ 
+    echo ""
     echo "4. Validando logos obrigatorias..."
  
     test -f deploy/public/brands/brand-auditoria.png
