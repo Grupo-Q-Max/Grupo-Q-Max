@@ -60,26 +60,29 @@ export default async function CRMPage() {
     }
   }
 
+  // Serialize Decimal so the pipeline can be passed to Client Components
+  const serializedPipeline = pipeline && {
+    ...pipeline,
+    stages: pipeline.stages.map(stage => ({
+      ...stage,
+      cards: stage.cards.map(card => ({
+        ...card,
+        value: card.value.toNumber()
+      }))
+    }))
+  };
+
   return (
     <>
       <header className="crm-header">
         <h1 className="crm-header__title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {pipeline?.name || "Pipeline"}
-          {pipeline && <CrmPipelineSettings pipeline={pipeline} />}
+          {serializedPipeline?.name || "Pipeline"}
+          {serializedPipeline && <CrmPipelineSettings pipeline={serializedPipeline} />}
         </h1>
-        <CrmButtons pipeline={pipeline} />
+        <CrmButtons pipeline={serializedPipeline} />
       </header>
 
-      {pipeline && <CrmWorkspace pipeline={{
-        ...pipeline,
-        stages: pipeline.stages.map(stage => ({
-          ...stage,
-          cards: stage.cards.map(card => ({
-            ...card,
-            value: card.value.toNumber()
-          }))
-        }))
-      }} />}
+      {serializedPipeline && <CrmWorkspace pipeline={serializedPipeline} />}
     </>
   );
 }
