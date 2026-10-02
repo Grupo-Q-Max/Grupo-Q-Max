@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import type { CrmActivityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notifyStageChanged } from "@/lib/crm-realtime";
+import { fireTriggers } from "@/lib/crm-automation";
 
 const TYPES = new Set<CrmActivityType>(["TODO", "TASK", "CALL", "MEETING", "COMMENT"]);
 
@@ -61,6 +62,9 @@ export async function PATCH(req: Request) {
       },
     });
     await notifyCard(activity.cardId);
+    if (activity.completed && !current.completed) {
+      after(() => fireTriggers(activity.cardId, { type: "ACTIVITY_COMPLETED", activityType: activity.type }));
+    }
 
     return NextResponse.json(activity);
   } catch (error) {

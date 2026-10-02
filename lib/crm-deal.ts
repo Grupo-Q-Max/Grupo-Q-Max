@@ -412,7 +412,10 @@ function shiftDate(date: Date, recurrence: string) {
   return next;
 }
 
-/** "Negócio recorrente": closing a recurring deal as won creates the next one in the first stage. */
+/**
+ * "Negócio recorrente": closing a recurring deal as won creates the next one in the first stage.
+ * Returns the new deal (null when the deal isn't recurring).
+ */
 export async function createRecurringCopy(tx: Tx, id: string) {
   const deal = await tx.crmCard.findUnique({
     where: { id },
@@ -423,7 +426,7 @@ export async function createRecurringCopy(tx: Tx, id: string) {
       stage: { select: { pipeline: { select: { stages: { orderBy: { order: "asc" }, take: 1 } } } } },
     },
   });
-  if (!deal || !(deal.recurrence in RECURRENCE_STEP)) return;
+  if (!deal || !(deal.recurrence in RECURRENCE_STEP)) return null;
 
   const firstStage = deal.stage.pipeline.stages[0];
   const copy = await tx.crmCard.create({
@@ -457,4 +460,5 @@ export async function createRecurringCopy(tx: Tx, id: string) {
   await tx.crmHistory.create({
     data: { cardId: deal.id, type: "RECURRENCE_CREATED", data: { cardId: copy.id, title: copy.title } },
   });
+  return copy;
 }

@@ -19,7 +19,14 @@ export type DealActivity = {
 
 export type DealHistory = {
   id: string;
-  type: "CREATED" | "STAGE_CHANGED" | "FIELD_CHANGED" | "STATUS_CHANGED" | "RECURRENCE_CREATED";
+  type:
+    | "CREATED"
+    | "STAGE_CHANGED"
+    | "FIELD_CHANGED"
+    | "STATUS_CHANGED"
+    | "RECURRENCE_CREATED"
+    | "AUTOMATION_RUN"
+    | "TRIGGER_FIRED";
   data: Record<string, string | null> | null;
   createdAt: string;
 };

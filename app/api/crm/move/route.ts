@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notifyStageChanged } from "@/lib/crm-realtime";
+import { onDealEnteredStage } from "@/lib/crm-automation";
 
 export async function POST(req: Request) {
   try {
@@ -16,9 +17,10 @@ export async function POST(req: Request) {
     });
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    // Record the stage change in the deal timeline
+    // Record the stage change in the deal timeline and run the new stage's automation rules
     const stageHistory = async () => {
       if (current.stageId === newStageId) return;
+      after(() => onDealEnteredStage(cardId, newStageId));
       const stage = await prisma.crmStage.findUnique({ where: { id: newStageId }, select: { name: true } });
       await prisma.crmHistory.create({
         data: { cardId, type: "STAGE_CHANGED", data: { from: current.stage.name, to: stage?.name ?? "" } },

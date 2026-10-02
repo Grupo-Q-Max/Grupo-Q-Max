@@ -1,5 +1,6 @@
 import "./crm.css";
 import "./deal.css";
+import "./automation.css";
 import { CrmSidebar } from "@/components/crm/CrmSidebar";
 
 export default function CRMLayout({ children }: { children: React.ReactNode }) {
