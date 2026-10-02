@@ -5,16 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
-  KeyboardSensor,
-  PointerSensor,
   closestCorners,
   useDroppable,
-  useSensor,
-  useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useBoardSensors, vibrateOnTouchDrag } from "@/components/kanban/sensors";
 import { ArrowLeft, ChevronDown, ListTodo, Pencil, Plus, Search, Webhook, X, Zap } from "lucide-react";
 import {
   ACTION_TYPES,
@@ -115,10 +112,7 @@ export function CrmAutomationBoard({
   const [editing, setEditing] = useState<Editing>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const sensors = useBoardSensors();
 
   const reload = useCallback(async () => {
     const res = await fetch(`/api/crm/automation?pipelineId=${pipeline.id}`, { cache: "no-store" });
@@ -307,7 +301,7 @@ export function CrmAutomationBoard({
         {tab === "runs" ? (
           <AutomationRunsTab pipelineId={pipeline.id} />
         ) : (
-          <DndContext id={dndId} sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+          <DndContext id={dndId} sensors={sensors} collisionDetection={closestCorners} onDragStart={vibrateOnTouchDrag} onDragEnd={handleDragEnd}>
             <div className="auto-board">
               <div className="auto-grid" style={columns}>
                 {stages.map((stage, index) => {

@@ -5,16 +5,13 @@ import {
   DndContext,
   DragOverlay,
   closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { arrayMove } from "@dnd-kit/sortable";
 import { KanbanColumn } from "./KanbanColumn";
+import { useBoardSensors, vibrateOnTouchDrag } from "./sensors";
 import type { KanbanColumnData, KanbanItemBase, KanbanLabels, KanbanProps } from "./types";
 import "./kanban.css";
 
@@ -119,17 +116,16 @@ export function Kanban<T extends KanbanItemBase>({
     return subscribe(() => syncNow());
   }, [subscribe, syncNow]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const sensors = useBoardSensors();
 
   const finishDrag = () => {
     isBusyRef.current = false;
     flushPendingSync();
   };
 
-  const handleDragStart = ({ active }: DragStartEvent) => {
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    vibrateOnTouchDrag(event);
     isBusyRef.current = true;
     snapshotRef.current = columns;
     setActiveId(String(active.id));

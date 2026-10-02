@@ -199,6 +199,10 @@
 /* ---- cards ---- */
 
 .auto-card {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   display: flex;
   flex-direction: column;
   gap: 6px;
