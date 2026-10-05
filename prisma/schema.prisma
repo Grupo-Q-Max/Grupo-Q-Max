@@ -334,21 +334,22 @@ enum CrmConditionOperator {
 
 /// Automation rule ("regra de automação"): runs when a deal enters `stage`.
 model CrmAutomation {
-  id            String              @id @default(cuid())
+  id            String                 @id @default(cuid())
   name          String
-  actionType    CrmAutomationAction @default(WEBHOOK)
+  actionType    CrmAutomationAction    @default(WEBHOOK)
+  execution     CrmAutomationExecution @default(PARALLEL)
   /// Wait before running; 0 = immediately
-  delayAmount   Int                 @default(0)
-  delayUnit     CrmDelayUnit        @default(MINUTES)
+  delayAmount   Int                    @default(0)
+  delayUnit     CrmDelayUnit           @default(MINUTES)
   /// WEBHOOK action. URL and body accept {{deal.<field>}} placeholders
-  webhookUrl    String?             @db.Text
-  webhookMethod CrmHttpMethod       @default(POST)
+  webhookUrl    String?                @db.Text
+  webhookMethod CrmHttpMethod          @default(POST)
   /// Empty: the deal snapshot is sent as JSON
-  webhookBody   String?             @db.Text
-  order         Int                 @default(0)
-  active        Boolean             @default(true)
+  webhookBody   String?                @db.Text
+  order         Int                    @default(0)
+  active        Boolean                @default(true)
   stageId       String
-  stage         CrmStage            @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  stage         CrmStage               @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
   /// CREATE_ACTIVITY action
   activity   CrmAutomationActivity?
@@ -546,7 +547,17 @@ model CrmTriggerCondition {
   @@index([triggerId, order])
 }
 
+/// How a rule starts relative to the rules before it in the stage (Bitrix24 "Execução")
+enum CrmAutomationExecution {
+  /// Starts when the deal enters the stage
+  PARALLEL
+  /// Starts when the previous rule of the stage finished for this deal; its delay counts from then
+  SEQUENTIAL
+}
+
 enum CrmAutomationRunStatus {
+  /// SEQUENTIAL rule waiting for the previous rule's run (afterRun) to finish
+  WAITING
   PENDING
   RUNNING
   SUCCESS
@@ -572,6 +583,10 @@ model CrmAutomationRun {
   httpStatus   Int?
   responseBody String?                @db.Text
   error        String?                @db.Text
+  /// WAITING runs: run of the previous rule this one waits for (null = previous run gone, start now)
+  afterRunId   String?
+  afterRun     CrmAutomationRun?      @relation("RunSequence", fields: [afterRunId], references: [id], onDelete: SetNull)
+  nextRuns     CrmAutomationRun[]     @relation("RunSequence")
   /// FLOW runs: next step to run (null + stepCount 0 = start)
   stepId       String?
   step         CrmAutomationStep?     @relation(fields: [stepId], references: [id], onDelete: SetNull)
@@ -586,6 +601,7 @@ model CrmAutomationRun {
   @@index([automationId])
   @@index([stageId])
   @@index([stepId])
+  @@index([afterRunId])
 }
 
 /// Path taken by a FLOW run: one row per step run. Type/action/label are a snapshot

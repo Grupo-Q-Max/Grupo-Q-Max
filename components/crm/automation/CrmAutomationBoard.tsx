@@ -19,7 +19,7 @@ import {
   DEAL_STATUSES,
   TRIGGER_TYPES,
   WATCHABLE_FIELDS,
-  describeDelay,
+  describeTiming,
   type ActionType,
 } from "@/lib/crm-automation-shared";
 import { AutomationRuleModal, type RuleDraft } from "./AutomationRuleModal";
@@ -408,7 +408,7 @@ export function CrmAutomationBoard({
                                 className="auto-card__delay"
                                 onClick={() => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType })}
                               >
-                                {describeDelay(rule.delayAmount, rule.delayUnit)}
+                                {describeTiming(rule.execution, rule.delayAmount, rule.delayUnit)}
                               </button>
                             }
                             name={rule.name}

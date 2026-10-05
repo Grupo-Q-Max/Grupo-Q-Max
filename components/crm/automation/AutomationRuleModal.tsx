@@ -4,9 +4,11 @@ import { useState } from "react";
 import {
   ACTION_TYPES,
   DELAY_UNITS,
+  EXECUTIONS,
   type ActionType,
   type AutomationCondition,
   type DelayUnit,
+  type Execution,
 } from "@/lib/crm-automation-shared";
 import { AutomationModal, ModalRow } from "./AutomationModal";
 import { ActionFields, actionDraft, actionValidationError, type ActionDraft } from "./ActionFields";
@@ -18,6 +20,7 @@ export type RuleDraft = ActionDraft & {
   actionType: ActionType;
   name: string;
   stageId: string;
+  execution: Execution;
   delayAmount: number;
   delayUnit: DelayUnit;
   conditions: AutomationCondition[];
@@ -32,6 +35,7 @@ function ruleDraft(rule: AutomationRule | null, stageId: string, actionType: Act
     actionType: rule?.actionType ?? actionType,
     name: rule?.name ?? ACTION_TYPES[actionType].label,
     stageId: rule?.stageId ?? stageId,
+    execution: rule?.execution ?? "PARALLEL",
     delayAmount: rule?.delayAmount ?? 0,
     delayUnit: rule?.delayUnit ?? "MINUTES",
     conditions: rule?.conditions.map(({ field, operator, value }) => ({ field, operator, value })) ?? [],
@@ -115,6 +119,19 @@ export function AutomationRuleModal({
             </option>
           ))}
         </select>
+      </ModalRow>
+
+      <ModalRow label="Execução">
+        <select value={draft.execution} onChange={(e) => set({ execution: e.target.value as Execution })}>
+          {Object.entries(EXECUTIONS).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+        {draft.execution === "SEQUENTIAL" && (
+          <p className="auto-hint">Começa quando a regra anterior desta etapa terminar para o negócio; o horário conta a partir daí.</p>
+        )}
       </ModalRow>
 
       <ModalRow label="Horário">

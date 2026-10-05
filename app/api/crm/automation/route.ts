@@ -83,6 +83,7 @@ function ruleFields(body: Record<string, unknown>, actionType: ActionType) {
     ...(webhook && body.webhookMethod !== undefined && { webhookMethod: body.webhookMethod === "GET" ? ("GET" as const) : ("POST" as const) }),
     ...(webhook && body.webhookBody !== undefined && { webhookBody: String(body.webhookBody ?? "").trim() ? String(body.webhookBody) : null }),
     ...(body.active !== undefined && { active: Boolean(body.active) }),
+    ...(body.execution !== undefined && { execution: body.execution === "SEQUENTIAL" ? ("SEQUENTIAL" as const) : ("PARALLEL" as const) }),
   };
 }
 

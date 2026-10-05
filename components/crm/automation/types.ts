@@ -6,6 +6,7 @@ import type {
   Branch,
   DealUpdateAction,
   DelayUnit,
+  Execution,
   HttpMethod,
   NotifyAction,
   StepActionType,
@@ -39,6 +40,7 @@ export type AutomationRule = {
   actionType: ActionType;
   /** Only for FLOW rules */
   steps: AutomationStepRow[];
+  execution: Execution;
   delayAmount: number;
   delayUnit: DelayUnit;
   webhookUrl: string | null;

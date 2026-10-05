@@ -216,7 +216,11 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
                 </td>
                 <td>{run.httpStatus ?? "—"}</td>
                 <td className="auto-runs__error">
-                  {run.status === "PENDING" && !run.error ? pendingDetail(run) : run.error ?? ""}
+                  {run.status === "WAITING"
+                    ? "aguarda a regra anterior terminar"
+                    : run.status === "PENDING" && !run.error
+                      ? pendingDetail(run)
+                      : run.error ?? ""}
                   {run.attempts > 1 && ` (${run.attempts} tentativas)`}
                 </td>
               </tr>

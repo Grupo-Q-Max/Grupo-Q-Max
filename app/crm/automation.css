@@ -593,6 +593,11 @@
   color: #ffc107;
 }
 
+.auto-status--waiting {
+  background: rgba(79, 195, 247, 0.15);
+  color: #4fc3f7;
+}
+
 .auto-status--skipped {
   background: rgba(255, 255, 255, 0.06);
   color: #a5a0aa;

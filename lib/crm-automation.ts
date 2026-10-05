@@ -108,25 +108,36 @@ export async function onDealEnteredStage(cardId: string, stageId: string) {
       // Rows with flowStepId are the actions of flow steps, run by their flow
       where: { stageId, active: true, flowStepId: null },
       orderBy: { order: "asc" },
-      select: { id: true, delayAmount: true, delayUnit: true },
+      select: { id: true, delayAmount: true, delayUnit: true, execution: true },
     });
     if (automations.length === 0) return;
 
     // Runs that were waiting in another stage no longer apply (they'd be skipped anyway)
     await prisma.crmAutomationRun.updateMany({
-      where: { cardId, status: "PENDING", NOT: { stageId } },
+      where: { cardId, status: { in: ["PENDING", "WAITING"] }, NOT: { stageId } },
       data: { status: "SKIPPED", error: "O negócio saiu da etapa antes da execução" },
     });
 
-    // +index ms keeps the rules' order when several run at the same moment
+    // One by one, so a SEQUENTIAL rule can point at the run of the rule before it.
+    // +index ms keeps the rules' order when several run at the same moment.
     const now = Date.now();
-    await prisma.crmAutomationRun.createMany({
-      data: automations.map((a, index) => ({
-        automationId: a.id,
-        cardId,
-        stageId,
-        runAt: new Date(now + delayMs(a.delayAmount, a.delayUnit) + index),
-      })),
+    await prisma.$transaction(async (tx) => {
+      let previousRunId: string | null = null;
+      for (const [index, a] of automations.entries()) {
+        const waits = a.execution === "SEQUENTIAL" && previousRunId !== null;
+        const run: { id: string } = await tx.crmAutomationRun.create({
+          data: {
+            automationId: a.id,
+            cardId,
+            stageId,
+            ...(waits
+              ? { status: "WAITING", afterRunId: previousRunId, runAt: new Date(now) } // runAt set on release
+              : { runAt: new Date(now + delayMs(a.delayAmount, a.delayUnit) + index) }),
+          },
+          select: { id: true },
+        });
+        previousRunId = run.id;
+      }
     });
 
     await processDueRuns();
@@ -155,6 +166,7 @@ export async function processDueRuns(limit = 50) {
         where: { status: "RUNNING", updatedAt: { lt: new Date(Date.now() - STALE_RUN_MS) } },
         data: { status: "PENDING" },
       });
+      const released = await releaseSequentialRuns();
 
       const due = await prisma.crmAutomationRun.findMany({
         where: { status: "PENDING", runAt: { lte: new Date() } },
@@ -173,6 +185,8 @@ export async function processDueRuns(limit = 50) {
         await processRun(id);
         processed++;
       }
+      // A finished run may release the next SEQUENTIAL rule: keep going while there is progress
+      if (released > 0 || due.length > 0) globalForAutomation.qmaxAutomationAgain = true;
     } while (globalForAutomation.qmaxAutomationAgain);
   } catch (error) {
     console.error("[crm-automation] processDueRuns failed", error);
@@ -180,6 +194,32 @@ export async function processDueRuns(limit = 50) {
     globalForAutomation.qmaxAutomationBusy = false;
   }
   return processed;
+}
+
+const FINISHED = ["SUCCESS", "FAILED", "SKIPPED"] as const;
+
+/**
+ * Turns WAITING runs (SEQUENTIAL rules) into PENDING once the run they wait for
+ * finished, whatever path finished it (success, failure, skip). Their delay
+ * counts from that moment. Returns how many were released.
+ */
+async function releaseSequentialRuns() {
+  const ready = await prisma.crmAutomationRun.findMany({
+    where: { status: "WAITING", OR: [{ afterRunId: null }, { afterRun: { status: { in: [...FINISHED] } } }] },
+    select: {
+      id: true,
+      afterRun: { select: { updatedAt: true } },
+      automation: { select: { delayAmount: true, delayUnit: true } },
+    },
+  });
+  for (const run of ready) {
+    const start = run.afterRun?.updatedAt.getTime() ?? Date.now();
+    await prisma.crmAutomationRun.updateMany({
+      where: { id: run.id, status: "WAITING" },
+      data: { status: "PENDING", runAt: new Date(start + delayMs(run.automation.delayAmount, run.automation.delayUnit)) },
+    });
+  }
+  return ready.length;
 }
 
 /** Action columns and tables of a rule (or of the child rule of a flow step). */

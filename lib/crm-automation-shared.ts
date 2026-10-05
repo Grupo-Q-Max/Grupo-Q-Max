@@ -72,6 +72,20 @@ export const delayMs = (amount: number, unit: DelayUnit) => Math.max(0, amount) 
 export const describeDelay = (amount: number, unit: DelayUnit) =>
   amount > 0 ? `após ${amount} ${DELAY_UNITS[unit].label}` : "imediatamente";
 
+/** "Execução" of a rule (Bitrix24): start with the stage, or after the previous rule finished. */
+export type Execution = "PARALLEL" | "SEQUENTIAL";
+
+export const EXECUTIONS: Record<Execution, string> = {
+  PARALLEL: "Em paralelo",
+  SEQUENTIAL: "Em sequência (após a regra anterior)",
+};
+
+/** Timing shown on a rule card: "imediatamente", "após 2 dias", "após a anterior + 2 dias". */
+export const describeTiming = (execution: Execution, amount: number, unit: DelayUnit) =>
+  execution === "SEQUENTIAL"
+    ? `após a anterior${amount > 0 ? ` + ${amount} ${DELAY_UNITS[unit].label}` : ""}`
+    : describeDelay(amount, unit);
+
 export const OPERATORS: Record<ConditionOperator, { label: string; needsValue: boolean }> = {
   eq: { label: "é igual a", needsValue: true },
   neq: { label: "é diferente de", needsValue: true },
@@ -248,6 +262,7 @@ export const WATCHABLE_FIELDS: Record<string, string> = {
 };
 
 export const RUN_STATUS_LABELS: Record<string, string> = {
+  WAITING: "Aguardando anterior",
   PENDING: "Agendada",
   RUNNING: "Executando",
   SUCCESS: "Sucesso",
