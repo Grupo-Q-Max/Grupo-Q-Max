@@ -34,11 +34,14 @@ export async function PUT(req: Request) {
     if (denied) return denied;
     const { id, name, order } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    if (name !== undefined && (typeof name !== "string" || !name.trim())) {
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    }
 
     const stage = await prisma.crmStage.update({
       where: { id },
       data: {
-        ...(name !== undefined && { name }),
+        ...(name !== undefined && { name: name.trim() }),
         ...(order !== undefined && { order })
       }
     });

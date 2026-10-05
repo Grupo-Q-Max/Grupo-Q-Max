@@ -19,6 +19,7 @@ const DEFAULT_LABELS: KanbanLabels = {
   addItem: "Novo item",
   addItemPlaceholder: "Título...",
   addColumn: "+ Adicionar coluna",
+  renameColumn: "Renomear coluna",
   deleteColumn: "Excluir coluna",
   syncing: "Sincronizando...",
 };

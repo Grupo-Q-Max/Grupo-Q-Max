@@ -94,6 +94,7 @@ export function CrmKanban({ pipeline, initialDealId }: { pipeline: CrmPipeline; 
           addItem: "Novo Negócio",
           addItemPlaceholder: "Nome do negócio...",
           addColumn: "+ Adicionar Coluna",
+          renameColumn: "Renomear Coluna",
           deleteColumn: "Excluir Coluna",
         }}
         renderItem={(deal, { remove }) => <DealCard deal={deal} onOpen={() => openDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}

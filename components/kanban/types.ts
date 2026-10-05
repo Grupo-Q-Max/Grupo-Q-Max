@@ -23,6 +23,7 @@ export type KanbanLabels = {
   addItem: string;
   addItemPlaceholder: string;
   addColumn: string;
+  renameColumn: string;
   deleteColumn: string;
   syncing: string;
 };

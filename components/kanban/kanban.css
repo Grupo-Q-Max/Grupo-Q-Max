@@ -131,6 +131,7 @@
   font-size: 13px;
   text-align: left;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
 .kanban-column__menu-item:hover {

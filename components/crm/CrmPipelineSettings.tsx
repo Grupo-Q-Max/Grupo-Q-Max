@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useTransition, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Settings, X, Plus, Trash2 } from "lucide-react";
+import { Settings, X, Plus, Trash2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
@@ -171,6 +171,81 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
       </button>
       
       {isOpen && typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null}
+    </>
+  );
+}
+
+/** Pipeline title (children) that turns into an input to rename the pipeline in place */
+export function CrmPipelineRename({ pipeline, children }: { pipeline: { id: string; name: string }; children: ReactNode }) {
+  const router = useRouter();
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(pipeline.name);
+  const [isPending, startTransition] = useTransition();
+  // Escape unmounts the input, which can still fire blur; this stops that blur from saving
+  const cancelledRef = useRef(false);
+
+  const cancel = () => {
+    cancelledRef.current = true;
+    setName(pipeline.name);
+    setIsEditing(false);
+  };
+
+  const save = async () => {
+    if (cancelledRef.current) return;
+    const next = name.trim();
+    if (!next || next === pipeline.name) return cancel();
+    const res = await fetch('/api/crm/pipeline/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: pipeline.id, name: next })
+    });
+    if (!res.ok) {
+      alert("Não foi possível renomear o pipeline.");
+      return cancel();
+    }
+    // Keep the input until the refreshed title arrives, so the old name doesn't flash back
+    startTransition(() => {
+      router.refresh();
+      setIsEditing(false);
+    });
+  };
+
+  if (isEditing) {
+    return (
+      <input
+        autoFocus
+        type="text"
+        className="crm-pipeline-title-input"
+        aria-label="Nome do pipeline"
+        value={name}
+        disabled={isPending}
+        onChange={(e) => setName(e.target.value)}
+        onFocus={(e) => e.currentTarget.select()}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") cancel();
+        }}
+      />
+    );
+  }
+
+  return (
+    <>
+      {children}
+      <button
+        className="btn-secondary"
+        onClick={() => {
+          cancelledRef.current = false;
+          setName(pipeline.name);
+          setIsEditing(true);
+        }}
+        style={{ padding: '8px', display: 'flex', alignItems: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.1)' }}
+        title="Renomear pipeline"
+        aria-label="Renomear pipeline"
+      >
+        <Pencil size={18} />
+      </button>
     </>
   );
 }
