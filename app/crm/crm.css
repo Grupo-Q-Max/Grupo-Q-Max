@@ -1038,3 +1038,37 @@ button.crm-nav__item {
 .crm-modal .crm-access__error {
   margin: 0 0 16px;
 }
+
+/* IMPROVEMENT REQUESTS (/crm/requests) */
+.crm-requests__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.crm-requests__form h3 {
+  margin: 0;
+}
+
+.crm-requests__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.crm-requests__title {
+  flex: 1;
+  min-width: 200px;
+}
+
+.crm-requests__form textarea {
+  font: inherit;
+  resize: vertical;
+}
+
+.crm-requests__description {
+  margin: 6px 0 0;
+  color: #a5a0aa;
+  font-size: 13px;
+  white-space: pre-wrap;
+}

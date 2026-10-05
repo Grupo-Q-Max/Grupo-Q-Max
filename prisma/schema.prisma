@@ -67,12 +67,43 @@ model TeamMember {
   automationDealUpdates CrmAutomationDealUpdate[]
   notifications         CrmNotification[]
   authLogs              AuthLog[]
+  requests              CrmRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([microsoftTid, microsoftOid])
   @@index([crmGroupId])
+}
+
+enum CrmRequestType {
+  IMPROVEMENT
+  BUG
+  OTHER
+}
+
+enum CrmRequestStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  REJECTED
+}
+
+/// Improvement/bug requests sent by CRM users (/crm/requests).
+model CrmRequest {
+  id          String           @id @default(cuid())
+  /// Null after the author is deleted: the request is kept
+  authorId    String?
+  author      TeamMember?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  type        CrmRequestType   @default(IMPROVEMENT)
+  title       String           @db.VarChar(200)
+  description String           @db.Text
+  status      CrmRequestStatus @default(OPEN)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([authorId])
+  @@index([createdAt])
 }
 
 /// CRM sign-in attempts with Microsoft, successful or not, for auditing. Never stores tokens.
