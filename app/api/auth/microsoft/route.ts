@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/auth";
 import { AuthError, findOrCreateMember, microsoftConfig, microsoftJwks, verifyMicrosoftIdToken } from "@/lib/microsoft-auth";
+import { syncMicrosoftPhoto } from "@/lib/microsoft-photo";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ const CLIENT_MESSAGE = {
 } as const;
 
 /**
- * Signs in with `{ idToken }` from MSAL. Anything else in the body (e-mail, name...) is ignored:
+ * Signs in with `{ idToken }` from MSAL; the optional Graph `accessToken` only copies the profile photo. Anything else in the body (e-mail, name...) is ignored:
  * the identity comes only from the validated token. Every attempt goes to AuthLog, without tokens.
  */
 export async function POST(req: Request) {
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => null);
-  const idToken = body && typeof body === "object" ? (body as { idToken?: unknown }).idToken : undefined;
+  const { idToken, accessToken } = body && typeof body === "object" ? (body as { idToken?: unknown; accessToken?: unknown }) : {};
   if (typeof idToken !== "string" || !idToken) {
     await audit(false, "invalid_request");
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
     const identity = await verifyMicrosoftIdToken(idToken, config, microsoftJwks(config.tenantId));
     const member = await findOrCreateMember(prisma, identity);
     await audit(true, "ok", identity.email, member.id);
+    await syncMicrosoftPhoto(member, accessToken);
     return setSessionCookie(NextResponse.json({ id: member.id, name: member.name, email: member.email }), member.id);
   } catch (error) {
     if (!(error instanceof AuthError)) {

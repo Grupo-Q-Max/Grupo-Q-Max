@@ -5,7 +5,7 @@ import { Target } from "lucide-react";
 import type { IPublicClientApplication } from "@azure/msal-browser";
 
 /**
- * "Entrar com Microsoft": MSAL popup (Authorization Code + PKCE), then POST of the id_token alone to
+ * "Entrar com Microsoft": MSAL popup (Authorization Code + PKCE), then POST of the id_token (+ Graph token for the photo) to
  * /api/auth/microsoft, which validates it and sets the HttpOnly session cookie. Nothing of the session
  * is stored by this page; MSAL keeps its own cache in sessionStorage.
  */
@@ -36,12 +36,13 @@ export function MicrosoftLogin({ tenantId, clientId }: { tenantId: string; clien
     setError("");
     try {
       const app = await msal.current!;
-      const result = await app.loginPopup({ scopes: ["openid", "profile", "email"], prompt: "select_account" });
+      // User.Read: Graph token used by the server only to copy the profile photo
+      const result = await app.loginPopup({ scopes: ["openid", "profile", "email", "User.Read"], prompt: "select_account" });
 
       const res = await fetch("/api/auth/microsoft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: result.idToken }),
+        body: JSON.stringify({ idToken: result.idToken, accessToken: result.accessToken }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Não foi possível entrar.");
 
