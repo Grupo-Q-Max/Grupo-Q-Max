@@ -29,3 +29,13 @@ if (
 }
 
 export {};
+
+/*
+ * CRM sign-in check at boot. A missing Microsoft configuration is logged loudly here and makes
+ * /login and /api/auth/microsoft fail, but the public website keeps working.
+ */
+if (process.env.NEXT_PHASE !== "phase-production-build") {
+  import("./lib/microsoft-auth")
+    .then(({ microsoftConfig }) => microsoftConfig())
+    .catch((error) => console.error("[auth] CRM sign-in with Microsoft is DISABLED:", error instanceof Error ? error.message : error));
+}

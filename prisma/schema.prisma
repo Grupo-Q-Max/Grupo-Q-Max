@@ -42,10 +42,17 @@ model TeamMember {
   /// (e.g. "grupo,technology"). Kept so db push doesn't drop its data; breaks 1NF, so move it to a
   /// TeamMemberCompany(memberId, company) table before using it
   companies       String?
-  /// CRM login (/login): members without email + password can't sign in
+  /// CRM login e-mail: links the member to their Microsoft account on the first sign-in
   email           String?   @unique
+  /// Microsoft (Entra ID) account of the member, set on the first sign-in: `oid` + `tid` identify
+  /// the user for good (the e-mail can change or be reused); null = never signed in (pending invite)
+  microsoftOid    String?
+  microsoftTid    String?
+  /// false = blocked: can't sign in and has no CRM permissions
+  crmActive       Boolean   @default(true)
+  /// Unused since the CRM signs in only with Microsoft (2026-10-05); drop with a manual db push
   passwordHash    String?
-  /// Set by the confirmation link (or when the admin sets the login); login requires it
+  /// Unused since the CRM signs in only with Microsoft (2026-10-05); drop with a manual db push
   emailVerifiedAt DateTime?
   /// Listed on the public "Nossos Sócios" section; self-registered CRM users start hidden
   showOnSite      Boolean   @default(true)
@@ -59,11 +66,32 @@ model TeamMember {
   automationActivities  CrmAutomationActivity[]
   automationDealUpdates CrmAutomationDealUpdate[]
   notifications         CrmNotification[]
+  authLogs              AuthLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([microsoftTid, microsoftOid])
   @@index([crmGroupId])
+}
+
+/// CRM sign-in attempts with Microsoft, successful or not, for auditing. Never stores tokens.
+model AuthLog {
+  id        String      @id @default(cuid())
+  /// Null when the attempt didn't reach a member (invalid token, domain not allowed...)
+  memberId  String?
+  member    TeamMember? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  /// E-mail from the validated token at the time of the attempt (snapshot: kept after the member changes or is deleted)
+  email     String?
+  success   Boolean
+  /// Outcome code: ok, invalid_request, invalid_token, domain_not_allowed, inactive, account_conflict
+  reason    String      @db.VarChar(64)
+  ip        String?     @db.VarChar(64)
+  userAgent String?     @db.VarChar(512)
+  createdAt DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([memberId])
 }
 
 model PageVisit {

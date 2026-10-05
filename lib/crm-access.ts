@@ -30,12 +30,12 @@ export function ensureGroups() {
   return groupsReady;
 }
 
-/** Permissions of a team member: those of their group, or of the default group when they have none. */
+/** Permissions of a team member: those of their group, or of the default group when they have none. Blocked members have none. */
 export async function memberPermissions(memberId: string | null): Promise<Set<Permission>> {
   if (!memberId) return new Set();
   await ensureGroups();
-  const member = await prisma.teamMember.findUnique({ where: { id: memberId }, select: { crmGroup: { select: groupSelect } } });
-  if (!member) return new Set();
+  const member = await prisma.teamMember.findUnique({ where: { id: memberId }, select: { crmActive: true, crmGroup: { select: groupSelect } } });
+  if (!member?.crmActive) return new Set();
   const group = member.crmGroup ?? (await prisma.crmGroup.findFirst({ where: { isDefault: true }, select: groupSelect }));
   if (!group) return new Set();
   if (group.isAdmin) return new Set(ALL_PERMISSIONS);

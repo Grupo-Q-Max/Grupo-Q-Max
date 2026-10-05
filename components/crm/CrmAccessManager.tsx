@@ -12,7 +12,9 @@ type Member = {
   name: string;
   email: string | null;
   crmGroupId: string | null;
-  /** Invited (or self-registered) but never confirmed the login */
+  /** false = blocked: can't sign in and has no permissions */
+  crmActive: boolean;
+  /** Invited (or created in /admin) but never signed in with Microsoft */
   pending: boolean;
   /** Pending and not on the public site, so cancelling the invite may delete it */
   cancellable: boolean;
@@ -75,8 +77,13 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
   };
 
   const cancelInvite = (member: Member) => {
-    if (!window.confirm(`Cancelar o convite de ${member.email}? O link enviado deixa de funcionar.`)) return;
+    if (!window.confirm(`Cancelar o convite de ${member.email}? Esse e-mail deixa de ter acesso ao CRM.`)) return;
     run(fetch(`/api/crm/invite?memberId=${member.id}`, { method: "DELETE" }));
+  };
+
+  const setActive = (member: Member, crmActive: boolean) => {
+    if (!crmActive && !window.confirm(`Bloquear ${member.name}? Ele não consegue mais entrar nem usar o CRM.`)) return;
+    run(fetch("/api/crm/access", jsonRequest("PATCH", { memberId: member.id, crmActive })));
   };
 
   const countOf = (group: Group) => members.filter((m) => (m.crmGroupId ?? defaultGroup?.id) === group.id).length;
@@ -166,21 +173,32 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
                     </select>
                   </td>
                   <td>
-                    {member.pending ? (
-                      <div className="crm-access__status">
+                    <div className="crm-access__status">
+                      {!member.crmActive ? (
+                        <span className="crm-badge">Bloqueado</span>
+                      ) : member.pending ? (
                         <span className="crm-badge">Convite pendente</span>
+                      ) : (
+                        "Ativo"
+                      )}
+                      {member.pending && member.crmActive && (
                         <button type="button" className="crm-access__link" onClick={() => resend(member)}>
                           Reenviar
                         </button>
-                        {member.cancellable && (
-                          <button type="button" className="crm-access__link crm-access__link--danger" onClick={() => cancelInvite(member)}>
-                            Cancelar
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      "Ativo"
-                    )}
+                      )}
+                      {member.pending && member.cancellable && (
+                        <button type="button" className="crm-access__link crm-access__link--danger" onClick={() => cancelInvite(member)}>
+                          Cancelar
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className={`crm-access__link ${member.crmActive ? "crm-access__link--danger" : ""}`}
+                        onClick={() => setActive(member, !member.crmActive)}
+                      >
+                        {member.crmActive ? "Bloquear" : "Desbloquear"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -284,7 +302,7 @@ function GroupEditor({
         )}
       </div>
       {group.isDefault && (
-        <p className="crm-access__note">Grupo padrão: usado por quem não tem grupo, inclusive quem se cadastra pelo /register.</p>
+        <p className="crm-access__note">Grupo padrão: usado por quem não tem grupo, inclusive quem entra com Microsoft pela primeira vez sem convite.</p>
       )}
     </div>
   );
@@ -324,7 +342,7 @@ function InviteModal({
           <X size={20} />
         </button>
         <h2>Convidar usuário</h2>
-        <p>A pessoa recebe um e-mail com um link para criar a senha e entrar no CRM.</p>
+        <p>A pessoa recebe um e-mail para entrar no CRM com a conta Microsoft desse endereço.</p>
         <form onSubmit={submit}>
           <div className="crm-modal-group">
             <label htmlFor="invite-name">Nome</label>

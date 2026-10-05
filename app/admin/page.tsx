@@ -52,11 +52,11 @@ interface TeamMember {
   order: number;
   accentColor?: string;
   email?: string | null;
-  hasPassword?: boolean;
+  crmLinked?: boolean;
   showOnSite?: boolean;
 }
 
-type MemberInput = Partial<TeamMember> & { password?: string };
+type MemberInput = Partial<TeamMember>;
 
 interface BrandLogo {
   id: string;
@@ -193,7 +193,6 @@ function MemberModal({
   const [sector, setSector] = useState(initialData?.sector || "");
   const [accentColor, setAccentColor] = useState(initialData?.accentColor || "#14d0c1");
   const [email, setEmail] = useState(initialData?.email || "");
-  const [password, setPassword] = useState("");
   const [showOnSite, setShowOnSite] = useState(initialData?.showOnSite ?? true);
 
   // Extract valid 6-char hex for native <input type="color">
@@ -241,22 +240,16 @@ function MemberModal({
             />
           </label>
           <label>
-            <span>E-mail de acesso ao CRM</span>
+            <span>
+              E-mail da conta Microsoft (acesso ao CRM)
+              {initialData?.crmLinked && " · já entrou no CRM"}
+            </span>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Ex: rodrigo@grupoqmax.com.br"
               autoComplete="off"
-            />
-          </label>
-          <label>
-            <span>{initialData?.hasPassword ? "Nova senha do CRM (vazio mantém a atual)" : "Senha do CRM"}</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
             />
           </label>
           <label className="qadmin-modal__check">
@@ -335,7 +328,7 @@ function MemberModal({
           </button>
           <button
             className="qadmin-btn qadmin-btn--primary"
-            onClick={() => onSave({ name, role, sector, accentColor, email, password, showOnSite })}
+            onClick={() => onSave({ name, role, sector, accentColor, email, showOnSite })}
             disabled={!name.trim()}
           >
             <CheckCircle2 size={16} />

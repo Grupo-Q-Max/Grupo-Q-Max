@@ -1,5 +1,4 @@
 import type { TeamMember } from "@prisma/client";
-import { hashPassword } from "@/lib/auth";
 
 /**
  * Team members live in the TeamMember table (they are also the CRM users:
@@ -18,14 +17,15 @@ export function toTeamDto(member: TeamMember) {
     bio: member.bio,
     linkedin: member.linkedin,
     email: member.email,
-    hasPassword: Boolean(member.passwordHash),
+    /** Already signed in to the CRM with Microsoft */
+    crmLinked: Boolean(member.microsoftOid),
     showOnSite: member.showOnSite,
   };
 }
 
 /** What the public site may see: no CRM login data. */
 export function toPublicTeamDto(member: TeamMember) {
-  const { email, hasPassword, ...dto } = toTeamDto(member);
+  const { email, crmLinked, ...dto } = toTeamDto(member);
   return dto;
 }
 
@@ -40,10 +40,13 @@ export function emailTakenResponse(error: unknown) {
 const optionalText = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim() : null);
 
 type TeamFields = Partial<
-  Pick<TeamMember, "name" | "role" | "sector" | "accentColor" | "photo" | "bio" | "linkedin" | "order" | "email" | "passwordHash" | "showOnSite" | "emailVerifiedAt">
+  Pick<TeamMember, "name" | "role" | "sector" | "accentColor" | "photo" | "bio" | "linkedin" | "order" | "email" | "showOnSite">
 >;
 
-/** Maps an API body to TeamMember columns, ignoring unknown and absent keys. An empty `password` keeps the current one. */
+/**
+ * Maps an API body to TeamMember columns, ignoring unknown and absent keys. `email` is the CRM login:
+ * the member's Microsoft account is linked to it on their first sign-in.
+ */
 export function parseTeamInput(body: Record<string, unknown>): TeamFields {
   return {
     ...(typeof body.name === "string" && { name: body.name.trim() || "Novo Membro" }),
@@ -56,8 +59,5 @@ export function parseTeamInput(body: Record<string, unknown>): TeamFields {
     ...(typeof body.order === "number" && { order: body.order }),
     ...(typeof body.showOnSite === "boolean" && { showOnSite: body.showOnSite }),
     ...("email" in body && { email: optionalText(body.email)?.toLowerCase() ?? null }),
-    ...(typeof body.password === "string" && body.password && { passwordHash: hashPassword(body.password) }),
-    // the admin vouches for the login it sets, so it needs no confirmation e-mail
-    ...(("email" in body || (typeof body.password === "string" && body.password)) && { emailVerifiedAt: new Date() }),
   };
 }

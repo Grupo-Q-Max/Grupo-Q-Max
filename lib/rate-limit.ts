@@ -27,5 +27,9 @@ export function tooManyRequests(wait: number) {
  */
 export function clientIp(req: Request) {
   const last = req.headers.get("x-forwarded-for")?.split(",").pop()?.trim() ?? "";
-  return last.replace(/:\d+$/, "") || "local";
+  // "[2001:db8::1]:443" → IPv6 without port; "1.2.3.4:443" → IPv4 without port; a bare IPv6 stays as is
+  const bracketed = last.match(/^\[([^\]]+)\](?::\d+)?$/);
+  if (bracketed) return bracketed[1];
+  if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(last)) return last.replace(/:\d+$/, "");
+  return last || "local";
 }

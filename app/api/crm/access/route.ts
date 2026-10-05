@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
+import { sessionMemberId } from "@/lib/auth";
 import { isPermission } from "@/lib/crm-permissions";
 
 /** Valid, distinct permission keys of a request body, as rows for CrmGroupPermission. */
@@ -90,15 +91,28 @@ export async function DELETE(req: Request) {
   }
 }
 
-/** Moves a member to a group: `{ memberId, groupId }` (`groupId: null` = default group). */
+/**
+ * Updates a member's access: `{ memberId, groupId? }` moves them to a group (`groupId: null` = default
+ * group); `{ memberId, crmActive? }` blocks (false) or unblocks them.
+ */
 export async function PATCH(req: Request) {
   try {
     const denied = await denyUnless("access.manage");
     if (denied) return denied;
-    const { memberId, groupId } = await req.json();
+    const body = await req.json();
+    const memberId = String(body.memberId ?? "");
     if (!memberId) return NextResponse.json({ error: "Missing memberId" }, { status: 400 });
+    if (body.crmActive === false && memberId === sessionMemberId(req)) {
+      return NextResponse.json({ error: "Você não pode bloquear a si mesmo." }, { status: 400 });
+    }
 
-    await prisma.teamMember.update({ where: { id: String(memberId) }, data: { crmGroupId: groupId ? String(groupId) : null } });
+    await prisma.teamMember.update({
+      where: { id: memberId },
+      data: {
+        ...("groupId" in body && { crmGroupId: body.groupId ? String(body.groupId) : null }),
+        ...(typeof body.crmActive === "boolean" && { crmActive: body.crmActive }),
+      },
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     if ((error as { code?: string })?.code === "P2003" || (error as { code?: string })?.code === "P2025") {

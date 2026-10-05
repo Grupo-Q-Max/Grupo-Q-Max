@@ -97,3 +97,13 @@
   line-height: 1.5;
   color: #d4d0d8;
 }
+
+/* Microsoft sign-in button (light, as in the Microsoft brand guidelines) */
+.crm-login .crm-login__microsoft {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #fff;
+  color: #1b1b1b;
+}

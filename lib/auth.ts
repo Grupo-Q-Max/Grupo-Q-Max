@@ -1,7 +1,10 @@
 import type { NextResponse } from "next/server";
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
-/** CRM session: cookie `memberId.expiresAt.signature`, signed with AUTH_SECRET. No DB lookup per request. */
+/**
+ * CRM session: cookie `memberId.expiresAt.signature`, signed with AUTH_SECRET. No DB lookup per request.
+ * Members sign in only with Microsoft (POST /api/auth/microsoft, lib/microsoft-auth.ts).
+ */
 export const SESSION_COOKIE = "qmax_crm_session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
@@ -15,17 +18,6 @@ const sameText = (a: string, b: string) => {
   const y = Buffer.from(b);
   return x.length === y.length && timingSafeEqual(x, y);
 };
-
-export function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  return `${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
-}
-
-export function verifyPassword(password: string, stored: string | null) {
-  const [salt, hash] = (stored ?? "").split(":");
-  if (!salt || !hash) return false;
-  return sameText(scryptSync(password, salt, 64).toString("hex"), hash);
-}
 
 /** Signed `memberId.expiresAt.signature`; `purpose` is signed too, so a token of one kind never works as another. */
 function createToken(purpose: string, memberId: string, maxAge: number) {
@@ -43,15 +35,6 @@ function readToken(purpose: string, token: string | undefined) {
 
 export const createSession = (memberId: string) => createToken("session", memberId, SESSION_MAX_AGE);
 export const readSession = (token: string | undefined) => readToken("session", token);
-
-/** E-mail confirmation link token, valid for 24h. */
-export const createVerifyToken = (memberId: string) => createToken("verify", memberId, 60 * 60 * 24);
-export const readVerifyToken = (token: string | undefined) => readToken("verify", token);
-
-/** CRM invitation link token (/invite), valid for 7 days. */
-export const INVITE_DAYS = 7;
-export const createInviteToken = (memberId: string) => createToken("invite", memberId, 60 * 60 * 24 * INVITE_DAYS);
-export const readInviteToken = (token: string | undefined) => readToken("invite", token);
 
 /** Signs `memberId` in on `res`. */
 export function setSessionCookie(res: NextResponse, memberId: string) {
