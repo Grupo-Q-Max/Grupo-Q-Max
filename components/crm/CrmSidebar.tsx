@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut, ShieldCheck, Lightbulb } from "lucide-react";
+import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 import { useCan } from "./CrmAccess";
 
@@ -15,6 +15,8 @@ export function CrmSidebar() {
   // the server render never flashes an open sidebar on phones
   const [open, setOpen] = useState<boolean | null>(null);
   const can = useCan();
+  // Settings also hosts access levels (/crm/settings/access)
+  const canSettings = can("request.manage") || can("access.manage");
   const pathname = usePathname();
   // Pipelines owns the board plus its deal and automation subpages
   const navClass = (href: string) => {
@@ -73,20 +75,14 @@ export function CrmSidebar() {
             <Lightbulb size={18} />
             Pedidos
           </Link>
-          {can("access.manage") && (
-            <Link href="/crm/access" className={navClass("/crm/access")}>
-              <ShieldCheck size={18} />
-              Acessos
-            </Link>
-          )}
-          {can("request.manage") && (
+          {canSettings && (
             <Link href="/crm/settings" className={navClass("/crm/settings")} style={{ marginTop: "auto" }}>
               <Settings size={18} />
               Configurações
             </Link>
           )}
           {/* Without settings, "Sair" is the item pushed to the bottom */}
-          <button type="button" className="crm-nav__item" onClick={logout} style={can("request.manage") ? undefined : { marginTop: "auto" }}>
+          <button type="button" className="crm-nav__item" onClick={logout} style={canSettings ? undefined : { marginTop: "auto" }}>
             <LogOut size={18} />
             Sair
           </button>

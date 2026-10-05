@@ -5,7 +5,7 @@ import { CrmAccessManager } from "@/components/crm/CrmAccessManager";
 
 export const dynamic = "force-dynamic";
 
-/** /crm/access — access groups, their permissions and the group of each CRM user. */
+/** /crm/settings/access — access groups, their permissions and the group of each CRM user. */
 export default async function AccessPage() {
   if (!(await currentPermissions()).has("access.manage")) return <CrmForbidden />;
   await ensureGroups();
