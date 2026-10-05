@@ -55,6 +55,19 @@ const sender = () => {
   return env("MAIL_FROM_NAME") ? { name: env("MAIL_FROM_NAME"), address } : address;
 };
 
+export const escapeHtml = (text: string) =>
+  text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
+/**
+ * Base URL for links sent by e-mail. Production never trusts the Host header (a forged one would send
+ * the token to another site); dev always links back to the server that got the request, whatever
+ * APP_URL a shared .env carries.
+ */
+export const appUrl = (req: Request) =>
+  process.env.NODE_ENV === "production"
+    ? (process.env.APP_URL || "https://qmaxbrasil.com.br").replace(/\/+$/, "")
+    : new URL(req.url).origin;
+
 export async function sendMail(to: string, subject: string, html: string) {
   if (!oauthConfigured() && !env("SMTP_HOST")) {
     if (process.env.NODE_ENV === "production") throw new Error("E-mail is not configured (OAUTH_* or SMTP_*)");

@@ -19,14 +19,19 @@ export default async function AccessPage() {
     prisma.teamMember.findMany({
       where: { email: { not: null } },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, email: true, crmGroupId: true },
+      select: { id: true, name: true, email: true, crmGroupId: true, emailVerifiedAt: true, showOnSite: true },
     }),
   ]);
 
   return (
     <CrmAccessManager
       groups={groups.map(({ permissions, ...g }) => ({ ...g, permissions: permissions.map((p) => p.permission) }))}
-      members={members}
+      // Pending = invited (or self-registered) but never confirmed; only those not on the site can be cancelled here
+      members={members.map(({ emailVerifiedAt, showOnSite, ...m }) => ({
+        ...m,
+        pending: !emailVerifiedAt,
+        cancellable: !emailVerifiedAt && !showOnSite,
+      }))}
     />
   );
 }

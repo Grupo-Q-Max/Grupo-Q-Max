@@ -1,12 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { Mail, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import { PERMISSION_SECTIONS, type Permission } from "@/lib/crm-permissions";
 
 type Group = { id: string; name: string; isAdmin: boolean; isDefault: boolean; permissions: string[] };
-type Member = { id: string; name: string; email: string | null; crmGroupId: string | null };
+type Member = {
+  id: string;
+  name: string;
+  email: string | null;
+  crmGroupId: string | null;
+  /** Invited (or self-registered) but never confirmed the login */
+  pending: boolean;
+  /** Pending and not on the public site, so cancelling the invite may delete it */
+  cancellable: boolean;
+};
 
 const jsonRequest = (method: string, body: unknown): RequestInit => ({
   method,
@@ -23,11 +33,14 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(groups[0]?.id ?? null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [inviting, setInviting] = useState(false);
   const selected = groups.find((g) => g.id === selectedId) ?? groups[0];
   const defaultGroup = groups.find((g) => g.isDefault);
 
   const run = async (request: Promise<Response>) => {
     setError(null);
+    setNotice(null);
     const message = await failure(await request);
     if (message) setError(message);
     else router.refresh();
@@ -44,6 +57,28 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
     router.refresh();
   };
 
+  /** Sends (or resends) the invitation e-mail; returns the error message, if any. */
+  const invite = async (fields: { name: string; email: string; groupId: string | null }) => {
+    setNotice(null);
+    const message = await failure(await fetch("/api/crm/invite", jsonRequest("POST", fields)));
+    // Also on failure: when only the e-mail failed, the user is listed as pending (to resend)
+    router.refresh();
+    if (message) return message;
+    setError(null);
+    setNotice(`Convite enviado para ${fields.email}.`);
+    return null;
+  };
+
+  const resend = async (member: Member) => {
+    const message = await invite({ name: member.name, email: member.email ?? "", groupId: member.crmGroupId });
+    if (message) setError(message);
+  };
+
+  const cancelInvite = (member: Member) => {
+    if (!window.confirm(`Cancelar o convite de ${member.email}? O link enviado deixa de funcionar.`)) return;
+    run(fetch(`/api/crm/invite?memberId=${member.id}`, { method: "DELETE" }));
+  };
+
   const countOf = (group: Group) => members.filter((m) => (m.crmGroupId ?? defaultGroup?.id) === group.id).length;
 
   return (
@@ -53,6 +88,9 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
           <ShieldCheck size={22} /> Níveis de acesso
         </h1>
         <div className="crm-header__actions">
+          <button type="button" className="btn-secondary" onClick={() => setInviting(true)}>
+            <Mail size={18} /> Convidar usuário
+          </button>
           <button type="button" className="btn-primary" onClick={createGroup}>
             <Plus size={18} /> Novo grupo
           </button>
@@ -61,6 +99,7 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
 
       <div className="crm-content crm-access">
         {error && <div className="crm-access__error">{error}</div>}
+        {notice && <div className="crm-access__notice">{notice}</div>}
 
         <div className="crm-access__layout">
           <nav className="crm-access__groups">
@@ -102,6 +141,7 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
                 <th>Nome</th>
                 <th>E-mail</th>
                 <th>Grupo</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -125,11 +165,28 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
                       ))}
                     </select>
                   </td>
+                  <td>
+                    {member.pending ? (
+                      <div className="crm-access__status">
+                        <span className="crm-badge">Convite pendente</span>
+                        <button type="button" className="crm-access__link" onClick={() => resend(member)}>
+                          Reenviar
+                        </button>
+                        {member.cancellable && (
+                          <button type="button" className="crm-access__link crm-access__link--danger" onClick={() => cancelInvite(member)}>
+                            Cancelar
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      "Ativo"
+                    )}
+                  </td>
                 </tr>
               ))}
               {members.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="deal-empty">
+                  <td colSpan={4} className="deal-empty">
                     Nenhum usuário com login no CRM.
                   </td>
                 </tr>
@@ -138,6 +195,21 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
           </table>
         </section>
       </div>
+
+      {inviting &&
+        createPortal(
+          <InviteModal
+            groups={groups}
+            defaultGroupName={defaultGroup?.name}
+            onClose={() => setInviting(false)}
+            onInvite={async (fields) => {
+              const message = await invite(fields);
+              if (!message) setInviting(false);
+              return message;
+            }}
+          />,
+          document.body
+        )}
     </>
   );
 }
@@ -214,6 +286,76 @@ function GroupEditor({
       {group.isDefault && (
         <p className="crm-access__note">Grupo padrão: usado por quem não tem grupo, inclusive quem se cadastra pelo /register.</p>
       )}
+    </div>
+  );
+}
+
+function InviteModal({
+  groups,
+  defaultGroupName,
+  onClose,
+  onInvite,
+}: {
+  groups: Group[];
+  defaultGroupName?: string;
+  onClose: () => void;
+  onInvite: (fields: { name: string; email: string; groupId: string | null }) => Promise<string | null>;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setSending(true);
+    const message = await onInvite({
+      name: String(form.get("name") ?? ""),
+      email: String(form.get("email") ?? ""),
+      groupId: String(form.get("groupId") ?? "") || null,
+    });
+    setSending(false);
+    setError(message);
+  };
+
+  return (
+    <div className="crm-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="crm-modal" role="dialog" aria-modal="true">
+        <button type="button" className="crm-modal-close" onClick={onClose} aria-label="Fechar">
+          <X size={20} />
+        </button>
+        <h2>Convidar usuário</h2>
+        <p>A pessoa recebe um e-mail com um link para criar a senha e entrar no CRM.</p>
+        <form onSubmit={submit}>
+          <div className="crm-modal-group">
+            <label htmlFor="invite-name">Nome</label>
+            <input id="invite-name" name="name" autoFocus readOnly={sending} />
+          </div>
+          <div className="crm-modal-group">
+            <label htmlFor="invite-email">E-mail *</label>
+            <input id="invite-email" name="email" type="email" required readOnly={sending} />
+          </div>
+          <div className="crm-modal-group">
+            <label htmlFor="invite-group">Grupo de acesso</label>
+            <select id="invite-group" name="groupId" className="crm-access__select">
+              <option value="">Padrão ({defaultGroupName ?? "sem grupo"})</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {error && <p className="crm-access__error">{error}</p>}
+          <div className="crm-modal-actions">
+            <button type="button" className="btn-secondary" onClick={onClose} disabled={sending}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-primary" disabled={sending}>
+              {sending ? "Enviando..." : "Enviar convite"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

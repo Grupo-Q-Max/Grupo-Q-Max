@@ -995,3 +995,41 @@ button.crm-nav__item {
     overflow-x: auto;
   }
 }
+
+.crm-access__notice {
+  background: rgba(76, 235, 149, 0.1);
+  border: 1px solid rgba(76, 235, 149, 0.3);
+  color: #4ceb95;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.crm-access__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.crm-access__link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #ff2b91;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.crm-access__link--danger {
+  color: #ff8080;
+}
+
+.crm-modal .crm-access__select {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+}
+
+.crm-modal .crm-access__error {
+  margin: 0 0 16px;
+}

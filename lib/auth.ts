@@ -48,6 +48,11 @@ export const readSession = (token: string | undefined) => readToken("session", t
 export const createVerifyToken = (memberId: string) => createToken("verify", memberId, 60 * 60 * 24);
 export const readVerifyToken = (token: string | undefined) => readToken("verify", token);
 
+/** CRM invitation link token (/invite), valid for 7 days. */
+export const INVITE_DAYS = 7;
+export const createInviteToken = (memberId: string) => createToken("invite", memberId, 60 * 60 * 24 * INVITE_DAYS);
+export const readInviteToken = (token: string | undefined) => readToken("invite", token);
+
 /** Signs `memberId` in on `res`. */
 export function setSessionCookie(res: NextResponse, memberId: string) {
   res.cookies.set(SESSION_COOKIE, createSession(memberId), {

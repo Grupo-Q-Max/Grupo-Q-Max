@@ -7,14 +7,17 @@ const MODES = {
   login: { endpoint: "/api/auth", submit: "Entrar", busy: "Entrando...", switchText: "Não tem conta?", switchLabel: "Cadastre-se", switchHref: "/register" },
   register: { endpoint: "/api/auth/register", submit: "Criar conta", busy: "Criando...", switchText: "Já tem conta?", switchLabel: "Entrar", switchHref: "/login" },
   verify: { endpoint: "/api/auth/verify", submit: "Confirmar e entrar", busy: "Confirmando...", switchText: "Link expirou?", switchLabel: "Cadastre-se de novo", switchHref: "/register" },
+  invite: { endpoint: "/api/auth/invite", submit: "Criar senha e entrar", busy: "Entrando...", switchText: "Já tem conta?", switchLabel: "Entrar", switchHref: "/login" },
 };
 
 /**
  * CRM login / sign-up / e-mail confirmation form. The proxy sends to /login with `?next=` the page the member
- * tried to open; the confirmation e-mail links to /verify with `?token=`.
+ * tried to open; the confirmation e-mail links to /verify and the invitation e-mail to /invite, both with `?token=`.
  */
 export function AuthForm({ mode }: { mode: keyof typeof MODES }) {
   const text = MODES[mode];
+  const withToken = mode === "verify" || mode === "invite";
+  const newPassword = mode === "register" || mode === "invite";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState("");
@@ -28,7 +31,7 @@ export function AuthForm({ mode }: { mode: keyof typeof MODES }) {
     const res = await fetch(text.endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(mode === "verify" ? { ...fields, token: params.get("token") } : fields),
+      body: JSON.stringify(withToken ? { ...fields, token: params.get("token") } : fields),
     }).catch(() => null);
 
     if (res?.ok && mode === "register") {
@@ -77,6 +80,8 @@ export function AuthForm({ mode }: { mode: keyof typeof MODES }) {
         )}
         {mode === "verify" ? (
           <p className="crm-login__notice">Digite a senha que você criou no cadastro para confirmar seu e-mail.</p>
+        ) : mode === "invite" ? (
+          <p className="crm-login__notice">Você foi convidado para o Q-Max CRM. Crie uma senha para entrar.</p>
         ) : (
           <label>
             <span>E-mail{mode === "register" && " (@grupoqmax.com.br)"}</span>
@@ -88,9 +93,9 @@ export function AuthForm({ mode }: { mode: keyof typeof MODES }) {
           <input
             name="password"
             type="password"
-            autoComplete={mode === "register" ? "new-password" : "current-password"}
-            autoFocus={mode === "verify"}
-            minLength={mode === "register" ? 8 : undefined}
+            autoComplete={newPassword ? "new-password" : "current-password"}
+            autoFocus={withToken}
+            minLength={newPassword ? 8 : undefined}
             required
           />
         </label>
