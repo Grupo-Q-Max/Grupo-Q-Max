@@ -9,7 +9,9 @@ type Notification = {
   message: string;
   readAt: string | null;
   createdAt: string;
-  card: { number: number; title: string };
+  /** Set for deal notifications; `request` for improvement requests */
+  card: { number: number; title: string } | null;
+  request: { title: string } | null;
 };
 
 const formatWhen = (iso: string) =>
@@ -80,11 +82,11 @@ export function CrmNotificationBell() {
               items.map((n) => (
                 <a
                   key={n.id}
-                  href={`/crm/deal/details/${n.card.number}`}
+                  href={n.card ? `/crm/deal/details/${n.card.number}` : "/crm/requests"}
                   className={`crm-bell__item ${n.readAt ? "" : "is-unread"}`}
                   onClick={() => !n.readAt && markRead(n.id)}
                 >
-                  <strong>{n.card.title}</strong>
+                  <strong>{n.card?.title ?? n.request?.title}</strong>
                   <span>{n.message}</span>
                   <time>{formatWhen(n.createdAt)}</time>
                 </a>

@@ -41,6 +41,7 @@ import {
   MessageSquare,
   Activity,
 } from "lucide-react";
+import { AREAS } from "@/lib/crm-areas";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 interface TeamMember {
@@ -48,6 +49,8 @@ interface TeamMember {
   name: string;
   role: string;
   sector: string;
+  /** CRM area notified of improvement requests addressed to it */
+  area?: keyof typeof AREAS | null;
   image: string | null;
   order: number;
   accentColor?: string;
@@ -193,6 +196,7 @@ function MemberModal({
   const [sector, setSector] = useState(initialData?.sector || "");
   const [accentColor, setAccentColor] = useState(initialData?.accentColor || "#14d0c1");
   const [email, setEmail] = useState(initialData?.email || "");
+  const [area, setArea] = useState<keyof typeof AREAS | "">(initialData?.area ?? "");
   const [showOnSite, setShowOnSite] = useState(initialData?.showOnSite ?? true);
 
   // Extract valid 6-char hex for native <input type="color">
@@ -251,6 +255,17 @@ function MemberModal({
               placeholder="Ex: rodrigo@grupoqmax.com.br"
               autoComplete="off"
             />
+          </label>
+          <label>
+            <span>Área no CRM (recebe os pedidos de melhoria da área)</span>
+            <select value={area} onChange={(e) => setArea(e.target.value as typeof area)}>
+              <option value="">Nenhuma</option>
+              {Object.entries(AREAS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="qadmin-modal__check">
             <input type="checkbox" checked={showOnSite} onChange={(e) => setShowOnSite(e.target.checked)} />
@@ -328,7 +343,7 @@ function MemberModal({
           </button>
           <button
             className="qadmin-btn qadmin-btn--primary"
-            onClick={() => onSave({ name, role, sector, accentColor, email, showOnSite })}
+            onClick={() => onSave({ name, role, sector, area: area || null, accentColor, email, showOnSite })}
             disabled={!name.trim()}
           >
             <CheckCircle2 size={16} />

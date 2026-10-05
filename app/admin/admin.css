@@ -817,7 +817,8 @@
   text-transform: uppercase;
   letter-spacing: .06em;
 }
-.qadmin-modal__body input {
+.qadmin-modal__body input,
+.qadmin-modal__body select {
   padding: 11px 14px;
   background: rgba(255,255,255,.05);
   border: 1px solid rgba(255,255,255,.1);
@@ -827,7 +828,9 @@
   outline: none;
   transition: border-color .2s;
 }
-.qadmin-modal__body input:focus { border-color: rgba(20,208,193,.5); }
+.qadmin-modal__body select option { background: #18181b; }
+.qadmin-modal__body input:focus,
+.qadmin-modal__body select:focus { border-color: rgba(20,208,193,.5); }
 
 /* ── Color Picker Section ── */
 .qadmin-color-picker {

@@ -59,6 +59,8 @@ model TeamMember {
   /// CRM access group; null = the default group (CrmGroup.isDefault)
   crmGroupId      String?
   crmGroup        CrmGroup? @relation(fields: [crmGroupId], references: [id], onDelete: SetNull)
+  /// Area notified of new improvement requests addressed to it; null = no area
+  area            CrmArea?
 
   responsibleDeals      CrmCard[]                 @relation("DealResponsible")
   observedDeals         CrmDealObserver[]
@@ -74,6 +76,14 @@ model TeamMember {
 
   @@unique([microsoftTid, microsoftOid])
   @@index([crmGroupId])
+  @@index([area])
+}
+
+/// Company area a request is addressed to; OTHER notifies the `request.manage` users.
+enum CrmArea {
+  MARKETING
+  TECHNOLOGY
+  OTHER
 }
 
 enum CrmRequestType {
@@ -87,6 +97,8 @@ model CrmRequestColumn {
   id        String       @id @default(cuid())
   name      String       @db.VarChar(100)
   order     Int          @default(0)
+  /// The "done" column (at most one): its requests are archived some days after entering it
+  isDone    Boolean      @default(false)
   requests  CrmRequest[]
   createdAt DateTime     @default(now())
 }
@@ -98,18 +110,28 @@ model CrmRequest {
   authorId    String?
   author      TeamMember?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
   type        CrmRequestType   @default(IMPROVEMENT)
+  /// Area whose members are notified and see the request
+  area        CrmArea          @default(OTHER)
   title       String           @db.VarChar(200)
   description String           @db.Text
   /// Board column; its name is the status the author sees. Deleting a column moves its requests first.
   columnId    String
   column      CrmRequestColumn @relation(fields: [columnId], references: [id], onDelete: Restrict)
   order       Int              @default(0)
+  /// When the request entered the done column; null outside it
+  completedAt DateTime?
+  /// Hidden from the board and the list; set by hand or some days after completedAt
+  archivedAt  DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+
+  notifications CrmNotification[]
 
   @@index([authorId])
   @@index([columnId, order])
   @@index([createdAt])
+  @@index([area])
+  @@index([archivedAt, completedAt])
 }
 
 /// CRM sign-in attempts with Microsoft, successful or not, for auditing. Never stores tokens.
@@ -564,19 +586,22 @@ model CrmAutomationNotify {
   memberIds         Json?
 }
 
-/// In-app notification shown in the CRM bell of a team member.
+/// In-app notification shown in the CRM bell of a team member, about a deal or an improvement request.
 model CrmNotification {
-  id        String     @id @default(cuid())
+  id        String      @id @default(cuid())
   memberId  String
-  member    TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  cardId    String
-  card      CrmCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  message   String     @db.Text
+  member    TeamMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  cardId    String?
+  card      CrmCard?    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  requestId String?
+  request   CrmRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  message   String      @db.Text
   readAt    DateTime?
-  createdAt DateTime   @default(now())
+  createdAt DateTime    @default(now())
 
   @@index([memberId, readAt])
   @@index([cardId])
+  @@index([requestId])
 }
 
 /// HTTP header sent by a webhook rule.
