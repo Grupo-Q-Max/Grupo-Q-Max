@@ -7,21 +7,29 @@ import { CrmRequests } from "@/components/crm/CrmRequests";
 
 export const dynamic = "force-dynamic";
 
-/** /crm/requests — improvement requests: everyone sees their own; `request.manage` sees all on a board. */
+/**
+ * /crm/requests — improvement requests: everyone sees their own and those addressed to their area;
+ * `request.manage` sees all on a board.
+ */
 export default async function RequestsPage() {
   const memberId = readSession((await cookies()).get(SESSION_COOKIE)?.value);
   const canManage = (await currentPermissions()).has("request.manage");
+
+  const area = memberId
+    ? (await prisma.teamMember.findUnique({ where: { id: memberId }, select: { area: true } }))?.area
+    : null;
 
   const [columns, requests] = await Promise.all([
     requestColumns(),
     prisma.crmRequest.findMany({
       // No session (site admin cookie only) and no permission = nothing to list
-      where: canManage ? {} : { authorId: memberId ?? "-" },
+      where: canManage ? {} : { OR: [{ authorId: memberId ?? "-" }, ...(area ? [{ area }] : [])] },
       orderBy: canManage ? { order: "asc" } : { createdAt: "desc" },
       take: 500, // ponytail: no pagination; add when requests pass a few hundred
       select: {
         id: true,
         type: true,
+        area: true,
         title: true,
         description: true,
         columnId: true,

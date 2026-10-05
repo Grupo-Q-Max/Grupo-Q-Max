@@ -15,7 +15,7 @@ export async function GET(req: Request) {
         where: { memberId },
         orderBy: { createdAt: "desc" },
         take: 30,
-        include: { card: { select: { number: true, title: true } } },
+        include: { card: { select: { number: true, title: true } }, request: { select: { title: true } } },
       }),
       prisma.crmNotification.count({ where: { memberId, readAt: null } }),
     ]);

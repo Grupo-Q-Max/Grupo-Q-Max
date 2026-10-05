@@ -5,12 +5,15 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Kanban as KanbanIcon, Lightbulb, Send, X } from "lucide-react";
 import { Kanban, type KanbanColumnData } from "@/components/kanban";
+import { AREAS } from "@/lib/crm-areas";
 
 type RequestType = "IMPROVEMENT" | "BUG" | "OTHER";
+type Area = keyof typeof AREAS;
 type Column = { id: string; name: string };
 type Request = {
   id: string;
   type: RequestType;
+  area: Area;
   title: string;
   description: string;
   columnId: string;
@@ -46,6 +49,7 @@ export function CrmRequests({
 }) {
   const router = useRouter();
   const [type, setType] = useState<RequestType>("IMPROVEMENT");
+  const [area, setArea] = useState<Area | "">("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -53,16 +57,18 @@ export function CrmRequests({
   const [notice, setNotice] = useState<string | null>(null);
   const [view, setView] = useState<"requests" | "board">("requests");
   const [opened, setOpened] = useState<Request | null>(null);
-  const myRequests = useMemo(() => requests.filter((r) => r.mine).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [requests]);
+  // Managers see everything on the board; the list shows their own. Others get theirs and their area's.
+  const myRequests = useMemo(() => requests.filter((r) => r.mine || !canManage).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [requests, canManage]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
     setNotice(null);
-    const message = await failure(await fetch("/api/crm/request", jsonRequest("POST", { type, title, description })));
+    const message = await failure(await fetch("/api/crm/request", jsonRequest("POST", { type, area, title, description })));
     setSaving(false);
     if (message) return setError(message);
+    setArea("");
     setTitle("");
     setDescription("");
     setNotice("Pedido enviado. Obrigado!");
@@ -123,6 +129,16 @@ export function CrmRequests({
                   </option>
                 ))}
               </select>
+              <select className="crm-access__select" value={area} required onChange={(e) => setArea(e.target.value as Area)} aria-label="Área">
+                <option value="" disabled>
+                  Área
+                </option>
+                {Object.entries(AREAS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
               <input
                 className="crm-access__select crm-requests__title"
                 placeholder="Título"
@@ -160,6 +176,7 @@ export function CrmRequests({
                 <div className="crm-requests__description">{r.description}</div>
                 <div className="kanban-card__footer">
                   <span className="crm-badge">{TYPES[r.type]}</span>
+                  <span className="crm-badge">{AREAS[r.area]}</span>
                   <span className="kanban-card__date">
                     {r.author} · {new Date(r.createdAt).toLocaleDateString("pt-BR")}
                   </span>
@@ -184,12 +201,13 @@ export function CrmRequests({
           />
         ) : (
           <section className="crm-access__members">
-            <h3>Meus pedidos</h3>
+            <h3>{canManage ? "Meus pedidos" : "Meus pedidos e da minha área"}</h3>
             <table className="crm-table">
               <thead>
                 <tr>
                   <th>Pedido</th>
                   <th>Tipo</th>
+                  <th>Área</th>
                   <th>Data</th>
                   <th>Status</th>
                 </tr>
@@ -200,8 +218,10 @@ export function CrmRequests({
                     <td>
                       <strong>{r.title}</strong>
                       <div className="crm-requests__description">{r.description}</div>
+                      {!r.mine && <div className="crm-requests__description">por {r.author}</div>}
                     </td>
                     <td>{TYPES[r.type]}</td>
+                    <td>{AREAS[r.area]}</td>
                     <td>{new Date(r.createdAt).toLocaleDateString("pt-BR")}</td>
                     <td>
                       <span className="crm-badge">{columnName.get(r.columnId)}</span>
@@ -210,7 +230,7 @@ export function CrmRequests({
                 ))}
                 {myRequests.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="deal-empty">
+                    <td colSpan={5} className="deal-empty">
                       Nenhum pedido ainda.
                     </td>
                   </tr>
@@ -231,6 +251,7 @@ export function CrmRequests({
               <h2>{opened.title}</h2>
               <div className="crm-requests__meta">
                 <span className="crm-badge">{TYPES[opened.type]}</span>
+                <span className="crm-badge">{AREAS[opened.area]}</span>
                 <span className="crm-badge">{columnName.get(opened.columnId)}</span>
                 <span>
                   {opened.author} · {new Date(opened.createdAt).toLocaleString("pt-BR")}

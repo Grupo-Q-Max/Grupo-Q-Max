@@ -3,11 +3,15 @@ import { CrmRequestType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
 import { sessionMemberId } from "@/lib/auth";
-import { requestColumns } from "@/lib/crm-requests";
+import { notifyRequestArea, requestColumns } from "@/lib/crm-requests";
+import { isArea } from "@/lib/crm-areas";
 
 const isType = (v: unknown): v is CrmRequestType => Object.values(CrmRequestType).includes(v as CrmRequestType);
 
-/** Any active CRM user sends a request: `{ type, title, description }`. It lands in the first column. */
+/**
+ * Any active CRM user sends a request: `{ type, area, title, description }`. It lands in the first
+ * column and the members of the area are notified.
+ */
 export async function POST(req: Request) {
   try {
     const memberId = sessionMemberId(req);
@@ -19,21 +23,24 @@ export async function POST(req: Request) {
     const description = String(body.description ?? "").trim();
     if (!title || !description) return NextResponse.json({ error: "Informe o título e a descrição." }, { status: 400 });
     if (title.length > 200) return NextResponse.json({ error: "Título muito longo (máx. 200 caracteres)." }, { status: 400 });
+    if (!isArea(body.area)) return NextResponse.json({ error: "Escolha a área do pedido." }, { status: 400 });
 
     const [first] = await requestColumns();
     const count = await prisma.crmRequest.count({ where: { columnId: first.id } });
     const request = await prisma.crmRequest.create({
       data: {
         authorId: memberId,
+        area: body.area,
         title,
         description,
         type: isType(body.type) ? body.type : CrmRequestType.IMPROVEMENT,
         columnId: first.id,
         order: count,
       },
-      select: { id: true },
+      select: { id: true, title: true, area: true, authorId: true },
     });
-    return NextResponse.json(request);
+    await notifyRequestArea(request).catch((error) => console.error("Request notification failed", error));
+    return NextResponse.json({ id: request.id });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

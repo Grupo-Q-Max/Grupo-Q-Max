@@ -1,4 +1,5 @@
 import type { TeamMember } from "@prisma/client";
+import { isArea } from "@/lib/crm-areas";
 
 /**
  * Team members live in the TeamMember table (they are also the CRM users:
@@ -11,6 +12,7 @@ export function toTeamDto(member: TeamMember) {
     name: member.name,
     role: member.role,
     sector: member.sector,
+    area: member.area,
     image: member.photo,
     order: member.order,
     accentColor: member.accentColor,
@@ -25,7 +27,7 @@ export function toTeamDto(member: TeamMember) {
 
 /** What the public site may see: no CRM login data. */
 export function toPublicTeamDto(member: TeamMember) {
-  const { email, crmLinked, ...dto } = toTeamDto(member);
+  const { email, crmLinked, area, ...dto } = toTeamDto(member);
   return dto;
 }
 
@@ -40,7 +42,7 @@ export function emailTakenResponse(error: unknown) {
 const optionalText = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim() : null);
 
 type TeamFields = Partial<
-  Pick<TeamMember, "name" | "role" | "sector" | "accentColor" | "photo" | "bio" | "linkedin" | "order" | "email" | "showOnSite">
+  Pick<TeamMember, "name" | "role" | "sector" | "area" |"accentColor" | "photo" | "bio" | "linkedin" | "order" | "email" | "showOnSite">
 >;
 
 /**
@@ -52,6 +54,7 @@ export function parseTeamInput(body: Record<string, unknown>): TeamFields {
     ...(typeof body.name === "string" && { name: body.name.trim() || "Novo Membro" }),
     ...(typeof body.role === "string" && { role: body.role.trim() }),
     ...(typeof body.sector === "string" && { sector: body.sector.trim() }),
+    ...("area" in body && { area: isArea(body.area) ? body.area : null }),
     ...(typeof body.accentColor === "string" && { accentColor: body.accentColor }),
     ...("image" in body && { photo: optionalText(body.image) }),
     ...("bio" in body && { bio: optionalText(body.bio) }),
