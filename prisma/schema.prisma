@@ -38,6 +38,10 @@ model TeamMember {
   linkedin        String?
   bio             String?   @db.Text
   order           Int       @default(0)
+  /// Legacy, created by hand in production and unused by the code: group companies, comma-separated
+  /// (e.g. "grupo,technology"). Kept so db push doesn't drop its data; breaks 1NF, so move it to a
+  /// TeamMemberCompany(memberId, company) table before using it
+  companies       String?
   /// CRM login (/login): members without email + password can't sign in
   email           String?   @unique
   passwordHash    String?
