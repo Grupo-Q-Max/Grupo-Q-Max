@@ -51,10 +51,10 @@ export function CrmSidebar() {
             <LayoutDashboard size={18} />
             Pipelines
           </Link>
-          <a href="#" className="crm-nav__item">
+          <Link href="/crm/contacts" className="crm-nav__item">
             <Users size={18} />
             Contatos
-          </a>
+          </Link>
           <a href="#" className="crm-nav__item">
             <PieChart size={18} />
             Relatórios

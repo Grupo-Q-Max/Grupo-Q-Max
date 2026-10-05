@@ -1050,6 +1050,26 @@ button.crm-nav__item {
   margin: 0;
 }
 
+.crm-contacts__search {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 16px;
+}
+
+.crm-contacts__deals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.crm-access .crm-table a {
+  color: inherit;
+}
+
+.crm-contacts__empty {
+  color: #a5a0aa;
+}
+
 .crm-requests__row {
   display: flex;
   flex-wrap: wrap;
