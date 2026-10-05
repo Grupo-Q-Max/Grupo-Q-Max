@@ -1,4 +1,4 @@
-import { subscribeToMember, subscribeToPipeline } from "@/lib/crm-realtime";
+import { subscribeToMember, subscribeToPipeline, subscribeToRequests } from "@/lib/crm-realtime";
 import { sessionMemberId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -8,16 +8,17 @@ export const runtime = "nodejs";
 const HEARTBEAT_MS = 25_000;
 
 /**
- * Server-Sent Events stream for a pipeline (`?pipelineId=`) or for the notifications
- * of the signed-in member (`?notifications=1`). Emits a `data:` message every time
- * something changes; clients refetch when they receive one.
+ * Server-Sent Events stream for a pipeline (`?pipelineId=`), for the notifications of the
+ * signed-in member (`?notifications=1`) or for the improvement requests (`?requests=1`).
+ * Emits a `data:` message every time something changes; clients refetch when they receive one.
  */
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const pipelineId = params.get("pipelineId");
+  const requests = params.has("requests");
   const memberId = params.has("notifications") ? sessionMemberId(req) : null;
-  if (!pipelineId && !memberId) {
-    return Response.json({ error: "Missing pipelineId or notifications" }, { status: 400 });
+  if (!pipelineId && !memberId && !requests) {
+    return Response.json({ error: "Missing pipelineId, notifications or requests" }, { status: 400 });
   }
 
   const encoder = new TextEncoder();
@@ -37,7 +38,11 @@ export async function GET(req: Request) {
       };
 
       const forward = (event: unknown) => send(`data: ${JSON.stringify(event)}\n\n`);
-      const unsubscribe = pipelineId ? subscribeToPipeline(pipelineId, forward) : subscribeToMember(memberId!, forward);
+      const unsubscribe = pipelineId
+        ? subscribeToPipeline(pipelineId, forward)
+        : memberId
+          ? subscribeToMember(memberId, forward)
+          : subscribeToRequests(forward);
       const heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);
 
       cleanup = () => {

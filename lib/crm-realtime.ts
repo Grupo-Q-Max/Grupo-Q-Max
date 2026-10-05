@@ -30,3 +30,16 @@ export function notifyMember(memberId: string) {
 export function subscribeToMember(memberId: string, handler: (event: MemberNotifiedEvent) => void) {
   return subscribe<MemberNotifiedEvent>(memberChannel(memberId), handler);
 }
+
+export type RequestsChangedEvent = { type: "requests.changed" };
+
+const REQUESTS_CHANNEL = "crm:requests";
+
+/** Tells the open /crm/requests tabs to reload; each page refetches with its own permissions. */
+export function notifyRequestsChanged() {
+  publish<RequestsChangedEvent>(REQUESTS_CHANNEL, { type: "requests.changed" });
+}
+
+export function subscribeToRequests(handler: (event: RequestsChangedEvent) => void) {
+  return subscribe<RequestsChangedEvent>(REQUESTS_CHANNEL, handler);
+}
