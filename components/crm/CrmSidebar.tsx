@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 
@@ -44,10 +45,10 @@ export function CrmSidebar() {
         </div>
 
         <nav className="crm-nav">
-          <a href="/crm" className="crm-nav__item is-active">
+          <Link href="/crm" className="crm-nav__item is-active">
             <LayoutDashboard size={18} />
             Pipelines
-          </a>
+          </Link>
           <a href="#" className="crm-nav__item">
             <Users size={18} />
             Contatos

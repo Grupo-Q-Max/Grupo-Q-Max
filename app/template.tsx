@@ -1,8 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 export default function Template({ children }: { children: React.ReactNode }) {
+  // The CRM is a working tool: no page-enter fade, it delays every navigation
+  if (usePathname()?.startsWith("/crm")) return children;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
