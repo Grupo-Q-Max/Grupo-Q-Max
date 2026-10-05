@@ -5,6 +5,7 @@ import { currentPermissions, denyUnless } from "@/lib/crm-access";
 import { sessionMemberId } from "@/lib/auth";
 import { canEditRequest, notifyRequestArea, requestColumns } from "@/lib/crm-requests";
 import { isArea } from "@/lib/crm-areas";
+import { notifyRequestsChanged } from "@/lib/crm-realtime";
 
 const isType = (v: unknown): v is CrmRequestType => Object.values(CrmRequestType).includes(v as CrmRequestType);
 
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
       select: { id: true, title: true, area: true, authorId: true },
     });
     await notifyRequestArea(request).catch((error) => console.error("Request notification failed", error));
+    notifyRequestsChanged();
     return NextResponse.json({ id: request.id });
   } catch (error) {
     console.error(error);
@@ -83,6 +85,7 @@ export async function PATCH(req: Request) {
       return true;
     });
     if (!found) return NextResponse.json({ error: "Pedido ou coluna não encontrado." }, { status: 404 });
+    notifyRequestsChanged();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -145,6 +148,7 @@ export async function PUT(req: Request) {
     }
 
     await prisma.crmRequest.update({ where: { id: request.id }, data });
+    notifyRequestsChanged();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -159,6 +163,7 @@ export async function DELETE(req: Request) {
     const request = await editable(req, id);
     if (request instanceof NextResponse) return request;
     await prisma.crmRequest.deleteMany({ where: { id: request.id } });
+    notifyRequestsChanged();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

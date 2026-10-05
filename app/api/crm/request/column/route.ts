@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
+import { notifyRequestsChanged } from "@/lib/crm-realtime";
 
 /** Adds a column at the end of the requests board: `{ name }`. */
 export async function POST(req: Request) {
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
       data: { name, order: (last?.order ?? -1) + 1 },
       select: { id: true, name: true },
     });
+    notifyRequestsChanged();
     return NextResponse.json(column);
   } catch (error) {
     console.error(error);
@@ -44,6 +46,7 @@ export async function PATCH(req: Request) {
       return true;
     });
     if (!found) return NextResponse.json({ error: "Coluna não encontrada." }, { status: 404 });
+    notifyRequestsChanged();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -72,6 +75,7 @@ export async function DELETE(req: Request) {
       return count ? null : "Coluna não encontrada.";
     });
     if (error) return NextResponse.json({ error }, { status: 400 });
+    notifyRequestsChanged();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

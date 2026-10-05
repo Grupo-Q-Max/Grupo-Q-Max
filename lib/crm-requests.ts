@@ -1,7 +1,7 @@
 import type { CrmArea } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AREAS } from "@/lib/crm-areas";
-import { notifyMember } from "@/lib/crm-realtime";
+import { notifyMember, notifyRequestsChanged } from "@/lib/crm-realtime";
 
 const DEFAULT_COLUMNS = ["Backlog", "Em andamento", "Concluído", "Aguardando"];
 const DONE_COLUMN = "Concluído";
@@ -26,12 +26,13 @@ export async function requestColumns() {
  * ponytail: runs when /crm/requests loads instead of on a timer; nobody sees a request
  * without opening that page. Move it to instrumentation-node.ts if something else needs it on time.
  */
-export function archiveCompleted() {
+export async function archiveCompleted() {
   const before = new Date(Date.now() - ARCHIVE_AFTER_DAYS * 24 * 60 * 60 * 1000);
-  return prisma.crmRequest.updateMany({
+  const { count } = await prisma.crmRequest.updateMany({
     where: { archivedAt: null, completedAt: { lt: before } },
     data: { archivedAt: new Date() },
   });
+  if (count) notifyRequestsChanged();
 }
 
 /** The author and the `request.manage` users may edit, archive and delete a request. */

@@ -70,11 +70,14 @@ export function CrmSidebar() {
               Acessos
             </Link>
           )}
-          <a href="#" className="crm-nav__item" style={{ marginTop: "auto" }}>
-            <Settings size={18} />
-            Configurações
-          </a>
-          <button type="button" className="crm-nav__item" onClick={logout}>
+          {can("request.manage") && (
+            <Link href="/crm/settings" className="crm-nav__item" style={{ marginTop: "auto" }}>
+              <Settings size={18} />
+              Configurações
+            </Link>
+          )}
+          {/* Without settings, "Sair" is the item pushed to the bottom */}
+          <button type="button" className="crm-nav__item" onClick={logout} style={can("request.manage") ? undefined : { marginTop: "auto" }}>
             <LogOut size={18} />
             Sair
           </button>

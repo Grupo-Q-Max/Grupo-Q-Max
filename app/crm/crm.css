@@ -1146,22 +1146,23 @@ button.crm-nav__item {
   cursor: pointer;
 }
 
-.crm-requests__done {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-  font-size: 14px;
-}
-
-.crm-requests__hint {
-  color: #a5a0aa;
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: normal;
-}
-
 .crm-requests__actions {
   margin-top: 20px;
+}
+
+/* SETTINGS (/crm/settings) */
+.crm-settings__section {
+  max-width: 640px;
+}
+
+.crm-settings__section h3 {
+  margin: 0 0 16px;
+}
+
+.crm-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
 }

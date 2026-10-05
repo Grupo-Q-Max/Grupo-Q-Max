@@ -29,7 +29,6 @@ type Draft = { type: RequestType; area: Area | ""; title: string; description: s
 
 const TYPES: Record<RequestType, string> = { IMPROVEMENT: "Melhoria", BUG: "Problema", OTHER: "Outro" };
 const EMPTY_DRAFT: Draft = { type: "IMPROVEMENT", area: "", title: "", description: "" };
-const ARCHIVE_AFTER_DAYS = 7; // keep in sync with lib/crm-requests.ts
 
 const jsonRequest = (method: string, body: unknown): RequestInit => ({
   method,
@@ -157,6 +156,19 @@ export function CrmRequests({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [openedId]);
 
+  // Realtime: any change by another tab or user (or the settings page) reloads the data
+  useEffect(() => {
+    const source = new EventSource("/api/crm/events?requests=1");
+    let hasConnected = false;
+    source.onopen = () => {
+      // EventSource reconnects on its own; refresh in case events were missed meanwhile
+      if (hasConnected) router.refresh();
+      hasConnected = true;
+    };
+    source.onmessage = () => router.refresh();
+    return () => source.close();
+  }, [router]);
+
   const columnName = useMemo(() => new Map(columns.map((c) => [c.id, c.name])), [columns]);
   const board = useMemo<KanbanColumnData<Request>[]>(
     () =>
@@ -237,57 +249,39 @@ export function CrmRequests({
         )}
 
         {view === "board" ? (
-          <>
-            <label className="crm-requests__done">
-              Coluna de conclusão
-              <select
-                className="crm-access__select"
-                value={columns.find((c) => c.isDone)?.id ?? ""}
-                onChange={(e) => save(fetch("/api/crm/request/column", jsonRequest("PATCH", { id: e.target.value || null })))}
-              >
-                <option value="">Nenhuma</option>
-                {columns.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <span className="crm-requests__hint">Pedidos nesta coluna são arquivados após {ARCHIVE_AFTER_DAYS} dias.</span>
-            </label>
-            <Kanban<Request>
-              columns={board}
-              className="crm-requests__board"
-              labels={{ addColumn: "+ Adicionar coluna", deleteColumn: "Excluir coluna" }}
-              renderItem={(r) => (
-                <div className="kanban-card" onClick={() => setOpenedId(r.id)}>
-                  <h3 className="kanban-card__title">{r.title}</h3>
-                  <div className="crm-requests__description">{r.description}</div>
-                  <div className="kanban-card__footer">
-                    <span className="crm-badge">{TYPES[r.type]}</span>
-                    <span className="crm-badge">{AREAS[r.area]}</span>
-                    <span className="kanban-card__date">
-                      {r.author} · {new Date(r.createdAt).toLocaleDateString("pt-BR")}
-                    </span>
-                  </div>
+          <Kanban<Request>
+            columns={board}
+            className="crm-requests__board"
+            labels={{ addColumn: "+ Adicionar coluna", deleteColumn: "Excluir coluna" }}
+            renderItem={(r) => (
+              <div className="kanban-card" onClick={() => setOpenedId(r.id)}>
+                <h3 className="kanban-card__title">{r.title}</h3>
+                <div className="crm-requests__description">{r.description}</div>
+                <div className="kanban-card__footer">
+                  <span className="crm-badge">{TYPES[r.type]}</span>
+                  <span className="crm-badge">{AREAS[r.area]}</span>
+                  <span className="kanban-card__date">
+                    {r.author} · {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                  </span>
                 </div>
-              )}
-              onMoveItem={(id, columnId, index) => save(fetch("/api/crm/request", jsonRequest("PATCH", { id, columnId, index })))}
-              onDeleteColumn={(id) => {
-                if (!window.confirm("Excluir esta coluna? Os pedidos dela vão para a primeira coluna.")) return false;
-                return save(fetch(`/api/crm/request/column?id=${id}`, { method: "DELETE" }));
-              }}
-              onAddColumn={async () => {
-                const name = window.prompt("Nome da nova coluna:")?.trim();
-                if (!name) return;
-                const res = await fetch("/api/crm/request/column", jsonRequest("POST", { name }));
-                const message = await failure(res);
-                if (message) return setError(message);
-                const column: Column = await res.json();
-                router.refresh();
-                return { id: column.id, title: column.name, items: [] };
-              }}
-            />
-          </>
+              </div>
+            )}
+            onMoveItem={(id, columnId, index) => save(fetch("/api/crm/request", jsonRequest("PATCH", { id, columnId, index })))}
+            onDeleteColumn={(id) => {
+              if (!window.confirm("Excluir esta coluna? Os pedidos dela vão para a primeira coluna.")) return false;
+              return save(fetch(`/api/crm/request/column?id=${id}`, { method: "DELETE" }));
+            }}
+            onAddColumn={async () => {
+              const name = window.prompt("Nome da nova coluna:")?.trim();
+              if (!name) return;
+              const res = await fetch("/api/crm/request/column", jsonRequest("POST", { name }));
+              const message = await failure(res);
+              if (message) return setError(message);
+              const column: Column = await res.json();
+              router.refresh();
+              return { id: column.id, title: column.name, items: [] };
+            }}
+          />
         ) : (
           <section className="crm-access__members">
             <h3>{view === "archived" ? "Pedidos arquivados" : canManage ? "Meus pedidos" : "Meus pedidos e da minha área"}</h3>
