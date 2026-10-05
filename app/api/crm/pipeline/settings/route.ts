@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { denyUnless } from "@/lib/crm-access";
 import { notifyPipelineChanged } from "@/lib/crm-realtime";
 
 export async function PUT(req: Request) {
   try {
+    const denied = await denyUnless("pipeline.edit");
+    if (denied) return denied;
     const { id, fieldsConfig, name } = await req.json();
     if (!id) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });

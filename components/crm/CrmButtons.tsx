@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCan } from "./CrmAccess";
 
 export function CrmButtons({ pipeline }: { pipeline?: any }) {
   const router = useRouter();
+  const can = useCan();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDealModalOpen, setIsDealModalOpen] = useState(false);
   
@@ -216,19 +218,23 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
   return (
     <>
       <div className="crm-header__actions">
-        <button className="btn-secondary" onClick={() => setIsModalOpen(true)}>
-          Criar Pipeline
-        </button>
-        <button className="btn-primary" onClick={() => {
-          if (!pipeline) {
-            alert("Crie um pipeline primeiro.");
-            return;
-          }
-          setIsDealModalOpen(true);
-        }}>
-          <Plus size={18} />
-          Novo Negócio
-        </button>
+        {can("pipeline.create") && (
+          <button className="btn-secondary" onClick={() => setIsModalOpen(true)}>
+            Criar Pipeline
+          </button>
+        )}
+        {can("deal.create") && (
+          <button className="btn-primary" onClick={() => {
+            if (!pipeline) {
+              alert("Crie um pipeline primeiro.");
+              return;
+            }
+            setIsDealModalOpen(true);
+          }}>
+            <Plus size={18} />
+            Novo Negócio
+          </button>
+        )}
       </div>
       
       {isModalOpen && typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null}

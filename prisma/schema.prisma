@@ -49,6 +49,9 @@ model TeamMember {
   emailVerifiedAt DateTime?
   /// Listed on the public "Nossos Sócios" section; self-registered CRM users start hidden
   showOnSite      Boolean   @default(true)
+  /// CRM access group; null = the default group (CrmGroup.isDefault)
+  crmGroupId      String?
+  crmGroup        CrmGroup? @relation(fields: [crmGroupId], references: [id], onDelete: SetNull)
 
   responsibleDeals      CrmCard[]                 @relation("DealResponsible")
   observedDeals         CrmDealObserver[]
@@ -59,6 +62,8 @@ model TeamMember {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([crmGroupId])
 }
 
 model PageVisit {
@@ -72,6 +77,30 @@ model PageVisit {
 // ==========================================
 // CRM MODULE
 // ==========================================
+
+/// CRM access group (e.g. "Administradores", "Usuários"): what its members may do.
+model CrmGroup {
+  id          String               @id @default(cuid())
+  name        String               @unique
+  /// Has every permission, including ones added later; can't be deleted
+  isAdmin     Boolean              @default(false)
+  /// Group of the members without a group (new and self-registered users); kept unique by lib/crm-access.ts
+  isDefault   Boolean              @default(false)
+  permissions CrmGroupPermission[]
+  members     TeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Permission granted to a group; valid keys are listed in lib/crm-permissions.ts (e.g. "automation.create").
+model CrmGroupPermission {
+  groupId    String
+  group      CrmGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  permission String   @db.VarChar(64)
+
+  @@id([groupId, permission])
+}
 
 model CrmPipeline {
   id           String     @id @default(cuid())

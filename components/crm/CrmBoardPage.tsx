@@ -5,6 +5,7 @@ import { CrmWorkspace } from "@/components/crm/CrmWorkspace";
 import { CrmPipelineSettings } from "@/components/crm/CrmPipelineSettings";
 import { PipelineSelector } from "@/components/crm/PipelineSelector";
 import { prisma } from "@/lib/prisma";
+import { currentPermissions } from "@/lib/crm-access";
 import { cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
 const pipelineInclude = {
@@ -35,6 +36,7 @@ async function createDefaultPipeline() {
  * /crm/deal/details/[number], which opens the deal panel over the board.
  */
 export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: string; openDealId?: string }) {
+  const can = await currentPermissions();
   let pipelines = await prisma.crmPipeline.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true } });
   if (pipelines.length === 0) {
     const created = await createDefaultPipeline();
@@ -60,15 +62,17 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
           ) : (
             pipeline.name
           )}
-          <CrmPipelineSettings pipeline={serializedPipeline} />
-          <Link
-            href={`/crm/automation/${pipeline.id}`}
-            className="btn-secondary"
-            style={{ padding: '8px 12px', fontSize: '13px', whiteSpace: 'nowrap', textDecoration: 'none', background: 'transparent', borderColor: 'rgba(255,255,255,0.1)' }}
-            title="Regras de automação e gatilhos"
-          >
-            <Zap size={16} /> <span className="crm-hide-mobile">Regras de automação</span>
-          </Link>
+          {can.has("pipeline.edit") && <CrmPipelineSettings pipeline={serializedPipeline} />}
+          {can.has("automation.view") && (
+            <Link
+              href={`/crm/automation/${pipeline.id}`}
+              className="btn-secondary"
+              style={{ padding: '8px 12px', fontSize: '13px', whiteSpace: 'nowrap', textDecoration: 'none', background: 'transparent', borderColor: 'rgba(255,255,255,0.1)' }}
+              title="Regras de automação e gatilhos"
+            >
+              <Zap size={16} /> <span className="crm-hide-mobile">Regras de automação</span>
+            </Link>
+          )}
         </h1>
         <CrmButtons pipeline={serializedPipeline} />
       </header>

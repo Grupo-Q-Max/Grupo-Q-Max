@@ -1,10 +1,13 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { denyUnless } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { onDealEnteredStage } from "@/lib/crm-automation";
 
 export async function POST(req: Request) {
   try {
+    const denied = await denyUnless("deal.edit");
+    if (denied) return denied;
     const { cardId, newStageId, index } = await req.json();
 
     if (!cardId || !newStageId) {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createVerifyToken, hashPassword } from "@/lib/auth";
-import { sendMail } from "@/lib/mail";
+import { appUrl, escapeHtml, sendMail } from "@/lib/mail";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { emailTakenResponse } from "@/lib/team";
 
@@ -9,9 +9,6 @@ export const dynamic = "force-dynamic";
 
 const SIGNUP_DOMAIN = "@grupoqmax.com.br";
 const MIN_PASSWORD = 8;
-
-const escapeHtml = (text: string) =>
-  text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /**
  * Self sign-up with `{ name, email, password }` for company e-mails. The account only signs in after the
@@ -35,13 +32,6 @@ export async function POST(req: Request) {
   // Each valid attempt sends an e-mail: cap per client and per address
   const wait = rateLimit(`register:ip:${clientIp(req)}`, 5, 15 * 60_000) ?? rateLimit(`register:email:${email}`, 3, 60 * 60_000);
   if (wait) return tooManyRequests(wait);
-
-  // Production never trusts the Host header for the link (a forged one would send the token to another site);
-  // dev always links back to the server that got the request, whatever APP_URL a shared .env carries
-  const appUrl =
-    process.env.NODE_ENV === "production"
-      ? (process.env.APP_URL || "https://qmaxbrasil.com.br").replace(/\/+$/, "")
-      : new URL(req.url).origin;
 
   const existing = await prisma.teamMember.findUnique({ where: { email } });
   if (existing?.emailVerifiedAt && existing.passwordHash) {
@@ -67,7 +57,7 @@ export async function POST(req: Request) {
   ).catch(emailTakenResponse);
   if (member instanceof Response) return member;
 
-  const link = `${appUrl}/verify?token=${encodeURIComponent(createVerifyToken(member.id))}`;
+  const link = `${appUrl(req)}/verify?token=${encodeURIComponent(createVerifyToken(member.id))}`;
   try {
     await sendMail(
       email,

@@ -12,6 +12,7 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useBoardSensors, vibrateOnTouchDrag } from "@/components/kanban/sensors";
+import { useCan } from "@/components/crm/CrmAccess";
 import { ArrowLeft, Bell, ChevronDown, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, Workflow, X, Zap } from "lucide-react";
 import {
   ACTION_TYPES,
@@ -151,6 +152,11 @@ export function CrmAutomationBoard({
   const [createOpen, setCreateOpen] = useState(false);
 
   const sensors = useBoardSensors();
+  const can = useCan();
+  const canCreateRule = can("automation.create");
+  const canCreateTrigger = can("trigger.create");
+  const canEditRule = can("automation.edit");
+  const canEditTrigger = can("trigger.edit");
 
   const reload = useCallback(async () => {
     const res = await fetch(`/api/crm/automation?pipelineId=${pipeline.id}`, { cache: "no-store" });
@@ -233,6 +239,7 @@ export function CrmAutomationBoard({
     const to = parseDndId(String(over.id));
     if (from.kind !== to.kind || !from.itemId) return;
     const kind = from.kind;
+    if (!(kind === "rule" ? canEditRule : canEditTrigger)) return;
     const key = listKey(kind);
 
     type Item = { id: string; stageId: string };
@@ -275,36 +282,40 @@ export function CrmAutomationBoard({
             <ArrowLeft size={18} />
           </Link>
           <h1 className="crm-header__title">Regras de automação e gatilhos</h1>
-          <div className="auto-create">
-            <button type="button" className="btn-primary" onClick={() => setCreateOpen(!createOpen)}>
-              <Plus size={16} /> Criar <ChevronDown size={14} />
-            </button>
-            {createOpen && (
-              <div className="auto-menu" onMouseLeave={() => setCreateOpen(false)}>
-                {RULE_ACTIONS.map(({ type, icon }) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => {
-                      setCreateOpen(false);
-                      setEditing({ kind: "rule", stageId: stages[0]?.id, item: null, actionType: type });
-                    }}
-                  >
-                    {icon} Regra: {ACTION_TYPES[type].label}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCreateOpen(false);
-                    setEditing({ kind: "trigger", stageId: stages[0]?.id, item: null });
-                  }}
-                >
-                  <Zap size={14} /> Gatilho
-                </button>
-              </div>
-            )}
-          </div>
+          {(canCreateRule || canCreateTrigger) && (
+            <div className="auto-create">
+              <button type="button" className="btn-primary" onClick={() => setCreateOpen(!createOpen)}>
+                <Plus size={16} /> Criar <ChevronDown size={14} />
+              </button>
+              {createOpen && (
+                <div className="auto-menu" onMouseLeave={() => setCreateOpen(false)}>
+                  {canCreateRule && RULE_ACTIONS.map(({ type, icon }) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setCreateOpen(false);
+                        setEditing({ kind: "rule", stageId: stages[0]?.id, item: null, actionType: type });
+                      }}
+                    >
+                      {icon} Regra: {ACTION_TYPES[type].label}
+                    </button>
+                  ))}
+                  {canCreateTrigger && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreateOpen(false);
+                        setEditing({ kind: "trigger", stageId: stages[0]?.id, item: null });
+                      }}
+                    >
+                      <Zap size={14} /> Gatilho
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <select
             className="auto-pipeline"
             value={pipeline.id}
@@ -341,7 +352,7 @@ export function CrmAutomationBoard({
         {tab === "runs" ? (
           <AutomationRunsTab pipelineId={pipeline.id} />
         ) : (
-          <DndContext id={dndId} sensors={sensors} collisionDetection={closestCorners} onDragStart={vibrateOnTouchDrag} onDragEnd={handleDragEnd}>
+          <DndContext id={dndId} sensors={canEditRule || canEditTrigger ? sensors : []} collisionDetection={closestCorners} onDragStart={vibrateOnTouchDrag} onDragEnd={handleDragEnd}>
             <div className="auto-board">
               <div className="auto-grid" style={columns}>
                 {stages.map((stage, index) => {
@@ -361,7 +372,7 @@ export function CrmAutomationBoard({
                       key={stage.id}
                       id={containerId("trigger", stage.id)}
                       items={stage.triggers.map((t) => itemId("trigger", t.id))}
-                      onAdd={() => setEditing({ kind: "trigger", stageId: stage.id, item: null })}
+                      onAdd={canCreateTrigger ? () => setEditing({ kind: "trigger", stageId: stage.id, item: null }) : undefined}
                       addLabel="Adicionar gatilho"
                     >
                       {stage.triggers.map((trigger) => (
@@ -373,9 +384,9 @@ export function CrmAutomationBoard({
                             name={trigger.name}
                             detail={triggerDetail(trigger)}
                             conditions={trigger.conditions.length}
-                            onEdit={() => setEditing({ kind: "trigger", stageId: stage.id, item: trigger })}
-                            onRename={(name) => rename("trigger", trigger.id, name)}
-                            onDelete={() => remove("trigger", trigger.id, trigger.name)}
+                            onEdit={canEditTrigger ? () => setEditing({ kind: "trigger", stageId: stage.id, item: trigger }) : undefined}
+                            onRename={canEditTrigger ? (name) => rename("trigger", trigger.id, name) : undefined}
+                            onDelete={can("trigger.delete") ? () => remove("trigger", trigger.id, trigger.name) : undefined}
                           />
                         </SortableCard>
                       ))}
@@ -392,11 +403,11 @@ export function CrmAutomationBoard({
                       id={containerId("rule", stage.id)}
                       items={stage.automations.map((a) => itemId("rule", a.id))}
                       addLabel="Adicionar regra"
-                      addOptions={RULE_ACTIONS.map(({ type, icon }) => ({
+                      addOptions={canCreateRule ? RULE_ACTIONS.map(({ type, icon }) => ({
                         label: ACTION_TYPES[type].label,
                         icon,
                         onClick: () => setEditing({ kind: "rule", stageId: stage.id, item: null, actionType: type }),
-                      }))}
+                      })) : undefined}
                     >
                       {stage.automations.map((rule) => (
                         <SortableCard key={rule.id} id={itemId("rule", rule.id)}>
@@ -406,6 +417,7 @@ export function CrmAutomationBoard({
                               <button
                                 type="button"
                                 className="auto-card__delay"
+                                disabled={!canEditRule}
                                 onClick={() => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType })}
                               >
                                 {describeTiming(rule.execution, rule.delayAmount, rule.delayUnit)}
@@ -414,9 +426,9 @@ export function CrmAutomationBoard({
                             name={rule.name}
                             detail={ruleDetail(rule, stages, members)}
                             conditions={rule.conditions.length}
-                            onEdit={() => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType })}
-                            onRename={(name) => rename("rule", rule.id, name)}
-                            onDelete={() => remove("rule", rule.id, rule.name)}
+                            onEdit={canEditRule ? () => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType }) : undefined}
+                            onRename={canEditRule ? (name) => rename("rule", rule.id, name) : undefined}
+                            onDelete={can("automation.delete") ? () => remove("rule", rule.id, rule.name) : undefined}
                           />
                         </SortableCard>
                       ))}
@@ -488,32 +500,34 @@ function Column({
     <SortableContext id={id} items={items} strategy={verticalListSortingStrategy}>
       <div ref={setNodeRef} className={`auto-column ${isOver ? "is-over" : ""}`}>
         {children}
-        <div className="auto-create">
-          <button
-            type="button"
-            className="auto-add"
-            onClick={() => (addOptions ? setMenuOpen(!menuOpen) : onAdd?.())}
-            title={addLabel}
-          >
-            <Plus size={16} />
-          </button>
-          {addOptions && menuOpen && (
-            <div className="auto-menu" onMouseLeave={() => setMenuOpen(false)}>
-              {addOptions.map((option) => (
-                <button
-                  key={option.label}
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    option.onClick();
-                  }}
-                >
-                  {option.icon} {option.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {(onAdd || addOptions) && (
+          <div className="auto-create">
+            <button
+              type="button"
+              className="auto-add"
+              onClick={() => (addOptions ? setMenuOpen(!menuOpen) : onAdd?.())}
+              title={addLabel}
+            >
+              <Plus size={16} />
+            </button>
+            {addOptions && menuOpen && (
+              <div className="auto-menu" onMouseLeave={() => setMenuOpen(false)}>
+                {addOptions.map((option) => (
+                  <button
+                    key={option.label}
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      option.onClick();
+                    }}
+                  >
+                    {option.icon} {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </SortableContext>
   );
@@ -550,16 +564,17 @@ function ItemCard({
   name: string;
   detail: ReactNode;
   conditions: number;
-  onEdit: () => void;
-  onRename: (name: string) => void;
-  onDelete: () => void;
+  /** Each action is hidden when omitted (no permission) */
+  onEdit?: () => void;
+  onRename?: (name: string) => void;
+  onDelete?: () => void;
 }) {
   const [renaming, setRenaming] = useState(false);
   const [value, setValue] = useState(name);
 
   const commit = () => {
     setRenaming(false);
-    if (value.trim() && value.trim() !== name) onRename(value.trim());
+    if (value.trim() && value.trim() !== name) onRename?.(value.trim());
     else setValue(name);
   };
 
@@ -567,9 +582,11 @@ function ItemCard({
     <div className={`auto-card ${className} ${active ? "" : "is-paused"}`}>
       <div className="auto-card__top">
         {top}
-        <button type="button" className="auto-icon-btn" title="Excluir" onClick={onDelete}>
-          <X size={14} />
-        </button>
+        {onDelete && (
+          <button type="button" className="auto-icon-btn" title="Excluir" onClick={onDelete}>
+            <X size={14} />
+          </button>
+        )}
       </div>
       {renaming ? (
         <input
@@ -590,9 +607,11 @@ function ItemCard({
       ) : (
         <div className="auto-card__name">
           <span>{name}</span>
-          <button type="button" className="auto-icon-btn" title="Renomear" onClick={() => setRenaming(true)}>
-            <Pencil size={12} />
-          </button>
+          {onRename && (
+            <button type="button" className="auto-icon-btn" title="Renomear" onClick={() => setRenaming(true)}>
+              <Pencil size={12} />
+            </button>
+          )}
         </div>
       )}
       <div className="auto-card__detail">{detail}</div>
@@ -601,9 +620,11 @@ function ItemCard({
           {!active && <span className="auto-tag">pausada</span>}
           {conditions > 0 && <span className="auto-tag">{conditions} condição(ões)</span>}
         </span>
-        <button type="button" className="auto-link-btn" onClick={onEdit}>
-          alterar
-        </button>
+        {onEdit && (
+          <button type="button" className="auto-link-btn" onClick={onEdit}>
+            alterar
+          </button>
+        )}
       </div>
     </div>
   );

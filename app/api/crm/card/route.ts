@@ -1,5 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { denyUnless } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import {
@@ -27,6 +28,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const denied = await denyUnless("deal.create");
+    if (denied) return denied;
     const { title, company, value, stageId, customData } = await req.json();
     if (!title || !stageId) return NextResponse.json({ error: "Missing title or stageId" }, { status: 400 });
 
@@ -65,6 +68,8 @@ export async function POST(req: Request) {
  */
 export async function PATCH(req: Request) {
   try {
+    const denied = await denyUnless("deal.edit");
+    if (denied) return denied;
     const { id, ...changes } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
@@ -89,6 +94,8 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const denied = await denyUnless("deal.delete");
+    if (denied) return denied;
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 

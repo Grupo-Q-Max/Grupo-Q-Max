@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { denyUnless } from "@/lib/crm-access";
 import { boardAutomations } from "@/lib/crm-automation";
 import {
   ACTION_TYPES,
@@ -184,6 +185,8 @@ async function flowRows(body: Record<string, unknown>, stageId: string) {
 /** Stages of a pipeline with their rules and triggers (the automation board). */
 export async function GET(req: Request) {
   try {
+    const denied = await denyUnless("automation.view");
+    if (denied) return denied;
     const pipelineId = new URL(req.url).searchParams.get("pipelineId");
     if (!pipelineId) return NextResponse.json({ error: "Missing pipelineId" }, { status: 400 });
 
@@ -204,6 +207,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const denied = await denyUnless("automation.create");
+    if (denied) return denied;
     const body = await req.json();
     if (!body.stageId) return NextResponse.json({ error: "Missing stageId" }, { status: 400 });
     const actionType: ActionType = isActionType(body.actionType) ? body.actionType : "WEBHOOK";
@@ -235,6 +240,8 @@ export async function POST(req: Request) {
  */
 export async function PUT(req: Request) {
   try {
+    const denied = await denyUnless("automation.edit");
+    if (denied) return denied;
     const body = await req.json();
 
     if (Array.isArray(body.items)) {
@@ -282,6 +289,8 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const denied = await denyUnless("automation.delete");
+    if (denied) return denied;
     const id = new URL(req.url).searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 

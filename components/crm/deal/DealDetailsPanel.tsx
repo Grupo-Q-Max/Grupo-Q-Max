@@ -7,6 +7,7 @@ import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
 import { pickDraft, type DealDetails, type DealDraft, type TeamMember } from "./types";
 import { formatDateOnly } from "./ui";
+import { useCan } from "../CrmAccess";
 
 type Tab = "general" | "products" | "history";
 
@@ -48,6 +49,7 @@ function changedFields(draft: DealDraft, deal: DealDetails) {
 }
 
 export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) {
+  const can = useCan();
   const [deal, setDeal] = useState<DealDetails | null>(null);
   const [draft, setDraft] = useState<DealDraft | null>(null);
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -243,9 +245,11 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
 
               <div className="deal-header__actions">
                 <ContactActions deal={deal} />
-                <button type="button" className="deal-icon-btn deal-icon-btn--boxed deal-icon-btn--danger" title="Excluir negócio" onClick={remove}>
-                  <Trash2 size={16} />
-                </button>
+                {can("deal.delete") && (
+                  <button type="button" className="deal-icon-btn deal-icon-btn--boxed deal-icon-btn--danger" title="Excluir negócio" onClick={remove}>
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
             </header>
 

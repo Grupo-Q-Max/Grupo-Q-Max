@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { denyUnless } from "@/lib/crm-access";
 
 const PAGE_SIZE = 50;
 
 /** Execution log of a pipeline's rules ("Registros"), newest first. */
 export async function GET(req: Request) {
   try {
+    const denied = await denyUnless("automation.view");
+    if (denied) return denied;
     const params = new URL(req.url).searchParams;
     const pipelineId = params.get("pipelineId");
     if (!pipelineId) return NextResponse.json({ error: "Missing pipelineId" }, { status: 400 });

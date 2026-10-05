@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { denyUnless } from "@/lib/crm-access";
 import { cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
 export async function POST(req: Request) {
   try {
+    const denied = await denyUnless("pipeline.create");
+    if (denied) return denied;
     const { name } = await req.json();
     
     if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
