@@ -11,6 +11,7 @@ type KanbanColumnProps<T extends KanbanItemBase> = {
   column: KanbanColumnData<T>;
   labels: KanbanLabels;
   renderItem: (item: T) => ReactNode;
+  isItemVisible?: (item: T) => boolean;
   onAddItem?: (title: string) => void;
   onRename?: (title: string) => void;
   onDelete?: () => void;
@@ -20,10 +21,12 @@ export function KanbanColumn<T extends KanbanItemBase>({
   column,
   labels,
   renderItem,
+  isItemVisible,
   onAddItem,
   onRename,
   onDelete,
 }: KanbanColumnProps<T>) {
+  const visibleItems = isItemVisible ? column.items.filter(isItemVisible) : column.items;
   const [isAdding, setIsAdding] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
@@ -74,7 +77,11 @@ export function KanbanColumn<T extends KanbanItemBase>({
           ) : (
             title
           )}
-          <span className="kanban-column__count">{column.items.length}</span>
+          <span className="kanban-column__count">
+            {visibleItems.length === column.items.length
+              ? column.items.length
+              : `${visibleItems.length}/${column.items.length}`}
+          </span>
         </div>
 
         {(onRename || onDelete) && (
@@ -113,8 +120,8 @@ export function KanbanColumn<T extends KanbanItemBase>({
       </div>
 
       <div ref={setNodeRef} className="kanban-column__body">
-        <SortableContext items={column.items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-          {column.items.map((item) => (
+        <SortableContext items={visibleItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+          {visibleItems.map((item) => (
             <KanbanItem key={item.id} id={item.id}>
               {renderItem(item)}
             </KanbanItem>

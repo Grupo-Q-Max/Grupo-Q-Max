@@ -166,6 +166,7 @@ main.crm-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 16px 40px;
   background: rgba(11, 11, 12, 0.6);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -733,7 +734,7 @@ body:has(.crm-layout) .qmax-floating-whatsapp {
     font-size: 13px;
   }
 
-  .crm-toolbar__search {
+  .crm-filter-search {
     width: 100%;
   }
 
@@ -1070,6 +1071,166 @@ button.crm-nav__item {
 
 .crm-requests__form h3 {
   margin: 0;
+}
+
+/* Search field with filter chips + filter panel (pipeline toolbar, requests, access) */
+.crm-filter-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 520px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 5px 6px 5px 12px;
+  background: #1a1a1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+
+.crm-filter-search:focus-within,
+.crm-filter-search:has(.crm-filter-panel:popover-open) {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.crm-filter-search--block {
+  margin-bottom: 16px;
+}
+
+.crm-filter-search__lead {
+  color: #a5a0aa;
+  flex-shrink: 0;
+}
+
+.crm-filter-search input {
+  flex: 1;
+  min-width: 120px;
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 14px;
+}
+
+/* The whole field shows the global focus ring instead of the input inside it;
+   the clear button replaces the native one */
+.crm-filter-search input:focus-visible {
+  outline: none !important;
+}
+
+.crm-filter-search:has(input:focus-visible) {
+  outline: 2px solid rgba(244, 24, 131, 0.95);
+  outline-offset: 2px;
+}
+
+.crm-filter-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.crm-filter-search__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 0, 110, 0.15);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.crm-filter-search__chip button,
+.crm-filter-search__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #a5a0aa;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.crm-filter-search__chip button {
+  padding: 2px;
+  border-radius: 999px;
+}
+
+.crm-filter-search__icon {
+  padding: 6px;
+}
+
+.crm-filter-search__chip button:hover,
+.crm-filter-search__icon:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.crm-filter-panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 16px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  background: #141416;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.crm-filter-panel:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.crm-filter-panel__header,
+.crm-filter-panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.crm-filter-panel__footer {
+  justify-content: flex-end;
+}
+
+.crm-filter-panel__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.crm-filter-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: #a5a0aa;
+}
+
+.crm-filter-panel__field .crm-access__select {
+  width: 100%;
+  font-size: 13px;
+}
+
+.crm-filter-panel__range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crm-filter-panel__range input {
+  flex: 1;
+  min-width: 0;
+  color-scheme: dark;
 }
 
 .crm-contacts__search {

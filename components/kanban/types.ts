@@ -43,6 +43,11 @@ export type KanbanSync<T extends KanbanItemBase> = {
 export type KanbanProps<T extends KanbanItemBase> = {
   columns: KanbanColumnData<T>[];
   renderItem: (item: T, helpers: KanbanItemHelpers) => ReactNode;
+  /**
+   * Hides items that return false (search/filters). Hidden items stay in the board
+   * state, so drop indexes still count them and the saved order stays correct.
+   */
+  isItemVisible?: (item: T) => boolean;
 
   /** Fired after a drop that changed the item's column or position. */
   onMoveItem?: (itemId: string, toColumnId: string, toIndex: number) => MaybeCancel | Promise<MaybeCancel>;

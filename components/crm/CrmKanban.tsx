@@ -20,7 +20,15 @@ const jsonRequest = (method: string, body: unknown): RequestInit => ({
   body: JSON.stringify(body),
 });
 
-export function CrmKanban({ pipeline, initialDealId }: { pipeline: CrmPipeline; initialDealId?: string }) {
+export function CrmKanban({
+  pipeline,
+  initialDealId,
+  isDealVisible,
+}: {
+  pipeline: CrmPipeline;
+  initialDealId?: string;
+  isDealVisible?: (deal: CrmDeal) => boolean;
+}) {
   const router = useRouter();
   const can = useCan();
   const columns = useMemo(() => toColumns(pipeline.stages), [pipeline.stages]);
@@ -89,6 +97,7 @@ export function CrmKanban({ pipeline, initialDealId }: { pipeline: CrmPipeline; 
     <>
       <Kanban<CrmDeal>
         columns={columns}
+        isItemVisible={isDealVisible}
         // Polling is only a fallback in case the SSE connection is blocked by a proxy
         sync={{ fetchColumns, subscribe, pollingIntervalMs: 30_000 }}
         labels={{
