@@ -36,12 +36,12 @@ export async function POST(req: Request) {
   const wait = rateLimit(`register:ip:${clientIp(req)}`, 5, 15 * 60_000) ?? rateLimit(`register:email:${email}`, 3, 60 * 60_000);
   if (wait) return tooManyRequests(wait);
 
-  // Never trust the Host header for the link: a forged one would send the token to another site
-  const appUrl = process.env.APP_URL || (process.env.NODE_ENV !== "production" ? new URL(req.url).origin : "");
-  if (!appUrl) {
-    console.error("APP_URL is not set: sign-up confirmation links can't be built");
-    return NextResponse.json({ error: "Cadastro indisponível no momento" }, { status: 500 });
-  }
+  // Production never trusts the Host header for the link (a forged one would send the token to another site);
+  // dev always links back to the server that got the request, whatever APP_URL a shared .env carries
+  const appUrl =
+    process.env.NODE_ENV === "production"
+      ? (process.env.APP_URL || "https://qmaxbrasil.com.br").replace(/\/+$/, "")
+      : new URL(req.url).origin;
 
   const existing = await prisma.teamMember.findUnique({ where: { email } });
   if (existing?.emailVerifiedAt && existing.passwordHash) {
