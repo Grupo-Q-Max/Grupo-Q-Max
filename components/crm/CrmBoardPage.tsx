@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Zap } from "lucide-react";
 import { CrmButtons } from "@/components/crm/CrmButtons";
 import { CrmWorkspace } from "@/components/crm/CrmWorkspace";
-import { CrmPipelineSettings } from "@/components/crm/CrmPipelineSettings";
+import { CrmPipelineRename, CrmPipelineSettings } from "@/components/crm/CrmPipelineSettings";
 import { PipelineSelector } from "@/components/crm/PipelineSelector";
 import { prisma } from "@/lib/prisma";
 import { currentPermissions } from "@/lib/crm-access";
@@ -53,14 +53,17 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
     stages: pipeline.stages.map((stage) => ({ ...stage, cards: stage.cards.map(serializeListCard) })),
   };
 
+  const title =
+    pipelines.length > 1 ? <PipelineSelector pipelines={pipelines} currentPipelineId={pipeline.id} /> : pipeline.name;
+
   return (
     <>
       <header className="crm-header">
         <h1 className="crm-header__title crm-header__title--board">
-          {pipelines.length > 1 ? (
-            <PipelineSelector pipelines={pipelines} currentPipelineId={pipeline.id} />
+          {can.has("pipeline.edit") ? (
+            <CrmPipelineRename pipeline={{ id: pipeline.id, name: pipeline.name }}>{title}</CrmPipelineRename>
           ) : (
-            pipeline.name
+            title
           )}
           {can.has("pipeline.edit") && <CrmPipelineSettings pipeline={serializedPipeline} />}
           {can.has("automation.view") && (

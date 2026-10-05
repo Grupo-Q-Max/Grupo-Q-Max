@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { KanbanItem } from "./KanbanItem";
 import type { KanbanColumnData, KanbanItemBase, KanbanLabels } from "./types";
 
@@ -77,22 +77,35 @@ export function KanbanColumn<T extends KanbanItemBase>({
           <span className="kanban-column__count">{column.items.length}</span>
         </div>
 
-        {onDelete && (
+        {(onRename || onDelete) && (
           <div className="kanban-column__menu">
             <button className="kanban-column__menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
               <MoreHorizontal size={18} />
             </button>
             {menuOpen && (
               <div className="kanban-column__menu-panel">
-                <button
-                  className="kanban-column__menu-item kanban-column__menu-item--danger"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onDelete();
-                  }}
-                >
-                  <Trash2 size={14} /> {labels.deleteColumn}
-                </button>
+                {onRename && (
+                  <button
+                    className="kanban-column__menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setIsRenaming(true);
+                    }}
+                  >
+                    <Pencil size={14} /> {labels.renameColumn}
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    className="kanban-column__menu-item kanban-column__menu-item--danger"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete();
+                    }}
+                  >
+                    <Trash2 size={14} /> {labels.deleteColumn}
+                  </button>
+                )}
               </div>
             )}
           </div>

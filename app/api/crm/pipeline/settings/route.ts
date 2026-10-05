@@ -14,7 +14,12 @@ export async function PUT(req: Request) {
 
     const dataToUpdate: any = {};
     if (fieldsConfig !== undefined) dataToUpdate.fieldsConfig = fieldsConfig;
-    if (name !== undefined) dataToUpdate.name = name;
+    if (name !== undefined) {
+      if (typeof name !== "string" || !name.trim()) {
+        return NextResponse.json({ error: "Name is required" }, { status: 400 });
+      }
+      dataToUpdate.name = name.trim();
+    }
 
     const updated = await prisma.crmPipeline.update({
       where: { id },
