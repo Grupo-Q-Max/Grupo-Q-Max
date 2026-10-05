@@ -97,6 +97,8 @@ model CrmRequestColumn {
   id        String       @id @default(cuid())
   name      String       @db.VarChar(100)
   order     Int          @default(0)
+  /// The "done" column (at most one): its requests are archived some days after entering it
+  isDone    Boolean      @default(false)
   requests  CrmRequest[]
   createdAt DateTime     @default(now())
 }
@@ -116,6 +118,10 @@ model CrmRequest {
   columnId    String
   column      CrmRequestColumn @relation(fields: [columnId], references: [id], onDelete: Restrict)
   order       Int              @default(0)
+  /// When the request entered the done column; null outside it
+  completedAt DateTime?
+  /// Hidden from the board and the list; set by hand or some days after completedAt
+  archivedAt  DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -125,6 +131,7 @@ model CrmRequest {
   @@index([columnId, order])
   @@index([createdAt])
   @@index([area])
+  @@index([archivedAt, completedAt])
 }
 
 /// CRM sign-in attempts with Microsoft, successful or not, for auditing. Never stores tokens.

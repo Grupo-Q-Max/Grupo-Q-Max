@@ -1141,3 +1141,27 @@ button.crm-nav__item {
   font-size: 14px;
   line-height: 1.6;
 }
+
+.crm-requests__table tbody tr {
+  cursor: pointer;
+}
+
+.crm-requests__done {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.crm-requests__hint {
+  color: #a5a0aa;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.crm-requests__actions {
+  margin-top: 20px;
+}
