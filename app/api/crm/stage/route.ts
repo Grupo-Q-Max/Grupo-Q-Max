@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { denyUnless } from "@/lib/crm-access";
 import { notifyPipelineChanged } from "@/lib/crm-realtime";
 
 export async function POST(req: Request) {
   try {
+    const denied = await denyUnless("stage.create");
+    if (denied) return denied;
     const { name, pipelineId } = await req.json();
     if (!name || !pipelineId) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
@@ -27,6 +30,8 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    const denied = await denyUnless("stage.edit");
+    if (denied) return denied;
     const { id, name, order } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
@@ -48,6 +53,8 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const denied = await denyUnless("stage.delete");
+    if (denied) return denied;
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     

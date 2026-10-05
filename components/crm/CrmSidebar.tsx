@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut } from "lucide-react";
+import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut, ShieldCheck } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
+import { useCan } from "./CrmAccess";
 
 /** Below this width the sidebar becomes an overlay that starts closed (see crm.css). */
 const MOBILE_QUERY = "(max-width: 900px)";
@@ -12,6 +13,7 @@ export function CrmSidebar() {
   // null = viewport default (open on desktop, closed on mobile), decided by CSS so
   // the server render never flashes an open sidebar on phones
   const [open, setOpen] = useState<boolean | null>(null);
+  const can = useCan();
   const state = open === null ? "" : open ? "is-open" : "is-closed";
 
   const toggle = () => {
@@ -58,6 +60,12 @@ export function CrmSidebar() {
             Relatórios
           </a>
           <CrmNotificationBell />
+          {can("access.manage") && (
+            <Link href="/crm/access" className="crm-nav__item">
+              <ShieldCheck size={18} />
+              Acessos
+            </Link>
+          )}
           <a href="#" className="crm-nav__item" style={{ marginTop: "auto" }}>
             <Settings size={18} />
             Configurações

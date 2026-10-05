@@ -250,7 +250,8 @@ export function Kanban<T extends KanbanItemBase>({
   return (
     <DndContext
       id={dndId}
-      sensors={sensors}
+      // Without onMoveItem the board is read-only: no sensors, no dragging
+      sensors={onMoveItem ? sensors : []}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}

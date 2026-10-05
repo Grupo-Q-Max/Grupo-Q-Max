@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { boardAutomations } from "@/lib/crm-automation";
+import { currentPermissions } from "@/lib/crm-access";
+import { CrmForbidden } from "@/components/crm/CrmForbidden";
 import { CrmAutomationBoard } from "@/components/crm/automation/CrmAutomationBoard";
 import type { AutomationStage, CustomField } from "@/components/crm/automation/types";
 
@@ -9,6 +11,7 @@ export const dynamic = "force-dynamic";
 /** /crm/automation/<pipelineId> — "Regras de automação e gatilhos" of a pipeline (like Bitrix24). */
 export default async function AutomationPage({ params }: { params: Promise<{ pipelineId: string }> }) {
   const { pipelineId } = await params;
+  if (!(await currentPermissions()).has("automation.view")) return <CrmForbidden />;
 
   const [pipeline, pipelines, members] = await Promise.all([
     prisma.crmPipeline.findUnique({

@@ -32,6 +32,7 @@ import {
   type TeamMember,
 } from "./types";
 import { Avatar, formatDateOnly, formatDateTime, formatDay, formatTime } from "./ui";
+import { useCan } from "../CrmAccess";
 
 type ComposerMode = "TODO" | "COMMENT" | "TASK" | "CALL" | "MEETING";
 
@@ -46,6 +47,11 @@ const jsonRequest = (method: string, body: unknown): RequestInit => ({
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(body),
 });
+
+/** Shows the API error (e.g. no permission) of a failed request. */
+async function alertIfFailed(res: Response) {
+  if (!res.ok) window.alert((await res.json().catch(() => null))?.error ?? "Não foi possível salvar.");
+}
 
 const ACTIVITY_ICONS: Record<DealActivity["type"], ReactNode> = {
   TODO: <ListTodo size={16} />,
@@ -66,30 +72,33 @@ const isOverdue = (activity: DealActivity) =>
   !activity.completed && !!activity.deadline && new Date(activity.deadline).getTime() < Date.now();
 
 export function DealTimeline({ deal, team, onChanged }: Props) {
+  const can = useCan();
   const findMember = (id: string | null) => team.find((m) => m.id === id) ?? null;
   const pending = deal.activities
     .filter((a) => !a.completed && a.type !== "COMMENT")
     .sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"));
 
   const toggleCompleted = async (activity: DealActivity) => {
-    await fetch("/api/crm/activity", jsonRequest("PATCH", { id: activity.id, completed: !activity.completed }));
+    await alertIfFailed(await fetch("/api/crm/activity", jsonRequest("PATCH", { id: activity.id, completed: !activity.completed })));
     await onChanged();
   };
 
   const remove = async (activity: DealActivity) => {
     if (!window.confirm(`Excluir ${ACTIVITY_LABELS[activity.type].toLowerCase()}?`)) return;
-    await fetch(`/api/crm/activity?id=${activity.id}`, { method: "DELETE" });
+    await alertIfFailed(await fetch(`/api/crm/activity?id=${activity.id}`, { method: "DELETE" }));
     await onChanged();
   };
 
   const update = async (activity: DealActivity, changes: Partial<DealActivity>) => {
-    await fetch("/api/crm/activity", jsonRequest("PATCH", { id: activity.id, ...changes }));
+    await alertIfFailed(await fetch("/api/crm/activity", jsonRequest("PATCH", { id: activity.id, ...changes })));
     await onChanged();
   };
 
   return (
     <div className="deal-timeline">
-      <ActivityComposer dealId={deal.id} team={team} defaultResponsible={deal.responsibleId} onCreated={onChanged} />
+      {can("activity.create") && (
+        <ActivityComposer dealId={deal.id} team={team} defaultResponsible={deal.responsibleId} onCreated={onChanged} />
+      )}
 
       <div className="deal-timeline__divider">
         <span className="deal-pill deal-pill--green">Coisas a fazer</span>
@@ -185,7 +194,7 @@ function ActivityComposer({
       })
     );
     setSaving(false);
-    if (!res.ok) return;
+    if (!res.ok) return alertIfFailed(res);
     reset();
     await onCreated();
   };

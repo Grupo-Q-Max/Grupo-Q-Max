@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import type { CrmActivityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { denyUnless } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers } from "@/lib/crm-automation";
 
@@ -16,6 +17,8 @@ async function notifyCard(cardId: string) {
 
 export async function POST(req: Request) {
   try {
+    const denied = await denyUnless("activity.create");
+    if (denied) return denied;
     const { cardId, type, title, description, deadline, responsibleId } = await req.json();
     if (!cardId || !TYPES.has(type) || !String(title ?? "").trim()) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -42,6 +45,8 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
+    const denied = await denyUnless("activity.edit");
+    if (denied) return denied;
     const { id, title, description, deadline, responsibleId, completed } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
@@ -75,6 +80,8 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const denied = await denyUnless("activity.delete");
+    if (denied) return denied;
     const id = new URL(req.url).searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 

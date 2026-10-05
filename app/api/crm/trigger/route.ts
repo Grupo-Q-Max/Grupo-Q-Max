@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import type { CrmActivityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { denyUnless } from "@/lib/crm-access";
 import { ACTIVITY_TYPES, TRIGGER_TYPES, isTriggerType, parseConditions, type TriggerType } from "@/lib/crm-automation-shared";
 
 const triggerInclude = { conditions: { orderBy: { order: "asc" as const } } };
@@ -25,6 +26,8 @@ function typeFields(type: TriggerType, body: Record<string, unknown>, currentTok
 
 export async function POST(req: Request) {
   try {
+    const denied = await denyUnless("trigger.create");
+    if (denied) return denied;
     const body = await req.json();
     if (!body.stageId || !isTriggerType(body.type)) {
       return NextResponse.json({ error: "Missing stageId or type" }, { status: 400 });
@@ -55,6 +58,8 @@ export async function POST(req: Request) {
  */
 export async function PUT(req: Request) {
   try {
+    const denied = await denyUnless("trigger.edit");
+    if (denied) return denied;
     const body = await req.json();
 
     if (Array.isArray(body.items)) {
@@ -94,6 +99,8 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const denied = await denyUnless("trigger.delete");
+    if (denied) return denied;
     const id = new URL(req.url).searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Kanban, type KanbanColumnData } from "@/components/kanban";
 import { DealCard, type CrmDeal } from "./DealCard";
 import { DealDetailsPanel } from "./deal/DealDetailsPanel";
+import { useCan } from "./CrmAccess";
 
 type CrmStage = { id: string; name: string; cards: CrmDeal[] };
 type CrmPipeline = { id: string; stages: CrmStage[] };
@@ -20,6 +21,7 @@ const jsonRequest = (method: string, body: unknown): RequestInit => ({
 
 export function CrmKanban({ pipeline, initialDealId }: { pipeline: CrmPipeline; initialDealId?: string }) {
   const router = useRouter();
+  const can = useCan();
   const columns = useMemo(() => toColumns(pipeline.stages), [pipeline.stages]);
   const [openDealId, setOpenDealId] = useState<string | null>(initialDealId ?? null);
   const dealChangedRef = useRef(false);
@@ -94,36 +96,36 @@ export function CrmKanban({ pipeline, initialDealId }: { pipeline: CrmPipeline; 
           addColumn: "+ Adicionar Coluna",
           deleteColumn: "Excluir Coluna",
         }}
-        renderItem={(deal, { remove }) => <DealCard deal={deal} onOpen={() => openDeal(deal)} onDelete={remove} />}
-        onMoveItem={async (cardId, newStageId, index) => {
+        renderItem={(deal, { remove }) => <DealCard deal={deal} onOpen={() => openDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
+        onMoveItem={can("deal.edit") ? async (cardId, newStageId, index) => {
           const res = await fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index }));
           if (!res.ok) return false;
           router.refresh();
-        }}
-        onAddItem={async (stageId, title) => {
+        } : undefined}
+        onAddItem={can("deal.create") ? async (stageId, title) => {
           const res = await fetch("/api/crm/card", jsonRequest("POST", { title, stageId }));
           if (!res.ok) return;
           router.refresh();
           return (await res.json()) as CrmDeal;
-        }}
-        onDeleteItem={async (cardId) => {
+        } : undefined}
+        onDeleteItem={can("deal.delete") ? async (cardId) => {
           if (!window.confirm("Certeza que deseja excluir este negócio?")) return false;
           const res = await fetch(`/api/crm/card?id=${cardId}`, { method: "DELETE" });
           if (!res.ok) return false;
           router.refresh();
-        }}
-        onRenameColumn={async (stageId, name) => {
+        } : undefined}
+        onRenameColumn={can("stage.edit") ? async (stageId, name) => {
           const res = await fetch("/api/crm/stage", jsonRequest("PUT", { id: stageId, name }));
           if (!res.ok) return false;
           router.refresh();
-        }}
-        onDeleteColumn={async (stageId) => {
+        } : undefined}
+        onDeleteColumn={can("stage.delete") ? async (stageId) => {
           if (!window.confirm("Certeza que deseja excluir esta coluna inteira?")) return false;
           const res = await fetch(`/api/crm/stage?id=${stageId}`, { method: "DELETE" });
           if (!res.ok) return false;
           router.refresh();
-        }}
-        onAddColumn={async () => {
+        } : undefined}
+        onAddColumn={can("stage.create") ? async () => {
           const name = window.prompt("Nome da nova coluna:")?.trim();
           if (!name) return;
           const res = await fetch("/api/crm/stage", jsonRequest("POST", { name, pipelineId: pipeline.id }));
@@ -131,7 +133,7 @@ export function CrmKanban({ pipeline, initialDealId }: { pipeline: CrmPipeline; 
           router.refresh();
           const stage: CrmStage = await res.json();
           return { id: stage.id, title: stage.name, items: stage.cards };
-        }}
+        } : undefined}
       />
 
       {openDealId && (
