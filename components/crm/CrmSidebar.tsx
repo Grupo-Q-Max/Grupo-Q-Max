@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut, ShieldCheck, Lightbulb } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 import { useCan } from "./CrmAccess";
@@ -14,6 +15,14 @@ export function CrmSidebar() {
   // the server render never flashes an open sidebar on phones
   const [open, setOpen] = useState<boolean | null>(null);
   const can = useCan();
+  const pathname = usePathname();
+  // Pipelines owns the board plus its deal and automation subpages
+  const navClass = (href: string) => {
+    const active = href === "/crm"
+      ? pathname === "/crm" || /^\/crm\/(deal|automation)(\/|$)/.test(pathname)
+      : pathname === href || pathname.startsWith(`${href}/`);
+    return active ? "crm-nav__item is-active" : "crm-nav__item";
+  };
   const state = open === null ? "" : open ? "is-open" : "is-closed";
 
   const toggle = () => {
@@ -47,11 +56,11 @@ export function CrmSidebar() {
         </div>
 
         <nav className="crm-nav">
-          <Link href="/crm" className="crm-nav__item is-active">
+          <Link href="/crm" className={navClass("/crm")}>
             <LayoutDashboard size={18} />
             Pipelines
           </Link>
-          <Link href="/crm/contacts" className="crm-nav__item">
+          <Link href="/crm/contacts" className={navClass("/crm/contacts")}>
             <Users size={18} />
             Contatos
           </Link>
@@ -60,18 +69,18 @@ export function CrmSidebar() {
             Relatórios
           </a>
           <CrmNotificationBell />
-          <Link href="/crm/requests" className="crm-nav__item">
+          <Link href="/crm/requests" className={navClass("/crm/requests")}>
             <Lightbulb size={18} />
             Pedidos
           </Link>
           {can("access.manage") && (
-            <Link href="/crm/access" className="crm-nav__item">
+            <Link href="/crm/access" className={navClass("/crm/access")}>
               <ShieldCheck size={18} />
               Acessos
             </Link>
           )}
           {can("request.manage") && (
-            <Link href="/crm/settings" className="crm-nav__item" style={{ marginTop: "auto" }}>
+            <Link href="/crm/settings" className={navClass("/crm/settings")} style={{ marginTop: "auto" }}>
               <Settings size={18} />
               Configurações
             </Link>
