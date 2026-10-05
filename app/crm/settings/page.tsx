@@ -5,8 +5,17 @@ import { CrmSettings } from "@/components/crm/CrmSettings";
 
 export const dynamic = "force-dynamic";
 
-/** /crm/settings — CRM settings; today only the improvement requests' done column. */
+/** /crm/settings — CRM settings: improvement requests' done column and the entry to access levels. */
 export default async function SettingsPage() {
-  if (!(await currentPermissions()).has("request.manage")) return <CrmForbidden />;
-  return <CrmSettings columns={await requestColumns()} archiveAfterDays={ARCHIVE_AFTER_DAYS} />;
+  const permissions = await currentPermissions();
+  const canRequests = permissions.has("request.manage");
+  const canAccess = permissions.has("access.manage");
+  if (!canRequests && !canAccess) return <CrmForbidden />;
+  return (
+    <CrmSettings
+      columns={canRequests ? await requestColumns() : null}
+      archiveAfterDays={ARCHIVE_AFTER_DAYS}
+      canAccess={canAccess}
+    />
+  );
 }

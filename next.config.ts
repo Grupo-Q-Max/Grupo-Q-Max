@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
 
+  async redirects() {
+    // Access levels moved under settings
+    return [{ source: "/crm/access", destination: "/crm/settings/access", permanent: true }];
+  },
+
   async rewrites() {
     return [
       {

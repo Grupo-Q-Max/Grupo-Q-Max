@@ -1,14 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
 import { Select } from "@/components/ui/Select";
 
 type Column = { id: string; name: string; isDone: boolean };
 
-export function CrmSettings({ columns, archiveAfterDays }: { columns: Column[]; archiveAfterDays: number }) {
+/** `columns` is null when the user can't manage improvement requests. */
+export function CrmSettings({
+  columns,
+  archiveAfterDays,
+  canAccess,
+}: {
+  columns: Column[] | null;
+  archiveAfterDays: number;
+  canAccess: boolean;
+}) {
   const router = useRouter();
-  const [doneId, setDoneId] = useState(columns.find((c) => c.isDone)?.id ?? "");
+  const [doneId, setDoneId] = useState(columns?.find((c) => c.isDone)?.id ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -42,23 +53,35 @@ export function CrmSettings({ columns, archiveAfterDays }: { columns: Column[]; 
         {error && <div className="crm-access__error">{error}</div>}
         {notice && <div className="crm-access__notice">{notice}</div>}
 
-        <section className="crm-access__editor crm-settings__section">
-          <h3>Pedidos de melhoria</h3>
-          <label className="crm-settings__field">
-            <span>Coluna de conclusão</span>
-            <Select className="crm-access__select" value={doneId} disabled={saving} onChange={(e) => changeDone(e.target.value)}>
-              <option value="">Nenhuma (não arquivar automaticamente)</option>
-              {columns.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <p className="crm-access__note">
-            Pedidos que ficarem {archiveAfterDays} dias nesta coluna do kanban vão para Arquivados automaticamente.
-          </p>
-        </section>
+        {canAccess && (
+          <section className="crm-access__editor crm-settings__section">
+            <h3>Acessos</h3>
+            <p className="crm-access__note">Grupos, permissões, convites e bloqueio dos usuários do CRM.</p>
+            <Link href="/crm/settings/access" className="btn-secondary">
+              <ShieldCheck size={18} /> Gerenciar níveis de acesso
+            </Link>
+          </section>
+        )}
+
+        {columns && (
+          <section className="crm-access__editor crm-settings__section">
+            <h3>Pedidos de melhoria</h3>
+            <label className="crm-settings__field">
+              <span>Coluna de conclusão</span>
+              <Select className="crm-access__select" value={doneId} disabled={saving} onChange={(e) => changeDone(e.target.value)}>
+                <option value="">Nenhuma (não arquivar automaticamente)</option>
+                {columns.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <p className="crm-access__note">
+              Pedidos que ficarem {archiveAfterDays} dias nesta coluna do kanban vão para Arquivados automaticamente.
+            </p>
+          </section>
+        )}
       </div>
     </>
   );

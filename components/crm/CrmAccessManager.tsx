@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { ArrowLeft, Mail, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import { PERMISSION_SECTIONS, type Permission } from "@/lib/crm-permissions";
 import { Select } from "@/components/ui/Select";
 import { confirmDialog, promptDialog } from "@/components/ui/Dialogs";
@@ -109,9 +110,14 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
   return (
     <>
       <header className="crm-header">
-        <h1 className="crm-header__title">
-          <ShieldCheck size={22} /> Níveis de acesso
-        </h1>
+        <div className="auto-header__title">
+          <Link href="/crm/settings" className="auto-back" title="Voltar às configurações">
+            <ArrowLeft size={18} />
+          </Link>
+          <h1 className="crm-header__title">
+            <ShieldCheck size={22} /> Níveis de acesso
+          </h1>
+        </div>
         <div className="crm-header__actions">
           <button type="button" className="btn-secondary" onClick={() => setInviting(true)}>
             <Mail size={18} /> Convidar usuário
