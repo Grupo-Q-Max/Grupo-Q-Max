@@ -751,10 +751,6 @@ body:has(.crm-layout) .qmax-floating-whatsapp {
 
 /* ---- Notification bell (sidebar) -------------------------------------- */
 
-.crm-bell {
-  position: relative;
-}
-
 button.crm-nav__item {
   width: 100%;
   background: none;
@@ -764,9 +760,23 @@ button.crm-nav__item {
   cursor: pointer;
 }
 
+/* "Sair" + notification bell side by side */
+.crm-nav__row {
+  display: flex;
+  gap: 8px;
+}
+
+button.crm-bell {
+  position: relative;
+  width: auto;
+  flex-shrink: 0;
+}
+
 .crm-bell__badge {
-  margin-left: auto;
-  min-width: 20px;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
   padding: 1px 6px;
   border-radius: 10px;
   background: #d90f81;
