@@ -20,6 +20,8 @@ import { ModalRow } from "./AutomationModal";
 import { ActionFields, actionDraft, actionValidationError, type ActionDraft } from "./ActionFields";
 import { ConditionsEditor, conditionFields } from "./ConditionsEditor";
 import type { AutomationStage, AutomationStepRow, CustomField, Member } from "./types";
+import { Select } from "@/components/ui/Select";
+import { confirmDialog } from "@/components/ui/Dialogs";
 
 /** A flow step as edited in the dialog; sent as is to the API (`key` is only for React). */
 export type FlowStepDraft = {
@@ -145,7 +147,7 @@ function StepList({
       ))}
       <label className={`auto-flow__add${full ? " is-disabled" : ""}`}>
         <Plus size={13} /> {full ? `Limite de ${FLOW_LIMITS.maxSteps} passos` : "Adicionar passo"}
-        <select
+        <Select
           value=""
           disabled={full}
           aria-label="Adicionar passo"
@@ -163,7 +165,7 @@ function StepList({
             <option value="WAIT">Esperar</option>
             {depth < FLOW_LIMITS.maxDepth && <option value="CONDITION">Condição (se/senão)</option>}
           </optgroup>
-        </select>
+        </Select>
       </label>
     </div>
   );
@@ -220,7 +222,7 @@ function StepCard({
               value={step.waitAmount}
               onChange={(e) => set({ waitAmount: Math.max(1, Math.round(Number(e.target.value) || 1)) })}
             />
-            <select
+            <Select
               aria-label="Unidade"
               value={step.waitUnit}
               onChange={(e) => set({ waitUnit: e.target.value as DelayUnit })}
@@ -230,7 +232,7 @@ function StepCard({
                   {unit.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         ) : (
           <button type="button" className="auto-flow__title auto-flow__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
@@ -252,8 +254,8 @@ function StepCard({
             type="button"
             className="auto-icon-btn"
             title="Remover passo"
-            onClick={() => {
-              if (nested === 0 || window.confirm(`Remover a condição e os ${nested} passos dentro dela?`)) onRemove();
+            onClick={async () => {
+              if (nested === 0 || (await confirmDialog(`Remover a condição e os ${nested} passos dentro dela?`, { danger: true, confirmLabel: "Remover" }))) onRemove();
             }}
           >
             <X size={15} />

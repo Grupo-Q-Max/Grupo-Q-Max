@@ -42,6 +42,8 @@ import {
   Activity,
 } from "lucide-react";
 import { AREAS } from "@/lib/crm-areas";
+import { Select } from "@/components/ui/Select";
+import { confirmDialog } from "@/components/ui/Dialogs";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 interface TeamMember {
@@ -258,14 +260,14 @@ function MemberModal({
           </label>
           <label>
             <span>Área no CRM (recebe os pedidos de melhoria da área)</span>
-            <select value={area} onChange={(e) => setArea(e.target.value as typeof area)}>
+            <Select value={area} onChange={(e) => setArea(e.target.value as typeof area)}>
               <option value="">Nenhuma</option>
               {Object.entries(AREAS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="qadmin-modal__check">
             <input type="checkbox" checked={showOnSite} onChange={(e) => setShowOnSite(e.target.checked)} />
@@ -777,7 +779,7 @@ function TeamTab({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Remover este sócio?")) return;
+    if (!(await confirmDialog("Remover este sócio?", { danger: true, confirmLabel: "Remover" }))) return;
     try {
       await fetch(`/api/team/${id}`, { method: "DELETE" });
       setTeam((p) => p.filter((m) => m.id !== id));

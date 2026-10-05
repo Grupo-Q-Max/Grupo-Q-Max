@@ -13,6 +13,7 @@ import {
 import { AutomationModal, ModalRow } from "./AutomationModal";
 import { ConditionsEditor } from "./ConditionsEditor";
 import type { AutomationStage, AutomationTrigger, CustomField } from "./types";
+import { Select } from "@/components/ui/Select";
 
 export type TriggerDraft = {
   name: string;
@@ -81,13 +82,13 @@ export function TriggerModal({
       }
     >
       <ModalRow label="Tipo">
-        <select value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as TriggerType })}>
+        <Select value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as TriggerType })}>
           {Object.entries(TRIGGER_TYPES).map(([key, t]) => (
             <option key={key} value={key}>
               {t.label}
             </option>
           ))}
-        </select>
+        </Select>
         <p className="auto-hint">{TRIGGER_TYPES[draft.type].description}</p>
       </ModalRow>
 
@@ -100,13 +101,13 @@ export function TriggerModal({
       </ModalRow>
 
       <ModalRow label="Mover para">
-        <select value={draft.stageId} onChange={(e) => setDraft({ ...draft, stageId: e.target.value })}>
+        <Select value={draft.stageId} onChange={(e) => setDraft({ ...draft, stageId: e.target.value })}>
           {stages.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
           ))}
-        </select>
+        </Select>
       </ModalRow>
 
       {draft.type === "WEBHOOK_IN" && (
@@ -138,20 +139,20 @@ export function TriggerModal({
 
       {draft.type === "FIELD_CHANGED" && (
         <ModalRow label="Campo">
-          <select value={draft.watchedField ?? ""} onChange={(e) => setDraft({ ...draft, watchedField: e.target.value || null })}>
+          <Select value={draft.watchedField ?? ""} onChange={(e) => setDraft({ ...draft, watchedField: e.target.value || null })}>
             <option value="">Qualquer campo</option>
             {Object.entries(WATCHABLE_FIELDS).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
         </ModalRow>
       )}
 
       {draft.type === "ACTIVITY_COMPLETED" && (
         <ModalRow label="Atividade">
-          <select
+          <Select
             value={draft.activityType ?? ""}
             onChange={(e) => setDraft({ ...draft, activityType: (e.target.value || null) as ActivityType | null })}
           >
@@ -161,7 +162,7 @@ export function TriggerModal({
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
         </ModalRow>
       )}
 

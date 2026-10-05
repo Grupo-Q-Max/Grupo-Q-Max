@@ -15,6 +15,7 @@ import { ActionFields, actionDraft, actionValidationError, type ActionDraft } fr
 import { ConditionsEditor } from "./ConditionsEditor";
 import { FlowEditor, flowDraft, flowValidationError, type FlowStepDraft } from "./FlowEditor";
 import type { AutomationRule, AutomationStage, CustomField, Member } from "./types";
+import { Select } from "@/components/ui/Select";
 
 export type RuleDraft = ActionDraft & {
   actionType: ActionType;
@@ -112,23 +113,23 @@ export function AutomationRuleModal({
       </ModalRow>
 
       <ModalRow label="Etapa">
-        <select value={draft.stageId} onChange={(e) => set({ stageId: e.target.value })}>
+        <Select value={draft.stageId} onChange={(e) => set({ stageId: e.target.value })}>
           {stages.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
           ))}
-        </select>
+        </Select>
       </ModalRow>
 
       <ModalRow label="Execução">
-        <select value={draft.execution} onChange={(e) => set({ execution: e.target.value as Execution })}>
+        <Select value={draft.execution} onChange={(e) => set({ execution: e.target.value as Execution })}>
           {Object.entries(EXECUTIONS).map(([key, label]) => (
             <option key={key} value={key}>
               {label}
             </option>
           ))}
-        </select>
+        </Select>
         {draft.execution === "SEQUENTIAL" && (
           <p className="auto-hint">Começa quando a regra anterior desta etapa terminar para o negócio; o horário conta a partir daí.</p>
         )}
@@ -136,7 +137,7 @@ export function AutomationRuleModal({
 
       <ModalRow label="Horário">
         <div className="auto-inline">
-          <select
+          <Select
             value={draft.delayAmount > 0 ? "AFTER" : "IMMEDIATE"}
             onChange={(e) =>
               set(e.target.value === "AFTER" ? { delayAmount: 1, delayUnit: "DAYS" } : { delayAmount: 0 })
@@ -144,7 +145,7 @@ export function AutomationRuleModal({
           >
             <option value="IMMEDIATE">Imediatamente</option>
             <option value="AFTER">Após um tempo</option>
-          </select>
+          </Select>
           {draft.delayAmount > 0 && (
             <>
               <input
@@ -154,13 +155,13 @@ export function AutomationRuleModal({
                 value={draft.delayAmount}
                 onChange={(e) => set({ delayAmount: Math.max(1, Number(e.target.value) || 1) })}
               />
-              <select value={draft.delayUnit} onChange={(e) => set({ delayUnit: e.target.value as DelayUnit })}>
+              <Select value={draft.delayUnit} onChange={(e) => set({ delayUnit: e.target.value as DelayUnit })}>
                 {Object.entries(DELAY_UNITS).map(([key, unit]) => (
                   <option key={key} value={key}>
                     {unit.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </>
           )}
         </div>

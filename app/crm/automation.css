@@ -377,7 +377,7 @@
 }
 
 .auto-modal input:not([type="checkbox"]),
-.auto-modal select,
+.auto-modal .qselect,
 .auto-modal textarea {
   width: 100%;
   padding: 8px 10px;
@@ -391,7 +391,7 @@
 }
 
 .auto-modal input:focus,
-.auto-modal select:focus,
+.auto-modal .qselect:focus,
 .auto-modal textarea:focus {
   border-color: #d90f81;
 }
@@ -407,7 +407,7 @@
   gap: 8px;
 }
 
-.auto-inline > select,
+.auto-inline > .qselect,
 .auto-inline > .auto-input--short {
   flex: 0 0 auto;
   width: auto;
@@ -458,7 +458,7 @@
   border-color: #d90f81;
 }
 
-.auto-placeholder select {
+.auto-placeholder .qselect {
   position: absolute;
   inset: 0;
   opacity: 0;
@@ -514,7 +514,7 @@
   margin-bottom: 16px;
 }
 
-.auto-runs__toolbar select {
+.auto-runs__toolbar .qselect {
   padding: 8px 10px;
   background: #1a1a1c;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -762,7 +762,7 @@
   cursor: pointer;
 }
 
-.auto-modal .auto-flow__title select,
+.auto-modal .auto-flow__title .qselect,
 .auto-modal .auto-flow__title input {
   width: auto;
   padding: 4px 8px;
@@ -836,7 +836,7 @@
   cursor: default;
 }
 
-.auto-modal .auto-flow__add select {
+.auto-modal .auto-flow__add .qselect {
   position: absolute;
   inset: 0;
   opacity: 0;
@@ -858,7 +858,7 @@
     flex-wrap: wrap;
   }
 
-  .auto-flow .auto-conditions__row > select {
+  .auto-flow .auto-conditions__row > .qselect {
     flex: 1 1 40%;
   }
 

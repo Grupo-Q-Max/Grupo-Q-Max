@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useTransition, type ReactNode } from "reac
 import { createPortal } from "react-dom";
 import { Settings, X, Plus, Trash2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Select } from "@/components/ui/Select";
+import { alertDialog } from "@/components/ui/Dialogs";
 
 export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
   const router = useRouter();
@@ -54,7 +56,7 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
   const handleSave = async () => {
     // Validate empty names
     if (fields.some(f => !f.name.trim())) {
-      alert("Por favor, preencha o nome de todos os campos.");
+      alertDialog("Por favor, preencha o nome de todos os campos.");
       return;
     }
 
@@ -104,7 +106,7 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
                 onChange={(e) => updateField(field.id, "name", e.target.value)}
                 style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', padding: '8px', color: '#fff', borderRadius: '4px' }}
               />
-              <select 
+              <Select 
                 value={field.type}
                 onChange={(e) => updateField(field.id, "type", e.target.value)}
                 style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', padding: '8px', color: '#fff', borderRadius: '4px' }}
@@ -113,7 +115,7 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
                 <option value="number">Número / Moeda</option>
                 <option value="phone">Telefone</option>
                 <option value="date">Data</option>
-              </select>
+              </Select>
               <label style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#a5a0aa', fontSize: '13px' }}>
                 <input 
                   type="checkbox" 
@@ -200,7 +202,7 @@ export function CrmPipelineRename({ pipeline, children }: { pipeline: { id: stri
       body: JSON.stringify({ id: pipeline.id, name: next })
     });
     if (!res.ok) {
-      alert("Não foi possível renomear o pipeline.");
+      alertDialog("Não foi possível renomear o pipeline.");
       return cancel();
     }
     // Keep the input until the refreshed title arrives, so the old name doesn't flash back

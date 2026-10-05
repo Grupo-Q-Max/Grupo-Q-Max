@@ -21,6 +21,7 @@ import {
 } from "@/lib/crm-automation-shared";
 import { ModalRow } from "./AutomationModal";
 import type { AutomationStage, CustomField, Member } from "./types";
+import { Select } from "@/components/ui/Select";
 
 /** Configuration of an action, as edited in the dialog (a rule or a flow step). */
 export type ActionDraft = {
@@ -104,7 +105,7 @@ function PlaceholderMenu({
   return (
     <label className="auto-placeholder" title="Inserir campo do negócio">
       <Braces size={14} />
-      <select
+      <Select
         value=""
         onChange={(e) => {
           if (e.target.value) onInsert(`{{deal.${e.target.value}}}`);
@@ -116,7 +117,7 @@ function PlaceholderMenu({
             {f.label}
           </option>
         ))}
-      </select>
+      </Select>
     </label>
   );
 }
@@ -174,14 +175,14 @@ export function ActionFields({
         <>
           <ModalRow label="URL">
             <div className="auto-inline">
-              <select
+              <Select
                 className="auto-input--short"
                 value={draft.webhookMethod}
                 onChange={(e) => set({ webhookMethod: e.target.value as HttpMethod })}
               >
                 <option value="POST">POST</option>
                 <option value="GET">GET</option>
-              </select>
+              </Select>
               <input
                 ref={urlRef}
                 value={draft.webhookUrl}
@@ -244,13 +245,13 @@ export function ActionFields({
       {action === "CREATE_ACTIVITY" && (
         <>
           <ModalRow label="Tipo">
-            <select value={activity.type} onChange={(e) => setActivity({ type: e.target.value as ActivityType })}>
+            <Select value={activity.type} onChange={(e) => setActivity({ type: e.target.value as ActivityType })}>
               {Object.entries(ACTIVITY_TYPES).map(([key, typeLabel]) => (
                 <option key={key} value={key}>
                   {typeLabel}
                 </option>
               ))}
-            </select>
+            </Select>
           </ModalRow>
 
           <ModalRow label="Título">
@@ -288,7 +289,7 @@ export function ActionFields({
 
           <ModalRow label="Responsável">
             <div className="auto-inline">
-              <select
+              <Select
                 value={activity.assignee}
                 onChange={(e) =>
                   setActivity(
@@ -300,9 +301,9 @@ export function ActionFields({
               >
                 <option value="DEAL_RESPONSIBLE">Responsável do negócio</option>
                 <option value="MEMBER">Membro da equipe</option>
-              </select>
+              </Select>
               {activity.assignee === "MEMBER" && (
-                <select
+                <Select
                   value={activity.responsibleId ?? ""}
                   onChange={(e) => setActivity({ responsibleId: e.target.value || null })}
                 >
@@ -312,14 +313,14 @@ export function ActionFields({
                       {m.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </div>
           </ModalRow>
 
           <ModalRow label="Prazo">
             <div className="auto-inline">
-              <select
+              <Select
                 value={activity.deadlineAmount ? "AFTER" : "NONE"}
                 onChange={(e) =>
                   setActivity(
@@ -331,7 +332,7 @@ export function ActionFields({
               >
                 <option value="NONE">Sem prazo</option>
                 <option value="AFTER">Após a criação</option>
-              </select>
+              </Select>
               {activity.deadlineAmount ? (
                 <>
                   <input
@@ -341,7 +342,7 @@ export function ActionFields({
                     value={activity.deadlineAmount}
                     onChange={(e) => setActivity({ deadlineAmount: Math.max(1, Number(e.target.value) || 1) })}
                   />
-                  <select
+                  <Select
                     value={activity.deadlineUnit ?? "DAYS"}
                     onChange={(e) => setActivity({ deadlineUnit: e.target.value as DelayUnit })}
                   >
@@ -350,7 +351,7 @@ export function ActionFields({
                         {unit.label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </>
               ) : null}
             </div>
@@ -361,7 +362,7 @@ export function ActionFields({
       {action === "UPDATE_DEAL" && (
         <>
           <ModalRow label="Mover para">
-            <select value={dealUpdate.stageId ?? ""} onChange={(e) => setDealUpdate({ stageId: e.target.value || null })}>
+            <Select value={dealUpdate.stageId ?? ""} onChange={(e) => setDealUpdate({ stageId: e.target.value || null })}>
               <option value="">Não mover</option>
               {stages
                 .filter((s) => s.id !== stageId || s.id === dealUpdate.stageId)
@@ -370,11 +371,11 @@ export function ActionFields({
                     {s.name}
                   </option>
                 ))}
-            </select>
+            </Select>
           </ModalRow>
 
           <ModalRow label="Status">
-            <select
+            <Select
               value={dealUpdate.status ?? ""}
               onChange={(e) => setDealUpdate({ status: (e.target.value || null) as DealStatus | null })}
             >
@@ -384,11 +385,11 @@ export function ActionFields({
                   {statusLabel}
                 </option>
               ))}
-            </select>
+            </Select>
           </ModalRow>
 
           <ModalRow label="Responsável">
-            <select
+            <Select
               value={dealUpdate.responsibleId ?? ""}
               onChange={(e) => setDealUpdate({ responsibleId: e.target.value || null })}
             >
@@ -398,7 +399,7 @@ export function ActionFields({
                   {m.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </ModalRow>
 
           <ModalRow label="Campos">
@@ -411,7 +412,7 @@ export function ActionFields({
                   );
                 return (
                   <div key={fieldId} className="auto-conditions__row">
-                    <select value={fieldId} onChange={(e) => setRow({ id: e.target.value })}>
+                    <Select value={fieldId} onChange={(e) => setRow({ id: e.target.value })}>
                       {!field && <option value={fieldId}>Campo removido</option>}
                       {customFields
                         .filter((f) => f.id === fieldId || unusedFields.includes(f))
@@ -420,7 +421,7 @@ export function ActionFields({
                             {f.name}
                           </option>
                         ))}
-                    </select>
+                    </Select>
                     <input
                       type={field?.type === "date" ? "date" : "text"}
                       value={value}

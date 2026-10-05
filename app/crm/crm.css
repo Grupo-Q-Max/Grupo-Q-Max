@@ -536,9 +536,19 @@ main.crm-main {
 }
 
 .crm-pipeline-select {
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: #fff;
   font-size: 24px;
-  max-width: 100%;
-  text-overflow: ellipsis;
+  font-weight: 700;
+}
+
+.crm-pipeline-select .qselect__chevron {
+  width: 24px;
+  height: 24px;
+  color: #ff2b5e;
+  opacity: 1;
 }
 
 .crm-header__actions {

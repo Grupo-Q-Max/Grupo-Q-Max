@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Archive, ArchiveRestore, Kanban as KanbanIcon, Lightbulb, Pencil, Send, Trash2, X } from "lucide-react";
 import { Kanban, type KanbanColumnData } from "@/components/kanban";
 import { AREAS } from "@/lib/crm-areas";
+import { Select } from "@/components/ui/Select";
+import { confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 
 type RequestType = "IMPROVEMENT" | "BUG" | "OTHER";
 type Area = keyof typeof AREAS;
@@ -46,7 +48,7 @@ function RequestFields({ draft, onChange }: { draft: Draft; onChange: (draft: Dr
   return (
     <>
       <div className="crm-requests__row">
-        <select
+        <Select
           className="crm-access__select"
           value={draft.type}
           onChange={(e) => onChange({ ...draft, type: e.target.value as RequestType })}
@@ -57,8 +59,8 @@ function RequestFields({ draft, onChange }: { draft: Draft; onChange: (draft: Dr
               {label}
             </option>
           ))}
-        </select>
-        <select
+        </Select>
+        <Select
           className="crm-access__select"
           value={draft.area}
           required
@@ -73,7 +75,7 @@ function RequestFields({ draft, onChange }: { draft: Draft; onChange: (draft: Dr
               {label}
             </option>
           ))}
-        </select>
+        </Select>
         <input
           className="crm-access__select crm-requests__title"
           placeholder="Título"
@@ -197,8 +199,8 @@ export function CrmRequests({
       if (ok !== false) close();
     });
 
-  const remove = (r: Request) => {
-    if (!window.confirm(`Apagar o pedido "${r.title}"? Esta ação não pode ser desfeita.`)) return;
+  const remove = async (r: Request) => {
+    if (!(await confirmDialog(`Apagar o pedido "${r.title}"? Esta ação não pode ser desfeita.`, { danger: true, confirmLabel: "Apagar" }))) return;
     save(fetch(`/api/crm/request?id=${encodeURIComponent(r.id)}`, { method: "DELETE" })).then((ok) => {
       if (ok !== false) close();
     });
@@ -267,12 +269,12 @@ export function CrmRequests({
               </div>
             )}
             onMoveItem={(id, columnId, index) => save(fetch("/api/crm/request", jsonRequest("PATCH", { id, columnId, index })))}
-            onDeleteColumn={(id) => {
-              if (!window.confirm("Excluir esta coluna? Os pedidos dela vão para a primeira coluna.")) return false;
+            onDeleteColumn={async (id) => {
+              if (!(await confirmDialog("Excluir esta coluna? Os pedidos dela vão para a primeira coluna.", { danger: true, confirmLabel: "Excluir" }))) return false;
               return save(fetch(`/api/crm/request/column?id=${id}`, { method: "DELETE" }));
             }}
             onAddColumn={async () => {
-              const name = window.prompt("Nome da nova coluna:")?.trim();
+              const name = (await promptDialog("Nome da nova coluna:", { confirmLabel: "Criar" }))?.trim();
               if (!name) return;
               const res = await fetch("/api/crm/request/column", jsonRequest("POST", { name }));
               const message = await failure(res);
