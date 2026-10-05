@@ -54,9 +54,9 @@ export function CrmNotificationBell() {
         className="crm-nav__item crm-bell"
         onClick={() => setOpen(!open)}
         aria-label={`Notificações${unread ? ` (${unread} não lidas)` : ""}`}
+        title="Notificações"
       >
         <Bell size={18} />
-        Notificações
         {unread > 0 && <span className="crm-bell__badge">{unread > 99 ? "99+" : unread}</span>}
       </button>
 

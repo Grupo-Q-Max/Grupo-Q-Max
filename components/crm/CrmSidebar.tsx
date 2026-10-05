@@ -70,7 +70,6 @@ export function CrmSidebar() {
             <PieChart size={18} />
             Relatórios
           </a>
-          <CrmNotificationBell />
           <Link href="/crm/requests" className={navClass("/crm/requests")}>
             <Lightbulb size={18} />
             Pedidos
@@ -81,11 +80,14 @@ export function CrmSidebar() {
               Configurações
             </Link>
           )}
-          {/* Without settings, "Sair" is the item pushed to the bottom */}
-          <button type="button" className="crm-nav__item" onClick={logout} style={canSettings ? undefined : { marginTop: "auto" }}>
-            <LogOut size={18} />
-            Sair
-          </button>
+          {/* Without settings, the "Sair" row is pushed to the bottom */}
+          <div className="crm-nav__row" style={canSettings ? undefined : { marginTop: "auto" }}>
+            <button type="button" className="crm-nav__item" onClick={logout}>
+              <LogOut size={18} />
+              Sair
+            </button>
+            <CrmNotificationBell />
+          </div>
         </nav>
       </aside>
     </>
