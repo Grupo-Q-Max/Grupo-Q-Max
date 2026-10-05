@@ -1,4 +1,6 @@
 import { Calendar, ListTodo, Trash2 } from "lucide-react";
+import { Avatar } from "./deal/ui";
+import type { TeamMember } from "./deal/types";
 
 export type CrmDeal = {
   id: string;
@@ -11,6 +13,7 @@ export type CrmDeal = {
   currency?: string;
   status?: string;
   contactName?: string | null;
+  responsible?: TeamMember | null;
   /** Next pending activity (see cardListInclude) */
   activities?: { id: string; title: string; deadline: string | null }[];
   _count?: { activities: number };
@@ -67,6 +70,7 @@ export function DealCard({
       )}
 
       <div className="kanban-card__footer">
+        <Avatar member={deal.responsible} size={26} />
         <span className="kanban-card__date">
           {[
             pendingCount > 0 && `${pendingCount} ${pendingCount === 1 ? "atividade" : "atividades"}`,

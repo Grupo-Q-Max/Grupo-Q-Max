@@ -7,10 +7,11 @@ type Tx = Prisma.TransactionClient;
 // Kanban list
 // ---------------------------------------------------------------------------
 
-/** What the kanban card needs: company, main contact and next pending activity. */
+/** What the kanban card needs: company, main contact, responsible and next pending activity. */
 export const cardListInclude = {
   company: { select: { name: true } },
   contacts: { orderBy: { order: "asc" }, take: 1, select: { contact: { select: { name: true } } } },
+  responsible: { select: { id: true, name: true, role: true, photo: true } },
   activities: {
     where: { completed: false, type: { not: "COMMENT" } },
     orderBy: [{ deadline: "asc" }, { createdAt: "asc" }],
@@ -23,12 +24,13 @@ export const cardListInclude = {
 type ListCard = Prisma.CrmCardGetPayload<{ include: typeof cardListInclude }>;
 
 /** Flattens relations and converts Decimal so the card can cross the server → client boundary. */
-export function serializeListCard({ company, contacts, ...card }: ListCard) {
+export function serializeListCard({ company, contacts, responsible, ...card }: ListCard) {
   return {
     ...card,
     value: card.value.toNumber(),
     company: company?.name ?? null,
     contactName: contacts[0]?.contact.name ?? null,
+    responsible: responsible && { id: responsible.id, name: responsible.name, role: responsible.role, image: responsible.photo },
   };
 }
 
