@@ -35,6 +35,8 @@ import {
   type CustomField,
   type Member,
 } from "./types";
+import { Select } from "@/components/ui/Select";
+import { confirmDialog } from "@/components/ui/Dialogs";
 
 type Kind = "rule" | "trigger";
 type Editing =
@@ -210,7 +212,7 @@ export function CrmAutomationBoard({
   };
 
   const remove = async (kind: Kind, id: string, name: string) => {
-    if (!window.confirm(`Excluir ${kind === "rule" ? "a regra" : "o gatilho"} "${name}"?`)) return;
+    if (!(await confirmDialog(`Excluir ${kind === "rule" ? "a regra" : "o gatilho"} "${name}"?`, { danger: true, confirmLabel: "Excluir" }))) return;
     await fetch(`/api/crm/${kind === "rule" ? "automation" : "trigger"}?id=${id}`, { method: "DELETE" });
     await reload();
   };
@@ -316,7 +318,7 @@ export function CrmAutomationBoard({
               )}
             </div>
           )}
-          <select
+          <Select
             className="auto-pipeline"
             value={pipeline.id}
             onChange={(e) => router.push(`/crm/automation/${e.target.value}`)}
@@ -326,7 +328,7 @@ export function CrmAutomationBoard({
                 {p.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="crm-toolbar__search">
           <Search size={16} />

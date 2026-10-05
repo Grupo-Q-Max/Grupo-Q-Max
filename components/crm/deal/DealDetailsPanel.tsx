@@ -8,6 +8,7 @@ import { DealTimeline } from "./DealTimeline";
 import { pickDraft, type DealDetails, type DealDraft, type TeamMember } from "./types";
 import { formatDateOnly } from "./ui";
 import { useCan } from "../CrmAccess";
+import { confirmDialog } from "@/components/ui/Dialogs";
 
 type Tab = "general" | "products" | "history";
 
@@ -109,8 +110,8 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
     return () => source.close();
   }, [pipelineId, load]);
 
-  const requestClose = useCallback(() => {
-    if (dirtyRef.current && !window.confirm("Existem alterações não salvas. Deseja descartá-las?")) return;
+  const requestClose = useCallback(async () => {
+    if (dirtyRef.current && !(await confirmDialog("Existem alterações não salvas. Deseja descartá-las?", { danger: true, confirmLabel: "Descartar" }))) return;
     onClose();
   }, [onClose]);
 
@@ -181,7 +182,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
   };
 
   const remove = async () => {
-    if (!window.confirm("Certeza que deseja excluir este negócio?")) return;
+    if (!(await confirmDialog("Certeza que deseja excluir este negócio?", { danger: true, confirmLabel: "Excluir" }))) return;
     const res = await fetch(`/api/crm/card?id=${dealId}`, { method: "DELETE" });
     if (!res.ok) return;
     onChanged();

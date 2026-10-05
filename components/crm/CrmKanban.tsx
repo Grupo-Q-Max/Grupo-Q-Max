@@ -6,6 +6,7 @@ import { Kanban, type KanbanColumnData } from "@/components/kanban";
 import { DealCard, type CrmDeal } from "./DealCard";
 import { DealDetailsPanel } from "./deal/DealDetailsPanel";
 import { useCan } from "./CrmAccess";
+import { confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 
 type CrmStage = { id: string; name: string; cards: CrmDeal[] };
 type CrmPipeline = { id: string; stages: CrmStage[] };
@@ -110,7 +111,7 @@ export function CrmKanban({ pipeline, initialDealId }: { pipeline: CrmPipeline; 
           return (await res.json()) as CrmDeal;
         } : undefined}
         onDeleteItem={can("deal.delete") ? async (cardId) => {
-          if (!window.confirm("Certeza que deseja excluir este negócio?")) return false;
+          if (!(await confirmDialog("Certeza que deseja excluir este negócio?", { danger: true, confirmLabel: "Excluir" }))) return false;
           const res = await fetch(`/api/crm/card?id=${cardId}`, { method: "DELETE" });
           if (!res.ok) return false;
           router.refresh();
@@ -121,13 +122,13 @@ export function CrmKanban({ pipeline, initialDealId }: { pipeline: CrmPipeline; 
           router.refresh();
         } : undefined}
         onDeleteColumn={can("stage.delete") ? async (stageId) => {
-          if (!window.confirm("Certeza que deseja excluir esta coluna inteira?")) return false;
+          if (!(await confirmDialog("Certeza que deseja excluir esta coluna inteira?", { danger: true, confirmLabel: "Excluir" }))) return false;
           const res = await fetch(`/api/crm/stage?id=${stageId}`, { method: "DELETE" });
           if (!res.ok) return false;
           router.refresh();
         } : undefined}
         onAddColumn={can("stage.create") ? async () => {
-          const name = window.prompt("Nome da nova coluna:")?.trim();
+          const name = (await promptDialog("Nome da nova coluna:", { confirmLabel: "Criar" }))?.trim();
           if (!name) return;
           const res = await fetch("/api/crm/stage", jsonRequest("POST", { name, pipelineId: pipeline.id }));
           if (!res.ok) return;

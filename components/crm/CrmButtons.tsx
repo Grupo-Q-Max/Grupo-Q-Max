@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCan } from "./CrmAccess";
+import { alertDialog } from "@/components/ui/Dialogs";
 
 export function CrmButtons({ pipeline }: { pipeline?: any }) {
   const router = useRouter();
@@ -48,7 +49,7 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
     if (pipeline.fieldsConfig && Array.isArray(pipeline.fieldsConfig)) {
       for (let field of pipeline.fieldsConfig) {
         if (field.required && !customData[field.id]) {
-          alert(`O campo ${field.name} é obrigatório.`);
+          alertDialog(`O campo ${field.name} é obrigatório.`);
           return;
         }
       }
@@ -226,7 +227,7 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
         {can("deal.create") && (
           <button className="btn-primary" onClick={() => {
             if (!pipeline) {
-              alert("Crie um pipeline primeiro.");
+              alertDialog("Crie um pipeline primeiro.");
               return;
             }
             setIsDealModalOpen(true);

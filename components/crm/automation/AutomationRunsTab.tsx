@@ -14,6 +14,7 @@ import {
   type DelayUnit,
   type StepType,
 } from "@/lib/crm-automation-shared";
+import { Select } from "@/components/ui/Select";
 
 /** Webhook: the request sent. Create activity: the activity created. Update deal: the changes made. Notify: the comment and who was notified. Wait: until when */
 type ActionLog = {
@@ -167,7 +168,7 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
   return (
     <div className="auto-runs">
       <div className="auto-runs__toolbar">
-        <select
+        <Select
           value={status}
           onChange={(e) => {
             setStatus(e.target.value);
@@ -180,7 +181,7 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
               {label}
             </option>
           ))}
-        </select>
+        </Select>
         <button type="button" className="btn-secondary auto-btn-sm" onClick={load} disabled={loading}>
           <RefreshCw size={14} className={loading ? "auto-spin" : ""} /> Atualizar
         </button>

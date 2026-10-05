@@ -9,6 +9,7 @@ import {
   type ConditionOperator,
 } from "@/lib/crm-automation-shared";
 import type { CustomField } from "./types";
+import { Select } from "@/components/ui/Select";
 
 /** Deal fields offered in condition selects: the built-in ones plus the pipeline's custom fields. */
 export function conditionFields(customFields: CustomField[]) {
@@ -37,14 +38,14 @@ export function ConditionsEditor({
       {value.map((condition, index) => (
         <div key={index} className="auto-conditions__row">
           {index > 0 && <span className="auto-conditions__and">e</span>}
-          <select value={condition.field} onChange={(e) => update(index, { field: e.target.value })}>
+          <Select value={condition.field} onChange={(e) => update(index, { field: e.target.value })}>
             {fields.map((f) => (
               <option key={f.key} value={f.key}>
                 {f.label}
               </option>
             ))}
-          </select>
-          <select
+          </Select>
+          <Select
             value={condition.operator}
             onChange={(e) => update(index, { operator: e.target.value as ConditionOperator })}
           >
@@ -53,7 +54,7 @@ export function ConditionsEditor({
                 {op.label}
               </option>
             ))}
-          </select>
+          </Select>
           {OPERATORS[condition.operator].needsValue && (
             <input
               value={condition.value ?? ""}

@@ -19,6 +19,7 @@ import {
   type TeamMember,
 } from "./types";
 import { Avatar, Field, LinkedBadge, LookupInput, Section } from "./ui";
+import { Select } from "@/components/ui/Select";
 
 type Props = {
   deal: DealDetails;
@@ -60,7 +61,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
         </Field>
 
         <Field label="Etapa">
-          <select
+          <Select
             className="deal-input"
             value={deal.stageId}
             onChange={(e) => onStageChange(e.target.value)}
@@ -70,7 +71,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
                 {stage.name}
               </option>
             ))}
-          </select>
+          </Select>
         </Field>
 
         <Field
@@ -87,7 +88,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
               value={draft.value}
               onChange={(e) => onChange({ value: Number(e.target.value) })}
             />
-            <select
+            <Select
               className="deal-input deal-input--narrow"
               value={draft.currency}
               onChange={(e) => onChange({ currency: e.target.value })}
@@ -97,7 +98,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
                   {c.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </Field>
 
@@ -257,14 +258,14 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
         </Field>
 
         <Field label="Fonte">
-          <select className="deal-input" value={draft.source ?? ""} onChange={(e) => onChange({ source: e.target.value })}>
+          <Select className="deal-input" value={draft.source ?? ""} onChange={(e) => onChange({ source: e.target.value })}>
             <option value="">Não selecionado</option>
             {SOURCES.map((source) => (
               <option key={source} value={source}>
                 {source}
               </option>
             ))}
-          </select>
+          </Select>
         </Field>
 
         <Field label="Informações da fonte">
@@ -284,7 +285,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
         <Field label="Responsável">
           <div className="deal-person">
             <Avatar member={responsible} size={36} />
-            <select
+            <Select
               className="deal-input"
               value={draft.responsibleId ?? ""}
               onChange={(e) => onChange({ responsibleId: e.target.value || null })}
@@ -295,7 +296,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
                   {member.name} — {member.role}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </Field>
       </Section>
@@ -343,7 +344,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
                 </span>
               );
             })}
-            <select
+            <Select
               className="deal-input deal-input--inline"
               value=""
               onChange={(e) => e.target.value && onChange({ observers: [...observers, e.target.value] })}
@@ -356,7 +357,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
                     {member.name}
                   </option>
                 ))}
-            </select>
+            </Select>
           </div>
         </Field>
 
@@ -421,13 +422,13 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
           label="Negócio recorrente"
           aside={draft.recurrence !== "NONE" && <span className="deal-field__hint">cria o próximo ao ganhar</span>}
         >
-          <select className="deal-input" value={draft.recurrence} onChange={(e) => onChange({ recurrence: e.target.value })}>
+          <Select className="deal-input" value={draft.recurrence} onChange={(e) => onChange({ recurrence: e.target.value })}>
             {RECURRENCES.map((r) => (
               <option key={r.value} value={r.value}>
                 {r.label}
               </option>
             ))}
-          </select>
+          </Select>
         </Field>
       </Section>
     </div>

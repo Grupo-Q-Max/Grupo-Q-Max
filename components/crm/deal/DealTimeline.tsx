@@ -33,6 +33,8 @@ import {
 } from "./types";
 import { Avatar, formatDateOnly, formatDateTime, formatDay, formatTime } from "./ui";
 import { useCan } from "../CrmAccess";
+import { Select } from "@/components/ui/Select";
+import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
 
 type ComposerMode = "TODO" | "COMMENT" | "TASK" | "CALL" | "MEETING";
 
@@ -50,7 +52,7 @@ const jsonRequest = (method: string, body: unknown): RequestInit => ({
 
 /** Shows the API error (e.g. no permission) of a failed request. */
 async function alertIfFailed(res: Response) {
-  if (!res.ok) window.alert((await res.json().catch(() => null))?.error ?? "Não foi possível salvar.");
+  if (!res.ok) await alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível salvar.");
 }
 
 const ACTIVITY_ICONS: Record<DealActivity["type"], ReactNode> = {
@@ -84,7 +86,7 @@ export function DealTimeline({ deal, team, onChanged }: Props) {
   };
 
   const remove = async (activity: DealActivity) => {
-    if (!window.confirm(`Excluir ${ACTIVITY_LABELS[activity.type].toLowerCase()}?`)) return;
+    if (!(await confirmDialog(`Excluir ${ACTIVITY_LABELS[activity.type].toLowerCase()}?`, { danger: true, confirmLabel: "Excluir" }))) return;
     await alertIfFailed(await fetch(`/api/crm/activity?id=${activity.id}`, { method: "DELETE" }));
     await onChanged();
   };
@@ -277,7 +279,7 @@ function ActivityComposer({
                 </label>
                 <label>
                   <Users size={14} />
-                  <select
+                  <Select
                     className="deal-input deal-input--compact"
                     value={responsible}
                     onChange={(e) => setResponsible(e.target.value)}
@@ -288,7 +290,7 @@ function ActivityComposer({
                         {member.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
               </div>
             )}
@@ -340,7 +342,7 @@ function ActivityItem({
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
           />
-          <select
+          <Select
             className="deal-input deal-input--compact"
             value={responsible}
             onChange={(e) => setResponsible(e.target.value)}
@@ -351,7 +353,7 @@ function ActivityItem({
                 {m.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="deal-composer__actions">
           <button

@@ -1,0 +1,216 @@
+/* Shared UI primitives: Select (components/ui/Select.tsx) and dialogs (components/ui/Dialogs.tsx).
+   Base looks use :where() so any area class (.deal-input, .crm-access__select...) overrides them. */
+
+:where(.qselect) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 10px;
+  background: #1a1a1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+}
+
+.qselect:focus-visible,
+.qselect[aria-expanded="true"] {
+  border-color: var(--qmax-magenta, #d90f81);
+}
+
+.qselect:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.qselect--empty .qselect__label {
+  color: #a5a0aa;
+}
+
+.qselect__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qselect__chevron {
+  flex: none;
+  opacity: 0.6;
+  transition: transform 0.15s;
+}
+
+.qselect[aria-expanded="true"] .qselect__chevron {
+  transform: rotate(180deg);
+}
+
+.qselect__list {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  max-width: calc(100vw - 16px);
+  padding: 4px;
+  overflow-y: auto;
+  background: #161618;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 14px;
+  list-style: none;
+  outline: none;
+}
+
+.qselect__list:popover-open {
+  animation: qui-pop 0.12s ease-out;
+}
+
+.qselect__group {
+  padding: 8px 10px 4px;
+  color: #a5a0aa;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.qselect__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.qselect__option.is-active {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.qselect__option.is-selected {
+  color: var(--qmax-magenta-bright, #ff2b91);
+}
+
+.qselect__option[aria-disabled] {
+  color: #6b6670;
+  cursor: default;
+}
+
+/* Dialogs */
+
+.qdialog {
+  width: min(420px, calc(100vw - 32px));
+  max-width: none;
+  padding: 0;
+  background: #111112;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.qdialog[open] {
+  animation: qui-pop 0.15s ease-out;
+}
+
+.qdialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.qdialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.qdialog__title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.qdialog__message {
+  margin: 0;
+  color: #d4d0d8;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.qdialog__input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1a1a1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.qdialog__input:focus {
+  border-color: var(--qmax-magenta, #d90f81);
+}
+
+.qdialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.qdialog__btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.qdialog__btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.qdialog__btn--primary {
+  background: var(--qmax-magenta, #d90f81);
+  border-color: transparent;
+}
+
+.qdialog__btn--primary:hover {
+  background: var(--qmax-magenta-bright, #ff2b91);
+}
+
+.qdialog__btn--danger {
+  background: #c62828;
+}
+
+.qdialog__btn--danger:hover {
+  background: #e53935;
+}
+
+.qdialog__btn:focus-visible {
+  outline: 2px solid var(--qmax-magenta-bright, #ff2b91);
+  outline-offset: 2px;
+}
+
+@keyframes qui-pop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Select } from "@/components/ui/Select";
 
 type Column = { id: string; name: string; isDone: boolean };
 
@@ -45,14 +46,14 @@ export function CrmSettings({ columns, archiveAfterDays }: { columns: Column[]; 
           <h3>Pedidos de melhoria</h3>
           <label className="crm-settings__field">
             <span>Coluna de conclusão</span>
-            <select className="crm-access__select" value={doneId} disabled={saving} onChange={(e) => changeDone(e.target.value)}>
+            <Select className="crm-access__select" value={doneId} disabled={saving} onChange={(e) => changeDone(e.target.value)}>
               <option value="">Nenhuma (não arquivar automaticamente)</option>
               {columns.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <p className="crm-access__note">
             Pedidos que ficarem {archiveAfterDays} dias nesta coluna do kanban vão para Arquivados automaticamente.

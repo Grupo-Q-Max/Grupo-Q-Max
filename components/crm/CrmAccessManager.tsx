@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Mail, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import { PERMISSION_SECTIONS, type Permission } from "@/lib/crm-permissions";
+import { Select } from "@/components/ui/Select";
+import { confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 
 type Group = { id: string; name: string; isAdmin: boolean; isDefault: boolean; permissions: string[] };
 type Member = {
@@ -50,7 +52,7 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
   };
 
   const createGroup = async () => {
-    const name = window.prompt("Nome do novo grupo:")?.trim();
+    const name = (await promptDialog("Nome do novo grupo:", { confirmLabel: "Criar" }))?.trim();
     if (!name) return;
     const res = await fetch("/api/crm/access", jsonRequest("POST", { name, permissions: [] }));
     const message = await failure(res);
@@ -76,13 +78,13 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
     if (message) setError(message);
   };
 
-  const cancelInvite = (member: Member) => {
-    if (!window.confirm(`Cancelar o convite de ${member.email}? Esse e-mail deixa de ter acesso ao CRM.`)) return;
+  const cancelInvite = async (member: Member) => {
+    if (!(await confirmDialog(`Cancelar o convite de ${member.email}? Esse e-mail deixa de ter acesso ao CRM.`, { danger: true, confirmLabel: "Cancelar convite", cancelLabel: "Voltar" }))) return;
     run(fetch(`/api/crm/invite?memberId=${member.id}`, { method: "DELETE" }));
   };
 
-  const setActive = (member: Member, crmActive: boolean) => {
-    if (!crmActive && !window.confirm(`Bloquear ${member.name}? Ele não consegue mais entrar nem usar o CRM.`)) return;
+  const setActive = async (member: Member, crmActive: boolean) => {
+    if (!crmActive && !(await confirmDialog(`Bloquear ${member.name}? Ele não consegue mais entrar nem usar o CRM.`, { danger: true, confirmLabel: "Bloquear" }))) return;
     run(fetch("/api/crm/access", jsonRequest("PATCH", { memberId: member.id, crmActive })));
   };
 
@@ -133,7 +135,7 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
               group={selected}
               onSave={(changes) => run(fetch("/api/crm/access", jsonRequest("PUT", { id: selected.id, ...changes })))}
               onDelete={async () => {
-                if (!window.confirm(`Excluir o grupo "${selected.name}"? Os usuários dele passam para o grupo padrão.`)) return;
+                if (!(await confirmDialog(`Excluir o grupo "${selected.name}"? Os usuários dele passam para o grupo padrão.`, { danger: true, confirmLabel: "Excluir" }))) return;
                 if (await run(fetch(`/api/crm/access?id=${selected.id}`, { method: "DELETE" }))) setSelectedId(null);
               }}
             />
@@ -157,7 +159,7 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
                   <td>{member.name}</td>
                   <td>{member.email}</td>
                   <td>
-                    <select
+                    <Select
                       className="crm-access__select"
                       value={member.crmGroupId ?? ""}
                       onChange={(e) =>
@@ -170,7 +172,7 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
                           {g.name}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </td>
                   <td>
                     <div className="crm-access__status">
@@ -354,14 +356,14 @@ function InviteModal({
           </div>
           <div className="crm-modal-group">
             <label htmlFor="invite-group">Grupo de acesso</label>
-            <select id="invite-group" name="groupId" className="crm-access__select">
+            <Select id="invite-group" name="groupId" className="crm-access__select">
               <option value="">Padrão ({defaultGroupName ?? "sem grupo"})</option>
               {groups.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           {error && <p className="crm-access__error">{error}</p>}
           <div className="crm-modal-actions">
