@@ -1,113 +1,85 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Braces, Plus, X } from "lucide-react";
+import { useState } from "react";
 import {
-  DEAL_FIELDS,
+  ACTION_TYPES,
   DELAY_UNITS,
-  customFieldKey,
+  EXECUTIONS,
+  type ActionType,
   type AutomationCondition,
   type DelayUnit,
-  type HttpMethod,
-  type WebhookHeader,
+  type Execution,
 } from "@/lib/crm-automation-shared";
 import { AutomationModal, ModalRow } from "./AutomationModal";
+import { ActionFields, actionDraft, actionValidationError, type ActionDraft } from "./ActionFields";
 import { ConditionsEditor } from "./ConditionsEditor";
-import type { AutomationRule, AutomationStage, CustomField } from "./types";
+import { FlowEditor, flowDraft, flowValidationError, type FlowStepDraft } from "./FlowEditor";
+import type { AutomationRule, AutomationStage, CustomField, Member } from "./types";
 
-export type RuleDraft = {
+export type RuleDraft = ActionDraft & {
+  actionType: ActionType;
   name: string;
   stageId: string;
+  execution: Execution;
   delayAmount: number;
   delayUnit: DelayUnit;
-  webhookUrl: string;
-  webhookMethod: HttpMethod;
-  webhookBody: string;
-  headers: WebhookHeader[];
   conditions: AutomationCondition[];
   active: boolean;
+  /** Only for FLOW rules */
+  steps: FlowStepDraft[];
 };
 
-function ruleDraft(rule: AutomationRule | null, stageId: string): RuleDraft {
+function ruleDraft(rule: AutomationRule | null, stageId: string, actionType: ActionType): RuleDraft {
   return {
-    name: rule?.name ?? "Webhook de saída",
+    ...actionDraft(rule),
+    actionType: rule?.actionType ?? actionType,
+    name: rule?.name ?? ACTION_TYPES[actionType].label,
     stageId: rule?.stageId ?? stageId,
+    execution: rule?.execution ?? "PARALLEL",
     delayAmount: rule?.delayAmount ?? 0,
     delayUnit: rule?.delayUnit ?? "MINUTES",
-    webhookUrl: rule?.webhookUrl ?? "",
-    webhookMethod: rule?.webhookMethod ?? "POST",
-    webhookBody: rule?.webhookBody ?? "",
-    headers: rule?.headers.map(({ key, value }) => ({ key, value })) ?? [],
     conditions: rule?.conditions.map(({ field, operator, value }) => ({ field, operator, value })) ?? [],
     active: rule?.active ?? true,
+    steps: flowDraft(rule?.steps ?? []),
   };
-}
-
-/** Menu that inserts a {{deal.<field>}} placeholder at the cursor of the given input. */
-function PlaceholderMenu({
-  customFields,
-  onInsert,
-}: {
-  customFields: CustomField[];
-  onInsert: (placeholder: string) => void;
-}) {
-  const fields = [...DEAL_FIELDS, ...customFields.map((f) => ({ key: customFieldKey(f.id), label: f.name }))];
-  return (
-    <label className="auto-placeholder" title="Inserir campo do negócio">
-      <Braces size={14} />
-      <select
-        value=""
-        onChange={(e) => {
-          if (e.target.value) onInsert(`{{deal.${e.target.value}}}`);
-        }}
-      >
-        <option value="">Inserir campo…</option>
-        {fields.map((f) => (
-          <option key={f.key} value={f.key}>
-            {f.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-/** Inserts text at the cursor of an input/textarea and returns the new value. */
-function insertAt(el: HTMLInputElement | HTMLTextAreaElement | null, current: string, text: string) {
-  if (!el) return current + text;
-  const start = el.selectionStart ?? current.length;
-  const end = el.selectionEnd ?? current.length;
-  return current.slice(0, start) + text + current.slice(end);
 }
 
 export function AutomationRuleModal({
   rule,
+  actionType,
   stageId,
   stages,
   customFields,
+  members,
   onClose,
   onSave,
 }: {
   rule: AutomationRule | null;
+  /** Action of a new rule (an existing rule keeps its own) */
+  actionType: ActionType;
   stageId: string;
   stages: AutomationStage[];
   customFields: CustomField[];
+  members: Member[];
   onClose: () => void;
   onSave: (draft: RuleDraft) => Promise<boolean>;
 }) {
-  const [draft, setDraft] = useState(() => ruleDraft(rule, stageId));
+  const [draft, setDraft] = useState(() => ruleDraft(rule, stageId, actionType));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const urlRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
-  const set = (patch: Partial<RuleDraft>) => setDraft((d) => ({ ...d, ...patch }));
-  const setHeader = (index: number, patch: Partial<WebhookHeader>) =>
-    set({ headers: draft.headers.map((h, i) => (i === index ? { ...h, ...patch } : h)) });
+  const set = (patch: Partial<RuleDraft>) => {
+    setDraft((d) => ({ ...d, ...patch }));
+    setError("");
+  };
+
+  const action = draft.actionType;
+  const flow = action === "FLOW";
 
   const save = async () => {
-    if (!/^https?:\/\//i.test(draft.webhookUrl.trim())) {
-      setError("Informe uma URL começando com http:// ou https://");
+    const message = flow ? flowValidationError(draft.steps, draft.stageId) : actionValidationError(action, draft, draft.stageId);
+    if (message) {
+      setError(message);
       return;
     }
     setSaving(true);
@@ -117,9 +89,12 @@ export function AutomationRuleModal({
     else setError("Não foi possível salvar a regra.");
   };
 
+  const label = ACTION_TYPES[action].label;
+
   return (
     <AutomationModal
-      title={rule ? "Webhook de saída" : "Nova regra: Webhook de saída"}
+      title={rule ? label : `Nova regra: ${label}`}
+      wide={flow}
       onClose={onClose}
       footer={
         <>
@@ -144,6 +119,19 @@ export function AutomationRuleModal({
             </option>
           ))}
         </select>
+      </ModalRow>
+
+      <ModalRow label="Execução">
+        <select value={draft.execution} onChange={(e) => set({ execution: e.target.value as Execution })}>
+          {Object.entries(EXECUTIONS).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+        {draft.execution === "SEQUENTIAL" && (
+          <p className="auto-hint">Começa quando a regra anterior desta etapa terminar para o negócio; o horário conta a partir daí.</p>
+        )}
       </ModalRow>
 
       <ModalRow label="Horário">
@@ -178,74 +166,32 @@ export function AutomationRuleModal({
         </div>
       </ModalRow>
 
-      <ModalRow label="Condição">
+      <ModalRow label={flow ? "Iniciar se" : "Condição"}>
         <ConditionsEditor value={draft.conditions} customFields={customFields} onChange={(conditions) => set({ conditions })} />
       </ModalRow>
 
-      <ModalRow label="URL">
-        <div className="auto-inline">
-          <select
-            className="auto-input--short"
-            value={draft.webhookMethod}
-            onChange={(e) => set({ webhookMethod: e.target.value as HttpMethod })}
-          >
-            <option value="POST">POST</option>
-            <option value="GET">GET</option>
-          </select>
-          <input
-            ref={urlRef}
-            value={draft.webhookUrl}
-            placeholder="https://exemplo.com/webhook?negocio={{deal.number}}"
-            onChange={(e) => {
-              set({ webhookUrl: e.target.value });
-              setError("");
-            }}
-          />
-          <PlaceholderMenu
+      {flow ? (
+        <div className="auto-modal__section">
+          <span className="auto-modal__label">Passos</span>
+          <FlowEditor
+            steps={draft.steps}
+            onChange={(steps) => set({ steps })}
+            stageId={draft.stageId}
+            stages={stages}
             customFields={customFields}
-            onInsert={(text) => set({ webhookUrl: insertAt(urlRef.current, draft.webhookUrl, text) })}
+            members={members}
           />
         </div>
-      </ModalRow>
-
-      <ModalRow label="Cabeçalhos">
-        <div className="auto-conditions">
-          {draft.headers.map((header, index) => (
-            <div key={index} className="auto-conditions__row">
-              <input value={header.key} placeholder="Nome" onChange={(e) => setHeader(index, { key: e.target.value })} />
-              <input value={header.value} placeholder="Valor" onChange={(e) => setHeader(index, { value: e.target.value })} />
-              <button
-                type="button"
-                className="auto-icon-btn"
-                title="Remover cabeçalho"
-                onClick={() => set({ headers: draft.headers.filter((_, i) => i !== index) })}
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
-          <button type="button" className="auto-link-btn" onClick={() => set({ headers: [...draft.headers, { key: "", value: "" }] })}>
-            <Plus size={13} /> Adicionar cabeçalho
-          </button>
-        </div>
-      </ModalRow>
-
-      {draft.webhookMethod === "POST" && (
-        <ModalRow label="Corpo">
-          <div className="auto-body">
-            <textarea
-              ref={bodyRef}
-              rows={5}
-              value={draft.webhookBody}
-              placeholder="Vazio: envia todos os dados do negócio em JSON"
-              onChange={(e) => set({ webhookBody: e.target.value })}
-            />
-            <PlaceholderMenu
-              customFields={customFields}
-              onInsert={(text) => set({ webhookBody: insertAt(bodyRef.current, draft.webhookBody, text) })}
-            />
-          </div>
-        </ModalRow>
+      ) : (
+        <ActionFields
+          action={action}
+          draft={draft}
+          onChange={set}
+          stageId={draft.stageId}
+          stages={stages}
+          customFields={customFields}
+          members={members}
+        />
       )}
 
       <ModalRow label="Ativa">

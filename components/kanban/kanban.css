@@ -198,8 +198,15 @@
 }
 
 /* ITEM / CARD SHELL — reuse .kanban-card in your renderItem for the default look */
+/*
+ * Touch drags start after a long press (see sensors.ts), so swipes must keep
+ * scrolling: allow panning, and block the long-press callout / text selection.
+ */
 .kanban-item {
-  touch-action: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .kanban-card {

@@ -3,7 +3,45 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { RefreshCw } from "lucide-react";
-import { RUN_STATUS_LABELS } from "@/lib/crm-automation-shared";
+import {
+  ACTIVITY_TYPES,
+  BRANCHES,
+  RUN_STATUS_LABELS,
+  stepLabel,
+  type ActionType,
+  type ActivityType,
+  type Branch,
+  type DelayUnit,
+  type StepType,
+} from "@/lib/crm-automation-shared";
+
+/** Webhook: the request sent. Create activity: the activity created. Update deal: the changes made. Notify: the comment and who was notified. Wait: until when */
+type ActionLog = {
+  method?: string;
+  url?: string;
+  activityId?: string;
+  type?: ActivityType;
+  title?: string;
+  responsible?: string | null;
+  deadline?: string | null;
+  changes?: { label: string; from: string | null; to: string | null }[];
+  message?: string;
+  notified?: string[];
+  until?: string;
+} | null;
+
+/** A step run by a FLOW rule */
+type RunStep = {
+  id: string;
+  label: string;
+  stepType: StepType;
+  status: string;
+  branch: Branch | null;
+  request: ActionLog;
+  httpStatus: number | null;
+  responseBody: string | null;
+  error: string | null;
+};
 
 type Run = {
   id: string;
@@ -12,15 +50,90 @@ type Run = {
   updatedAt: string;
   attempts: number;
   error: string | null;
-  request: { method?: string; url?: string } | null;
+  request: ActionLog;
   httpStatus: number | null;
   responseBody: string | null;
-  automation: { name: string; stage: { name: string } };
+  stepCount: number;
+  steps: RunStep[];
+  /** FLOW runs: next step to run */
+  step: { type: StepType; waitAmount: number | null; waitUnit: DelayUnit | null; actions: { name: string; actionType: ActionType }[] } | null;
+  automation: { name: string; actionType: ActionType; stage: { name: string } };
   card: { number: number; title: string };
 };
 
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+/** What an action did, from its log. */
+function ActionDetail({ request, status, responseBody }: { request: ActionLog; status: string; responseBody: string | null }) {
+  if (request?.url) {
+    return (
+      <>
+        <b>{request.method}</b> {request.url}
+        {responseBody && <pre>{responseBody}</pre>}
+      </>
+    );
+  }
+  if (request?.title) {
+    return (
+      <>
+        <b>{request.activityId ? "Atividade criada" : "Atividade não criada"}:</b>{" "}
+        {(request.type && ACTIVITY_TYPES[request.type]) ?? "Atividade"} · {request.title} · para {request.responsible ?? "ninguém"}
+        {request.deadline && ` · prazo ${formatDateTime(request.deadline)}`}
+      </>
+    );
+  }
+  if (request?.changes) {
+    if (request.changes.length === 0) {
+      return <>{status === "SUCCESS" ? "Nenhuma alteração: o negócio já estava assim." : "A ação não foi executada."}</>;
+    }
+    return (
+      <>
+        <b>Negócio alterado:</b> {request.changes.map((c) => `${c.label}: ${c.from ?? "vazio"} → ${c.to ?? "vazio"}`).join(" · ")}
+      </>
+    );
+  }
+  if (request?.notified) {
+    return (
+      <>
+        <b>{status === "SUCCESS" ? "Comentário adicionado" : "Comentário não adicionado"}:</b> {request.message} · avisados:{" "}
+        {request.notified.join(", ") || "ninguém"}
+      </>
+    );
+  }
+  return <>A ação não foi executada.</>;
+}
+
+/** Path taken by a FLOW run: every step run, in order. */
+function FlowPath({ run }: { run: Run }) {
+  if (run.steps.length === 0) return <>Nenhum passo executado ainda.</>;
+  return (
+    <ol className="auto-run-path">
+      {run.steps.map((step) => (
+        <li key={step.id}>
+          <b>{step.label}</b>
+          <span className={`auto-status auto-status--${step.status.toLowerCase()}`}>{RUN_STATUS_LABELS[step.status]}</span>
+          {step.stepType === "CONDITION" && step.branch && <>seguiu por <b>{BRANCHES[step.branch]}</b></>}
+          {step.stepType === "WAIT" && step.request?.until && <>até {formatDateTime(step.request.until)}</>}
+          {step.stepType === "ACTION" && step.status !== "SKIPPED" && (
+            <div>
+              {step.httpStatus && <>HTTP {step.httpStatus} · </>}
+              <ActionDetail request={step.request} status={step.status} responseBody={step.responseBody} />
+            </div>
+          )}
+          {step.error && <div className="auto-runs__error">{step.error}</div>}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** "Executa em …" of a pending run; a flow waiting in the middle also says which step comes next. */
+function pendingDetail(run: Run) {
+  const when = `executa em ${formatDateTime(run.runAt)}`;
+  if (run.automation.actionType !== "FLOW" || !run.step) return when;
+  return `${when} · próximo passo: ${stepLabel(run.step, run.step.actions[0])}`;
+}
 
 /** "Registros": execution log of the pipeline's rules, newest first. */
 export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
@@ -103,20 +216,21 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
                 </td>
                 <td>{run.httpStatus ?? "—"}</td>
                 <td className="auto-runs__error">
-                  {run.status === "PENDING" && !run.error ? `executa em ${formatDateTime(run.runAt)}` : run.error ?? ""}
+                  {run.status === "WAITING"
+                    ? "aguarda a regra anterior terminar"
+                    : run.status === "PENDING" && !run.error
+                      ? pendingDetail(run)
+                      : run.error ?? ""}
                   {run.attempts > 1 && ` (${run.attempts} tentativas)`}
                 </td>
               </tr>
               {expanded === run.id && (
                 <tr className="auto-runs__details">
                   <td colSpan={7}>
-                    {run.request?.url ? (
-                      <>
-                        <b>{run.request.method}</b> {run.request.url}
-                        {run.responseBody && <pre>{run.responseBody}</pre>}
-                      </>
+                    {run.automation.actionType === "FLOW" ? (
+                      <FlowPath run={run} />
                     ) : (
-                      "A requisição não foi enviada."
+                      <ActionDetail request={run.request} status={run.status} responseBody={run.responseBody} />
                     )}
                   </td>
                 </tr>

@@ -1,16 +1,16 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
- 
+
 // Get a free hosted Postgres database in seconds: `npx create-db`
- 
+
 generator client {
   provider = "prisma-client-js"
 }
- 
+
 datasource db {
   provider = "mysql"
 }
- 
+
 model ContactLead {
   id        String   @id @default(cuid())
   name      String
@@ -21,73 +21,89 @@ model ContactLead {
   status    String   @default("NEW") // NEW, CONTACTED, CLOSED
   createdAt DateTime @default(now())
 }
- 
+
 model SiteSetting {
   key       String   @id
   value     String   @db.Text
   updatedAt DateTime @updatedAt
 }
- 
+
 model TeamMember {
-  id          String   @id @default(cuid())
-  name        String
-  role        String
-  sector      String   @default("")
-  photo       String?  // public path or /api/files/<upload>
-  accentColor String   @default("#14d0c1")
-  linkedin    String?
-  bio         String?  @db.Text
-  order       Int      @default(0)
- 
-  responsibleDeals CrmCard[]         @relation("DealResponsible")
-  observedDeals    CrmDealObserver[]
-  activities       CrmActivity[]
- 
+  id              String    @id @default(cuid())
+  name            String
+  role            String
+  sector          String    @default("")
+  photo           String? // public path or /api/files/<upload>
+  accentColor     String    @default("#14d0c1")
+  linkedin        String?
+  bio             String?   @db.Text
+  order           Int       @default(0)
+  /// Legacy, created by hand in production and unused by the code: group companies, comma-separated
+  /// (e.g. "grupo,technology"). Kept so db push doesn't drop its data; breaks 1NF, so move it to a
+  /// TeamMemberCompany(memberId, company) table before using it
+  companies       String?
+  /// CRM login (/login): members without email + password can't sign in
+  email           String?   @unique
+  passwordHash    String?
+  /// Set by the confirmation link (or when the admin sets the login); login requires it
+  emailVerifiedAt DateTime?
+  /// Listed on the public "Nossos Sócios" section; self-registered CRM users start hidden
+  showOnSite      Boolean   @default(true)
+
+  responsibleDeals      CrmCard[]                 @relation("DealResponsible")
+  observedDeals         CrmDealObserver[]
+  activities            CrmActivity[]
+  automationActivities  CrmAutomationActivity[]
+  automationDealUpdates CrmAutomationDealUpdate[]
+  notifications         CrmNotification[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
- 
+
 model PageVisit {
   id        String   @id @default(cuid())
-  path      String   // qual pagina acessou (ex: /auditoria, /technology)
-  referrer  String?  // de onde veio (ex: google.com)
+  path      String // qual pagina acessou (ex: /auditoria, /technology)
+  referrer  String? // de onde veio (ex: google.com)
   userAgent String?
   createdAt DateTime @default(now())
 }
- 
+
 // ==========================================
 // CRM MODULE
 // ==========================================
- 
+
 model CrmPipeline {
   id           String     @id @default(cuid())
   name         String
   stages       CrmStage[]
-  fieldsConfig Json?      // Array of field definitions
+  fieldsConfig Json? // Array of field definitions
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
- 
+
 model CrmStage {
-  id             String             @id @default(cuid())
-  name           String
-  order          Int                @default(0)
-  pipelineId     String
-  pipeline       CrmPipeline        @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
-  cards        CrmCard[]
-  automations    CrmAutomation[]
-  triggers       CrmTrigger[]
-  automationRuns CrmAutomationRun[]
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  id              String                    @id @default(cuid())
+  name            String
+  order           Int                       @default(0)
+  pipelineId      String
+  pipeline        CrmPipeline               @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  cards           CrmCard[]
+  automations     CrmAutomation[]
+  triggers        CrmTrigger[]
+  automationRuns  CrmAutomationRun[]
+  /// UPDATE_DEAL rules that move deals into this stage
+  automationMoves CrmAutomationDealUpdate[] @relation("AutomationTargetStage")
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
 }
- 
+
 enum CrmDealStatus {
   OPEN
   WON
   LOST
 }
- 
+
 enum CrmRecurrence {
   NONE
   DAILY
@@ -95,52 +111,53 @@ enum CrmRecurrence {
   MONTHLY
   YEARLY
 }
- 
+
 /// A deal (negócio) shown as a card on the kanban.
 model CrmCard {
-  id          String        @id @default(cuid())
+  id         String        @id @default(cuid())
   /// Short sequential number used in the URL: /crm/deal/details/<number>
-  number      Int           @unique @default(autoincrement())
-  title       String
+  number     Int           @unique @default(autoincrement())
+  title      String
   /// Cached sum of the deal products (kept in sync by the API) so the board doesn't aggregate on every load
-  value       Decimal       @default(0.00) @db.Decimal(10, 2)
-  currency    String        @default("BRL") @db.VarChar(3)
-  status      CrmDealStatus @default(OPEN)
-  order       Int           @default(0)
-  startDate   DateTime?     @db.Date
-  closeDate   DateTime?     @db.Date
-  dealType    String?
-  source      String?
-  sourceInfo  String?       @db.Text
-  isPublic    Boolean       @default(true)
-  comment     String?       @db.Text
-  recurrence  CrmRecurrence @default(NONE)
-  utm         Json?         // { source, medium, campaign, content, term } captured from forms
-  customData  Json?         // values of the pipeline's user-defined fields (fieldsConfig)
- 
+  value      Decimal       @default(0.00) @db.Decimal(10, 2)
+  currency   String        @default("BRL") @db.VarChar(3)
+  status     CrmDealStatus @default(OPEN)
+  order      Int           @default(0)
+  startDate  DateTime?     @db.Date
+  closeDate  DateTime?     @db.Date
+  dealType   String?
+  source     String?
+  sourceInfo String?       @db.Text
+  isPublic   Boolean       @default(true)
+  comment    String?       @db.Text
+  recurrence CrmRecurrence @default(NONE)
+  utm        Json? // { source, medium, campaign, content, term } captured from forms
+  customData Json? // values of the pipeline's user-defined fields (fieldsConfig)
+
   stageId       String
   stage         CrmStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)
   companyId     String?
   company       CrmCompany? @relation(fields: [companyId], references: [id], onDelete: SetNull)
   responsibleId String?
   responsible   TeamMember? @relation("DealResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
- 
+
   contacts   CrmDealContact[]
   observers  CrmDealObserver[]
   products   CrmDealProduct[]
   activities CrmActivity[]
   history    CrmHistory[]
- 
+
   automationRuns CrmAutomationRun[]
- 
+  notifications  CrmNotification[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
- 
+
   @@index([stageId, order])
   @@index([companyId])
   @@index([responsibleId])
 }
- 
+
 /// Companies are shared between deals: editing one updates every deal linked to it.
 model CrmCompany {
   id        String       @id @default(cuid())
@@ -154,10 +171,10 @@ model CrmCompany {
   contacts  CrmContact[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
- 
+
   @@index([name])
 }
- 
+
 model CrmContact {
   id        String           @id @default(cuid())
   name      String
@@ -170,11 +187,11 @@ model CrmContact {
   deals     CrmDealContact[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
- 
+
   @@index([name])
   @@index([companyId])
 }
- 
+
 /// Contacts (participantes) of a deal; the lowest `order` is the main contact.
 model CrmDealContact {
   dealId    String
@@ -182,21 +199,21 @@ model CrmDealContact {
   contactId String
   contact   CrmContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
   order     Int        @default(0)
- 
+
   @@id([dealId, contactId])
   @@index([contactId])
 }
- 
+
 model CrmDealObserver {
   dealId   String
   deal     CrmCard    @relation(fields: [dealId], references: [id], onDelete: Cascade)
   memberId String
   member   TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
- 
+
   @@id([dealId, memberId])
   @@index([memberId])
 }
- 
+
 /// Product/service catalog.
 model CrmProduct {
   id        String           @id @default(cuid())
@@ -206,7 +223,7 @@ model CrmProduct {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 }
- 
+
 /// Product line of a deal. Name and price are a snapshot of the sale, so later
 /// catalog changes don't rewrite closed deals.
 model CrmDealProduct {
@@ -219,11 +236,11 @@ model CrmDealProduct {
   price     Decimal     @default(0.00) @db.Decimal(10, 2)
   quantity  Int         @default(1)
   order     Int         @default(0)
- 
+
   @@index([dealId])
   @@index([productId])
 }
- 
+
 enum CrmActivityType {
   TODO
   TASK
@@ -231,7 +248,7 @@ enum CrmActivityType {
   MEETING
   COMMENT
 }
- 
+
 model CrmActivity {
   id            String          @id @default(cuid())
   cardId        String
@@ -246,46 +263,69 @@ model CrmActivity {
   completedAt   DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
- 
+
   @@index([cardId])
   @@index([responsibleId])
 }
- 
+
 /// Append-only audit log of the deal timeline. `data` is a snapshot of the change
 /// (names, old/new values) so entries stay readable after related rows change.
 model CrmHistory {
   id        String   @id @default(cuid())
   cardId    String
   card      CrmCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  type      String   // CREATED, STAGE_CHANGED, FIELD_CHANGED, STATUS_CHANGED, RECURRENCE_CREATED, AUTOMATION_RUN, TRIGGER_FIRED
+  type      String // CREATED, STAGE_CHANGED, FIELD_CHANGED, STATUS_CHANGED, RECURRENCE_CREATED, AUTOMATION_RUN, TRIGGER_FIRED
   data      Json?
   createdAt DateTime @default(now())
- 
+
   @@index([cardId])
 }
- 
+
 enum CrmAutomationAction {
   WEBHOOK
+  CREATE_ACTIVITY
+  UPDATE_DEAL
+  NOTIFY
+  /// Several steps (actions, waits, if/else) run in order ("ações de grupo")
+  FLOW
 }
- 
+
+enum CrmAutomationStepType {
+  ACTION
+  WAIT
+  CONDITION
+}
+
+/// Branch of a CONDITION step a child step belongs to
+enum CrmAutomationBranch {
+  THEN
+  ELSE
+}
+
+/// Who receives an activity created by an automation rule
+enum CrmActivityAssignee {
+  DEAL_RESPONSIBLE
+  MEMBER
+}
+
 enum CrmTriggerType {
   WEBHOOK_IN
   FIELD_CHANGED
   ACTIVITY_COMPLETED
   DEAL_CREATED
 }
- 
+
 enum CrmDelayUnit {
   MINUTES
   HOURS
   DAYS
 }
- 
+
 enum CrmHttpMethod {
   GET
   POST
 }
- 
+
 enum CrmConditionOperator {
   eq
   neq
@@ -295,35 +335,156 @@ enum CrmConditionOperator {
   gt
   lt
 }
- 
+
 /// Automation rule ("regra de automação"): runs when a deal enters `stage`.
 model CrmAutomation {
-  id            String              @id @default(cuid())
+  id            String                 @id @default(cuid())
   name          String
-  actionType    CrmAutomationAction @default(WEBHOOK)
+  actionType    CrmAutomationAction    @default(WEBHOOK)
+  execution     CrmAutomationExecution @default(PARALLEL)
   /// Wait before running; 0 = immediately
-  delayAmount   Int                 @default(0)
-  delayUnit     CrmDelayUnit        @default(MINUTES)
+  delayAmount   Int                    @default(0)
+  delayUnit     CrmDelayUnit           @default(MINUTES)
   /// WEBHOOK action. URL and body accept {{deal.<field>}} placeholders
-  webhookUrl    String              @db.Text
-  webhookMethod CrmHttpMethod       @default(POST)
+  webhookUrl    String?                @db.Text
+  webhookMethod CrmHttpMethod          @default(POST)
   /// Empty: the deal snapshot is sent as JSON
-  webhookBody   String?             @db.Text
-  order         Int                 @default(0)
-  active        Boolean             @default(true)
+  webhookBody   String?                @db.Text
+  order         Int                    @default(0)
+  active        Boolean                @default(true)
   stageId       String
-  stage         CrmStage            @relation(fields: [stageId], references: [id], onDelete: Cascade)
- 
+  stage         CrmStage               @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  /// CREATE_ACTIVITY action
+  activity   CrmAutomationActivity?
+  /// UPDATE_DEAL action
+  dealUpdate CrmAutomationDealUpdate?
+  /// NOTIFY action
+  notify     CrmAutomationNotify?
   headers    CrmAutomationHeader[]
   conditions CrmAutomationCondition[]
   runs       CrmAutomationRun[]
- 
+
+  /// FLOW rules: their steps
+  steps      CrmAutomationStep[] @relation("FlowSteps")
+  /// Set when this row is not a rule of the board but the action of a flow step
+  /// (reusing the action columns/tables); such rows are never queued on their own.
+  /// At most one per step, kept by the API: a UNIQUE added to this existing table
+  /// would make the deploy's `prisma db push` stop on a data-loss warning.
+  flowStepId String?
+  flowStep   CrmAutomationStep?  @relation("StepAction", fields: [flowStepId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
- 
+
   @@index([stageId, order])
+  @@index([flowStepId])
 }
- 
+
+/// Step of a FLOW rule. Root steps have no parent; steps inside a CONDITION have
+/// the condition as parent and the branch they belong to.
+model CrmAutomationStep {
+  id         String                @id @default(cuid())
+  flowId     String
+  flow       CrmAutomation         @relation("FlowSteps", fields: [flowId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     CrmAutomationStep?    @relation("StepChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children   CrmAutomationStep[]   @relation("StepChildren")
+  /// Set only when parentId is set
+  branch     CrmAutomationBranch?
+  order      Int                   @default(0)
+  type       CrmAutomationStepType
+  /// WAIT step
+  waitAmount Int?
+  waitUnit   CrmDelayUnit?
+
+  /// ACTION step: the action, stored as a child CrmAutomation (exactly one)
+  actions    CrmAutomation[]              @relation("StepAction")
+  /// CONDITION step: all must match (AND) to follow THEN, otherwise ELSE
+  conditions CrmAutomationStepCondition[]
+  runs       CrmAutomationRun[]
+  runSteps   CrmAutomationRunStep[]
+
+  @@index([flowId, parentId, branch, order])
+  @@index([parentId])
+}
+
+/// Condition of a CONDITION step (same shape as CrmAutomationCondition).
+model CrmAutomationStepCondition {
+  id       String               @id @default(cuid())
+  stepId   String
+  step     CrmAutomationStep    @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  field    String
+  operator CrmConditionOperator
+  value    String?              @db.Text
+  order    Int                  @default(0)
+
+  @@index([stepId, order])
+}
+
+/// CREATE_ACTIVITY action of a rule: the activity added to the deal.
+model CrmAutomationActivity {
+  automationId   String              @id
+  automation     CrmAutomation       @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  type           CrmActivityType
+  /// Title and description accept {{deal.<field>}} placeholders
+  title          String              @db.Text
+  description    String?             @db.Text
+  assignee       CrmActivityAssignee @default(DEAL_RESPONSIBLE)
+  /// Used when assignee = MEMBER
+  responsibleId  String?
+  responsible    TeamMember?         @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  /// Deadline counted from the moment the activity is created; null = no deadline
+  deadlineAmount Int?
+  deadlineUnit   CrmDelayUnit?
+
+  @@index([responsibleId])
+}
+
+/// UPDATE_DEAL action of a rule: changes applied to the deal; null = leave unchanged.
+model CrmAutomationDealUpdate {
+  automationId  String         @id
+  automation    CrmAutomation  @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  /// Stage of the same pipeline the deal is moved to (after the other changes)
+  stageId       String?
+  stage         CrmStage?      @relation("AutomationTargetStage", fields: [stageId], references: [id], onDelete: SetNull)
+  status        CrmDealStatus?
+  responsibleId String?
+  responsible   TeamMember?    @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  /// { [customFieldId]: value }; values accept {{deal.<field>}} placeholders, "" clears the field
+  customData    Json?
+
+  @@index([stageId])
+  @@index([responsibleId])
+}
+
+/// NOTIFY action of a rule: a comment added to the deal timeline and a notification to team members.
+model CrmAutomationNotify {
+  automationId      String        @id
+  automation        CrmAutomation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  /// Accepts {{deal.<field>}} placeholders
+  message           String        @db.Text
+  /// Also notify whoever is the deal's responsible when the rule runs
+  notifyResponsible Boolean       @default(true)
+  /// TeamMember ids notified on every run
+  memberIds         Json?
+}
+
+/// In-app notification shown in the CRM bell of a team member.
+model CrmNotification {
+  id        String     @id @default(cuid())
+  memberId  String
+  member    TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  cardId    String
+  card      CrmCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  message   String     @db.Text
+  readAt    DateTime?
+  createdAt DateTime   @default(now())
+
+  @@index([memberId, readAt])
+  @@index([cardId])
+}
+
 /// HTTP header sent by a webhook rule.
 model CrmAutomationHeader {
   id           String        @id @default(cuid())
@@ -332,10 +493,10 @@ model CrmAutomationHeader {
   key          String
   value        String        @db.Text
   order        Int           @default(0)
- 
+
   @@index([automationId, order])
 }
- 
+
 /// Condition of a rule; all of a rule's conditions must match (AND).
 model CrmAutomationCondition {
   id           String               @id @default(cuid())
@@ -346,10 +507,10 @@ model CrmAutomationCondition {
   operator     CrmConditionOperator
   value        String?              @db.Text
   order        Int                  @default(0)
- 
+
   @@index([automationId, order])
 }
- 
+
 /// Trigger ("gatilho"): an event that moves a deal into `stage`.
 model CrmTrigger {
   id             String           @id @default(cuid())
@@ -367,16 +528,16 @@ model CrmTrigger {
   active         Boolean          @default(true)
   stageId        String
   stage          CrmStage         @relation(fields: [stageId], references: [id], onDelete: Cascade)
- 
+
   conditions CrmTriggerCondition[]
- 
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
- 
+
   @@index([stageId, order])
   @@index([type])
 }
- 
+
 /// Condition of a trigger; all of a trigger's conditions must match (AND).
 model CrmTriggerCondition {
   id        String               @id @default(cuid())
@@ -386,18 +547,28 @@ model CrmTriggerCondition {
   operator  CrmConditionOperator
   value     String?              @db.Text
   order     Int                  @default(0)
- 
+
   @@index([triggerId, order])
 }
- 
+
+/// How a rule starts relative to the rules before it in the stage (Bitrix24 "Execução")
+enum CrmAutomationExecution {
+  /// Starts when the deal enters the stage
+  PARALLEL
+  /// Starts when the previous rule of the stage finished for this deal; its delay counts from then
+  SEQUENTIAL
+}
+
 enum CrmAutomationRunStatus {
+  /// SEQUENTIAL rule waiting for the previous rule's run (afterRun) to finish
+  WAITING
   PENDING
   RUNNING
   SUCCESS
   FAILED
   SKIPPED
 }
- 
+
 /// Queue + log of automation executions (one row per deal entering a stage that has a rule).
 model CrmAutomationRun {
   id           String                 @id @default(cuid())
@@ -416,11 +587,52 @@ model CrmAutomationRun {
   httpStatus   Int?
   responseBody String?                @db.Text
   error        String?                @db.Text
+  /// WAITING runs: run of the previous rule this one waits for (null = previous run gone, start now)
+  afterRunId   String?
+  afterRun     CrmAutomationRun?      @relation("RunSequence", fields: [afterRunId], references: [id], onDelete: SetNull)
+  nextRuns     CrmAutomationRun[]     @relation("RunSequence")
+  /// FLOW runs: next step to run (null + stepCount 0 = start)
+  stepId       String?
+  step         CrmAutomationStep?     @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  /// FLOW runs: steps already run; also the seq of the next CrmAutomationRunStep
+  stepCount    Int                    @default(0)
+  steps        CrmAutomationRunStep[]
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
- 
+
   @@index([status, runAt])
   @@index([cardId])
   @@index([automationId])
   @@index([stageId])
+  @@index([stepId])
+  @@index([afterRunId])
+}
+
+/// Path taken by a FLOW run: one row per step run. Type/action/label are a snapshot
+/// so the log stays readable after the flow is edited. The (runId, seq) unique key
+/// is the claim that keeps a step from running twice.
+model CrmAutomationRunStep {
+  id           String                 @id @default(cuid())
+  runId        String
+  run          CrmAutomationRun       @relation(fields: [runId], references: [id], onDelete: Cascade)
+  seq          Int
+  stepId       String?
+  step         CrmAutomationStep?     @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  stepType     CrmAutomationStepType
+  actionType   CrmAutomationAction?
+  label        String
+  status       CrmAutomationRunStatus
+  /// CONDITION step: branch taken
+  branch       CrmAutomationBranch?
+  /// Same content as CrmAutomationRun.request for the action
+  request      Json?
+  httpStatus   Int?
+  responseBody String?                @db.Text
+  error        String?                @db.Text
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@unique([runId, seq])
+  @@index([stepId])
+  @@index([actionType, status, updatedAt])
 }

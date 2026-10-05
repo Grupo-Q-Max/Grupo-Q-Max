@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { parseTeamInput, toTeamDto } from "@/lib/team";
+import { emailTakenResponse, parseTeamInput, toPublicTeamDto, toTeamDto } from "@/lib/team";
+import { sessionMemberId } from "@/lib/auth";
+import { isAdminToken } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET() {
+/** Whole team for the admin and CRM users; the public site only gets members shown on it, without login data. */
+export async function GET(req: NextRequest) {
+  const internal = Boolean(sessionMemberId(req)) || isAdminToken(req.cookies.get("qmax_admin")?.value);
   try {
-    const team = await prisma.teamMember.findMany({ orderBy: [{ order: "asc" }, { createdAt: "asc" }] });
-    return NextResponse.json(team.map(toTeamDto), {
+    const team = await prisma.teamMember.findMany({
+      where: internal ? undefined : { showOnSite: true },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    });
+    return NextResponse.json(team.map(internal ? toTeamDto : toPublicTeamDto), {
       headers: {
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
       },
@@ -21,15 +28,18 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const member = await prisma.teamMember.create({
-    data: {
-      name: "Novo Membro",
-      role: "Cargo",
-      sector: "Setor",
-      ...parseTeamInput(body),
-      order: await prisma.teamMember.count(),
-    },
-  });
+  const member = await prisma.teamMember
+    .create({
+      data: {
+        name: "Novo Membro",
+        role: "Cargo",
+        sector: "Setor",
+        ...parseTeamInput(body),
+        order: await prisma.teamMember.count(),
+      },
+    })
+    .catch(emailTakenResponse);
+  if (member instanceof Response) return member;
   return NextResponse.json(toTeamDto(member), { status: 201 });
 }
 

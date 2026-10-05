@@ -51,7 +51,12 @@ interface TeamMember {
   image: string | null;
   order: number;
   accentColor?: string;
+  email?: string | null;
+  hasPassword?: boolean;
+  showOnSite?: boolean;
 }
+
+type MemberInput = Partial<TeamMember> & { password?: string };
 
 interface BrandLogo {
   id: string;
@@ -180,13 +185,16 @@ function MemberModal({
   onClose,
 }: {
   initialData?: TeamMember | null;
-  onSave: (data: Partial<TeamMember>) => void;
+  onSave: (data: MemberInput) => void;
   onClose: () => void;
 }) {
   const [name, setName] = useState(initialData?.name || "");
   const [role, setRole] = useState(initialData?.role || "");
   const [sector, setSector] = useState(initialData?.sector || "");
   const [accentColor, setAccentColor] = useState(initialData?.accentColor || "#14d0c1");
+  const [email, setEmail] = useState(initialData?.email || "");
+  const [password, setPassword] = useState("");
+  const [showOnSite, setShowOnSite] = useState(initialData?.showOnSite ?? true);
 
   // Extract valid 6-char hex for native <input type="color">
   const hexValue =
@@ -231,6 +239,29 @@ function MemberModal({
               onChange={(e) => setSector(e.target.value)}
               placeholder="Ex: Liderança"
             />
+          </label>
+          <label>
+            <span>E-mail de acesso ao CRM</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Ex: rodrigo@grupoqmax.com.br"
+              autoComplete="off"
+            />
+          </label>
+          <label>
+            <span>{initialData?.hasPassword ? "Nova senha do CRM (vazio mantém a atual)" : "Senha do CRM"}</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+          </label>
+          <label className="qadmin-modal__check">
+            <input type="checkbox" checked={showOnSite} onChange={(e) => setShowOnSite(e.target.checked)} />
+            <span>Mostrar na seção "Nossos Sócios" do site</span>
           </label>
 
           {/* Color selector for details/glow/tags */}
@@ -304,7 +335,7 @@ function MemberModal({
           </button>
           <button
             className="qadmin-btn qadmin-btn--primary"
-            onClick={() => onSave({ name, role, sector, accentColor })}
+            onClick={() => onSave({ name, role, sector, accentColor, email, password, showOnSite })}
             disabled={!name.trim()}
           >
             <CheckCircle2 size={16} />
@@ -707,7 +738,7 @@ function TeamTab({
     fetchTeam();
   }, [fetchTeam]);
 
-  async function handleSaveMember(data: Partial<TeamMember>) {
+  async function handleSaveMember(data: MemberInput) {
     try {
       if (typeof modalMember === "object" && modalMember?.id) {
         // Edit existing
@@ -717,15 +748,17 @@ function TeamTab({
           body: JSON.stringify(data),
         });
         const updated = await res.json();
+        if (!res.ok) return showToast(updated.error ?? "Erro ao salvar membro", "error");
         setTeam((p) => p.map((m) => (m.id === modalMember.id ? { ...m, ...updated } : m)));
         showToast("Sócio atualizado!");
       } else {
         // Add new
-        await fetch("/api/team", {
+        const res = await fetch("/api/team", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
+        if (!res.ok) return showToast((await res.json()).error ?? "Erro ao salvar membro", "error");
         await fetchTeam();
         showToast("Sócio adicionado!");
       }

@@ -17,3 +17,16 @@ export async function notifyStageChanged(stageId: string) {
 export function subscribeToPipeline(pipelineId: string, handler: (event: PipelineChangedEvent) => void) {
   return subscribe<PipelineChangedEvent>(pipelineChannel(pipelineId), handler);
 }
+
+export type MemberNotifiedEvent = { type: "member.notified"; memberId: string };
+
+const memberChannel = (memberId: string) => `crm:member:${memberId}`;
+
+/** Tells the member's open CRM tabs that they got a new notification. */
+export function notifyMember(memberId: string) {
+  publish<MemberNotifiedEvent>(memberChannel(memberId), { type: "member.notified", memberId });
+}
+
+export function subscribeToMember(memberId: string, handler: (event: MemberNotifiedEvent) => void) {
+  return subscribe<MemberNotifiedEvent>(memberChannel(memberId), handler);
+}

@@ -1,54 +1,54 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X } from "lucide-react";
+import Link from "next/link";
+import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut } from "lucide-react";
+import { CrmNotificationBell } from "./CrmNotificationBell";
+
+/** Below this width the sidebar becomes an overlay that starts closed (see crm.css). */
+const MOBILE_QUERY = "(max-width: 900px)";
 
 export function CrmSidebar() {
-  const [isOpen, setIsOpen] = useState(true);
+  // null = viewport default (open on desktop, closed on mobile), decided by CSS so
+  // the server render never flashes an open sidebar on phones
+  const [open, setOpen] = useState<boolean | null>(null);
+  const state = open === null ? "" : open ? "is-open" : "is-closed";
+
+  const toggle = () => {
+    const isOpen = open ?? !window.matchMedia(MOBILE_QUERY).matches;
+    setOpen(!isOpen);
+  };
+
+  const logout = async () => {
+    await fetch("/api/auth", { method: "DELETE" }).catch(() => {});
+    location.href = "/login";
+  };
 
   return (
     <>
-      <button 
-        className="crm-sidebar-toggle" 
-        onClick={() => setIsOpen(!isOpen)}
-        style={{
-          position: 'fixed',
-          top: '20px',
-          left: isOpen ? '240px' : '20px',
-          zIndex: 50,
-          background: 'rgba(11, 11, 12, 0.8)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          color: '#fff',
-          padding: '8px',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          transition: 'left 0.3s ease',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
+      <button
+        type="button"
+        className={`crm-sidebar-toggle ${state}`}
+        onClick={toggle}
+        aria-label="Alternar menu"
       >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
+        <X size={20} className="crm-sidebar-toggle__close" />
+        <Menu size={20} className="crm-sidebar-toggle__open" />
       </button>
 
-      <aside className={`crm-sidebar ${isOpen ? 'is-open' : 'is-closed'}`} style={{
-        width: isOpen ? '280px' : '0px',
-        transition: 'width 0.3s ease',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+      <div className={`crm-sidebar-backdrop ${state}`} onClick={() => setOpen(false)} aria-hidden />
+
+      <aside className={`crm-sidebar ${state}`}>
         <div className="crm-sidebar__brand">
           <Target size={28} />
           <span>Q-Max CRM</span>
         </div>
 
         <nav className="crm-nav">
-          <a href="/crm" className="crm-nav__item is-active">
+          <Link href="/crm" className="crm-nav__item is-active">
             <LayoutDashboard size={18} />
             Pipelines
-          </a>
+          </Link>
           <a href="#" className="crm-nav__item">
             <Users size={18} />
             Contatos
@@ -57,10 +57,15 @@ export function CrmSidebar() {
             <PieChart size={18} />
             Relatórios
           </a>
+          <CrmNotificationBell />
           <a href="#" className="crm-nav__item" style={{ marginTop: "auto" }}>
             <Settings size={18} />
             Configurações
           </a>
+          <button type="button" className="crm-nav__item" onClick={logout}>
+            <LogOut size={18} />
+            Sair
+          </button>
         </nav>
       </aside>
     </>

@@ -276,6 +276,58 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
 
 export class DealValidationError extends Error {}
 
+/**
+ * Full deal update (deal panel and "Modificar negócio" automation): fields
+ * from applyDealChanges plus `stageId` and `status`, all recorded in the
+ * history. Running the new stage's rules / "campo alterado" triggers is left
+ * to the caller (lib/crm-automation imports this module).
+ */
+export async function updateDeal(
+  id: string,
+  { stageId, status, ...changes }: { stageId?: string | null; status?: string | null } & Record<string, unknown>
+) {
+  if (status && !STATUSES.has(status as CrmDealStatus)) throw new DealValidationError("Status inválido");
+
+  return prisma.$transaction(async (tx) => {
+    const { data, history, current } = await applyDealChanges(tx, id, changes);
+
+    if (stageId && stageId !== current.stageId) {
+      const [from, to] = await Promise.all([
+        tx.crmStage.findUniqueOrThrow({ where: { id: current.stageId } }),
+        tx.crmStage.findUnique({ where: { id: stageId } }),
+      ]);
+      if (!to || to.pipelineId !== from.pipelineId) throw new DealValidationError("Etapa inválida");
+
+      data.stageId = to.id;
+      data.order = await tx.crmCard.count({ where: { stageId: to.id } });
+      history.push({ type: "STAGE_CHANGED", data: { from: from.name, to: to.name } });
+    }
+
+    if (status && status !== current.status) {
+      data.status = status as CrmDealStatus;
+      history.push({ type: "STATUS_CHANGED", data: { from: current.status, to: status } });
+    }
+
+    let recurringCopy = null;
+    if (history.length > 0) {
+      await tx.crmCard.update({ where: { id }, data: { ...data, history: { createMany: { data: history } } } });
+      if (data.status === "WON") recurringCopy = await createRecurringCopy(tx, id);
+    }
+
+    const changedFields = history.flatMap((h) =>
+      h.type === "STATUS_CHANGED" ? ["status"] : h.type === "FIELD_CHANGED" ? [(h.data as { field?: string }).field ?? ""] : []
+    );
+    return {
+      changed: history.length > 0,
+      history,
+      stageId: current.stageId,
+      movedTo: typeof data.stageId === "string" ? data.stageId : null,
+      changedFields: changedFields.filter(Boolean),
+      recurringCopy,
+    };
+  }, { timeout: 15_000 });
+}
+
 const stripId = <T extends { id?: string } | null | undefined>(item: T) => {
   if (!item) return null;
   const { id: _id, ...rest } = item;

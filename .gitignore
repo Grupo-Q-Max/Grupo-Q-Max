@@ -21,3 +21,8 @@ backup-*
 data/settings.json
 /lib/generated/prisma
 .env*.local
+
+# AI project skill (local, não versionar)
+/.claude/skills/project-grupo-qmax/
+/.claude/skills/project-grupo-qmax-prisma/
+/.claude/skills/project-grupo-qmax-azure-pipelines/

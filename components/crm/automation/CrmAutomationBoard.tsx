@@ -5,26 +5,39 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
-  KeyboardSensor,
-  PointerSensor,
   closestCorners,
   useDroppable,
-  useSensor,
-  useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowLeft, ChevronDown, Pencil, Plus, Search, Webhook, X, Zap } from "lucide-react";
-import { TRIGGER_TYPES, WATCHABLE_FIELDS, ACTIVITY_TYPES, describeDelay } from "@/lib/crm-automation-shared";
+import { useBoardSensors, vibrateOnTouchDrag } from "@/components/kanban/sensors";
+import { ArrowLeft, Bell, ChevronDown, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, Workflow, X, Zap } from "lucide-react";
+import {
+  ACTION_TYPES,
+  ACTIVITY_TYPES,
+  DEAL_STATUSES,
+  TRIGGER_TYPES,
+  WATCHABLE_FIELDS,
+  describeTiming,
+  type ActionType,
+} from "@/lib/crm-automation-shared";
 import { AutomationRuleModal, type RuleDraft } from "./AutomationRuleModal";
 import { TriggerModal, type TriggerDraft } from "./TriggerModal";
 import { AutomationRunsTab } from "./AutomationRunsTab";
-import { stageColor, textOn, type AutomationRule, type AutomationStage, type AutomationTrigger, type CustomField } from "./types";
+import {
+  stageColor,
+  textOn,
+  type AutomationRule,
+  type AutomationStage,
+  type AutomationTrigger,
+  type CustomField,
+  type Member,
+} from "./types";
 
 type Kind = "rule" | "trigger";
 type Editing =
-  | { kind: "rule"; stageId: string; item: AutomationRule | null }
+  | { kind: "rule"; stageId: string; item: AutomationRule | null; actionType: ActionType }
   | { kind: "trigger"; stageId: string; item: AutomationTrigger | null }
   | null;
 
@@ -45,6 +58,69 @@ const urlHost = (url?: string) => {
   }
 };
 
+/** Summary of an UPDATE_DEAL rule: "→ Etapa · Ganho · resp.: Fulano · 2 campos". */
+function dealUpdateSummary(rule: AutomationRule, stages: AutomationStage[], members: Member[]) {
+  const update = rule.dealUpdate;
+  if (!update) return "";
+  const fields = Object.keys(update.customData ?? {}).length;
+  return [
+    update.stageId && `→ ${stages.find((s) => s.id === update.stageId)?.name ?? "etapa removida"}`,
+    update.status && DEAL_STATUSES[update.status],
+    update.responsibleId && `resp.: ${members.find((m) => m.id === update.responsibleId)?.name ?? "membro removido"}`,
+    fields > 0 && `${fields} ${fields === 1 ? "campo" : "campos"}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** "para: ..." line of a rule card (who receives the action, like Bitrix24). */
+function ruleDetail(rule: AutomationRule, stages: AutomationStage[], members: Member[]) {
+  if (rule.actionType === "FLOW") {
+    const count = rule.steps.length;
+    return <span className="auto-card__target">{count} {count === 1 ? "passo" : "passos"}</span>;
+  }
+  if (rule.actionType === "UPDATE_DEAL") {
+    return <span className="auto-card__target">{dealUpdateSummary(rule, stages, members) || "nenhuma alteração"}</span>;
+  }
+  if (rule.actionType === "NOTIFY" && rule.notify) {
+    const { notify } = rule;
+    const targets = [
+      notify.notifyResponsible && "responsável do negócio",
+      ...(notify.memberIds ?? []).map((id) => members.find((m) => m.id === id)?.name ?? "membro removido"),
+    ].filter(Boolean);
+    return (
+      <>
+        Comentário · para: <span className="auto-card__target">{targets.join(", ") || "ninguém"}</span>
+      </>
+    );
+  }
+  if (rule.actionType === "CREATE_ACTIVITY" && rule.activity) {
+    const { activity } = rule;
+    const target =
+      activity.assignee === "MEMBER"
+        ? members.find((m) => m.id === activity.responsibleId)?.name ?? "membro removido"
+        : "responsável do negócio";
+    return (
+      <>
+        {ACTIVITY_TYPES[activity.type] ?? "Atividade"} · para: <span className="auto-card__target">{target}</span>
+      </>
+    );
+  }
+  return (
+    <>
+      para: <span className="auto-card__target">{rule.webhookMethod} {urlHost(rule.webhookUrl ?? undefined) || "sem URL"}</span>
+    </>
+  );
+}
+
+const RULE_ACTIONS: { type: ActionType; icon: ReactNode }[] = [
+  { type: "WEBHOOK", icon: <Webhook size={14} /> },
+  { type: "CREATE_ACTIVITY", icon: <ListTodo size={14} /> },
+  { type: "UPDATE_DEAL", icon: <PencilLine size={14} /> },
+  { type: "NOTIFY", icon: <Bell size={14} /> },
+  { type: "FLOW", icon: <Workflow size={14} /> },
+];
+
 function triggerDetail(trigger: AutomationTrigger) {
   const { watchedField, activityType } = trigger;
   if (trigger.type === "FIELD_CHANGED") return watchedField ? `campo: ${WATCHABLE_FIELDS[watchedField] ?? watchedField}` : "qualquer campo";
@@ -58,11 +134,13 @@ export function CrmAutomationBoard({
   pipelines,
   initialStages,
   customFields,
+  members,
 }: {
   pipeline: { id: string; name: string };
   pipelines: { id: string; name: string }[];
   initialStages: AutomationStage[];
   customFields: CustomField[];
+  members: Member[];
 }) {
   const router = useRouter();
   const dndId = useId();
@@ -72,10 +150,7 @@ export function CrmAutomationBoard({
   const [editing, setEditing] = useState<Editing>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const sensors = useBoardSensors();
 
   const reload = useCallback(async () => {
     const res = await fetch(`/api/crm/automation?pipelineId=${pipeline.id}`, { cache: "no-store" });
@@ -88,10 +163,12 @@ export function CrmAutomationBoard({
     const match = (...texts: (string | undefined)[]) => texts.some((t) => t?.toLowerCase().includes(query));
     return stages.map((s) => ({
       ...s,
-      automations: s.automations.filter((a) => match(a.name, a.webhookUrl)),
+      automations: s.automations.filter((a) =>
+        match(a.name, a.webhookUrl ?? undefined, a.activity?.title, a.notify?.message, dealUpdateSummary(a, stages, members))
+      ),
       triggers: s.triggers.filter((t) => match(t.name, TRIGGER_TYPES[t.type]?.label)),
     }));
-  }, [stages, query]);
+  }, [stages, query, members]);
 
   // ---- persistence --------------------------------------------------------
 
@@ -204,15 +281,18 @@ export function CrmAutomationBoard({
             </button>
             {createOpen && (
               <div className="auto-menu" onMouseLeave={() => setCreateOpen(false)}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCreateOpen(false);
-                    setEditing({ kind: "rule", stageId: stages[0]?.id, item: null });
-                  }}
-                >
-                  <Webhook size={14} /> Regra: Webhook de saída
-                </button>
+                {RULE_ACTIONS.map(({ type, icon }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      setCreateOpen(false);
+                      setEditing({ kind: "rule", stageId: stages[0]?.id, item: null, actionType: type });
+                    }}
+                  >
+                    {icon} Regra: {ACTION_TYPES[type].label}
+                  </button>
+                ))}
                 <button
                   type="button"
                   onClick={() => {
@@ -261,7 +341,7 @@ export function CrmAutomationBoard({
         {tab === "runs" ? (
           <AutomationRunsTab pipelineId={pipeline.id} />
         ) : (
-          <DndContext id={dndId} sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+          <DndContext id={dndId} sensors={sensors} collisionDetection={closestCorners} onDragStart={vibrateOnTouchDrag} onDragEnd={handleDragEnd}>
             <div className="auto-board">
               <div className="auto-grid" style={columns}>
                 {stages.map((stage, index) => {
@@ -311,8 +391,12 @@ export function CrmAutomationBoard({
                       key={stage.id}
                       id={containerId("rule", stage.id)}
                       items={stage.automations.map((a) => itemId("rule", a.id))}
-                      onAdd={() => setEditing({ kind: "rule", stageId: stage.id, item: null })}
                       addLabel="Adicionar regra"
+                      addOptions={RULE_ACTIONS.map(({ type, icon }) => ({
+                        label: ACTION_TYPES[type].label,
+                        icon,
+                        onClick: () => setEditing({ kind: "rule", stageId: stage.id, item: null, actionType: type }),
+                      }))}
                     >
                       {stage.automations.map((rule) => (
                         <SortableCard key={rule.id} id={itemId("rule", rule.id)}>
@@ -322,19 +406,15 @@ export function CrmAutomationBoard({
                               <button
                                 type="button"
                                 className="auto-card__delay"
-                                onClick={() => setEditing({ kind: "rule", stageId: stage.id, item: rule })}
+                                onClick={() => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType })}
                               >
-                                {describeDelay(rule.delayAmount, rule.delayUnit)}
+                                {describeTiming(rule.execution, rule.delayAmount, rule.delayUnit)}
                               </button>
                             }
                             name={rule.name}
-                            detail={
-                              <>
-                                para: <span className="auto-card__target">{rule.webhookMethod} {urlHost(rule.webhookUrl) || "sem URL"}</span>
-                              </>
-                            }
+                            detail={ruleDetail(rule, stages, members)}
                             conditions={rule.conditions.length}
-                            onEdit={() => setEditing({ kind: "rule", stageId: stage.id, item: rule })}
+                            onEdit={() => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType })}
                             onRename={(name) => rename("rule", rule.id, name)}
                             onDelete={() => remove("rule", rule.id, rule.name)}
                           />
@@ -352,9 +432,11 @@ export function CrmAutomationBoard({
       {editing?.kind === "rule" && (
         <AutomationRuleModal
           rule={editing.item}
+          actionType={editing.actionType}
           stageId={editing.stageId}
           stages={stages}
           customFields={customFields}
+          members={members}
           onClose={() => setEditing(null)}
           onSave={(draft) => saveRule(draft, editing.item)}
         />
@@ -389,22 +471,49 @@ function Column({
   items,
   onAdd,
   addLabel,
+  addOptions,
   children,
 }: {
   id: string;
   items: string[];
-  onAdd: () => void;
+  onAdd?: () => void;
   addLabel: string;
+  /** When set, "+" opens a menu with these choices instead of calling onAdd */
+  addOptions?: { label: string; icon: ReactNode; onClick: () => void }[];
   children: ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <SortableContext id={id} items={items} strategy={verticalListSortingStrategy}>
       <div ref={setNodeRef} className={`auto-column ${isOver ? "is-over" : ""}`}>
         {children}
-        <button type="button" className="auto-add" onClick={onAdd} title={addLabel}>
-          <Plus size={16} />
-        </button>
+        <div className="auto-create">
+          <button
+            type="button"
+            className="auto-add"
+            onClick={() => (addOptions ? setMenuOpen(!menuOpen) : onAdd?.())}
+            title={addLabel}
+          >
+            <Plus size={16} />
+          </button>
+          {addOptions && menuOpen && (
+            <div className="auto-menu" onMouseLeave={() => setMenuOpen(false)}>
+              {addOptions.map((option) => (
+                <button
+                  key={option.label}
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    option.onClick();
+                  }}
+                >
+                  {option.icon} {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </SortableContext>
   );

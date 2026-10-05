@@ -24,7 +24,7 @@ steps:
 - script: npx prisma generate
   displayName: 'Gerar Prisma Client'
  
-- script: npx prisma db push --accept-data-loss
+- script: npx prisma db push
   displayName: 'Sincronizar Banco de Dados (DB Push)'
   env:
     DATABASE_URL: "mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website"

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { boardAutomations } from "@/lib/crm-automation";
 import { CrmAutomationBoard } from "@/components/crm/automation/CrmAutomationBoard";
 import type { AutomationStage, CustomField } from "@/components/crm/automation/types";
 
@@ -9,23 +10,21 @@ export const dynamic = "force-dynamic";
 export default async function AutomationPage({ params }: { params: Promise<{ pipelineId: string }> }) {
   const { pipelineId } = await params;
 
-  const [pipeline, pipelines] = await Promise.all([
+  const [pipeline, pipelines, members] = await Promise.all([
     prisma.crmPipeline.findUnique({
       where: { id: pipelineId },
       include: {
         stages: {
           orderBy: { order: "asc" },
           include: {
-            automations: {
-              orderBy: { order: "asc" },
-              include: { headers: { orderBy: { order: "asc" } }, conditions: { orderBy: { order: "asc" } } },
-            },
+            automations: boardAutomations,
             triggers: { orderBy: { order: "asc" }, include: { conditions: { orderBy: { order: "asc" } } } },
           },
         },
       },
     }),
     prisma.crmPipeline.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
+    prisma.teamMember.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
   ]);
   if (!pipeline) notFound();
 
@@ -40,6 +39,7 @@ export default async function AutomationPage({ params }: { params: Promise<{ pip
       pipelines={pipelines}
       initialStages={stages}
       customFields={customFields}
+      members={members}
     />
   );
 }

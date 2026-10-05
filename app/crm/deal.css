@@ -288,6 +288,8 @@
   .deal-grid { grid-template-columns: 1fr; }
   .deal-panel { width: 100vw; }
   .deal-panel__close { left: auto; right: 16px; top: 16px; z-index: 5; }
+  /* keep the header actions clear of the floating close button */
+  .deal-header { padding-right: 72px; }
   .deal-stages { overflow-x: auto; }
   .deal-stage { min-width: 120px; }
 }
@@ -746,4 +748,25 @@
   font-size: 15px;
   font-weight: 500;
   color: var(--deal-subtle);
+}
+
+/* PHONE: title on its own line, actions below, tighter paddings */
+@media (max-width: 640px) {
+  .deal-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    /* right padding keeps clear of the floating close button */
+    padding: 18px 64px 4px 16px;
+  }
+
+  .deal-header__title { flex: 1 1 100%; }
+  .deal-header__title h2 { font-size: 20px; white-space: normal; }
+  .deal-header__input { min-width: 0; width: 100%; font-size: 18px !important; }
+
+  .deal-meta { padding: 0 16px 12px; }
+  .deal-stages { padding: 0 16px 12px; }
+  .deal-tabs { padding: 0 8px; overflow-x: auto; }
+  .deal-tabs button { white-space: nowrap; padding: 10px 12px; }
+  .deal-body { padding: 16px 16px 24px; }
+  .deal-savebar { flex-wrap: wrap; gap: 8px; }
 }

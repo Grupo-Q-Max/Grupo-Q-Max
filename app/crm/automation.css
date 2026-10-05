@@ -178,6 +178,7 @@
 
 .auto-add {
   display: flex;
+  width: 100%;
   align-items: center;
   justify-content: center;
   height: 32px;
@@ -198,6 +199,10 @@
 /* ---- cards ---- */
 
 .auto-card {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -588,6 +593,11 @@
   color: #ffc107;
 }
 
+.auto-status--waiting {
+  background: rgba(79, 195, 247, 0.15);
+  color: #4fc3f7;
+}
+
 .auto-status--skipped {
   background: rgba(255, 255, 255, 0.06);
   color: #a5a0aa;
@@ -601,4 +611,273 @@
 
 .auto-spin {
   animation: spin 1s linear infinite;
+}
+
+/* ---- tablet / phone ---- */
+
+@media (max-width: 900px) {
+  .auto-header .crm-header__title {
+    font-size: 18px;
+    white-space: normal;
+  }
+
+  .auto-header .crm-toolbar__search {
+    flex: 1 1 100%;
+  }
+
+  .auto-header__title .crm-header__title {
+    flex: 1 1 calc(100% - 60px);
+    font-size: 17px;
+  }
+
+  /* "Criar" and the pipeline select share one row */
+  .auto-pipeline {
+    flex: 1 1 140px;
+    min-width: 0;
+    max-width: 320px;
+  }
+
+  .auto-tabs {
+    padding: 10px 16px 0;
+  }
+
+  .auto-board {
+    padding-right: 16px;
+  }
+
+  .auto-modal__body {
+    padding: 14px;
+  }
+
+  /* Label above the field instead of beside it */
+  .auto-modal__row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .auto-modal__label {
+    padding-top: 0;
+  }
+
+  .auto-inline {
+    flex-wrap: wrap;
+  }
+
+  .auto-inline > input {
+    flex: 1 1 160px;
+  }
+
+  .auto-runs {
+    overflow-x: auto;
+  }
+
+  .auto-runs__table {
+    min-width: 720px;
+  }
+
+  .auto-runs__toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+.auto-checks {
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.auto-checks .auto-switch {
+  padding-top: 6px;
+}
+
+/* ---- flow editor ("ações de grupo") ---- */
+
+.auto-modal--wide.crm-modal {
+  max-width: 860px;
+}
+
+.auto-modal__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auto-modal__section > .auto-modal__label {
+  padding-top: 0;
+}
+
+.auto-flow__list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.auto-flow__step {
+  padding: 8px 10px;
+  background: #111112;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid #d90f81;
+  border-radius: 8px;
+}
+
+.auto-flow__step--wait {
+  border-left-color: #ffc107;
+}
+
+.auto-flow__step--condition {
+  border-left-color: #4fc3f7;
+}
+
+.auto-flow__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auto-flow__title {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #d6d2da;
+  font-size: 13px;
+}
+
+.auto-flow__title > span {
+  overflow-wrap: anywhere;
+}
+
+.auto-flow__toggle {
+  flex-wrap: nowrap;
+  min-height: 32px;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.auto-modal .auto-flow__title select,
+.auto-modal .auto-flow__title input {
+  width: auto;
+  padding: 4px 8px;
+}
+
+.auto-flow__tools {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.auto-flow__tools .auto-icon-btn {
+  padding: 6px;
+}
+
+.auto-flow__tools .auto-icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Fields of a step: label above the field, there is little width */
+.auto-flow__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+
+.auto-flow__body .auto-modal__row {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.auto-flow__body .auto-modal__label {
+  padding-top: 0;
+}
+
+.auto-flow__branch {
+  margin: 8px 0 0 6px;
+  padding-left: 12px;
+  border-left: 2px dashed rgba(79, 195, 247, 0.4);
+}
+
+.auto-flow__branch--else {
+  border-left-color: rgba(255, 255, 255, 0.15);
+}
+
+.auto-flow__branch-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #a5a0aa;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.auto-flow__add {
+  position: relative;
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: #ff2b91;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.auto-flow__add.is-disabled {
+  color: #a5a0aa;
+  cursor: default;
+}
+
+.auto-modal .auto-flow__add select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .auto-flow__step {
+    padding: 8px;
+  }
+
+  .auto-flow__branch {
+    margin-left: 2px;
+    padding-left: 8px;
+  }
+
+  /* Condition rows: field and operator side by side, value below */
+  .auto-flow .auto-conditions__row {
+    flex-wrap: wrap;
+  }
+
+  .auto-flow .auto-conditions__row > select {
+    flex: 1 1 40%;
+  }
+
+  .auto-flow .auto-conditions__row > input {
+    flex: 1 1 70%;
+  }
+}
+
+/* ---- flow path in "Registros" ---- */
+
+.auto-run-path {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.auto-run-path li + li {
+  margin-top: 6px;
+}
+
+.auto-run-path .auto-status {
+  margin: 0 6px;
 }

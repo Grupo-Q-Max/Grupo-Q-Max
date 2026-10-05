@@ -33,7 +33,7 @@ jobs:
         run: npx prisma generate
 
       - name: Sincronizar Banco de Dados (DB Push)
-        run: npx prisma db push --accept-data-loss
+        run: npx prisma db push
         
       - name: Robô de Testes Automatizados
         run: node test-db.js

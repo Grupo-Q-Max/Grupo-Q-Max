@@ -1,22 +1,58 @@
 import type {
+  ActionType,
+  ActivityAction,
   ActivityType,
   AutomationCondition,
+  Branch,
+  DealUpdateAction,
   DelayUnit,
+  Execution,
   HttpMethod,
+  NotifyAction,
+  StepActionType,
+  StepType,
   TriggerType,
   WebhookHeader,
 } from "@/lib/crm-automation-shared";
 
+/** Action of a flow step (a child rule holding only the action fields). */
+export type StepActionRule = Pick<
+  AutomationRule,
+  "id" | "name" | "webhookUrl" | "webhookMethod" | "webhookBody" | "headers" | "activity" | "dealUpdate" | "notify"
+> & { actionType: StepActionType };
+
+/** Saved step of a FLOW rule, as a flat row (the editor builds the tree). */
+export type AutomationStepRow = {
+  id: string;
+  parentId: string | null;
+  branch: Branch | null;
+  order: number;
+  type: StepType;
+  waitAmount: number | null;
+  waitUnit: DelayUnit | null;
+  conditions: AutomationCondition[];
+  actions: StepActionRule[];
+};
+
 export type AutomationRule = {
   id: string;
   name: string;
-  actionType: "WEBHOOK";
+  actionType: ActionType;
+  /** Only for FLOW rules */
+  steps: AutomationStepRow[];
+  execution: Execution;
   delayAmount: number;
   delayUnit: DelayUnit;
-  webhookUrl: string;
+  webhookUrl: string | null;
   webhookMethod: HttpMethod;
   webhookBody: string | null;
   headers: WebhookHeader[];
+  /** Only for CREATE_ACTIVITY rules */
+  activity: ActivityAction | null;
+  /** Only for UPDATE_DEAL rules */
+  dealUpdate: DealUpdateAction | null;
+  /** Only for NOTIFY rules */
+  notify: NotifyAction | null;
   conditions: AutomationCondition[];
   active: boolean;
   order: number;
@@ -45,6 +81,8 @@ export type AutomationStage = {
 };
 
 export type CustomField = { id: string; name: string; type: string };
+
+export type Member = { id: string; name: string };
 
 /** Fixed palette for stage headers (stages have no color of their own yet). */
 export const STAGE_COLORS = ["#8bc34a", "#f8bbd0", "#fff176", "#ffe0a3", "#4fc3f7", "#2e7d32", "#ef5350", "#b388ff", "#4db6ac", "#ffb74d"];

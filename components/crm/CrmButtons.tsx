@@ -31,10 +31,11 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
     
     if (res.ok) {
       const created = await res.json();
-      window.location.href = `/crm?pipelineId=${created.id}`;
-    } else {
-      setIsLoading(false);
+      setIsModalOpen(false);
+      setPipelineName("");
+      router.push(`/crm?pipelineId=${created.id}`);
     }
+    setIsLoading(false);
   };
 
   const handleCreateDeal = async (e: React.FormEvent) => {
@@ -214,7 +215,7 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '16px' }}>
+      <div className="crm-header__actions">
         <button className="btn-secondary" onClick={() => setIsModalOpen(true)}>
           Criar Pipeline
         </button>
