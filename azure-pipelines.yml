@@ -85,7 +85,10 @@ steps:
     echo ""
     echo "3.2. Criando .env para o servidor..."
     echo "DATABASE_URL=mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website" > deploy/.env
- 
+    echo "MICROSOFT_TENANT_ID=e3a65ea4-591b-4eab-acf5-059083274f98" >> deploy/.env
+    echo "MICROSOFT_CLIENT_ID=365625d9-2647-489d-b319-48b960f9edab" >> deploy/.env
+    echo "MICROSOFT_ALLOWED_DOMAINS=grupoqmax.com.br" >> deploy/.env
+
     echo ""
     echo "4. Validando logos obrigatorias..."
  
