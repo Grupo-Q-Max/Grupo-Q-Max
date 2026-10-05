@@ -52,6 +52,11 @@
   left: 20px;
 }
 
+/* Closed sidebar: header makes room for the fixed menu button */
+.crm-sidebar.is-closed ~ .crm-main .crm-header {
+  padding-left: 72px;
+}
+
 /* Icon follows the state: X while open, menu while closed */
 .crm-sidebar-toggle__open,
 .crm-sidebar-toggle.is-closed .crm-sidebar-toggle__close {
