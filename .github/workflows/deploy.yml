@@ -37,7 +37,10 @@ jobs:
 
       - name: Sincronizar Banco de Dados (DB Push)
         run: npx prisma db push
-        
+
+      - name: Seed Sócios no Banco de Dados
+        run: node scripts/seed-prod-team.cjs
+
       - name: Robô de Testes Automatizados
         run: node test-db.js
 

@@ -1,5 +1,6 @@
-trigger:
-- main
+# Automatic deploy runs on GitHub Actions (.github/workflows/deploy.yml); this pipeline runs only when started by hand
+trigger: none
+pr: none
  
 pool:
   vmImage: 'ubuntu-latest'
