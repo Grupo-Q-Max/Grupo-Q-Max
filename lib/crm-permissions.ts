@@ -46,6 +46,7 @@ export const PERMISSION_SECTIONS = [
     label: "Administração",
     permissions: {
       "access.manage": "Gerenciar grupos, permissões e o grupo de cada usuário",
+      "request.manage": "Ver todos os pedidos de melhoria e alterar o status",
     },
   },
 ] as const;

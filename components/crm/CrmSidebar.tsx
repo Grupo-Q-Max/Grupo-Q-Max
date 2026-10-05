@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut, ShieldCheck, Lightbulb } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 import { useCan } from "./CrmAccess";
 
@@ -60,6 +60,10 @@ export function CrmSidebar() {
             Relatórios
           </a>
           <CrmNotificationBell />
+          <Link href="/crm/requests" className="crm-nav__item">
+            <Lightbulb size={18} />
+            Pedidos
+          </Link>
           {can("access.manage") && (
             <Link href="/crm/access" className="crm-nav__item">
               <ShieldCheck size={18} />
