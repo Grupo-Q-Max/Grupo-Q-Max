@@ -82,11 +82,13 @@ enum CrmRequestType {
   OTHER
 }
 
-enum CrmRequestStatus {
-  OPEN
-  IN_PROGRESS
-  DONE
-  REJECTED
+/// Columns of the improvement requests board, managed by `request.manage` users.
+model CrmRequestColumn {
+  id        String       @id @default(cuid())
+  name      String       @db.VarChar(100)
+  order     Int          @default(0)
+  requests  CrmRequest[]
+  createdAt DateTime     @default(now())
 }
 
 /// Improvement/bug requests sent by CRM users (/crm/requests).
@@ -98,11 +100,15 @@ model CrmRequest {
   type        CrmRequestType   @default(IMPROVEMENT)
   title       String           @db.VarChar(200)
   description String           @db.Text
-  status      CrmRequestStatus @default(OPEN)
+  /// Board column; its name is the status the author sees. Deleting a column moves its requests first.
+  columnId    String
+  column      CrmRequestColumn @relation(fields: [columnId], references: [id], onDelete: Restrict)
+  order       Int              @default(0)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
   @@index([authorId])
+  @@index([columnId, order])
   @@index([createdAt])
 }
 

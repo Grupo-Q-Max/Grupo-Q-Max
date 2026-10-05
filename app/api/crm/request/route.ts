@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { CrmRequestStatus, CrmRequestType } from "@prisma/client";
+import { CrmRequestType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
 import { sessionMemberId } from "@/lib/auth";
+import { requestColumns } from "@/lib/crm-requests";
 
 const isType = (v: unknown): v is CrmRequestType => Object.values(CrmRequestType).includes(v as CrmRequestType);
-const isStatus = (v: unknown): v is CrmRequestStatus => Object.values(CrmRequestStatus).includes(v as CrmRequestStatus);
 
-/** Any active CRM user sends a request: `{ type, title, description }`. */
+/** Any active CRM user sends a request: `{ type, title, description }`. It lands in the first column. */
 export async function POST(req: Request) {
   try {
     const memberId = sessionMemberId(req);
@@ -20,8 +20,17 @@ export async function POST(req: Request) {
     if (!title || !description) return NextResponse.json({ error: "Informe o título e a descrição." }, { status: 400 });
     if (title.length > 200) return NextResponse.json({ error: "Título muito longo (máx. 200 caracteres)." }, { status: 400 });
 
+    const [first] = await requestColumns();
+    const count = await prisma.crmRequest.count({ where: { columnId: first.id } });
     const request = await prisma.crmRequest.create({
-      data: { authorId: memberId, title, description, type: isType(body.type) ? body.type : CrmRequestType.IMPROVEMENT },
+      data: {
+        authorId: memberId,
+        title,
+        description,
+        type: isType(body.type) ? body.type : CrmRequestType.IMPROVEMENT,
+        columnId: first.id,
+        order: count,
+      },
       select: { id: true },
     });
     return NextResponse.json(request);
@@ -31,16 +40,29 @@ export async function POST(req: Request) {
   }
 }
 
-/** Changes the status of a request: `{ id, status }`. */
+/** Moves a request on the board: `{ id, columnId, index }`; renumbers the target column. */
 export async function PATCH(req: Request) {
   try {
     const denied = await denyUnless("request.manage");
     if (denied) return denied;
-    const { id, status } = await req.json();
-    if (typeof id !== "string" || !isStatus(status)) return NextResponse.json({ error: "Status inválido." }, { status: 400 });
+    const { id, columnId, index } = await req.json();
+    if (typeof id !== "string" || typeof columnId !== "string" || typeof index !== "number") {
+      return NextResponse.json({ error: "Parâmetros inválidos." }, { status: 400 });
+    }
 
-    const { count } = await prisma.crmRequest.updateMany({ where: { id }, data: { status } });
-    if (!count) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
+    const found = await prisma.$transaction(async (tx) => {
+      const exists = await tx.crmRequest.count({ where: { id } });
+      const column = await tx.crmRequestColumn.count({ where: { id: columnId } });
+      if (!exists || !column) return false;
+
+      const ids = (
+        await tx.crmRequest.findMany({ where: { columnId, NOT: { id } }, orderBy: { order: "asc" }, select: { id: true } })
+      ).map((r) => r.id);
+      ids.splice(Math.max(0, Math.min(index, ids.length)), 0, id);
+      await Promise.all(ids.map((rid, order) => tx.crmRequest.update({ where: { id: rid }, data: { columnId, order } })));
+      return true;
+    });
+    if (!found) return NextResponse.json({ error: "Pedido ou coluna não encontrado." }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

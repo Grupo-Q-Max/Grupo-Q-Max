@@ -1071,4 +1071,53 @@ button.crm-nav__item {
   color: #a5a0aa;
   font-size: 13px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The board scrolls sideways on its own, so the form above stays in place */
+.crm-requests__board {
+  flex-shrink: 0;
+  height: auto;
+  margin-top: 24px;
+  padding-bottom: 12px;
+  overflow-x: auto;
+}
+
+.crm-requests__board .crm-requests__description {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.crm-requests__board .kanban-card {
+  cursor: pointer;
+}
+
+.crm-requests__modal.crm-modal {
+  max-width: 720px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-requests__modal h2 {
+  padding-right: 32px;
+  overflow-wrap: anywhere;
+}
+
+.crm-requests__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: #a5a0aa;
+  font-size: 13px;
+}
+
+.crm-requests__full {
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
 }
