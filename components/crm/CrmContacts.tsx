@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Building2, Users } from "lucide-react";
+import { matches } from "@/lib/text-search";
 
 type DealLink = { number: number; title: string };
 
@@ -25,9 +26,6 @@ export type CompanyRow = {
   deals: DealLink[];
 };
 
-const matches = (query: string, ...values: (string | null)[]) =>
-  values.some((v) => v?.toLowerCase().includes(query));
-
 function Deals({ deals }: { deals: DealLink[] }) {
   if (!deals.length) return <>—</>;
   return (
@@ -47,10 +45,8 @@ const Email = ({ value }: { value: string | null }) => (value ? <a href={`mailto
 export function CrmContacts({ contacts, companies }: { contacts: ContactRow[]; companies: CompanyRow[] }) {
   const [view, setView] = useState<"contacts" | "companies">("contacts");
   const [search, setSearch] = useState("");
-  const query = search.trim().toLowerCase();
-
-  const shownContacts = contacts.filter((c) => matches(query, c.name, c.email, c.phone, c.company));
-  const shownCompanies = companies.filter((c) => matches(query, c.name, c.email, c.phone, c.document));
+  const shownContacts = contacts.filter((c) => matches(search, c.name, c.email, c.phone, c.company));
+  const shownCompanies = companies.filter((c) => matches(search, c.name, c.email, c.phone, c.document));
 
   return (
     <>
@@ -101,7 +97,7 @@ export function CrmContacts({ contacts, companies }: { contacts: ContactRow[]; c
             </table>
           ) : (
             <p className="crm-contacts__empty">
-              {query ? "Nenhum contato encontrado." : "Nenhum contato salvo ainda. Contatos criados nos negócios aparecem aqui."}
+              {search.trim() ? "Nenhum contato encontrado." : "Nenhum contato salvo ainda. Contatos criados nos negócios aparecem aqui."}
             </p>
           )
         ) : shownCompanies.length ? (
@@ -131,7 +127,7 @@ export function CrmContacts({ contacts, companies }: { contacts: ContactRow[]; c
           </table>
         ) : (
           <p className="crm-contacts__empty">
-            {query ? "Nenhuma empresa encontrada." : "Nenhuma empresa salva ainda. Empresas criadas nos negócios aparecem aqui."}
+            {search.trim() ? "Nenhuma empresa encontrada." : "Nenhuma empresa salva ainda. Empresas criadas nos negócios aparecem aqui."}
           </p>
         )}
       </div>

@@ -7,6 +7,8 @@ import { Mail, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import { PERMISSION_SECTIONS, type Permission } from "@/lib/crm-permissions";
 import { Select } from "@/components/ui/Select";
 import { confirmDialog, promptDialog } from "@/components/ui/Dialogs";
+import { matches } from "@/lib/text-search";
+import { FilterField, FilterSearch, type FilterChip } from "./FilterSearch";
 
 type Group = { id: string; name: string; isAdmin: boolean; isDefault: boolean; permissions: string[] };
 type Member = {
@@ -22,7 +24,9 @@ type Member = {
   cancellable: boolean;
 };
 
-const jsonRequest = (method: string, body: unknown): RequestInit => ({
+const MEMBER_STATUSES: Record<string, string> = { active: "Ativo", pending: "Convite pendente", blocked: "Bloqueado" };
+
+const jsonRequest =(method: string, body: unknown): RequestInit => ({
   method,
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(body),
@@ -39,6 +43,9 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [groupFilter, setGroupFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const selected = groups.find((g) => g.id === selectedId) ?? groups[0];
   const defaultGroup = groups.find((g) => g.isDefault);
 
@@ -88,7 +95,16 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
     run(fetch("/api/crm/access", jsonRequest("PATCH", { memberId: member.id, crmActive })));
   };
 
-  const countOf = (group: Group) => members.filter((m) => (m.crmGroupId ?? defaultGroup?.id) === group.id).length;
+  const groupOf = (m: Member) => m.crmGroupId ?? defaultGroup?.id;
+  const countOf = (group: Group) => members.filter((m) => groupOf(m) === group.id).length;
+  const statusOf = (m: Member) => (!m.crmActive ? "blocked" : m.pending ? "pending" : "active");
+  const filtering = Boolean(search || groupFilter || statusFilter);
+  const shownMembers = members.filter(
+    (m) =>
+      (!groupFilter || groupOf(m) === groupFilter) &&
+      (!statusFilter || statusOf(m) === statusFilter) &&
+      matches(search, m.name, m.email)
+  );
 
   return (
     <>
@@ -144,6 +160,42 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
 
         <section className="crm-access__members">
           <h3>Usuários</h3>
+          <FilterSearch
+            className="crm-filter-search--block"
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar por nome ou e-mail"
+            chips={[
+              groupFilter && { key: "group", label: groups.find((g) => g.id === groupFilter)?.name ?? "Grupo", onRemove: () => setGroupFilter("") },
+              statusFilter && { key: "status", label: MEMBER_STATUSES[statusFilter], onRemove: () => setStatusFilter("") },
+            ].filter((c): c is FilterChip => Boolean(c))}
+            onClear={() => {
+              setSearch("");
+              setGroupFilter("");
+              setStatusFilter("");
+            }}
+          >
+            <FilterField label="Grupo">
+              <Select className="crm-access__select" value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} aria-label="Grupo">
+                <option value="">Todos</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </Select>
+            </FilterField>
+            <FilterField label="Status">
+              <Select className="crm-access__select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Status">
+                <option value="">Todos</option>
+                {Object.entries(MEMBER_STATUSES).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+            </FilterField>
+          </FilterSearch>
           <table className="crm-table">
             <thead>
               <tr>
@@ -154,7 +206,7 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
               </tr>
             </thead>
             <tbody>
-              {members.map((member) => (
+              {shownMembers.map((member) => (
                 <tr key={member.id}>
                   <td>{member.name}</td>
                   <td>{member.email}</td>
@@ -204,10 +256,10 @@ export function CrmAccessManager({ groups, members }: { groups: Group[]; members
                   </td>
                 </tr>
               ))}
-              {members.length === 0 && (
+              {shownMembers.length === 0 && (
                 <tr>
                   <td colSpan={4} className="deal-empty">
-                    Nenhum usuário com login no CRM.
+                    {filtering ? "Nenhum usuário corresponde aos filtros." : "Nenhum usuário com login no CRM."}
                   </td>
                 </tr>
               )}

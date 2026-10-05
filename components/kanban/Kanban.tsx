@@ -41,6 +41,7 @@ function findPosition<T extends KanbanItemBase>(columns: KanbanColumnData<T>[], 
 export function Kanban<T extends KanbanItemBase>({
   columns: initialColumns,
   renderItem,
+  isItemVisible,
   onMoveItem,
   onAddItem,
   onDeleteItem,
@@ -272,6 +273,7 @@ export function Kanban<T extends KanbanItemBase>({
             key={column.id}
             column={column}
             labels={labels}
+            isItemVisible={isItemVisible}
             renderItem={(item) => renderItem(item, { remove: () => removeItem(item.id) })}
             onAddItem={onAddItem && ((title) => addItem(column.id, title))}
             onRename={onRenameColumn && ((title) => renameColumn(column.id, title))}

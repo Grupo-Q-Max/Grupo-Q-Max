@@ -44,6 +44,7 @@ import {
 import { AREAS } from "@/lib/crm-areas";
 import { Select } from "@/components/ui/Select";
 import { confirmDialog } from "@/components/ui/Dialogs";
+import { matches } from "@/lib/text-search";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 interface TeamMember {
@@ -1260,6 +1261,8 @@ interface Lead {
 function LeadsTab() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const shownLeads = leads.filter((l) => matches(search, l.name, l.company, l.phone, l.email, l.message));
 
   useEffect(() => {
     fetch("/api/leads")
@@ -1276,6 +1279,16 @@ function LeadsTab() {
           <h2>Leads e Contatos</h2>
           <p>Potenciais clientes que solicitaram contato pelo site</p>
         </div>
+        {leads.length > 0 && (
+          <input
+            type="search"
+            className="qadmin__search"
+            placeholder="Buscar por nome, empresa, contato ou mensagem"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Buscar leads"
+          />
+        )}
       </div>
       
       {loading ? (
@@ -1302,7 +1315,12 @@ function LeadsTab() {
               </tr>
             </thead>
             <tbody>
-              {leads.map((lead) => (
+              {shownLeads.length === 0 && (
+                <tr>
+                  <td colSpan={5}>Nenhum lead corresponde à busca.</td>
+                </tr>
+              )}
+              {shownLeads.map((lead) => (
                 <tr key={lead.id}>
                   <td>{new Date(lead.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
                   <td><strong>{lead.name}</strong></td>

@@ -17,6 +17,8 @@ export type CrmDeal = {
   /** Next pending activity (see cardListInclude) */
   activities?: { id: string; title: string; deadline: string | null }[];
   _count?: { activities: number };
+  /** Date from the server render, ISO string after a client sync */
+  createdAt?: string | Date;
 };
 
 export function DealCard({

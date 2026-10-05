@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Archive, ArchiveRestore, Kanban as KanbanIcon, Lightbulb, Pencil, Send, Trash2, X } from "lucide-react";
@@ -8,6 +8,8 @@ import { Kanban, type KanbanColumnData } from "@/components/kanban";
 import { AREAS } from "@/lib/crm-areas";
 import { Select } from "@/components/ui/Select";
 import { confirmDialog, promptDialog } from "@/components/ui/Dialogs";
+import { matches } from "@/lib/text-search";
+import { FilterField, FilterSearch, type FilterChip } from "./FilterSearch";
 
 type RequestType = "IMPROVEMENT" | "BUG" | "OTHER";
 type Area = keyof typeof AREAS;
@@ -116,6 +118,17 @@ export function CrmRequests({
   const [view, setView] = useState<"requests" | "board" | "archived">("requests");
   const [openedId, setOpenedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Draft | null>(null);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [areaFilter, setAreaFilter] = useState("");
+  const filtering = Boolean(search || typeFilter || areaFilter);
+  const isVisible = useCallback(
+    (r: Request) =>
+      (!typeFilter || r.type === typeFilter) &&
+      (!areaFilter || r.area === areaFilter) &&
+      matches(search, r.title, r.description, r.author),
+    [search, typeFilter, areaFilter]
+  );
   // Looked up by id so the modal shows the refreshed data and closes once the request is deleted
   const opened = requests.find((r) => r.id === openedId) ?? null;
 
@@ -125,8 +138,9 @@ export function CrmRequests({
       // Managers see everything on the board; the list shows their own. Others get theirs and their area's.
       requests
         .filter((r) => (view === "archived" ? r.archived : !r.archived && (r.mine || !canManage)))
+        .filter(isVisible)
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [requests, view, canManage]
+    [requests, view, canManage, isVisible]
   );
 
   const submit = async (e: React.FormEvent) => {
@@ -250,9 +264,47 @@ export function CrmRequests({
           </form>
         )}
 
+        <FilterSearch
+          className="crm-filter-search--block"
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por título, descrição ou autor"
+          chips={[
+            typeFilter && { key: "type", label: TYPES[typeFilter as RequestType], onRemove: () => setTypeFilter("") },
+            areaFilter && { key: "area", label: AREAS[areaFilter as Area], onRemove: () => setAreaFilter("") },
+          ].filter((c): c is FilterChip => Boolean(c))}
+          onClear={() => {
+            setSearch("");
+            setTypeFilter("");
+            setAreaFilter("");
+          }}
+        >
+          <FilterField label="Tipo">
+            <Select className="crm-access__select" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} aria-label="Tipo">
+              <option value="">Todos</option>
+              {Object.entries(TYPES).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </FilterField>
+          <FilterField label="Área">
+            <Select className="crm-access__select" value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} aria-label="Área">
+              <option value="">Todas</option>
+              {Object.entries(AREAS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </FilterField>
+        </FilterSearch>
+
         {view === "board" ? (
           <Kanban<Request>
             columns={board}
+            isItemVisible={filtering ? isVisible : undefined}
             className="crm-requests__board"
             labels={{ addColumn: "+ Adicionar coluna", deleteColumn: "Excluir coluna" }}
             renderItem={(r) => (
@@ -332,7 +384,11 @@ export function CrmRequests({
                 {listed.length === 0 && (
                   <tr>
                     <td colSpan={6} className="deal-empty">
-                      {view === "archived" ? "Nenhum pedido arquivado." : "Nenhum pedido ainda."}
+                      {filtering
+                        ? "Nenhum pedido corresponde aos filtros."
+                        : view === "archived"
+                          ? "Nenhum pedido arquivado."
+                          : "Nenhum pedido ainda."}
                     </td>
                   </tr>
                 )}
