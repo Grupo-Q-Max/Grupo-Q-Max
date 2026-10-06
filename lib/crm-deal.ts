@@ -139,7 +139,7 @@ export const RELATION_FIELDS = {
   company: "Empresa",
   contacts: "Contatos",
   observers: "Observadores",
-  products: "Produtos",
+  products: "Serviços",
 } as const;
 
 type ScalarField = keyof typeof SCALAR_FIELDS;

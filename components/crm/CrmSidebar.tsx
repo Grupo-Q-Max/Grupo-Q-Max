@@ -68,7 +68,7 @@ export function CrmSidebar() {
           </Link>
           <Link href="/crm/products" className={navClass("/crm/products")}>
             <Package size={18} />
-            Produtos
+            Serviços
           </Link>
           {can("report.view") && (
             <Link href="/crm/reports" className={navClass("/crm/reports")}>

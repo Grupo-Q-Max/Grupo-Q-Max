@@ -51,7 +51,7 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
   };
 
   const remove = async (p: ProductRow) => {
-    const message = `Excluir "${p.name}" do catálogo? Os negócios mantêm o produto já adicionado.`;
+    const message = `Excluir "${p.name}" do catálogo? Os negócios mantêm o serviço já adicionado.`;
     if (!(await confirmDialog(message, { danger: true, confirmLabel: "Excluir" }))) return;
     void send("DELETE", undefined, `?id=${encodeURIComponent(p.id)}`);
   };
@@ -59,12 +59,12 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
   return (
     <>
       <header className="crm-header">
-        <h1 className="crm-header__title">Produtos ({products.length})</h1>
+        <h1 className="crm-header__title">Serviços ({products.length})</h1>
       </header>
       <div className="crm-content crm-access">
         {error && <div className="crm-access__error">{error}</div>}
         <p className="crm-access__note">
-          O preço padrão entra automaticamente quando o produto é adicionado a um negócio. Produtos novos (digitados no
+          O preço padrão entra automaticamente quando o serviço é adicionado a um negócio. Serviços novos (digitados no
           negócio ou vindos do QXBACK) entram aqui com preço zerado.
         </p>
 
@@ -72,11 +72,11 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
           <form className="crm-products__add" onSubmit={add}>
             <input
               className="crm-access__select"
-              placeholder="Nome do produto"
+              placeholder="Nome do serviço"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              aria-label="Nome do produto"
+              aria-label="Nome do serviço"
             />
             <input
               className="crm-access__select"
@@ -97,7 +97,7 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
         <input
           type="search"
           className="crm-access__select crm-contacts__search"
-          placeholder="Buscar produto"
+          placeholder="Buscar serviço"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           aria-label="Buscar"
@@ -157,7 +157,7 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
             </tbody>
           </table>
         ) : (
-          <p className="crm-contacts__empty">{search.trim() ? "Nenhum produto encontrado." : "Nenhum produto cadastrado ainda."}</p>
+          <p className="crm-contacts__empty">{search.trim() ? "Nenhum serviço encontrado." : "Nenhum serviço cadastrado ainda."}</p>
         )}
       </div>
     </>

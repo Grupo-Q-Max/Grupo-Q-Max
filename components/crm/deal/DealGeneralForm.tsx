@@ -77,7 +77,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
 
         <Field
           label="Valor e moeda"
-          aside={hasProducts && <span className="deal-field__hint">calculado pelos produtos</span>}
+          aside={hasProducts && <span className="deal-field__hint">calculado pelos serviços</span>}
         >
           <div className="deal-row">
             <input
@@ -402,7 +402,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
       </Section>
 
       <Section
-        title="Produtos"
+        title="Serviços"
         action={
           <button type="button" className="deal-link-btn" onClick={onOpenProducts}>
             editar
@@ -417,7 +417,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
             <ul className="deal-product-summary">
               {products.map((product) => (
                 <li key={product.id}>
-                  <strong>{product.name || "Produto sem nome"}</strong>
+                  <strong>{product.name || "Serviço sem nome"}</strong>
                   <span>
                     {product.quantity} × {formatMoney(product.price, draft.currency)}
                   </span>
@@ -427,7 +427,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
           </>
         ) : (
           <button type="button" className="deal-link-btn" onClick={onOpenProducts}>
-            <Plus size={14} /> Adicionar produtos
+            <Plus size={14} /> Adicionar serviços
           </button>
         )}
       </Section>
@@ -466,7 +466,7 @@ export function DealProductsEditor({ draft, onChange }: { draft: DealDraft; onCh
       <table className="deal-products__table">
         <thead>
           <tr>
-            <th>Produto</th>
+            <th>Serviço</th>
             <th>Preço</th>
             <th>Quantidade</th>
             <th>Total</th>
@@ -479,7 +479,7 @@ export function DealProductsEditor({ draft, onChange }: { draft: DealDraft; onCh
               <td>
                 <LookupInput<CatalogProduct>
                   type="product"
-                  placeholder="Nome do produto ou serviço (busca no catálogo)"
+                  placeholder="Nome do serviço (busca no catálogo)"
                   value={product.name}
                   // Typing a different name unlinks the catalog product; the API links/creates it on save
                   onChange={(name) => update(product.id, { name, productId: null })}
@@ -518,7 +518,7 @@ export function DealProductsEditor({ draft, onChange }: { draft: DealDraft; onCh
                 <button
                   type="button"
                   className="deal-icon-btn deal-icon-btn--danger"
-                  title="Remover produto"
+                  title="Remover serviço"
                   onClick={() => setProducts(products.filter((p) => p.id !== product.id))}
                 >
                   <Trash2 size={16} />
@@ -529,7 +529,7 @@ export function DealProductsEditor({ draft, onChange }: { draft: DealDraft; onCh
           {products.length === 0 && (
             <tr>
               <td colSpan={5} className="deal-empty">
-                Nenhum produto. O valor do negócio pode ser informado manualmente na aba Geral.
+                Nenhum serviço. O valor do negócio pode ser informado manualmente na aba Geral.
               </td>
             </tr>
           )}
@@ -547,7 +547,7 @@ export function DealProductsEditor({ draft, onChange }: { draft: DealDraft; onCh
             ])
           }
         >
-          <Plus size={16} /> Adicionar produto
+          <Plus size={16} /> Adicionar serviço
         </button>
         <div className="deal-products__sum">
           Total: <strong>{formatMoney(draft.value, draft.currency)}</strong>
