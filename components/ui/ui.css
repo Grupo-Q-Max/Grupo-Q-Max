@@ -214,3 +214,330 @@
   from { opacity: 0; transform: translateY(-4px) scale(0.98); }
   to { opacity: 1; transform: none; }
 }
+
+/* DatePicker (components/ui/DatePicker.tsx): trigger reuses .qselect, popover reuses .qselect__list. */
+
+.qdate__pop {
+  width: 280px;
+  min-width: 0 !important;
+  padding: 10px;
+}
+
+.qdate__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.qdate__month {
+  font-weight: 600;
+}
+
+.qdate__nav,
+.qdate__day,
+.qdate__link {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.qdate__nav {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.qdate__nav:hover,
+.qdate__day:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.qdate__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.qdate__weekday {
+  padding: 4px 0;
+  color: #a5a0aa;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.qdate__day {
+  height: 34px;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+}
+
+.qdate__day.is-outside {
+  color: #6b6670;
+}
+
+.qdate__day.is-today {
+  box-shadow: inset 0 0 0 1px var(--qui-accent);
+}
+
+.qdate__day.is-selected {
+  background: var(--qui-accent);
+  color: #fff;
+}
+
+.qdate__day:focus-visible {
+  outline: 2px solid var(--qui-accent);
+  outline-offset: 1px;
+}
+
+.qdate__day:disabled {
+  color: #4a464e;
+  cursor: not-allowed;
+}
+
+.qdate__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qdate__time {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  background: #1a1a1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.qdate__time:focus {
+  border-color: var(--qui-accent);
+}
+
+/* The calendar above replaces the native clock popup. */
+.qdate__time::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.qdate__link {
+  margin-left: auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--qui-accent);
+  font-size: 13px;
+}
+
+.qdate__link + .qdate__link {
+  margin-left: 0;
+}
+
+.qdate__link:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.qdate__link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Native form controls, site-wide (imported by app/layout.tsx).
+   Dark color-scheme themes the browser pickers (date, color) and scrollbars;
+   the rest swaps the default widgets for the brand look. Override --qui-accent per area. */
+
+:root {
+  color-scheme: dark;
+  --qui-accent: var(--qmax-magenta, #d90f81);
+  accent-color: var(--qui-accent);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: none;
+  flex: none;
+  display: inline-grid;
+  place-content: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  background: #1a1a1c;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 5px;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+input[type="radio"] {
+  border-radius: 50%;
+}
+
+input[type="checkbox"]::before,
+input[type="radio"]::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  transform: scale(0);
+  transition: transform 0.12s ease-out;
+}
+
+input[type="checkbox"]::before {
+  background: #fff;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+}
+
+input[type="radio"]::before {
+  background: #fff;
+  border-radius: 50%;
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  background: var(--qui-accent);
+  border-color: var(--qui-accent);
+}
+
+input[type="checkbox"]:checked::before,
+input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+
+input[type="checkbox"]:hover:not(:disabled),
+input[type="radio"]:hover:not(:disabled) {
+  border-color: var(--qui-accent);
+}
+
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--qui-accent);
+  outline-offset: 2px;
+}
+
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Date pickers: tinted icon, the popup itself follows color-scheme. */
+input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Number: no spinners. */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Search: brand clear button. */
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #a5a0aa;
+  clip-path: polygon(20% 0, 50% 30%, 80% 0, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0 80%, 30% 50%, 0 20%);
+  cursor: pointer;
+}
+
+/* File: button styled like the dialog buttons. */
+input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--qui-accent);
+}
+
+/* Color: swatch without the native frame. */
+:where(input[type="color"]) {
+  width: 44px;
+  height: 32px;
+  padding: 3px;
+  background: #1a1a1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+/* Separate rules: one unknown vendor selector drops the whole list. */
+input[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: 5px;
+}
+
+input[type="color"]::-moz-color-swatch {
+  border: 0;
+  border-radius: 5px;
+}
+
+/* Range: thin track, round thumb. Classes like .qmax-calculator__range keep their own. */
+:where(input[type="range"]) {
+  appearance: none;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+:where(input[type="range"])::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--qui-accent);
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+:where(input[type="range"])::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--qui-accent);
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+/* Autofill: keep the dark field instead of the browser's yellow/blue. */
+input:-webkit-autofill {
+  -webkit-text-fill-color: #fff;
+  -webkit-box-shadow: 0 0 0 1000px #1a1a1c inset;
+  caret-color: #fff;
+}

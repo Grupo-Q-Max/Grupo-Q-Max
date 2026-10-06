@@ -8,6 +8,12 @@
   box-sizing: border-box;
 }
 
+.qadmin,
+.qadmin-login,
+.qadmin-modal-overlay {
+  --qui-accent: #14d0c1;
+}
+
 /* ── Login ──────────────────────────────────────────────── */
 .qadmin-login {
   min-height: 100vh;
@@ -830,7 +836,7 @@
   text-transform: uppercase;
   letter-spacing: .06em;
 }
-.qadmin-modal__body input,
+.qadmin-modal__body input:not([type="checkbox"]),
 .qadmin-modal__body .qselect {
   padding: 11px 14px;
   background: rgba(255,255,255,.05);

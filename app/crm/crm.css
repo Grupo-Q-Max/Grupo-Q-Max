@@ -485,7 +485,7 @@ main.crm-main {
   font-weight: 500;
 }
 
-.crm-modal-group input {
+.crm-modal-group input:not([type="checkbox"]) {
   width: 100%;
   background: #1a1a1c;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1229,10 +1229,9 @@ button.crm-bell {
   gap: 6px;
 }
 
-.crm-filter-panel__range input {
+.crm-filter-panel__range .qdate {
   flex: 1;
   min-width: 0;
-  color-scheme: dark;
 }
 
 .crm-contacts__search {
@@ -1383,10 +1382,6 @@ button.crm-bell {
   gap: 8px;
   font-size: 13px;
   color: #a5a0aa;
-}
-
-.crm-reports__period input {
-  color-scheme: dark;
 }
 
 .crm-reports__caption {

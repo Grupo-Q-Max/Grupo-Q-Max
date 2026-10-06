@@ -5,6 +5,7 @@ import { CrmKanban } from "./CrmKanban";
 import type { CrmDeal } from "./DealCard";
 import { FilterField, FilterSearch, type FilterChip } from "./FilterSearch";
 import { Select } from "@/components/ui/Select";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { matches } from "@/lib/text-search";
 import { Kanban, List, Calendar, TrendingUp } from "lucide-react";
 
@@ -104,9 +105,9 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
           </FilterField>
           <FilterField label="Data de criação">
             <div className="crm-filter-panel__range">
-              <input type="date" className="crm-access__select" aria-label="Criado de" value={filters.from} max={filters.to || undefined} onChange={(e) => set({ from: e.target.value })} />
+              <DatePicker className="crm-access__select" aria-label="Criado de" value={filters.from} max={filters.to || undefined} onChange={(e) => set({ from: e.target.value })} />
               <span>até</span>
-              <input type="date" className="crm-access__select" aria-label="Criado até" value={filters.to} min={filters.from || undefined} onChange={(e) => set({ to: e.target.value })} />
+              <DatePicker className="crm-access__select" aria-label="Criado até" value={filters.to} min={filters.from || undefined} onChange={(e) => set({ to: e.target.value })} />
             </div>
           </FilterField>
         </FilterSearch>

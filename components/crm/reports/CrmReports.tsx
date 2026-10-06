@@ -20,6 +20,7 @@ import {
 } from "recharts";
 import { FilterField, FilterSearch, type FilterChip } from "../FilterSearch";
 import { Select } from "@/components/ui/Select";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { matches } from "@/lib/text-search";
 import {
   breakdown,
@@ -199,9 +200,9 @@ export function CrmReports({ deals, pipelines, members }: { deals: ReportDeal[];
         </Select>
         {f.preset === "custom" && (
           <span className="crm-filter-panel__range">
-            <input type="date" className="crm-access__select" value={f.from} max={f.to || undefined} onChange={(e) => set({ from: e.target.value })} aria-label="De" />
+            <DatePicker className="crm-access__select" value={f.from} max={f.to || undefined} onChange={(e) => set({ from: e.target.value })} aria-label="De" />
             <span>até</span>
-            <input type="date" className="crm-access__select" value={f.to} min={f.from || undefined} onChange={(e) => set({ to: e.target.value })} aria-label="Até" />
+            <DatePicker className="crm-access__select" value={f.to} min={f.from || undefined} onChange={(e) => set({ to: e.target.value })} aria-label="Até" />
           </span>
         )}
         <Select className="crm-access__select" value={f.compare} onChange={(e) => set({ compare: e.target.value as CompareMode })} aria-label="Comparar com">

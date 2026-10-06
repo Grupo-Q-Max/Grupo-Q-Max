@@ -20,6 +20,7 @@ import {
 } from "./types";
 import { Avatar, Field, LinkedBadge, LookupInput, Section } from "./ui";
 import { Select } from "@/components/ui/Select";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 type Props = {
   deal: DealDetails;
@@ -103,9 +104,8 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
         </Field>
 
         <Field label="Data de término">
-          <input
+          <DatePicker
             className="deal-input deal-input--date"
-            type="date"
             value={toDateInput(draft.closeDate)}
             onChange={(e) => onChange({ closeDate: e.target.value || null })}
           />
@@ -334,9 +334,8 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
 
       <Section title="Mais">
         <Field label="Data de início">
-          <input
+          <DatePicker
             className="deal-input deal-input--date"
-            type="date"
             value={toDateInput(draft.startDate)}
             onChange={(e) => onChange({ startDate: e.target.value || null })}
           />

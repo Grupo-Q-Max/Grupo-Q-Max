@@ -34,6 +34,7 @@ import {
 import { Avatar, formatDateOnly, formatDateTime, formatDay, formatTime } from "./ui";
 import { useCan } from "../CrmAccess";
 import { Select } from "@/components/ui/Select";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
 
 type ComposerMode = "TODO" | "COMMENT" | "TASK" | "CALL" | "MEETING";
@@ -270,7 +271,7 @@ function ActivityComposer({
               <div className="deal-composer__options">
                 <label>
                   <Calendar size={14} />
-                  <input
+                  <DatePicker
                     type="datetime-local"
                     className="deal-input deal-input--compact"
                     value={deadline}
@@ -336,7 +337,7 @@ function ActivityItem({
       <li className="deal-todo is-editing">
         <input className="deal-input" value={title} onChange={(e) => setTitle(e.target.value)} />
         <div className="deal-composer__options">
-          <input
+          <DatePicker
             type="datetime-local"
             className="deal-input deal-input--compact"
             value={deadline}
