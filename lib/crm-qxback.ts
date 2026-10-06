@@ -40,22 +40,43 @@ function envMap(name: string): Record<string, string> {
   }
 }
 
-/** Parses `http_build_query` output (`filter[STAGE_ID]=..&fields[PHONE][0][VALUE]=..`) into nested objects. */
+/**
+ * Parses `http_build_query` output (`filter[STAGE_ID]=..&fields[PHONE][0][VALUE]=..`) into nested objects.
+ * Nodes have no prototype, so a `__proto__`/`constructor` key is just data and never reaches Object.prototype.
+ */
 export function parseParams(search: URLSearchParams): Params {
-  const root: Params = {};
+  const root: Params = Object.create(null);
   for (const [key, value] of search) {
     const path = key.replace(/\]/g, "").split("[");
     let node = root;
-    for (const part of path.slice(0, -1)) node = (node[part] ??= {}) as Params;
-    node[path[path.length - 1]] = value;
+    for (const part of path.slice(0, -1)) {
+      node[part] ??= Object.create(null);
+      if (typeof node[part] !== "object") throw new BitrixError("INVALID_PARAMS", `Parâmetro ${key} conflita com ${part}`);
+      node = node[part] as Params;
+    }
+    const last = path[path.length - 1];
+    if (typeof node[last] === "object") throw new BitrixError("INVALID_PARAMS", `Parâmetro ${key} conflita com ${last}`);
+    node[last] = value;
   }
   return root;
 }
 
 const obj = (value: unknown) => (value && typeof value === "object" ? (value as Params) : {});
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
+/** Bitrix numbers arrive as form strings; anything else (a nested object) is not a number */
+const num = (value: unknown) => (typeof value === "string" && value.trim() !== "" ? Number(value) : NaN);
 /** `PHONE[0][VALUE]` style multi-fields */
 const firstValue = (value: unknown) => text(obj(Object.values(obj(value))[0]).VALUE);
+
+/** "12345678000190", "12.345.678/0001-90" and what was sent: the spellings of one CNPJ (or CPF) */
+export function documentForms(document: string) {
+  const digits = document.replace(/\D/g, "");
+  const masked =
+    digits.length === 14 ? digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")
+    : digits.length === 11 ? digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4")
+    : digits;
+  return [...new Set([document, digits, masked].filter(Boolean))];
+}
 
 /** Multi-value custom field typed in the CRM as "a; b; c" (fechamento parcial reads service names). */
 const splitList = (value: string) => value.split(/[;\n]/).map((s) => s.trim()).filter(Boolean);
@@ -126,19 +147,29 @@ function toBitrixDeal(s: Scope, deal: Prisma.CrmCardGetPayload<{ select: typeof 
 }
 
 async function findDeal(s: Scope, id: unknown) {
-  const number = Number(id);
+  const number = num(id);
   const deal = Number.isInteger(number) && number > 0
     ? await prisma.crmCard.findFirst({ where: { number, ...s.dealWhere }, select: dealSelect })
     : null;
-  if (!deal) throw new BitrixError("NOT_FOUND", `Negócio ${String(id)} não encontrado`);
+  if (!deal) throw new BitrixError("NOT_FOUND", `Negócio ${text(id) || "?"} não encontrado`);
   return deal;
 }
 
 /** Recomputes the cached deal value from its products (same rule as the deal panel). */
 async function syncDealValue(dealId: string) {
-  const lines = await prisma.crmDealProduct.findMany({ where: { dealId }, select: { price: true, quantity: true } });
-  const value = lines.reduce((sum, l) => sum + l.price.toNumber() * l.quantity, 0);
-  return prisma.crmCard.update({ where: { id: dealId }, data: { value }, select: { stageId: true } });
+  // Concurrent product rows race on the deal row (MariaDB: P2039 "record has changed"): re-read and retry,
+  // so the line already saved never turns into an error answer and the value ends with every line
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const lines = await prisma.crmDealProduct.findMany({ where: { dealId }, select: { price: true, quantity: true } });
+      const value = lines.reduce((sum, l) => sum + l.price.toNumber() * l.quantity, 0);
+      return await prisma.crmCard.update({ where: { id: dealId }, data: { value }, select: { stageId: true } });
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      if (attempt >= 5 || (code !== "P2039" && code !== "P2034")) throw error;
+      await new Promise((r) => setTimeout(r, 20 * attempt));
+    }
+  }
 }
 
 /** Runs one method. Returns the Bitrix answer plus what changed for the route to broadcast. */
@@ -152,7 +183,7 @@ export async function callMethod(method: string, params: Params): Promise<{ body
       const stageId = s.stages[text(filter.STAGE_ID)];
       // A stage that is not mapped has no deals here (never fall back to "all deals")
       if (!stageId) return { body: { result: [], total: 0 } };
-      const start = Math.max(0, Number(params.start) || 0);
+      const start = Math.max(0, num(params.start) || 0);
       const where = { stageId, ...s.dealWhere };
       const [deals, total] = await Promise.all([
         prisma.crmCard.findMany({ where, orderBy: { number: "asc" }, skip: start, take: PAGE_SIZE, select: dealSelect }),
@@ -169,7 +200,9 @@ export async function callMethod(method: string, params: Params): Promise<{ body
       const deal = await findDeal(s, params.id);
       // QXBACK only appends processing notes to the comment
       if (!("COMMENTS" in fields)) return { body: { result: true } };
-      const result = await updateDeal(deal.id, { comment: String(fields.COMMENTS) });
+      // The comment carries "ID da Indicação: N", the only link QXBACK's scripts have: never overwrite it with junk
+      if (typeof fields.COMMENTS !== "string") throw new BitrixError("INVALID_PARAMS", "COMMENTS deve ser texto");
+      const result = await updateDeal(deal.id, { comment: fields.COMMENTS });
       return {
         body: { result: true },
         effect: result.changed ? { type: "updated", dealId: deal.id, stageId: result.stageId, changedFields: result.changedFields } : undefined,
@@ -209,7 +242,7 @@ export async function callMethod(method: string, params: Params): Promise<{ body
 
       const customData: Record<string, string> = {};
       for (const [uf, fieldId] of Object.entries(s.fields)) {
-        if (fields[uf] != null) customData[fieldId] = String(fields[uf]);
+        if (typeof fields[uf] === "string") customData[fieldId] = fields[uf];
       }
       const companyId = text(fields.COMPANY_ID) || null;
       const contactId = text(fields.CONTACT_ID);
@@ -218,7 +251,7 @@ export async function callMethod(method: string, params: Params): Promise<{ body
         tx.crmCard.create({
           data: {
             title,
-            value: Number(fields.OPPORTUNITY) || 0,
+            value: num(fields.OPPORTUNITY) || 0,
             stageId,
             companyId: companyId ? (await tx.crmCompany.findUnique({ where: { id: companyId }, select: { id: true } }))?.id : null,
             comment: text(fields.COMMENTS) || null,
@@ -246,8 +279,9 @@ export async function callMethod(method: string, params: Params): Promise<{ body
           productId: product.id,
           name: product.name,
           description: text(fields.DESCRIPTION) || null,
-          price: Number(fields.PRICE) || 0,
-          quantity: Math.max(0, Math.round(Number(fields.QUANTITY) || 1)),
+          price: num(fields.PRICE) || 0,
+          // Bitrix default is 1 only when QUANTITY is missing; an explicit 0 stays 0
+          quantity: Math.max(0, Math.round(fields.QUANTITY === undefined ? 1 : num(fields.QUANTITY) || 0)),
           order: await prisma.crmDealProduct.count({ where: { dealId: deal.id } }),
         },
       });
@@ -265,8 +299,9 @@ export async function callMethod(method: string, params: Params): Promise<{ body
       const name = text(fields.TITLE);
       if (!name) throw new BitrixError("TITLE_REQUIRED", "TITLE é obrigatório");
       const document = text(fields.UF_CRM_CNPJ) || null;
-      // CNPJ is unique: an existing company with it is the same company
-      const existing = document && (await prisma.crmCompany.findUnique({ where: { document } }));
+      // CNPJ is unique: an existing company with it is the same company. QXBACK sends digits only while
+      // the CRM keeps what was typed, so look for every way of writing it
+      const existing = document && (await prisma.crmCompany.findFirst({ where: { document: { in: documentForms(document) } } }));
       const company = existing || (await prisma.crmCompany.create({ data: { name, document } }));
       return { body: { result: company.id } };
     }
@@ -303,7 +338,7 @@ export async function callMethod(method: string, params: Params): Promise<{ body
     case "crm.product.add": {
       const name = text(fields.NAME);
       if (!name) throw new BitrixError("NAME_REQUIRED", "NAME é obrigatório");
-      const product = await prisma.crmProduct.upsert({ where: { name }, update: {}, create: { name, price: Number(fields.PRICE) || 0 } });
+      const product = await prisma.crmProduct.upsert({ where: { name }, update: {}, create: { name, price: num(fields.PRICE) || 0 } });
       return { body: { result: product.id } };
     }
 
