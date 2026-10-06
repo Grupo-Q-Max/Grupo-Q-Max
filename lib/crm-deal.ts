@@ -281,6 +281,40 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
 
 export class DealValidationError extends Error {}
 
+export type DuplicateDeal = { number: number; title: string; stage: string };
+
+/** Thrown on create when an open deal already looks the same; the client may resend with `force`. */
+export class DuplicateDealError extends Error {
+  constructor(public deals: DuplicateDeal[]) {
+    super("Possible duplicate deal");
+  }
+}
+
+/**
+ * Open deals of the pipeline with the same title, company, responsible and value.
+ * A same-titled deal with another seller or value is a different sale, not a duplicate.
+ * The title match relies on the column's case/accent-insensitive collation.
+ */
+export async function findDuplicateDeals(
+  tx: Tx,
+  d: { title: string; pipelineId: string; companyId: string | null; responsibleId: string | null; value: number }
+): Promise<DuplicateDeal[]> {
+  const rows = await tx.crmCard.findMany({
+    where: {
+      title: d.title,
+      status: "OPEN",
+      stage: { pipelineId: d.pipelineId },
+      companyId: d.companyId,
+      responsibleId: d.responsibleId,
+      value: d.value,
+    },
+    orderBy: { number: "asc" },
+    take: 5,
+    select: { number: true, title: true, stage: { select: { name: true } } },
+  });
+  return rows.map((r) => ({ number: r.number, title: r.title, stage: r.stage.name }));
+}
+
 /**
  * Full deal update (deal panel and "Modificar negócio" automation): fields
  * from applyDealChanges plus `stageId` and `status`, all recorded in the
