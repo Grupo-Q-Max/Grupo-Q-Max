@@ -475,7 +475,8 @@ async function syncProducts(tx: Tx, dealId: string, input: ProductInput[]) {
     const price = Number(line.price) || 0;
     const catalog =
       (line.productId && (await tx.crmProduct.findUnique({ where: { id: line.productId } }))) ||
-      (await tx.crmProduct.upsert({ where: { name }, update: {}, create: { name, price } }));
+      // A name typed for the first time enters the catalog at 0; the line keeps the typed price
+      (await tx.crmProduct.upsert({ where: { name }, update: {}, create: { name, price: 0 } }));
 
     await tx.crmDealProduct.create({
       data: {

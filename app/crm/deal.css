@@ -358,7 +358,7 @@
 .deal-input:disabled { opacity: 0.55; cursor: not-allowed; }
 .deal-input::placeholder { color: var(--deal-subtle); }
 .deal-input--narrow { max-width: 190px; }
-.deal-input--date { max-width: 220px; color-scheme: dark; }
+.deal-input--date { max-width: 220px; }
 .deal-input--compact { padding: 6px 10px; font-size: 13px; width: auto; color-scheme: dark; }
 .deal-input--inline { width: auto; padding: 6px 10px; font-size: 13px; }
 

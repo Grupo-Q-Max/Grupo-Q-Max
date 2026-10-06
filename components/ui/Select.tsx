@@ -10,6 +10,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import "./ui.css";
@@ -28,6 +29,35 @@ function collect(children: ReactNode, group?: string, out: Option[] = []) {
       out.push({ value: String(child.props.value ?? ""), label: child.props.children, disabled: child.props.disabled, group });
   });
   return out;
+}
+
+// Fixed position next to the trigger; the popover lives in the top layer, so no ancestor clips it.
+export function anchorPopover(trigger: HTMLElement, el: HTMLElement, need = 220, max = 300) {
+  const r = trigger.getBoundingClientRect();
+  const below = innerHeight - r.bottom - 12;
+  const above = r.top - 12;
+  const up = below < need && above > below;
+  el.style.minWidth = `${r.width}px`;
+  el.style.left = `${Math.max(8, r.left)}px`;
+  el.style.maxHeight = `${Math.min(max, up ? above : below)}px`;
+  el.style.top = up ? "auto" : `${r.bottom + 4}px`;
+  el.style.bottom = up ? `${innerHeight - r.top + 4}px` : "auto";
+}
+
+// While open: keep the popover inside the viewport horizontally; close it when the page scrolls or resizes.
+export function useAnchoredPopover(open: boolean, ref: RefObject<HTMLElement | null>, hide: () => void) {
+  useEffect(() => {
+    if (!open) return;
+    const el = ref.current!;
+    el.style.left = `${Math.max(8, Math.min(el.getBoundingClientRect().left, innerWidth - el.offsetWidth - 8))}px`;
+    const onScroll = (e: Event) => !el.contains(e.target as Node) && hide();
+    addEventListener("scroll", onScroll, true);
+    addEventListener("resize", hide);
+    return () => {
+      removeEventListener("scroll", onScroll, true);
+      removeEventListener("resize", hide);
+    };
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 const text = (node: ReactNode) => Children.toArray(node).join("").toLowerCase();
@@ -61,19 +91,7 @@ export function Select({ value, defaultValue, onChange, children, className, sty
   const listId = useId();
   const optionId = (i: number) => `${listId}-${i}`;
 
-  // Fixed position next to the trigger; the list lives in the top layer, so no ancestor clips it.
-  const place = () => {
-    const r = button.current!.getBoundingClientRect();
-    const el = list.current!;
-    const below = innerHeight - r.bottom - 12;
-    const above = r.top - 12;
-    const up = below < 220 && above > below;
-    el.style.minWidth = `${r.width}px`;
-    el.style.left = `${Math.max(8, r.left)}px`;
-    el.style.maxHeight = `${Math.min(300, up ? above : below)}px`;
-    el.style.top = up ? "auto" : `${r.bottom + 4}px`;
-    el.style.bottom = up ? `${innerHeight - r.top + 4}px` : "auto";
-  };
+  const place = () => anchorPopover(button.current!, list.current!);
 
   const show = () => {
     if (disabled || open) return;
@@ -97,19 +115,7 @@ export function Select({ value, defaultValue, onChange, children, className, sty
     return from;
   };
 
-  useEffect(() => {
-    if (!open) return;
-    const el = list.current!;
-    // Keep the list inside the viewport horizontally once its width is known.
-    el.style.left = `${Math.max(8, Math.min(el.getBoundingClientRect().left, innerWidth - el.offsetWidth - 8))}px`;
-    const onScroll = (e: Event) => e.target !== el && hide();
-    addEventListener("scroll", onScroll, true);
-    addEventListener("resize", hide);
-    return () => {
-      removeEventListener("scroll", onScroll, true);
-      removeEventListener("resize", hide);
-    };
-  }, [open]);
+  useAnchoredPopover(open, list, hide);
 
   useEffect(() => {
     if (open && active >= 0) document.getElementById(optionId(active))?.scrollIntoView({ block: "nearest" });
