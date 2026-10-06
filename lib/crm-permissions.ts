@@ -43,9 +43,9 @@ export const PERMISSION_SECTIONS = [
     },
   },
   {
-    label: "Produtos",
+    label: "Serviços",
     permissions: {
-      "product.manage": "Cadastrar, editar e excluir produtos do catálogo",
+      "product.manage": "Cadastrar, editar e excluir serviços do catálogo",
     },
   },
   {

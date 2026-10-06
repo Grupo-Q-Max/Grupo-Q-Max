@@ -257,7 +257,7 @@ export const WATCHABLE_FIELDS: Record<string, string> = {
   comment: "Comentário",
   company: "Empresa",
   contacts: "Contatos",
-  products: "Produtos",
+  products: "Serviços",
   customData: "Campos adicionais",
 };
 

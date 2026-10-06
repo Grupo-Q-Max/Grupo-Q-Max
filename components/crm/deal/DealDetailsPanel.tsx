@@ -274,7 +274,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
               {(
                 [
                   ["general", "Geral"],
-                  ["products", `Produtos${deal.products.length ? ` (${deal.products.length})` : ""}`],
+                  ["products", `Serviços${deal.products.length ? ` (${deal.products.length})` : ""}`],
                   ["history", "Histórico"],
                 ] as [Tab, string][]
               ).map(([value, label]) => (
