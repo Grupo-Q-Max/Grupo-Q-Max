@@ -43,6 +43,12 @@ export const PERMISSION_SECTIONS = [
     },
   },
   {
+    label: "Relatórios",
+    permissions: {
+      "report.view": "Ver relatórios de negócios ganhos e perdidos",
+    },
+  },
+  {
     label: "Administração",
     permissions: {
       "access.manage": "Gerenciar grupos, permissões e o grupo de cada usuário",

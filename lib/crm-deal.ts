@@ -307,6 +307,7 @@ export async function updateDeal(
 
     if (status && status !== current.status) {
       data.status = status as CrmDealStatus;
+      data.closedAt = status === "OPEN" ? null : new Date();
       history.push({ type: "STATUS_CHANGED", data: { from: current.status, to: status } });
     }
 

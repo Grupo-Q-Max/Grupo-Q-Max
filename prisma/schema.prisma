@@ -238,6 +238,8 @@ model CrmCard {
   value      Decimal       @default(0.00) @db.Decimal(10, 2)
   currency   String        @default("BRL") @db.VarChar(3)
   status     CrmDealStatus @default(OPEN)
+  /// When the status became WON/LOST (null while OPEN); used by the reports. closeDate is the planned end date
+  closedAt   DateTime?
   order      Int           @default(0)
   startDate  DateTime?     @db.Date
   closeDate  DateTime?     @db.Date
@@ -272,6 +274,7 @@ model CrmCard {
   @@index([stageId, order])
   @@index([companyId])
   @@index([responsibleId])
+  @@index([status, closedAt])
 }
 
 /// Companies are shared between deals: editing one updates every deal linked to it.
