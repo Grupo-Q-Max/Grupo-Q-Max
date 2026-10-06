@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { matches } from "@/lib/text-search";
 import { formatMoney } from "@/components/crm/deal/types";
+import { confirmDialog } from "@/components/ui/Dialogs";
 
 export type ProductRow = { id: string; name: string; price: number; deals: number };
 
@@ -49,8 +50,9 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
     void send("PUT", { id: p.id, ...changes });
   };
 
-  const remove = (p: ProductRow) => {
-    if (!confirm(`Excluir "${p.name}" do catálogo? Os negócios mantêm o produto já adicionado.`)) return;
+  const remove = async (p: ProductRow) => {
+    const message = `Excluir "${p.name}" do catálogo? Os negócios mantêm o produto já adicionado.`;
+    if (!(await confirmDialog(message, { danger: true, confirmLabel: "Excluir" }))) return;
     void send("DELETE", undefined, `?id=${encodeURIComponent(p.id)}`);
   };
 
