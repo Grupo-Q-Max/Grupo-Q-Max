@@ -457,6 +457,7 @@
 .deal-products__table td { padding: 0 8px; }
 .deal-products__table td:nth-child(2), .deal-products__table td:nth-child(3) { width: 150px; }
 .deal-products__total { white-space: nowrap; font-weight: 600; color: var(--deal-green); }
+.deal-products__description { margin-top: 6px; font-size: 12px; }
 .deal-products__footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 0 8px; }
 .deal-products__sum { font-size: 16px; color: var(--deal-muted); }
 .deal-products__sum strong { color: var(--deal-green); font-size: 20px; margin-left: 6px; }

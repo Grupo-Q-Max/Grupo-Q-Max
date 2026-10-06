@@ -353,10 +353,11 @@ model CrmDealProduct {
   deal      CrmCard     @relation(fields: [dealId], references: [id], onDelete: Cascade)
   productId String?
   product   CrmProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
-  name      String
-  price     Decimal     @default(0.00) @db.Decimal(10, 2)
-  quantity  Int         @default(1)
-  order     Int         @default(0)
+  name        String
+  description String?     @db.Text
+  price       Decimal     @default(0.00) @db.Decimal(10, 2)
+  quantity    Int         @default(1)
+  order       Int         @default(0)
 
   @@index([dealId])
   @@index([productId])

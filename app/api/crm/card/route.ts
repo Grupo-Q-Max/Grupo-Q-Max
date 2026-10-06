@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
+import { isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
 import {
   DealValidationError,
   DuplicateDealError,
@@ -96,6 +97,14 @@ export async function PATCH(req: Request) {
       // A manual stage change runs the new stage's rules; other changes may fire a "campo alterado" trigger
       if (result.movedTo) await onDealEnteredStage(id, result.movedTo);
       else if (result.changedFields.length) await fireTriggers(id, { type: "FIELD_CHANGED", fields: result.changedFields });
+
+      // Edits made here (not through the QXBACK rest route) to a QXBACK deal's products/value/comment:
+      // tell QXBACK so it re-reads the deal (same role as Bitrix's own ONCRMDEALUPDATE push)
+      const stageId = result.movedTo ?? result.stageId;
+      if (isQxbackStage(stageId) && result.changedFields.some((f) => ["products", "value", "comment"].includes(f))) {
+        const deal = await prisma.crmCard.findUnique({ where: { id }, select: { number: true } });
+        if (deal) await notifyQxback(deal.number);
+      }
     });
     return NextResponse.json(await getDealDetails(id));
   } catch (error) {
