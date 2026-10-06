@@ -66,10 +66,12 @@ export function CrmSidebar() {
             <Users size={18} />
             Contatos
           </Link>
-          <a href="#" className="crm-nav__item">
-            <PieChart size={18} />
-            Relatórios
-          </a>
+          {can("report.view") && (
+            <Link href="/crm/reports" className={navClass("/crm/reports")}>
+              <PieChart size={18} />
+              Relatórios
+            </Link>
+          )}
           <Link href="/crm/requests" className={navClass("/crm/requests")}>
             <Lightbulb size={18} />
             Pedidos
