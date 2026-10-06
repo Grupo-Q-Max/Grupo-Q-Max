@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Target } from "lucide-react";
+import { Handshake } from "lucide-react";
 import type { IPublicClientApplication } from "@azure/msal-browser";
 
 /**
@@ -70,7 +70,7 @@ export function MicrosoftLogin({ tenantId, clientId }: { tenantId: string; clien
     <main className="crm-login">
       <div className="crm-login__card">
         <div className="crm-login__brand">
-          <Target size={28} />
+          <Handshake size={28} />
           <span>Q-Max CRM</span>
         </div>
         <p className="crm-login__notice">Entre com a sua conta Microsoft corporativa.</p>

@@ -8,7 +8,7 @@ import {
   Lightbulb,
   Scale,
   Sparkles,
-  Target,
+  Compass,
 } from "lucide-react";
 
 const values = [
@@ -121,7 +121,7 @@ export function Story() {
             >
               <div className="qprinciples__cardTop">
                 <span>01 / MISSÃO</span>
-                <Target size={22} />
+                <Compass size={22} />
               </div>
 
               <h3>Qualidade com atitude ética.</h3>
