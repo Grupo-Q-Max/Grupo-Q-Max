@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Target, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package } from "lucide-react";
+import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 import { useCan } from "./CrmAccess";
 
@@ -53,7 +53,7 @@ export function CrmSidebar() {
 
       <aside className={`crm-sidebar ${state}`}>
         <div className="crm-sidebar__brand">
-          <Target size={28} />
+          <Handshake size={28} />
           <span>Q-Max CRM</span>
         </div>
 
