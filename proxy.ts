@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
 import { isAdminToken } from "@/lib/settings";
 
-// These authenticate on their own (webhook token / CRON_SECRET) and are called by other servers
-const PUBLIC_API = ["/api/crm/hook/", "/api/crm/automation/cron"];
+// These authenticate on their own (webhook token / CRON_SECRET / QXBACK_TOKEN) and are called by other servers
+const PUBLIC_API = ["/api/crm/hook/", "/api/crm/automation/cron", "/api/crm/qxback/"];
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 });

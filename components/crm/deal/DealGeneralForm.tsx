@@ -487,6 +487,12 @@ export function DealProductsEditor({ draft, onChange }: { draft: DealDraft; onCh
                   onPick={(picked) => update(product.id, { name: picked.name, price: picked.price, productId: picked.id })}
                   describe={(p) => formatMoney(p.price, draft.currency)}
                 />
+                <input
+                  className="deal-input deal-products__description"
+                  placeholder="Descrição (opcional)"
+                  value={product.description ?? ""}
+                  onChange={(e) => update(product.id, { description: e.target.value })}
+                />
               </td>
               <td>
                 <input
@@ -536,7 +542,10 @@ export function DealProductsEditor({ draft, onChange }: { draft: DealDraft; onCh
           type="button"
           className="btn-secondary"
           onClick={() =>
-            setProducts([...products, { id: crypto.randomUUID(), productId: null, name: "", price: 0, quantity: 1 }])
+            setProducts([
+              ...products,
+              { id: crypto.randomUUID(), productId: null, name: "", description: null, price: 0, quantity: 1 },
+            ])
           }
         >
           <Plus size={16} /> Adicionar produto

@@ -1,7 +1,7 @@
 /** `id` is set when the contact/company already exists (they are shared between deals). */
 export type DealContact = { id?: string; name: string; phone: string; email: string; address: string; info: string };
 export type DealCompany = { id?: string; name: string; document: string; phone: string; email: string; address: string; info: string };
-export type DealProduct = { id: string; productId: string | null; name: string; price: number; quantity: number };
+export type DealProduct = { id: string; productId: string | null; name: string; description: string | null; price: number; quantity: number };
 
 export type CustomFieldConfig = { id: string; name: string; type: string; required?: boolean };
 

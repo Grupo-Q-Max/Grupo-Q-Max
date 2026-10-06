@@ -87,6 +87,7 @@ const toDto = (row: DealRow) => {
       id: p.id,
       productId: p.productId,
       name: p.name,
+      description: p.description,
       price: p.price.toNumber(),
       quantity: p.quantity,
     })),
@@ -107,7 +108,7 @@ export async function getDealDetails(id: string, tx: Tx = prisma) {
 
 type CompanyInput = { id?: string; name: string; document?: string; phone?: string; email?: string; address?: string; info?: string };
 type ContactInput = { id?: string; name: string; phone?: string; email?: string; address?: string; info?: string };
-type ProductInput = { productId?: string | null; name: string; price: number; quantity: number };
+type ProductInput = { productId?: string | null; name: string; description?: string | null; price: number; quantity: number };
 
 const blankToNull = (value: unknown) => {
   const text = typeof value === "string" ? value.trim() : value;
@@ -264,7 +265,12 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
     if (field === "products") {
       const input = ((changes.products as ProductInput[] | null) ?? []).filter((p) => p.name?.trim());
       const normalize = (list: ProductInput[]) =>
-        list.map((p) => ({ name: p.name.trim(), price: Number(p.price) || 0, quantity: Number(p.quantity) || 0 }));
+        list.map((p) => ({
+          name: p.name.trim(),
+          description: p.description?.trim() || null,
+          price: Number(p.price) || 0,
+          quantity: Number(p.quantity) || 0,
+        }));
       if (comparable(normalize(currentDto.products)) === comparable(normalize(input))) continue;
       await syncProducts(tx, dealId, input);
       history.push({ type: "FIELD_CHANGED", data: { field, label, from: names(currentDto.products), to: names(input) } });
@@ -472,7 +478,15 @@ async function syncProducts(tx: Tx, dealId: string, input: ProductInput[]) {
       (await tx.crmProduct.upsert({ where: { name }, update: {}, create: { name, price } }));
 
     await tx.crmDealProduct.create({
-      data: { dealId, productId: catalog.id, name, price, quantity: Math.max(0, Math.round(Number(line.quantity) || 0)), order },
+      data: {
+        dealId,
+        productId: catalog.id,
+        name,
+        description: line.description?.trim() || null,
+        price,
+        quantity: Math.max(0, Math.round(Number(line.quantity) || 0)),
+        order,
+      },
     });
   }
 }
