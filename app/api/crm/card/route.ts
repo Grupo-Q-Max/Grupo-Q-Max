@@ -30,7 +30,7 @@ export async function POST(req: Request) {
   try {
     const denied = await denyUnless("deal.create");
     if (denied) return denied;
-    const { title, company, value, stageId, customData } = await req.json();
+    const { title, company, value, stageId, customData, referredBy } = await req.json();
     if (!title || !stageId) return NextResponse.json({ error: "Missing title or stageId" }, { status: 400 });
 
     const card = await prisma.$transaction(async (tx) =>
@@ -41,6 +41,7 @@ export async function POST(req: Request) {
           stageId,
           companyId: await companyIdByName(tx, company),
           customData: customData || {},
+          referredBy: typeof referredBy === "string" ? referredBy.trim().slice(0, 200) || null : null,
           order: await tx.crmCard.count({ where: { stageId } }),
           history: { create: { type: "CREATED", data: { title } } },
         },

@@ -277,6 +277,22 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
           />
         </Field>
 
+        <Field label="Quem trouxe o lead">
+          <input
+            className="deal-input"
+            list="deal-referrers"
+            placeholder="Membro da equipe ou pessoa externa"
+            maxLength={200}
+            value={draft.referredBy ?? ""}
+            onChange={(e) => onChange({ referredBy: e.target.value })}
+          />
+          <datalist id="deal-referrers">
+            {team.map((member) => (
+              <option key={member.id} value={member.name} />
+            ))}
+          </datalist>
+        </Field>
+
         <label className="deal-checkbox">
           <input type="checkbox" checked={draft.isPublic} onChange={(e) => onChange({ isPublic: e.target.checked })} />
           Disponível para todos

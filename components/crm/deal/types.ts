@@ -46,6 +46,7 @@ export type DealDetails = {
   dealType: string | null;
   source: string | null;
   sourceInfo: string | null;
+  referredBy: string | null;
   isPublic: boolean;
   responsibleId: string | null;
   observers: string[];
@@ -74,6 +75,7 @@ export type DealDraft = Pick<
   | "dealType"
   | "source"
   | "sourceInfo"
+  | "referredBy"
   | "isPublic"
   | "responsibleId"
   | "observers"
@@ -155,6 +157,7 @@ export function pickDraft(deal: DealDetails): DealDraft {
     dealType: deal.dealType,
     source: deal.source,
     sourceInfo: deal.sourceInfo,
+    referredBy: deal.referredBy,
     isPublic: deal.isPublic,
     responsibleId: deal.responsibleId,
     observers: deal.observers,

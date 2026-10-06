@@ -246,6 +246,8 @@ model CrmCard {
   dealType   String?
   source     String?
   sourceInfo String?       @db.Text
+  /// Who brought the lead: free text (team member or external person), set by the webhook or by hand
+  referredBy String?       @db.VarChar(200)
   isPublic   Boolean       @default(true)
   comment    String?       @db.Text
   recurrence CrmRecurrence @default(NONE)
