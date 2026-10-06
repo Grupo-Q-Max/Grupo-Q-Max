@@ -279,7 +279,8 @@ export async function callMethod(method: string, params: Params): Promise<{ body
           productId: product.id,
           name: product.name,
           description: text(fields.DESCRIPTION) || null,
-          price: num(fields.PRICE) || 0,
+          // Like Bitrix: the catalog price wins; a product still at 0 (just created) keeps what QXBACK sent
+          price: product.price.toNumber() > 0 ? product.price : num(fields.PRICE) || 0,
           // Bitrix default is 1 only when QUANTITY is missing; an explicit 0 stays 0
           quantity: Math.max(0, Math.round(fields.QUANTITY === undefined ? 1 : num(fields.QUANTITY) || 0)),
           order: await prisma.crmDealProduct.count({ where: { dealId: deal.id } }),
@@ -338,7 +339,8 @@ export async function callMethod(method: string, params: Params): Promise<{ body
     case "crm.product.add": {
       const name = text(fields.NAME);
       if (!name) throw new BitrixError("NAME_REQUIRED", "NAME é obrigatório");
-      const product = await prisma.crmProduct.upsert({ where: { name }, update: {}, create: { name, price: num(fields.PRICE) || 0 } });
+      // New catalog products start at 0, like Bitrix; the price is set later on /crm/products
+      const product = await prisma.crmProduct.upsert({ where: { name }, update: {}, create: { name, price: 0 } });
       return { body: { result: product.id } };
     }
 

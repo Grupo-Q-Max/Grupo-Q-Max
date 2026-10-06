@@ -43,6 +43,12 @@ export const PERMISSION_SECTIONS = [
     },
   },
   {
+    label: "Produtos",
+    permissions: {
+      "product.manage": "Cadastrar, editar e excluir produtos do catálogo",
+    },
+  },
+  {
     label: "Relatórios",
     permissions: {
       "report.view": "Ver relatórios de negócios ganhos e perdidos",

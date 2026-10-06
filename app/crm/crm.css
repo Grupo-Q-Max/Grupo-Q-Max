@@ -1255,6 +1255,18 @@ button.crm-bell {
   color: #a5a0aa;
 }
 
+.crm-products__add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.crm-products__add input {
+  flex: 1 1 200px;
+  max-width: 320px;
+}
+
 .crm-requests__row {
   display: flex;
   flex-wrap: wrap;
