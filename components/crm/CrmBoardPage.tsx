@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { Zap } from "lucide-react";
 import { CrmButtons } from "@/components/crm/CrmButtons";
 import { CrmWorkspace } from "@/components/crm/CrmWorkspace";
@@ -6,6 +7,7 @@ import { CrmPipelineRename, CrmPipelineSettings } from "@/components/crm/CrmPipe
 import { PipelineSelector } from "@/components/crm/PipelineSelector";
 import { prisma } from "@/lib/prisma";
 import { currentPermissions } from "@/lib/crm-access";
+import { readSession, SESSION_COOKIE } from "@/lib/auth";
 import { cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
 const pipelineInclude = {
@@ -77,7 +79,7 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
             </Link>
           )}
         </h1>
-        <CrmButtons pipeline={serializedPipeline} />
+        <CrmButtons pipeline={serializedPipeline} currentMemberId={readSession((await cookies()).get(SESSION_COOKIE)?.value)} />
       </header>
 
       <CrmWorkspace key={pipeline.id} pipeline={serializedPipeline} initialDealId={openDealId} />

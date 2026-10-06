@@ -5,8 +5,10 @@ import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import {
   DealValidationError,
+  DuplicateDealError,
   cardListInclude,
   companyIdByName,
+  findDuplicateDeals,
   getDealDetails,
   serializeListCard,
   updateDeal,
@@ -30,24 +32,33 @@ export async function POST(req: Request) {
   try {
     const denied = await denyUnless("deal.create");
     if (denied) return denied;
-    const { title, company, value, stageId, customData, referredBy } = await req.json();
+    const { title, company, value, stageId, customData, referredBy, responsibleId, force } = await req.json();
     if (!title || !stageId) return NextResponse.json({ error: "Missing title or stageId" }, { status: 400 });
+    const responsible = typeof responsibleId === "string" && responsibleId ? responsibleId : null;
 
-    const card = await prisma.$transaction(async (tx) =>
-      tx.crmCard.create({
+    const card = await prisma.$transaction(async (tx) => {
+      const { pipelineId } = await tx.crmStage.findUniqueOrThrow({ where: { id: stageId }, select: { pipelineId: true } });
+      const companyId = await companyIdByName(tx, company);
+      if (!force) {
+        // Throwing rolls back a company created just above
+        const duplicates = await findDuplicateDeals(tx, { title, pipelineId, companyId, responsibleId: responsible, value: Number(value) || 0 });
+        if (duplicates.length) throw new DuplicateDealError(duplicates);
+      }
+      return tx.crmCard.create({
         data: {
           title,
           value: value || 0,
           stageId,
-          companyId: await companyIdByName(tx, company),
+          companyId,
+          responsibleId: responsible,
           customData: customData || {},
           referredBy: typeof referredBy === "string" ? referredBy.trim().slice(0, 200) || null : null,
           order: await tx.crmCard.count({ where: { stageId } }),
           history: { create: { type: "CREATED", data: { title } } },
         },
         include: cardListInclude,
-      })
-    );
+      });
+    });
 
     await notifyStageChanged(card.stageId);
     // A "negócio criado" trigger may move the deal right away; otherwise run the first stage's rules
@@ -57,6 +68,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(serializeListCard(card));
   } catch (error) {
+    if (error instanceof DuplicateDealError) {
+      return NextResponse.json({ error: "duplicate", deals: error.deals }, { status: 409 });
+    }
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

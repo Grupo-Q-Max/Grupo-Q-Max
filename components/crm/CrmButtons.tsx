@@ -5,9 +5,34 @@ import { createPortal } from "react-dom";
 import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCan } from "./CrmAccess";
-import { alertDialog } from "@/components/ui/Dialogs";
+import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
+import { Select } from "@/components/ui/Select";
+import type { DuplicateDeal } from "@/lib/crm-deal";
 
-export function CrmButtons({ pipeline }: { pipeline?: any }) {
+/**
+ * POST /api/crm/card. When an open deal already has the same title, company, seller
+ * and value the API answers 409; the user confirms and the deal is created anyway.
+ * Returns null when the user gives up.
+ */
+export async function postDeal(body: Record<string, unknown>): Promise<Response | null> {
+  const send = (force?: boolean) =>
+    fetch("/api/crm/card", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, force }),
+    });
+  const res = await send();
+  if (res.status !== 409) return res;
+  const { deals } = (await res.json()) as { deals: DuplicateDeal[] };
+  const list = deals.map((d) => `#${d.number} ${d.title} (${d.stage})`).join("\n");
+  const ok = await confirmDialog(
+    `Já existe negócio aberto com mesmo nome, empresa, vendedor e valor:\n${list}\n\nCriar mesmo assim?`,
+    { title: "Possível duplicado", confirmLabel: "Criar mesmo assim" }
+  );
+  return ok ? send(true) : null;
+}
+
+export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; currentMemberId: string | null }) {
   const router = useRouter();
   const can = useCan();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,6 +43,8 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
   const [dealValue, setDealValue] = useState("");
   const [dealCompany, setDealCompany] = useState("");
   const [customData, setCustomData] = useState<any>({});
+  const [dealResponsible, setDealResponsible] = useState(currentMemberId ?? "");
+  const [team, setTeam] = useState<{ id: string; name: string; role: string }[]>([]);
   
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,28 +83,34 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
     }
 
     setIsLoading(true);
-    const res = await fetch('/api/crm/card', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        title: dealTitle,
-        company: dealCompany,
-        value: Number(dealValue) || 0,
-        stageId: pipeline.stages[0].id,
-        customData
-      })
+    const res = await postDeal({
+      title: dealTitle,
+      company: dealCompany,
+      value: Number(dealValue) || 0,
+      stageId: pipeline.stages[0].id,
+      responsibleId: dealResponsible || null,
+      customData,
     });
-    
-    if (res.ok) {
+
+    if (res?.ok) {
       setIsDealModalOpen(false);
       setDealTitle("");
       setDealCompany("");
       setDealValue("");
       setCustomData({});
+      setDealResponsible(currentMemberId ?? "");
       router.refresh();
     }
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    if (!isDealModalOpen || team.length) return;
+    fetch("/api/team")
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setTeam)
+      .catch(() => setTeam([]));
+  }, [isDealModalOpen, team.length]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -181,6 +214,18 @@ export function CrmButtons({ pipeline }: { pipeline?: any }) {
                 disabled={isLoading}
               />
             </div>
+          </div>
+
+          <div className="crm-modal-group" style={{ marginBottom: 0 }}>
+            <label>Vendedor</label>
+            <Select value={dealResponsible} onChange={(e) => setDealResponsible(e.target.value)} disabled={isLoading} aria-label="Vendedor">
+              <option value="">Sem vendedor</option>
+              {team.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name} — {member.role}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* DYNAMIC CUSTOM FIELDS */}

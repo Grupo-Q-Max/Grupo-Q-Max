@@ -6,6 +6,7 @@ import { Kanban, type KanbanColumnData } from "@/components/kanban";
 import { DealCard, type CrmDeal } from "./DealCard";
 import { DealDetailsPanel } from "./deal/DealDetailsPanel";
 import { useCan } from "./CrmAccess";
+import { postDeal } from "./CrmButtons";
 import { confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 
 type CrmStage = { id: string; name: string; cards: CrmDeal[] };
@@ -114,8 +115,8 @@ export function CrmKanban({
           router.refresh();
         } : undefined}
         onAddItem={can("deal.create") ? async (stageId, title) => {
-          const res = await fetch("/api/crm/card", jsonRequest("POST", { title, stageId }));
-          if (!res.ok) return;
+          const res = await postDeal({ title, stageId });
+          if (!res?.ok) return;
           router.refresh();
           return (await res.json()) as CrmDeal;
         } : undefined}
