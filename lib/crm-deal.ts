@@ -126,6 +126,7 @@ export const SCALAR_FIELDS = {
   dealType: "Tipo de negócio",
   source: "Fonte",
   sourceInfo: "Informações da fonte",
+  referredBy: "Quem trouxe o lead",
   isPublic: "Disponível para todos",
   responsibleId: "Responsável",
   comment: "Comentário",
@@ -163,6 +164,8 @@ function parseScalar(field: ScalarField, value: unknown) {
       return RECURRENCES.has(value as CrmRecurrence) ? value : "NONE";
     case "customData":
       return value && typeof value === "object" ? value : null;
+    case "referredBy":
+      return blankToNull(value)?.slice(0, 200) ?? null;
     default:
       return blankToNull(value);
   }
@@ -496,6 +499,7 @@ export async function createRecurringCopy(tx: Tx, id: string) {
       dealType: deal.dealType,
       source: deal.source,
       sourceInfo: deal.sourceInfo,
+      referredBy: deal.referredBy,
       isPublic: deal.isPublic,
       recurrence: deal.recurrence,
       customData: deal.customData ?? Prisma.DbNull,
