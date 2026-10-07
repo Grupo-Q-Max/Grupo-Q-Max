@@ -7,6 +7,7 @@ import { DealCard, type CrmDeal } from "./DealCard";
 import { DealDetailsPanel } from "./deal/DealDetailsPanel";
 import { useCan } from "./CrmAccess";
 import { postDeal } from "./CrmButtons";
+import { sendStageMove } from "./stageEntry";
 import { confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 
 type CrmStage = { id: string; name: string; cards: CrmDeal[] };
@@ -110,8 +111,8 @@ export function CrmKanban({
         }}
         renderItem={(deal, { remove }) => <DealCard deal={deal} onOpen={() => openDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
         onMoveItem={can("deal.edit") ? async (cardId, newStageId, index) => {
-          const res = await fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index }));
-          if (!res.ok) return false;
+          const res = await sendStageMove((extra) => fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index, ...extra })));
+          if (!res) return false;
           router.refresh();
         } : undefined}
         onAddItem={can("deal.create") ? async (stageId, title) => {

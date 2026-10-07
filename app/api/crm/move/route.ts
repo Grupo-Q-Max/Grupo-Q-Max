@@ -3,12 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { onDealEnteredStage } from "@/lib/crm-automation";
+import { checkStageEntry, StageEntryError } from "@/lib/crm-qxback";
 
 export async function POST(req: Request) {
   try {
     const denied = await denyUnless("deal.edit");
     if (denied) return denied;
-    const { cardId, newStageId, index } = await req.json();
+    const { cardId, newStageId, index, lostReason } = await req.json();
 
     if (!cardId || !newStageId) {
       return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
       select: { stageId: true, stage: { select: { name: true } } },
     });
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (current.stageId !== newStageId) await checkStageEntry(cardId, newStageId, lostReason);
 
     // Record the stage change in the deal timeline and run the new stage's automation rules
     const stageHistory = async () => {
@@ -68,6 +70,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, card: updatedCard });
   } catch (error) {
+    if (error instanceof StageEntryError) return error.toResponse();
     console.error("Error moving card:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

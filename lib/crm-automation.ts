@@ -10,7 +10,7 @@ import type {
 import { prisma } from "@/lib/prisma";
 import { notifyMember, notifyPipelineChanged } from "@/lib/crm-realtime";
 import { updateDeal } from "@/lib/crm-deal";
-import { notifyQxbackBonusStage } from "@/lib/crm-qxback";
+import { notifyQxbackStage } from "@/lib/crm-qxback";
 import {
   DEAL_STATUSES,
   FLOW_LIMITS,
@@ -105,7 +105,7 @@ export async function dealContext(cardId: string) {
 /** Queues the stage's active rules for a deal that just entered it, then runs the due ones. */
 export async function onDealEnteredStage(cardId: string, stageId: string) {
   // Every stage entry passes here (move, PATCH, automations, triggers, QXBACK route)
-  await notifyQxbackBonusStage(cardId, stageId).catch((error) => console.error("[crm-automation] QXBACK bonus push failed", error));
+  await notifyQxbackStage(cardId, stageId).catch((error) => console.error("[crm-automation] QXBACK stage push failed", error));
   try {
     const automations = await prisma.crmAutomation.findMany({
       // Rows with flowStepId are the actions of flow steps, run by their flow

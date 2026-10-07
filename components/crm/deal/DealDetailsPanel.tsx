@@ -8,6 +8,7 @@ import { DealTimeline } from "./DealTimeline";
 import { pickDraft, type DealDetails, type DealDraft, type TeamMember } from "./types";
 import { formatDateOnly } from "./ui";
 import { useCan } from "../CrmAccess";
+import { sendStageMove } from "../stageEntry";
 import { confirmDialog } from "@/components/ui/Dialogs";
 
 type Tab = "general" | "products" | "history";
@@ -128,12 +129,18 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
   /** Immediate change (stage, status) — keeps unsaved edits in the form. */
   const patch = async (changes: Record<string, unknown>) => {
     setError(null);
-    const res = await fetch("/api/crm/card", jsonRequest("PATCH", { id: dealId, ...changes }));
+    const send = (extra: Record<string, unknown> = {}) => fetch("/api/crm/card", jsonRequest("PATCH", { id: dealId, ...changes, ...extra }));
+    // Stage moves follow the QXBACK stage rules (required services / lost reason)
+    const res = "stageId" in changes ? await sendStageMove(send) : await send();
+    if (!res) return;
     if (!res.ok) {
       setError((await res.json().catch(() => null))?.error ?? "Não foi possível salvar.");
       return;
     }
-    setDeal(await res.json());
+    const updated: DealDetails = await res.json();
+    // The lost reason is saved in a custom field: refresh it in the form unless it has unsaved edits
+    if (deal && !dirtyFields.includes("customData")) updateDraft({ customData: updated.customData });
+    setDeal(updated);
     onChanged();
   };
 

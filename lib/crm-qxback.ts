@@ -105,7 +105,7 @@ export const isQxbackStage = (stageId: string) => Object.values(envMap("QXBACK_S
  * DEAL_SOURCE=crm) and refreshes its products/value — closing the gap after "Proposta enviada"
  * for edits made in the CRM UI, not through the QXBACK rest route above.
  */
-export async function notifyQxback(dealNumber: number, event = "ONCRMDEALUPDATE") {
+export async function notifyQxback(dealNumber: number, event = "ONCRMDEALUPDATE", extra: Record<string, string> = {}) {
   const url = process.env.QXBACK_WEBHOOK_URL;
   const secret = process.env.QXBACK_WEBHOOK_SECRET;
   if (!url || !secret) return;
@@ -118,6 +118,7 @@ export async function notifyQxback(dealNumber: number, event = "ONCRMDEALUPDATE"
         event,
         "auth[application_token]": secret,
         "data[FIELDS][ID]": String(dealNumber),
+        ...extra,
       }),
       signal: AbortSignal.timeout(10_000),
       cache: "no-store",
@@ -127,15 +128,71 @@ export async function notifyQxback(dealNumber: number, event = "ONCRMDEALUPDATE"
   }
 }
 
+const stageCode = (stageId: string) => {
+  const stages = envMap("QXBACK_STAGES");
+  return Object.keys(stages).find((code) => stages[code] === stageId) ?? null;
+};
+
 /**
- * A deal entering "Proposta em Elaboração" (C1:PREPAYMENT_INVOICE) asks QXBACK for the R$ 20 referral
- * bonus. QXBACK reads the BONUS flag of the deal's product rows (CrmProduct.hasBonus), creates the bonus
- * for approval and emails the referrer; its cron (bitrix/indicacao_boa.php) retries if this push is lost.
+ * A deal entering a mapped QXBACK stage pushes `ONCRMDEALSTAGE` with its Bitrix code. QXBACK's
+ * webhook runs that column's rule right away (Em Contato, bônus de R$ 20, valor da proposta,
+ * fechamento, recusa, perda); its cron scripts (bitrix/*.php) retry if this push is lost.
  */
-export async function notifyQxbackBonusStage(dealId: string, stageId: string) {
-  if (envMap("QXBACK_STAGES")["C1:PREPAYMENT_INVOICE"] !== stageId) return;
+export async function notifyQxbackStage(dealId: string, stageId: string) {
+  const code = stageCode(stageId);
+  if (!code) return;
   const deal = await prisma.crmCard.findUnique({ where: { id: dealId }, select: { number: true } });
-  if (deal) await notifyQxback(deal.number, "ONCRMDEALBONUS");
+  if (deal) await notifyQxback(deal.number, "ONCRMDEALSTAGE", { "data[FIELDS][STAGE_ID]": code });
+}
+
+/** Bitrix field QXBACK's negocio_perdido reads as the reason shown to the referrer. */
+const LOST_REASON_FIELD = "UF_CRM_1745841118729";
+
+/** Proposta em Análise: C1:EXECUTING, or the Bitrix "Proposta Enviada" code the CRM column is mapped to. */
+const PROPOSAL_STAGES = ["C1:EXECUTING", "C1:UC_WZ7S1B"];
+
+function stageRequirement(stageId: string) {
+  const code = stageCode(stageId);
+  if (code && PROPOSAL_STAGES.includes(code)) return "services";
+  return code === "C1:APOLOGY" ? "lostReason" : null;
+}
+
+/**
+ * Stage entry refused: answered as `{ error, need }`. `need: "lostReason"` makes the client
+ * ask for the reason and send the move again (components/crm/stageEntry.ts).
+ */
+export class StageEntryError extends Error {
+  constructor(message: string, public status = 422, public need?: "lostReason") {
+    super(message);
+  }
+
+  toResponse() {
+    return Response.json({ error: this.message, need: this.need }, { status: this.status });
+  }
+}
+
+/**
+ * Checks a manual move (board drag or deal panel) into a QXBACK stage:
+ * - Proposta em Análise: every service needs a price, so QXBACK can tell the referrer what they can earn.
+ * - Negócio Perdido: the reason is required; it is saved in the deal's mapped custom field.
+ * Automations skip this check (they cannot fill these in).
+ */
+export async function checkStageEntry(dealId: string, stageId: string, lostReason: unknown) {
+  const requirement = stageRequirement(stageId);
+  if (requirement === "services") {
+    const products = await prisma.crmDealProduct.findMany({ where: { dealId }, select: { price: true } });
+    if (products.length === 0 || products.some((p) => p.price.lte(0))) {
+      throw new StageEntryError("Informe os serviços e o valor de cada um antes de mover para Proposta em Análise.");
+    }
+  }
+  if (requirement === "lostReason") {
+    const reason = text(lostReason).slice(0, 1000);
+    if (!reason) throw new StageEntryError("Informe o motivo da perda.", 422, "lostReason");
+    const fieldId = envMap("QXBACK_FIELDS")[LOST_REASON_FIELD];
+    if (!fieldId) throw new StageEntryError(`QXBACK_FIELDS sem o campo ${LOST_REASON_FIELD} (motivo da perda).`, 500);
+    const deal = await prisma.crmCard.findUniqueOrThrow({ where: { id: dealId }, select: { customData: true } });
+    await updateDeal(dealId, { customData: { ...obj(deal.customData), [fieldId]: reason } });
+  }
 }
 
 const dealSelect = { id: true, number: true, title: true, stageId: true, comment: true, value: true, customData: true, updatedAt: true } as const;
