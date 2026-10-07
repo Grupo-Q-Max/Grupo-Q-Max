@@ -7,9 +7,9 @@ const MAX_PRICE = 99_999_999.99;
 
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status });
 
-/** Validated { name?, price? } from the body; a string is the error message. */
-function parse(body: { name?: unknown; price?: unknown }, required: boolean) {
-  const data: { name?: string; price?: number } = {};
+/** Validated { name?, price?, hasBonus? } from the body; a string is the error message. */
+function parse(body: { name?: unknown; price?: unknown; hasBonus?: unknown }, required: boolean) {
+  const data: { name?: string; price?: number; hasBonus?: boolean } = {};
   if (required || body.name !== undefined) {
     const name = typeof body.name === "string" ? body.name.trim() : "";
     if (!name) return "Informe o nome do produto.";
@@ -19,6 +19,10 @@ function parse(body: { name?: unknown; price?: unknown }, required: boolean) {
     const price = Number(body.price ?? 0);
     if (!Number.isFinite(price) || price < 0 || price > MAX_PRICE) return "Preço inválido.";
     data.price = Math.round(price * 100) / 100;
+  }
+  if (body.hasBonus !== undefined) {
+    if (typeof body.hasBonus !== "boolean") return "Bonificação inválida.";
+    data.hasBonus = body.hasBonus;
   }
   return data;
 }
@@ -33,7 +37,7 @@ export async function POST(req: Request) {
     if (denied) return denied;
     const data = parse(await req.json(), true);
     if (typeof data === "string") return bad(data);
-    const product = await prisma.crmProduct.create({ data: { name: data.name!, price: data.price! } });
+    const product = await prisma.crmProduct.create({ data: { name: data.name!, price: data.price!, hasBonus: data.hasBonus } });
     return NextResponse.json({ id: product.id });
   } catch (error) {
     if (isDuplicate(error)) return bad("Já existe um produto com esse nome.", 409);

@@ -340,6 +340,8 @@ model CrmProduct {
   id        String           @id @default(cuid())
   name      String           @unique
   price     Decimal          @default(0.00) @db.Decimal(10, 2)
+  /// Earns the QXBACK R$ 20 referral bonus when its deal reaches "Proposta em Elaboração".
+  hasBonus  Boolean          @default(false)
   dealItems CrmDealProduct[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
