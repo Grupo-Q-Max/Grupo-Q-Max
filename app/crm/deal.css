@@ -463,6 +463,9 @@
 .deal-products__sum strong { color: var(--deal-green); font-size: 20px; margin-left: 6px; }
 
 .deal-history .crm-table td { font-size: 14px; }
+.deal-snapshots { margin-bottom: 24px; }
+.deal-snapshots h3 { font-size: 14px; font-weight: 600; color: var(--deal-muted); margin: 0 0 8px; }
+.deal-snapshots button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 
 /* SAVE BAR */
 .deal-savebar {

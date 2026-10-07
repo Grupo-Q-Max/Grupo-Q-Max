@@ -9,7 +9,7 @@ import type {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notifyMember, notifyPipelineChanged } from "@/lib/crm-realtime";
-import { updateDeal } from "@/lib/crm-deal";
+import { snapshotBeforeMove, updateDeal } from "@/lib/crm-deal";
 import { notifyQxbackStage } from "@/lib/crm-qxback";
 import {
   DEAL_STATUSES,
@@ -728,6 +728,7 @@ export async function moveDealToStage(cardId: string, stageId: string, trigger?:
     const card = await tx.crmCard.findUniqueOrThrow({ where: { id: cardId }, include: { stage: true } });
     const to = await tx.crmStage.findUniqueOrThrow({ where: { id: stageId } });
     if (card.stageId === to.id || to.pipelineId !== card.stage.pipelineId) return null;
+    await snapshotBeforeMove(tx, cardId, card.stageId, to.id);
 
     await tx.crmCard.update({
       where: { id: cardId },
