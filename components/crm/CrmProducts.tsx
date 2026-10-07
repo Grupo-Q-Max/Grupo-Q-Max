@@ -7,7 +7,7 @@ import { matches } from "@/lib/text-search";
 import { formatMoney } from "@/components/crm/deal/types";
 import { confirmDialog } from "@/components/ui/Dialogs";
 
-export type ProductRow = { id: string; name: string; price: number; deals: number };
+export type ProductRow = { id: string; name: string; price: number; hasBonus: boolean; deals: number };
 
 /** Product catalog. Users with `product.manage` add, edit (on blur) and delete products. */
 export function CrmProducts({ products, canManage }: { products: ProductRow[]; canManage: boolean }) {
@@ -15,6 +15,7 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
   const [search, setSearch] = useState("");
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [hasBonus, setHasBonus] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const shown = products.filter((p) => matches(search, p.name));
@@ -38,13 +39,14 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (await send("POST", { name, price: price || 0 })) {
+    if (await send("POST", { name, price: price || 0, hasBonus })) {
       setName("");
       setPrice("");
+      setHasBonus(false);
     }
   };
 
-  const update = (p: ProductRow, changes: { name?: string; price?: number }) => {
+  const update = (p: ProductRow, changes: { name?: string; price?: number; hasBonus?: boolean }) => {
     if (changes.name !== undefined && changes.name.trim() === p.name) return;
     if (changes.price !== undefined && changes.price === p.price) return;
     void send("PUT", { id: p.id, ...changes });
@@ -65,7 +67,8 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
         {error && <div className="crm-access__error">{error}</div>}
         <p className="crm-access__note">
           O preço padrão entra automaticamente quando o serviço é adicionado a um negócio. Serviços novos (digitados no
-          negócio ou vindos do QXBACK) entram aqui com preço zerado.
+          negócio ou vindos do QXBACK) entram aqui com preço zerado. Serviço com bonificação gera o bônus de R$ 20,00
+          do QXBACK (enviado para aprovação) quando o negócio entra em Proposta em Elaboração.
         </p>
 
         {canManage && (
@@ -88,6 +91,10 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
               onChange={(e) => setPrice(e.target.value)}
               aria-label="Preço padrão"
             />
+            <label className="crm-access__permission">
+              <input type="checkbox" checked={hasBonus} onChange={(e) => setHasBonus(e.target.checked)} />
+              Possui bonificação
+            </label>
             <button type="submit" className="btn-primary" disabled={busy || !name.trim()}>
               <Plus size={18} /> Adicionar
             </button>
@@ -109,6 +116,7 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
               <tr>
                 <th>Nome</th>
                 <th>Preço padrão</th>
+                <th>Bonificação</th>
                 <th>Linhas em negócios</th>
                 {canManage && <th aria-label="Ações" />}
               </tr>
@@ -117,7 +125,7 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
               {shown.map((p) =>
                 canManage ? (
                   // key includes the saved values so the inputs reset after router.refresh()
-                  <tr key={`${p.id}:${p.name}:${p.price}`}>
+                  <tr key={`${p.id}:${p.name}:${p.price}:${p.hasBonus}`}>
                     <td>
                       <input
                         className="crm-access__select"
@@ -139,6 +147,15 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
                         aria-label="Preço padrão"
                       />
                     </td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        defaultChecked={p.hasBonus}
+                        disabled={busy}
+                        onChange={(e) => update(p, { hasBonus: e.target.checked })}
+                        aria-label={`Bonificação de ${p.name}`}
+                      />
+                    </td>
                     <td>{p.deals}</td>
                     <td>
                       <button type="button" className="btn-secondary" disabled={busy} onClick={() => remove(p)} aria-label={`Excluir ${p.name}`}>
@@ -150,6 +167,7 @@ export function CrmProducts({ products, canManage }: { products: ProductRow[]; c
                   <tr key={p.id}>
                     <td>{p.name}</td>
                     <td>{formatMoney(p.price)}</td>
+                    <td>{p.hasBonus ? "Sim" : "Não"}</td>
                     <td>{p.deals}</td>
                   </tr>
                 )

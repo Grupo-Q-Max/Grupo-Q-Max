@@ -105,7 +105,7 @@ export const isQxbackStage = (stageId: string) => Object.values(envMap("QXBACK_S
  * DEAL_SOURCE=crm) and refreshes its products/value — closing the gap after "Proposta enviada"
  * for edits made in the CRM UI, not through the QXBACK rest route above.
  */
-export async function notifyQxback(dealNumber: number) {
+export async function notifyQxback(dealNumber: number, event = "ONCRMDEALUPDATE") {
   const url = process.env.QXBACK_WEBHOOK_URL;
   const secret = process.env.QXBACK_WEBHOOK_SECRET;
   if (!url || !secret) return;
@@ -115,7 +115,7 @@ export async function notifyQxback(dealNumber: number) {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        event: "ONCRMDEALUPDATE",
+        event,
         "auth[application_token]": secret,
         "data[FIELDS][ID]": String(dealNumber),
       }),
@@ -125,6 +125,17 @@ export async function notifyQxback(dealNumber: number) {
   } catch (error) {
     console.error("Falha ao avisar QXBACK do negócio alterado:", error);
   }
+}
+
+/**
+ * A deal entering "Proposta em Elaboração" (C1:PREPAYMENT_INVOICE) asks QXBACK for the R$ 20 referral
+ * bonus. QXBACK reads the BONUS flag of the deal's product rows (CrmProduct.hasBonus), creates the bonus
+ * for approval and emails the referrer; its cron (bitrix/indicacao_boa.php) retries if this push is lost.
+ */
+export async function notifyQxbackBonusStage(dealId: string, stageId: string) {
+  if (envMap("QXBACK_STAGES")["C1:PREPAYMENT_INVOICE"] !== stageId) return;
+  const deal = await prisma.crmCard.findUnique({ where: { id: dealId }, select: { number: true } });
+  if (deal) await notifyQxback(deal.number, "ONCRMDEALBONUS");
 }
 
 const dealSelect = { id: true, number: true, title: true, stageId: true, comment: true, value: true, customData: true, updatedAt: true } as const;
@@ -211,7 +222,11 @@ export async function callMethod(method: string, params: Params): Promise<{ body
 
     case "crm.deal.productrows.get": {
       const deal = await findDeal(s, params.id);
-      const lines = await prisma.crmDealProduct.findMany({ where: { dealId: deal.id }, orderBy: { order: "asc" } });
+      const lines = await prisma.crmDealProduct.findMany({
+        where: { dealId: deal.id },
+        orderBy: { order: "asc" },
+        include: { product: { select: { hasBonus: true } } },
+      });
       return {
         body: {
           result: lines.map((l) => ({
@@ -221,6 +236,8 @@ export async function callMethod(method: string, params: Params): Promise<{ body
             PRICE: l.price.toNumber(),
             QUANTITY: l.quantity,
             DESCRIPTION: l.description ?? "",
+            // Not a Bitrix field: QXBACK's "Proposta em Elaboração" bonus rule (a deleted product has no bonus)
+            BONUS: l.product?.hasBonus ? "Y" : "N",
           })),
         },
       };
