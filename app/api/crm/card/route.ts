@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
-import { isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
+import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
 import {
   DealValidationError,
   DuplicateDealError,
@@ -86,9 +86,13 @@ export async function PATCH(req: Request) {
   try {
     const denied = await denyUnless("deal.edit");
     if (denied) return denied;
-    const { id, ...changes } = await req.json();
+    const { id, lostReason, ...changes } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
+    if (typeof changes.stageId === "string") {
+      const current = await prisma.crmCard.findUnique({ where: { id }, select: { stageId: true } });
+      if (current && current.stageId !== changes.stageId) await checkStageEntry(id, changes.stageId, lostReason);
+    }
     const result = await updateDeal(id, changes);
 
     if (result.changed) await notifyStageChanged(result.stageId);
@@ -111,6 +115,7 @@ export async function PATCH(req: Request) {
     if (error instanceof DealValidationError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+    if (error instanceof StageEntryError) return error.toResponse();
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
