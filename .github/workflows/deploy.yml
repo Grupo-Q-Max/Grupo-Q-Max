@@ -18,6 +18,12 @@ jobs:
       MICROSOFT_TENANT_ID: ${{ secrets.MICROSOFT_TENANT_ID }}
       MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
       MICROSOFT_ALLOWED_DOMAINS: ${{ secrets.MICROSOFT_ALLOWED_DOMAINS }}
+      # Integração QXBACK (lib/crm-qxback.ts); secret vazio = variável fora do .env
+      QXBACK_TOKEN: ${{ secrets.QXBACK_TOKEN }}
+      QXBACK_STAGES: ${{ secrets.QXBACK_STAGES }}
+      QXBACK_FIELDS: ${{ secrets.QXBACK_FIELDS }}
+      QXBACK_WEBHOOK_URL: ${{ secrets.QXBACK_WEBHOOK_URL }}
+      QXBACK_WEBHOOK_SECRET: ${{ secrets.QXBACK_WEBHOOK_SECRET }}
 
     steps:
       - name: Checkout Repository
@@ -91,6 +97,10 @@ jobs:
           echo "MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID}" >> deploy/.env
           echo "MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}" >> deploy/.env
           echo "MICROSOFT_ALLOWED_DOMAINS=${MICROSOFT_ALLOWED_DOMAINS}" >> deploy/.env
+          # Aspas simples: QXBACK_STAGES/QXBACK_FIELDS são JSON (node --env-file)
+          for name in QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET; do
+            if [ -n "${!name}" ]; then echo "${name}='${!name}'" >> deploy/.env; fi
+          done
 
           echo ""
           echo "4. Validando logos obrigatorias..."
