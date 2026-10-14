@@ -18,6 +18,8 @@ jobs:
       MICROSOFT_TENANT_ID: ${{ secrets.MICROSOFT_TENANT_ID }}
       MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
       MICROSOFT_ALLOWED_DOMAINS: ${{ secrets.MICROSOFT_ALLOWED_DOMAINS }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
     steps:
       - name: Checkout Repository
@@ -91,6 +93,8 @@ jobs:
           echo "MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID}" >> deploy/.env
           echo "MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}" >> deploy/.env
           echo "MICROSOFT_ALLOWED_DOMAINS=${MICROSOFT_ALLOWED_DOMAINS}" >> deploy/.env
+          if [ -n "${AUTH_SECRET}" ]; then echo "AUTH_SECRET=${AUTH_SECRET}" >> deploy/.env; fi
+          if [ -n "${ADMIN_PASSWORD}" ]; then echo "ADMIN_PASSWORD=${ADMIN_PASSWORD}" >> deploy/.env; fi
 
           echo ""
           echo "4. Validando logos obrigatorias..."

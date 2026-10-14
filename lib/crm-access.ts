@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { readSession, SESSION_COOKIE } from "@/lib/auth";
+import { ADMIN_COOKIE, readSession, SESSION_COOKIE } from "@/lib/auth";
 import { isAdminToken } from "@/lib/settings";
 import { ALL_PERMISSIONS, DEFAULT_USER_PERMISSIONS, isPermission, type Permission } from "@/lib/crm-permissions";
 
@@ -49,7 +49,7 @@ export async function memberPermissions(memberId: string | null): Promise<Set<Pe
 export async function currentPermissions() {
   const jar = await cookies();
   const permissions = await memberPermissions(readSession(jar.get(SESSION_COOKIE)?.value));
-  if (isAdminToken(jar.get("qmax_admin")?.value)) permissions.add("access.manage");
+  if (isAdminToken(jar.get(ADMIN_COOKIE)?.value)) permissions.add("access.manage");
   return permissions;
 }
 

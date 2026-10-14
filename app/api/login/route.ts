@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readSettings } from "@/lib/settings";
+import { ADMIN_COOKIE, createAdminToken, samePassword, SESSION_MAX_AGE } from "@/lib/auth";
+import { adminPassword } from "@/lib/settings";
+import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
-  const { password } = await req.json();
-  const settings = readSettings();
-  
-  if (password === settings.adminPassword || password === "qmax2025") {
-    const res = NextResponse.json({ success: true });
-    res.cookies.set("qmax_admin", password, { 
-      httpOnly: true, 
-      secure: process.env.NODE_ENV === "production", 
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7 // 7 days
-    });
-    return res;
-  }
-  
-  return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+  const wait = rateLimit(`admin:ip:${clientIp(req)}`, 10, 15 * 60_000);
+  if (wait) return tooManyRequests(wait);
+
+  const { password } = await req.json().catch(() => ({}));
+  const expected = adminPassword();
+  if (!samePassword(password, expected)) return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+
+  const res = NextResponse.json({ success: true });
+  res.cookies.set(ADMIN_COOKIE, createAdminToken(expected), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE,
+  });
+  return res;
 }

@@ -1101,11 +1101,17 @@ function SettingsTab({
     if (!settings) return;
     setSaving(true);
     try {
-      await fetch("/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error ?? "Erro ao salvar", "error");
+        return;
+      }
+      setSettings(await res.json());
       showToast("Configurações salvas!");
     } catch {
       showToast("Erro ao salvar", "error");
@@ -1225,7 +1231,8 @@ function SettingsTab({
             <div className="qadmin__pwWrap">
               <input
                 type={showPw ? "text" : "password"}
-                value={settings.adminPassword}
+                value={settings.adminPassword ?? ""}
+                placeholder="Deixe vazio para manter a atual"
                 onChange={(e) => update("adminPassword", e.target.value)}
               />
               <button
