@@ -58,7 +58,8 @@ export async function PATCH(req: Request) {
       data: {
         ...(title !== undefined && { title: String(title).trim() || current.title }),
         ...(description !== undefined && { description: description || null }),
-        ...(deadline !== undefined && { deadline: toDate(deadline) }),
+        // A new deadline gets its own overdue reminder
+        ...(deadline !== undefined && { deadline: toDate(deadline), remindedAt: null }),
         ...(responsibleId !== undefined && { responsibleId: responsibleId || null }),
         ...(completed !== undefined && {
           completed: Boolean(completed),

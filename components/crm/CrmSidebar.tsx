@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package } from "lucide-react";
+import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package, ListChecks } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 import { useCan } from "./CrmAccess";
 
@@ -61,6 +61,10 @@ export function CrmSidebar() {
           <Link href="/crm" className={navClass("/crm")}>
             <LayoutDashboard size={18} />
             Pipelines
+          </Link>
+          <Link href="/crm/activities" className={navClass("/crm/activities")}>
+            <ListChecks size={18} />
+            Atividades
           </Link>
           <Link href="/crm/contacts" className={navClass("/crm/contacts")}>
             <Users size={18} />
