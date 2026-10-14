@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import fs from "fs";
 import path from "path";
 import { getSettingsJsonPath } from "@/lib/storage";
-import { adminPassword, isAdminToken, readSettings } from "@/lib/settings";
+import { adminPassword, isAdminToken, readSettings, withoutPassword } from "@/lib/settings";
 import { ADMIN_COOKIE, createAdminToken, SESSION_MAX_AGE } from "@/lib/auth";
 
 function write(data: object) {
@@ -14,12 +14,6 @@ function write(data: object) {
 }
 
 const isAdmin = async () => isAdminToken((await cookies()).get(ADMIN_COOKIE)?.value);
-
-/** Never sends the admin password back, not even to the admin. */
-function withoutPassword(settings: ReturnType<typeof readSettings>) {
-  const { adminPassword: _password, ...rest } = settings;
-  return rest;
-}
 
 export async function GET() {
   return NextResponse.json(withoutPassword(readSettings()));

@@ -28,6 +28,12 @@ export function isAdminToken(token: string | undefined) {
   return !!password && readAdminToken(token, password);
 }
 
+/** Settings safe to send to a browser: never the admin password, not even to the admin. */
+export function withoutPassword(settings: ReturnType<typeof readSettings>) {
+  const { adminPassword: _password, ...rest } = settings;
+  return rest;
+}
+
 export function readSettings() {
   const p = getSettingsJsonPath();
   if (!fs.existsSync(p)) return DEFAULTS;
