@@ -68,6 +68,7 @@ model TeamMember {
   automationActivities  CrmAutomationActivity[]
   automationDealUpdates CrmAutomationDealUpdate[]
   notifications         CrmNotification[]
+  goals                 CrmGoal[]
   authLogs              AuthLog[]
   requests              CrmRequest[]
 
@@ -279,6 +280,21 @@ model CrmCard {
   @@index([status, closedAt])
 }
 
+/// Monthly sales goal of a member: won deal value (CrmCard.value by closedAt) they should reach in `month`.
+model CrmGoal {
+  id        String     @id @default(cuid())
+  memberId  String
+  member    TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  /// First day of the month the goal is for
+  month     DateTime   @db.Date
+  amount    Decimal    @db.Decimal(12, 2)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([memberId, month])
+  @@index([month])
+}
+
 /// Companies are shared between deals: editing one updates every deal linked to it.
 model CrmCompany {
   id        String       @id @default(cuid())
@@ -348,11 +364,11 @@ model CrmProduct {
 /// Product line of a deal. Name and price are a snapshot of the sale, so later
 /// catalog changes don't rewrite closed deals.
 model CrmDealProduct {
-  id        String      @id @default(cuid())
-  dealId    String
-  deal      CrmCard     @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  productId String?
-  product   CrmProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  id          String      @id @default(cuid())
+  dealId      String
+  deal        CrmCard     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     CrmProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
   name        String
   description String?     @db.Text
   price       Decimal     @default(0.00) @db.Decimal(10, 2)
