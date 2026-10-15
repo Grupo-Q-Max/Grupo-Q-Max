@@ -115,7 +115,21 @@ function NewTaskButton({ pipelines, memberId }: { pipelines: TaskPipeline[]; mem
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!can("deal.create") || pipelines.length === 0) return null;
+  const blocked = !can("deal.create")
+    ? "Seu grupo não tem permissão para criar tarefas."
+    : pipelines.length === 0
+      ? "Crie um pipeline do tipo Tarefas para criar tarefas aqui."
+      : null;
+  if (blocked) {
+    return (
+      <div className="crm-header__actions crm-my-tasks__blocked">
+        <span className="crm-my-tasks__hint">{blocked}</span>
+        <button className="btn-primary" disabled title={blocked}>
+          <Plus size={18} /> Nova Tarefa
+        </button>
+      </div>
+    );
+  }
 
   const close = () => setOpen(false);
   const submit = async (e: React.FormEvent) => {

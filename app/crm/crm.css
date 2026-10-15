@@ -1651,6 +1651,22 @@ button.crm-bell {
   color: #a5a0aa;
 }
 
+.crm-my-tasks__blocked {
+  align-items: center;
+}
+
+.crm-my-tasks__blocked .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.crm-header__actions > .crm-my-tasks__hint {
+  white-space: normal;
+  max-width: 280px;
+  color: #a5a0aa;
+  font-size: 13px;
+}
+
 /* Phones: each row becomes a stacked card (due + type, then title, then where) */
 @media (max-width: 640px) {
   .crm-my-tasks thead {
