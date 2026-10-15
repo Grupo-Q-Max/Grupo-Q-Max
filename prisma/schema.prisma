@@ -72,6 +72,7 @@ model TeamMember {
   goals                 CrmGoal[]
   authLogs              AuthLog[]
   requests              CrmRequest[]
+  attachments           CrmAttachment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -208,21 +209,21 @@ enum CrmPipelineKind {
 }
 
 model CrmPipeline {
-  id           String             @id @default(cuid())
+  id           String              @id @default(cuid())
   name         String
-  kind         CrmPipelineKind    @default(DEALS)
+  kind         CrmPipelineKind     @default(DEALS)
   /// Null = listed under "Geral"
   spaceId      String?
-  space        CrmSpace?          @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  space        CrmSpace?           @relation(fields: [spaceId], references: [id], onDelete: SetNull)
   /// Position inside its space in the sidebar
-  order        Int                @default(0)
+  order        Int                 @default(0)
   stages       CrmStage[]
   /// Groups and members that see the pipeline; neither = every CRM user. Admin groups see all.
   groups       CrmPipelineGroup[]
   members      CrmPipelineMember[]
   fieldsConfig Json? // Array of field definitions
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   @@index([spaceId, order])
 }
@@ -279,33 +280,44 @@ enum CrmRecurrence {
   YEARLY
 }
 
+/// Task priority (task boards); null = no priority set.
+enum CrmPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 /// A deal (negócio) shown as a card on the kanban.
 model CrmCard {
-  id          String        @id @default(cuid())
+  id                 String        @id @default(cuid())
   /// Short sequential number used in the URL: /crm/deal/details/<number>
-  number      Int           @unique @default(autoincrement())
-  title       String
+  number             Int           @unique @default(autoincrement())
+  title              String
   /// Cached sum of the deal products (kept in sync by the API) so the board doesn't aggregate on every load
-  value       Decimal       @default(0.00) @db.Decimal(10, 2)
-  currency    String        @default("BRL") @db.VarChar(3)
-  status      CrmDealStatus @default(OPEN)
+  value              Decimal       @default(0.00) @db.Decimal(10, 2)
+  currency           String        @default("BRL") @db.VarChar(3)
+  status             CrmDealStatus @default(OPEN)
   /// When the status became WON/LOST (null while OPEN); used by the reports. closeDate is the planned end date
-  closedAt    DateTime?
-  order       Int           @default(0)
-  startDate   DateTime?     @db.Date
-  closeDate   DateTime?     @db.Date
+  closedAt           DateTime?
+  order              Int           @default(0)
+  startDate          DateTime?     @db.Date
+  closeDate          DateTime?     @db.Date
   /// closeDate whose due reminder already went out (task boards); a new closeDate gets its own reminder
-  remindedFor DateTime?     @db.Date
-  dealType    String?
-  source      String?
-  sourceInfo  String?       @db.Text
+  remindedFor        DateTime?     @db.Date
+  /// closeDate whose "vence amanhã" reminder already went out (task boards); same rule as remindedFor
+  dueSoonRemindedFor DateTime?     @db.Date
+  priority           CrmPriority?
+  dealType           String?
+  source             String?
+  sourceInfo         String?       @db.Text
   /// Who brought the lead: free text (team member or external person), set by the webhook or by hand
-  referredBy  String?       @db.VarChar(200)
-  isPublic    Boolean       @default(true)
-  comment     String?       @db.Text
-  recurrence  CrmRecurrence @default(NONE)
-  utm         Json? // { source, medium, campaign, content, term } captured from forms
-  customData  Json? // values of the pipeline's user-defined fields (fieldsConfig)
+  referredBy         String?       @db.VarChar(200)
+  isPublic           Boolean       @default(true)
+  comment            String?       @db.Text
+  recurrence         CrmRecurrence @default(NONE)
+  utm                Json? // { source, medium, campaign, content, term } captured from forms
+  customData         Json? // values of the pipeline's user-defined fields (fieldsConfig)
 
   stageId       String
   stage         CrmStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)
@@ -317,6 +329,8 @@ model CrmCard {
   contacts       CrmDealContact[]
   observers      CrmDealObserver[]
   products       CrmDealProduct[]
+  tags           CrmCardTag[]
+  attachments    CrmAttachment[]
   activities     CrmActivity[]
   history        CrmHistory[]
   stageSnapshots CrmDealStageSnapshot[]
@@ -403,6 +417,43 @@ model CrmDealObserver {
 
   @@id([dealId, memberId])
   @@index([memberId])
+}
+
+/// Label shared by every board (etiquetas); color is a #rrggbb hex.
+model CrmTag {
+  id        String       @id @default(cuid())
+  name      String       @unique @db.VarChar(50)
+  color     String       @db.VarChar(7)
+  cards     CrmCardTag[]
+  createdAt DateTime     @default(now())
+}
+
+model CrmCardTag {
+  cardId String
+  card   CrmCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  tagId  String
+  tag    CrmTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, tagId])
+  @@index([tagId])
+}
+
+/// File attached to a card, stored in <uploads>/crm/<fileName> and served only through the card's access check.
+model CrmAttachment {
+  id           String      @id @default(cuid())
+  cardId       String
+  card         CrmCard     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  /// Generated name on disk; never the user's file name
+  fileName     String      @unique @db.VarChar(100)
+  originalName String      @db.VarChar(255)
+  mimeType     String      @db.VarChar(100)
+  size         Int
+  uploadedById String?
+  uploadedBy   TeamMember? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+
+  @@index([cardId])
+  @@index([uploadedById])
 }
 
 /// Product/service catalog.
