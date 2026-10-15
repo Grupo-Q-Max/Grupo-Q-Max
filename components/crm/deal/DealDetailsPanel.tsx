@@ -197,6 +197,9 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
     setTimeout(() => setCopied(false), 1500);
   };
 
+  // Task boards hide the sales parts (contact buttons, services, won/lost)
+  const isTasks = deal?.pipeline.kind === "TASKS";
+
   const content = (
     <div
       className="deal-overlay"
@@ -245,9 +248,9 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
               </div>
 
               <div className="deal-header__actions">
-                <ContactActions deal={deal} />
+                {!isTasks && <ContactActions deal={deal} />}
                 {can("deal.delete") && (
-                  <button type="button" className="deal-icon-btn deal-icon-btn--boxed deal-icon-btn--danger" title="Excluir negócio" onClick={remove}>
+                  <button type="button" className="deal-icon-btn deal-icon-btn--boxed deal-icon-btn--danger" title={isTasks ? "Excluir tarefa" : "Excluir negócio"} onClick={remove}>
                     <Trash2 size={16} />
                   </button>
                 )}
@@ -256,11 +259,12 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
 
             <div className="deal-meta">
               Criado em {formatDateOnly(deal.createdAt)}
-              {deal.closeDate && <> · Término previsto {formatDateOnly(deal.closeDate)}</>}
+              {deal.closeDate && <> · {isTasks ? "Prazo" : "Término previsto"} {formatDateOnly(deal.closeDate)}</>}
             </div>
 
             <StageBar
               deal={deal}
+              closable={!isTasks}
               menuOpen={closeMenuOpen}
               onToggleMenu={() => setCloseMenuOpen(!closeMenuOpen)}
               onStage={(stageId) => patch({ stageId, status: "OPEN" })}
@@ -277,7 +281,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
                   ["products", `Serviços${deal.products.length ? ` (${deal.products.length})` : ""}`],
                   ["history", "Histórico"],
                 ] as [Tab, string][]
-              ).map(([value, label]) => (
+              ).filter(([value]) => !isTasks || value !== "products").map(([value, label]) => (
                 <button key={value} type="button" className={tab === value ? "is-active" : ""} onClick={() => setTab(value)}>
                   {label}
                 </button>
@@ -352,12 +356,15 @@ function ContactActions({ deal }: { deal: DealDetails }) {
 
 function StageBar({
   deal,
+  closable,
   menuOpen,
   onToggleMenu,
   onStage,
   onStatus,
 }: {
   deal: DealDetails;
+  /** Shows the won/lost menu (sales boards only) */
+  closable: boolean;
   menuOpen: boolean;
   onToggleMenu: () => void;
   onStage: (stageId: string) => void;
@@ -380,7 +387,7 @@ function StageBar({
         </button>
       ))}
 
-      <div className="deal-stage-close">
+      {closable && <div className="deal-stage-close">
         <button
           type="button"
           className={`deal-stage deal-stage--final ${deal.status !== "OPEN" ? "is-passed" : ""}`}
@@ -407,7 +414,7 @@ function StageBar({
             )}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

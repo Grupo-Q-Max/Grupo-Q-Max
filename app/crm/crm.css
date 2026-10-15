@@ -116,6 +116,58 @@
   border-left: 3px solid #d90f81;
 }
 
+/* Pipelines grouped by space under "Pipelines"; scrolls when the list is long */
+.crm-spaces {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -4px 0 4px 16px;
+  min-height: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.crm-space__name {
+  cursor: pointer;
+  padding: 6px 8px;
+  color: #6f6a75;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.crm-space__name:hover {
+  color: #a5a0aa;
+}
+
+.crm-space__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: #a5a0aa;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.crm-space__item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-space__item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.crm-space__item.is-active {
+  color: #fff;
+  background: rgba(217, 15, 129, 0.12);
+}
+
 .crm-main {
   flex: 1;
   display: flex;
@@ -1361,6 +1413,34 @@ button.crm-bell {
   gap: 8px;
   margin-bottom: 12px;
   font-size: 14px;
+}
+
+.crm-settings__list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.crm-settings__list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.crm-settings__list li > span {
+  flex: 1;
+}
+
+.crm-settings__list small {
+  color: #6f6a75;
+}
+
+.crm-settings__list .btn-secondary {
+  padding: 6px 8px;
 }
 
 /* REPORTS (/crm/reports) */

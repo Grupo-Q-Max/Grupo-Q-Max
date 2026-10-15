@@ -19,20 +19,29 @@ export type CrmDeal = {
   _count?: { activities: number };
   /** Date from the server render, ISO string after a client sync */
   createdAt?: string | Date;
+  /** Planned end date; the deadline on task boards */
+  closeDate?: string | Date | null;
 };
+
+/** End of the due day (closeDate is a date-only column stored as UTC midnight). */
+const dueEnd = (date: string | Date) => new Date(date).getTime() + 86_400_000;
 
 export function DealCard({
   deal,
+  isTask,
   onOpen,
   onDelete,
 }: {
   deal: CrmDeal;
+  /** Task board card: deadline instead of value, no won/lost */
+  isTask?: boolean;
   onOpen?: () => void;
   onDelete?: () => void;
 }) {
   const nextActivity = deal.activities?.[0];
   const pendingCount = deal._count?.activities ?? 0;
   const overdue = nextActivity?.deadline && new Date(nextActivity.deadline).getTime() < Date.now();
+  const taskOverdue = isTask && deal.closeDate && dueEnd(deal.closeDate) < Date.now();
 
   return (
     <div
@@ -45,9 +54,18 @@ export function DealCard({
         <div className="kanban-card__company">{[deal.contactName, deal.company].filter(Boolean).join(" · ")}</div>
       )}
 
-      <span className="kanban-card__value">
-        {Number(deal.value).toLocaleString("pt-BR", { style: "currency", currency: deal.currency || "BRL" })}
-      </span>
+      {isTask ? (
+        deal.closeDate && (
+          <div className={`kanban-card__activity ${taskOverdue ? "is-overdue" : ""}`}>
+            <Calendar size={12} />
+            <span>Prazo {new Date(deal.closeDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", timeZone: "UTC" })}</span>
+          </div>
+        )
+      ) : (
+        <span className="kanban-card__value">
+          {Number(deal.value).toLocaleString("pt-BR", { style: "currency", currency: deal.currency || "BRL" })}
+        </span>
+      )}
 
       {nextActivity ? (
         <div className={`kanban-card__activity ${overdue ? "is-overdue" : ""}`} title={nextActivity.title}>
@@ -66,16 +84,21 @@ export function DealCard({
           </span>
         </div>
       ) : (
-        <div className="kanban-card__activity is-empty">
-          <ListTodo size={12} /> <span>Nenhuma atividade planejada</span>
-        </div>
+        !isTask && (
+          <div className="kanban-card__activity is-empty">
+            <ListTodo size={12} /> <span>Nenhuma atividade planejada</span>
+          </div>
+        )
       )}
 
       <div className="kanban-card__footer">
         <Avatar member={deal.responsible} size={26} />
         <span className="kanban-card__date">
           {[
-            pendingCount > 0 && `${pendingCount} ${pendingCount === 1 ? "atividade" : "atividades"}`,
+            pendingCount > 0 &&
+              (isTask
+                ? `${pendingCount} ${pendingCount === 1 ? "item pendente" : "itens pendentes"}`
+                : `${pendingCount} ${pendingCount === 1 ? "atividade" : "atividades"}`),
             deal.status === "WON" && "Ganho",
             deal.status === "LOST" && "Perdido",
           ]

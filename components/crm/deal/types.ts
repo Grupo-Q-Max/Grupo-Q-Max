@@ -59,7 +59,7 @@ export type DealDetails = {
   updatedAt: string;
   activities: DealActivity[];
   history: DealHistory[];
-  pipeline: { id: string; fieldsConfig: CustomFieldConfig[] | null; stages: { id: string; name: string }[] };
+  pipeline: { id: string; kind: "DEALS" | "TASKS"; fieldsConfig: CustomFieldConfig[] | null; stages: { id: string; name: string }[] };
 };
 
 /** Fields edited in the "Geral" form and saved together by SALVAR. */

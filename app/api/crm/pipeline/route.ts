@@ -1,26 +1,29 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { denyUnless } from "@/lib/crm-access";
+import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { cardListInclude, serializeListCard } from "@/lib/crm-deal";
+
+/** Starting columns of a new pipeline, by kind. */
+const DEFAULT_STAGES = {
+  DEALS: ["Novos Leads", "Em Contato", "Fechado Ganho"],
+  TASKS: ["A fazer", "Fazendo", "Feito"],
+};
 
 export async function POST(req: Request) {
   try {
     const denied = await denyUnless("pipeline.create");
     if (denied) return denied;
-    const { name } = await req.json();
-    
+    const { name, kind, spaceId } = await req.json();
+
     if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    const pipelineKind = kind === "TASKS" ? "TASKS" : "DEALS";
 
     const pipeline = await prisma.crmPipeline.create({
       data: {
         name,
-        stages: {
-          create: [
-            { name: "Novos Leads", order: 0 },
-            { name: "Em Contato", order: 1 },
-            { name: "Fechado Ganho", order: 2 }
-          ]
-        }
+        kind: pipelineKind,
+        spaceId: typeof spaceId === "string" && spaceId ? spaceId : null,
+        stages: { create: DEFAULT_STAGES[pipelineKind].map((stage, order) => ({ name: stage, order })) },
       },
       include: {
         stages: {
@@ -41,8 +44,10 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    
+
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const hidden = await denyUnlessPipeline({ pipelineId: id });
+    if (hidden) return hidden;
 
     const pipeline = await prisma.crmPipeline.findUnique({
       where: { id },

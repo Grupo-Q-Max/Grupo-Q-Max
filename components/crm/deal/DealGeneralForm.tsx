@@ -39,12 +39,123 @@ const UTM_LABELS: Record<string, string> = {
   term: "utm_term",
 };
 
-export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, onOpenProducts }: Props) {
+function ObserversField({ observers, team, onChange }: { observers: string[]; team: Props["team"]; onChange: Props["onChange"] }) {
+  return (
+    <Field label="Observadores">
+      <div className="deal-chips">
+        {observers.map((id) => {
+          const member = team.find((m) => m.id === id);
+          return (
+            <span className="deal-chip" key={id}>
+              <Avatar member={member} size={20} />
+              {member?.name ?? "Membro removido"}
+              <button
+                type="button"
+                title="Remover observador"
+                onClick={() => onChange({ observers: observers.filter((o) => o !== id) })}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          );
+        })}
+        <Select
+          className="deal-input deal-input--inline"
+          value=""
+          onChange={(e) => e.target.value && onChange({ observers: [...observers, e.target.value] })}
+        >
+          <option value="">+ Adicionar observador</option>
+          {team
+            .filter((m) => !observers.includes(m.id))
+            .map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
+            ))}
+        </Select>
+      </div>
+    </Field>
+  );
+}
+
+function CustomFieldsSection({ deal, draft, onChange }: Pick<Props, "deal" | "draft" | "onChange">) {
+  const customFields = deal.pipeline.fieldsConfig ?? [];
+  if (customFields.length === 0) return null;
+  return (
+    <Section title="Campos adicionais">
+      {customFields.map((field) => (
+        <Field key={field.id} label={field.name} required={field.required}>
+          <input
+            className="deal-input"
+            type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "phone" ? "tel" : "text"}
+            value={draft.customData?.[field.id] ?? ""}
+            onChange={(e) => onChange({ customData: { ...draft.customData, [field.id]: e.target.value } })}
+          />
+        </Field>
+      ))}
+    </Section>
+  );
+}
+
+/** Task boards (pipeline kind TASKS): same card, only what an internal to-do needs. Checklist = activities in the timeline. */
+function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) {
+  const responsible = team.find((m) => m.id === draft.responsibleId);
+  return (
+    <div className="deal-form">
+      <Section title="Sobre a tarefa">
+        <Field label="Nome" required>
+          <input className="deal-input" value={draft.title} onChange={(e) => onChange({ title: e.target.value })} />
+        </Field>
+        <Field label="Coluna">
+          <Select className="deal-input" value={deal.stageId} onChange={(e) => onStageChange(e.target.value)}>
+            {deal.pipeline.stages.map((stage) => (
+              <option key={stage.id} value={stage.id}>
+                {stage.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Prazo">
+          <DatePicker
+            className="deal-input deal-input--date"
+            value={toDateInput(draft.closeDate)}
+            onChange={(e) => onChange({ closeDate: e.target.value || null })}
+          />
+        </Field>
+        <Field label="Responsável">
+          <div className="deal-person">
+            <Avatar member={responsible} size={36} />
+            <Select
+              className="deal-input"
+              value={draft.responsibleId ?? ""}
+              onChange={(e) => onChange({ responsibleId: e.target.value || null })}
+            >
+              <option value="">Sem responsável</option>
+              {team.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name} — {member.role}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </Field>
+        <Field label="Descrição">
+          <textarea className="deal-input" rows={6} value={draft.comment ?? ""} onChange={(e) => onChange({ comment: e.target.value })} />
+        </Field>
+        <ObserversField observers={draft.observers} team={team} onChange={onChange} />
+      </Section>
+      <CustomFieldsSection deal={deal} draft={draft} onChange={onChange} />
+    </div>
+  );
+}
+
+export function DealGeneralForm(props: Props) {
+  if (props.deal.pipeline.kind === "TASKS") return <TaskGeneralForm {...props} />;
+  const { deal, draft, onChange, team, onStageChange, onOpenProducts } = props;
   const contacts = draft.contacts.length ? draft.contacts : [emptyContact()];
   const company = draft.company ?? emptyCompany();
   const observers = draft.observers;
   const products = draft.products;
-  const customFields = deal.pipeline.fieldsConfig ?? [];
   const hasProducts = products.length > 0;
   const responsible = team.find((m) => m.id === draft.responsibleId);
   const utmEntries = Object.entries(deal.utm ?? {}).filter(([, v]) => v);
@@ -317,20 +428,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
         </Field>
       </Section>
 
-      {customFields.length > 0 && (
-        <Section title="Campos adicionais">
-          {customFields.map((field) => (
-            <Field key={field.id} label={field.name} required={field.required}>
-              <input
-                className="deal-input"
-                type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "phone" ? "tel" : "text"}
-                value={draft.customData?.[field.id] ?? ""}
-                onChange={(e) => onChange({ customData: { ...draft.customData, [field.id]: e.target.value } })}
-              />
-            </Field>
-          ))}
-        </Section>
-      )}
+      <CustomFieldsSection deal={deal} draft={draft} onChange={onChange} />
 
       <Section title="Mais">
         <Field label="Data de início">
@@ -341,40 +439,7 @@ export function DealGeneralForm({ deal, draft, onChange, team, onStageChange, on
           />
         </Field>
 
-        <Field label="Observadores">
-          <div className="deal-chips">
-            {observers.map((id) => {
-              const member = team.find((m) => m.id === id);
-              return (
-                <span className="deal-chip" key={id}>
-                  <Avatar member={member} size={20} />
-                  {member?.name ?? "Membro removido"}
-                  <button
-                    type="button"
-                    title="Remover observador"
-                    onClick={() => onChange({ observers: observers.filter((o) => o !== id) })}
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              );
-            })}
-            <Select
-              className="deal-input deal-input--inline"
-              value=""
-              onChange={(e) => e.target.value && onChange({ observers: [...observers, e.target.value] })}
-            >
-              <option value="">+ Adicionar observador</option>
-              {team
-                .filter((m) => !observers.includes(m.id))
-                .map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
-            </Select>
-          </div>
-        </Field>
+        <ObserversField observers={observers} team={team} onChange={onChange} />
 
         <Field label="Comentário">
           <textarea

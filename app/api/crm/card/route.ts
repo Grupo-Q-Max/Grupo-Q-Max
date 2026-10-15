@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { denyUnless } from "@/lib/crm-access";
+import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
@@ -19,6 +19,8 @@ export async function GET(req: Request) {
   try {
     const id = new URL(req.url).searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const hidden = await denyUnlessPipeline({ cardId: id });
+    if (hidden) return hidden;
 
     const deal = await getDealDetails(id);
     if (!deal) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -33,8 +35,10 @@ export async function POST(req: Request) {
   try {
     const denied = await denyUnless("deal.create");
     if (denied) return denied;
-    const { title, company, value, stageId, customData, referredBy, responsibleId, force } = await req.json();
+    const { title, company, value, stageId, customData, referredBy, responsibleId, closeDate, comment, force } = await req.json();
     if (!title || !stageId) return NextResponse.json({ error: "Missing title or stageId" }, { status: 400 });
+    const hidden = await denyUnlessPipeline({ stageId });
+    if (hidden) return hidden;
     const responsible = typeof responsibleId === "string" && responsibleId ? responsibleId : null;
 
     const card = await prisma.$transaction(async (tx) => {
@@ -54,6 +58,9 @@ export async function POST(req: Request) {
           responsibleId: responsible,
           customData: customData || {},
           referredBy: typeof referredBy === "string" ? referredBy.trim().slice(0, 200) || null : null,
+          // Task boards: deadline (yyyy-mm-dd) and description
+          closeDate: typeof closeDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(closeDate) ? new Date(closeDate) : null,
+          comment: typeof comment === "string" ? comment.trim() || null : null,
           order: await tx.crmCard.count({ where: { stageId } }),
           history: { create: { type: "CREATED", data: { title } } },
         },
@@ -88,6 +95,9 @@ export async function PATCH(req: Request) {
     if (denied) return denied;
     const { id, ...changes } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    // A stage change must also land in a pipeline the user sees
+    const hidden = await denyUnlessPipeline({ cardId: id, stageId: typeof changes.stageId === "string" ? changes.stageId : null });
+    if (hidden) return hidden;
 
     const result = await updateDeal(id, changes);
 
@@ -124,6 +134,8 @@ export async function DELETE(req: Request) {
     const id = url.searchParams.get("id");
 
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const hidden = await denyUnlessPipeline({ cardId: id });
+    if (hidden) return hidden;
 
     const card = await prisma.crmCard.delete({
       where: { id }

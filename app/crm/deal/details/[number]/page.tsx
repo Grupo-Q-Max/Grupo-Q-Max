@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CrmBoardPage } from "@/components/crm/CrmBoardPage";
 import { prisma } from "@/lib/prisma";
+import { visiblePipelineWhere } from "@/lib/crm-access";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +11,8 @@ export default async function DealDetailsPage({ params }: { params: Promise<{ nu
   const dealNumber = Number(number);
   if (!Number.isInteger(dealNumber) || dealNumber <= 0) notFound();
 
-  const deal = await prisma.crmCard.findUnique({
-    where: { number: dealNumber },
+  const deal = await prisma.crmCard.findFirst({
+    where: { number: dealNumber, stage: { pipeline: await visiblePipelineWhere() } },
     select: { id: true, stage: { select: { pipelineId: true } } },
   });
   if (!deal) notFound();

@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import type { CrmActivityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { denyUnless } from "@/lib/crm-access";
+import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers } from "@/lib/crm-automation";
 
@@ -23,6 +23,8 @@ export async function POST(req: Request) {
     if (!cardId || !TYPES.has(type) || !String(title ?? "").trim()) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
+    const hidden = await denyUnlessPipeline({ cardId });
+    if (hidden) return hidden;
 
     const activity = await prisma.crmActivity.create({
       data: {
@@ -52,6 +54,8 @@ export async function PATCH(req: Request) {
 
     const current = await prisma.crmActivity.findUnique({ where: { id } });
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const hidden = await denyUnlessPipeline({ cardId: current.cardId });
+    if (hidden) return hidden;
 
     const activity = await prisma.crmActivity.update({
       where: { id },
@@ -84,6 +88,9 @@ export async function DELETE(req: Request) {
     if (denied) return denied;
     const id = new URL(req.url).searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const current = await prisma.crmActivity.findUnique({ where: { id }, select: { cardId: true } });
+    const hidden = await denyUnlessPipeline({ cardId: current?.cardId });
+    if (hidden) return hidden;
 
     const activity = await prisma.crmActivity.delete({ where: { id } });
     await notifyCard(activity.cardId);

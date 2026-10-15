@@ -4,9 +4,9 @@ import { Zap } from "lucide-react";
 import { CrmButtons } from "@/components/crm/CrmButtons";
 import { CrmWorkspace } from "@/components/crm/CrmWorkspace";
 import { CrmPipelineRename, CrmPipelineSettings } from "@/components/crm/CrmPipelineSettings";
-import { PipelineSelector } from "@/components/crm/PipelineSelector";
 import { prisma } from "@/lib/prisma";
-import { currentPermissions } from "@/lib/crm-access";
+import { currentPermissions, visiblePipelineWhere } from "@/lib/crm-access";
+import { isQxbackStage } from "@/lib/crm-qxback";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
 import { cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
@@ -15,6 +15,7 @@ const pipelineInclude = {
     orderBy: { order: "asc" as const },
     include: { cards: { orderBy: { order: "asc" as const }, include: cardListInclude } },
   },
+  groups: { select: { groupId: true } },
 };
 
 async function createDefaultPipeline() {
@@ -39,15 +40,30 @@ async function createDefaultPipeline() {
  */
 export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: string; openDealId?: string }) {
   const can = await currentPermissions();
-  let pipelines = await prisma.crmPipeline.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true } });
-  if (pipelines.length === 0) {
-    const created = await createDefaultPipeline();
-    pipelines = [{ id: created.id, name: created.name }];
-  }
+  if ((await prisma.crmPipeline.count()) === 0) await createDefaultPipeline();
+  const visible = await visiblePipelineWhere();
 
-  // Selected pipeline, falling back to the first one
-  const selectedId = pipelines.find((p) => p.id === pipelineId)?.id ?? pipelines[0].id;
-  const pipeline = await prisma.crmPipeline.findUniqueOrThrow({ where: { id: selectedId }, include: pipelineInclude });
+  // Selected pipeline when visible, else the first visible one (same order as the sidebar)
+  const pipeline =
+    (pipelineId && (await prisma.crmPipeline.findFirst({ where: { id: pipelineId, ...visible }, include: pipelineInclude }))) ||
+    (await prisma.crmPipeline.findFirst({
+      where: visible,
+      orderBy: [{ space: { order: "asc" } }, { order: "asc" }, { createdAt: "asc" }],
+      include: pipelineInclude,
+    }));
+  if (!pipeline) {
+    return (
+      <header className="crm-header">
+        <h1 className="crm-header__title">Nenhum pipeline disponível para o seu grupo.</h1>
+      </header>
+    );
+  }
+  const qxback = pipeline.stages.some((stage) => isQxbackStage(stage.id));
+  // Choices for the pipeline settings and the "Criar Pipeline" modal
+  const [spaces, groups] = await Promise.all([
+    prisma.crmSpace.findMany({ orderBy: { order: "asc" }, select: { id: true, name: true } }),
+    can.has("pipeline.edit") ? prisma.crmGroup.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, isAdmin: true } }) : [],
+  ]);
 
   // Serialize Decimal/relations so the pipeline can be passed to Client Components
   const serializedPipeline = {
@@ -55,8 +71,7 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
     stages: pipeline.stages.map((stage) => ({ ...stage, cards: stage.cards.map(serializeListCard) })),
   };
 
-  const title =
-    pipelines.length > 1 ? <PipelineSelector pipelines={pipelines} currentPipelineId={pipeline.id} /> : pipeline.name;
+  const title = pipeline.name;
 
   return (
     <>
@@ -67,7 +82,12 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
           ) : (
             title
           )}
-          {can.has("pipeline.edit") && <CrmPipelineSettings pipeline={serializedPipeline} />}
+          {qxback && (
+            <span className="crm-badge" title="Recebe e envia negócios do programa de indicações QXBACK">
+              Integrado QXBACK
+            </span>
+          )}
+          {can.has("pipeline.edit") && <CrmPipelineSettings pipeline={serializedPipeline} options={{ spaces, groups }} />}
           {can.has("automation.view") && (
             <Link
               href={`/crm/automation/${pipeline.id}`}
@@ -79,7 +99,7 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
             </Link>
           )}
         </h1>
-        <CrmButtons pipeline={serializedPipeline} currentMemberId={readSession((await cookies()).get(SESSION_COOKIE)?.value)} />
+        <CrmButtons pipeline={serializedPipeline} spaces={spaces} currentMemberId={readSession((await cookies()).get(SESSION_COOKIE)?.value)} />
       </header>
 
       <CrmWorkspace key={pipeline.id} pipeline={serializedPipeline} initialDealId={openDealId} />

@@ -1,22 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package, ListChecks } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 import { useCan } from "./CrmAccess";
 
 /** Below this width the sidebar becomes an overlay that starts closed (see crm.css). */
 const MOBILE_QUERY = "(max-width: 900px)";
 
-export function CrmSidebar() {
+export type SidebarSpace = { id: string; name: string; pipelines: { id: string; name: string; kind: "DEALS" | "TASKS" }[] };
+
+/** Pipelines grouped by space; the open one is the `pipelineId` param, or the first one on a bare /crm. */
+function SpaceList({ spaces, onNavigate }: { spaces: SidebarSpace[]; onNavigate: () => void }) {
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const current = pathname === "/crm" ? (params.get("pipelineId") ?? spaces[0]?.pipelines[0]?.id) : null;
+
+  return (
+    <div className="crm-spaces">
+      {spaces.map((space) => (
+        <details key={space.id || "geral"} className="crm-space" open>
+          <summary className="crm-space__name">{space.name}</summary>
+          {space.pipelines.map((p) => (
+            <Link
+              key={p.id}
+              href={`/crm?pipelineId=${p.id}`}
+              onClick={onNavigate}
+              className={`crm-space__item${p.id === current ? " is-active" : ""}`}
+            >
+              {p.kind === "TASKS" ? <ListChecks size={15} /> : <Handshake size={15} />}
+              <span>{p.name}</span>
+            </Link>
+          ))}
+        </details>
+      ))}
+    </div>
+  );
+}
+
+export function CrmSidebar({ spaces }: { spaces: SidebarSpace[] }) {
   // null = viewport default (open on desktop, closed on mobile), decided by CSS so
   // the server render never flashes an open sidebar on phones
   const [open, setOpen] = useState<boolean | null>(null);
   const can = useCan();
   // Settings also hosts access levels (/crm/settings/access)
-  const canSettings = can("request.manage") || can("access.manage");
+  const canSettings = can("request.manage") || can("access.manage") || can("space.manage");
   const pathname = usePathname();
   // Pipelines owns the board plus its deal and automation subpages
   const navClass = (href: string) => {
@@ -62,6 +92,9 @@ export function CrmSidebar() {
             <LayoutDashboard size={18} />
             Pipelines
           </Link>
+          <Suspense>
+            <SpaceList spaces={spaces} onNavigate={() => window.matchMedia(MOBILE_QUERY).matches && setOpen(false)} />
+          </Suspense>
           <Link href="/crm/contacts" className={navClass("/crm/contacts")}>
             <Users size={18} />
             Contatos

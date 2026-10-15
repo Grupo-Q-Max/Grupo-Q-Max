@@ -175,6 +175,7 @@ model CrmGroup {
   isDefault   Boolean              @default(false)
   permissions CrmGroupPermission[]
   members     TeamMember[]
+  pipelines   CrmPipelineGroup[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -189,13 +190,48 @@ model CrmGroupPermission {
   @@id([groupId, permission])
 }
 
+/// Area of the company (Comercial, Marketing...) grouping its pipelines in the sidebar.
+model CrmSpace {
+  id        String        @id @default(cuid())
+  name      String        @unique @db.VarChar(100)
+  order     Int           @default(0)
+  pipelines CrmPipeline[]
+  createdAt DateTime      @default(now())
+}
+
+/// DEALS = sales board (value, services, company); TASKS = internal to-do board (same CrmCard, deal fields hidden).
+enum CrmPipelineKind {
+  DEALS
+  TASKS
+}
+
 model CrmPipeline {
-  id           String     @id @default(cuid())
+  id           String             @id @default(cuid())
   name         String
+  kind         CrmPipelineKind    @default(DEALS)
+  /// Null = listed under "Geral"
+  spaceId      String?
+  space        CrmSpace?          @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  /// Position inside its space in the sidebar
+  order        Int                @default(0)
   stages       CrmStage[]
+  /// Groups that see the pipeline; none = every CRM user. Admin groups see all.
+  groups       CrmPipelineGroup[]
   fieldsConfig Json? // Array of field definitions
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([spaceId, order])
+}
+
+model CrmPipelineGroup {
+  pipelineId String
+  pipeline   CrmPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  groupId    String
+  group      CrmGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([pipelineId, groupId])
+  @@index([groupId])
 }
 
 model CrmStage {

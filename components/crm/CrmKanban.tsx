@@ -7,10 +7,10 @@ import { DealCard, type CrmDeal } from "./DealCard";
 import { DealDetailsPanel } from "./deal/DealDetailsPanel";
 import { useCan } from "./CrmAccess";
 import { postDeal } from "./CrmButtons";
-import { confirmDialog, promptDialog } from "@/components/ui/Dialogs";
+import { alertDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 
 type CrmStage = { id: string; name: string; cards: CrmDeal[] };
-type CrmPipeline = { id: string; stages: CrmStage[] };
+type CrmPipeline = { id: string; kind?: "DEALS" | "TASKS"; stages: CrmStage[] };
 
 const toColumns = (stages: CrmStage[]): KanbanColumnData<CrmDeal>[] =>
   stages.map((stage) => ({ id: stage.id, title: stage.name, items: stage.cards }));
@@ -33,6 +33,7 @@ export function CrmKanban({
   const router = useRouter();
   const can = useCan();
   const columns = useMemo(() => toColumns(pipeline.stages), [pipeline.stages]);
+  const isTasks = pipeline.kind === "TASKS";
   const [openDealId, setOpenDealId] = useState<string | null>(initialDealId ?? null);
   const dealChangedRef = useRef(false);
   const syncBoardRef = useRef<(() => void) | null>(null);
@@ -102,13 +103,13 @@ export function CrmKanban({
         // Polling is only a fallback in case the SSE connection is blocked by a proxy
         sync={{ fetchColumns, subscribe, pollingIntervalMs: 30_000 }}
         labels={{
-          addItem: "Novo Negócio",
-          addItemPlaceholder: "Nome do negócio...",
+          addItem: isTasks ? "Nova Tarefa" : "Novo Negócio",
+          addItemPlaceholder: isTasks ? "Nome da tarefa..." : "Nome do negócio...",
           addColumn: "+ Adicionar Coluna",
           renameColumn: "Renomear Coluna",
           deleteColumn: "Excluir Coluna",
         }}
-        renderItem={(deal, { remove }) => <DealCard deal={deal} onOpen={() => openDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
+        renderItem={(deal, { remove }) => <DealCard deal={deal} isTask={isTasks} onOpen={() => openDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
         onMoveItem={can("deal.edit") ? async (cardId, newStageId, index) => {
           const res = await fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index }));
           if (!res.ok) return false;
@@ -121,7 +122,7 @@ export function CrmKanban({
           return (await res.json()) as CrmDeal;
         } : undefined}
         onDeleteItem={can("deal.delete") ? async (cardId) => {
-          if (!(await confirmDialog("Certeza que deseja excluir este negócio?", { danger: true, confirmLabel: "Excluir" }))) return false;
+          if (!(await confirmDialog(`Certeza que deseja excluir ${isTasks ? "esta tarefa" : "este negócio"}?`, { danger: true, confirmLabel: "Excluir" }))) return false;
           const res = await fetch(`/api/crm/card?id=${cardId}`, { method: "DELETE" });
           if (!res.ok) return false;
           router.refresh();
@@ -134,7 +135,11 @@ export function CrmKanban({
         onDeleteColumn={can("stage.delete") ? async (stageId) => {
           if (!(await confirmDialog("Certeza que deseja excluir esta coluna inteira?", { danger: true, confirmLabel: "Excluir" }))) return false;
           const res = await fetch(`/api/crm/stage?id=${stageId}`, { method: "DELETE" });
-          if (!res.ok) return false;
+          if (!res.ok) {
+            const message = (await res.json().catch(() => null))?.error;
+            if (res.status === 409 && message) alertDialog(message);
+            return false;
+          }
           router.refresh();
         } : undefined}
         onAddColumn={can("stage.create") ? async () => {

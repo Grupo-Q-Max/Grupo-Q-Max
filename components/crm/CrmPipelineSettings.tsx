@@ -7,7 +7,14 @@ import { useRouter } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 import { alertDialog } from "@/components/ui/Dialogs";
 
-export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
+export type PipelineOptions = {
+  spaces: { id: string; name: string }[];
+  groups: { id: string; name: string; isAdmin: boolean }[];
+};
+
+const groupIdsOf = (pipeline: any): string[] => (pipeline.groups ?? []).map((g: { groupId: string }) => g.groupId);
+
+export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; options: PipelineOptions }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const parseFields = (config: any) => {
@@ -21,12 +28,21 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
 
   const [fields, setFields] = useState<any[]>(parseFields(pipeline.fieldsConfig));
   const [pipelineName, setPipelineName] = useState(pipeline.name || "");
+  const [spaceId, setSpaceId] = useState<string>(pipeline.spaceId ?? "");
+  const [kind, setKind] = useState<"DEALS" | "TASKS">(pipeline.kind);
+  const [groupIds, setGroupIds] = useState<string[]>(groupIdsOf(pipeline));
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setFields(parseFields(pipeline.fieldsConfig));
     setPipelineName(pipeline.name || "");
-  }, [pipeline.fieldsConfig, pipeline.name]);
+    setSpaceId(pipeline.spaceId ?? "");
+    setKind(pipeline.kind);
+    setGroupIds(groupIdsOf(pipeline));
+  }, [pipeline]);
+
+  const toggleGroup = (id: string, on: boolean) =>
+    setGroupIds((ids) => (on ? [...ids, id] : ids.filter((g) => g !== id)));
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -64,12 +80,14 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
     const res = await fetch('/api/crm/pipeline/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: pipeline.id, fieldsConfig: fields, name: pipelineName })
+      body: JSON.stringify({ id: pipeline.id, fieldsConfig: fields, name: pipelineName, spaceId, kind, groupIds })
     });
 
     if (res.ok) {
       setIsOpen(false);
       router.refresh();
+    } else {
+      alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível salvar as configurações.");
     }
     setIsLoading(false);
   };
@@ -83,7 +101,7 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
           <X size={20} />
         </button>
         <h2>Configurações do Pipeline</h2>
-        <p>Defina o nome do pipeline e os campos personalizados.</p>
+        <p>Defina nome, espaço, tipo, quem vê o pipeline e os campos personalizados.</p>
 
         <div className="crm-modal-group" style={{ marginTop: '24px' }}>
           <label>Nome do Pipeline</label>
@@ -94,7 +112,41 @@ export function CrmPipelineSettings({ pipeline }: { pipeline: any }) {
             style={{ width: '100%', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', padding: '12px', color: '#fff', borderRadius: '4px' }}
           />
         </div>
-        
+
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <div className="crm-modal-group" style={{ flex: 1 }}>
+            <label>Espaço</label>
+            <Select value={spaceId} onChange={(e) => setSpaceId(e.target.value)} aria-label="Espaço">
+              <option value="">Geral</option>
+              {options.spaces.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </Select>
+          </div>
+          <div className="crm-modal-group" style={{ flex: 1 }}>
+            <label>Tipo</label>
+            <Select value={kind} onChange={(e) => setKind(e.target.value as "DEALS" | "TASKS")} aria-label="Tipo">
+              <option value="DEALS">Negócios</option>
+              <option value="TASKS">Tarefas</option>
+            </Select>
+          </div>
+        </div>
+
+        <div className="crm-modal-group">
+          <label>Quem vê este pipeline</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+            {options.groups.filter((g) => !g.isAdmin).map((g) => (
+              <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#a5a0aa', fontSize: '13px' }}>
+                <input type="checkbox" checked={groupIds.includes(g.id)} onChange={(e) => toggleGroup(g.id, e.target.checked)} />
+                {g.name}
+              </label>
+            ))}
+          </div>
+          <small style={{ color: '#6f6a75', fontSize: '12px' }}>
+            Nenhum marcado = todos os usuários do CRM. Administradores sempre veem.
+          </small>
+        </div>
+
         <h4 style={{ color: '#fff', marginBottom: '16px', marginTop: '24px' }}>Campos Dinâmicos dos Cards</h4>
         <div className="crm-fields-config">
           {fields.map((field, index) => (
