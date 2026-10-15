@@ -39,8 +39,11 @@ import {
   type ReportDeal,
   type Totals,
 } from "@/lib/crm-reports";
+import { csvMoney, downloadCsv } from "@/lib/csv";
+import { CrmGoals, type Goal } from "./CrmGoals";
 
 type Option = { id: string; name: string };
+type PipelineOption = Option & { stages: Option[] };
 type Metric = "count" | "value";
 type Filters = {
   q: string;
@@ -92,7 +95,21 @@ const axis = { stroke: "#6b6670", fontSize: 12, tickLine: false, axisLine: false
 const subscribe = () => () => {};
 const useIsClient = () => useSyncExternalStore(subscribe, () => true, () => false);
 
-export function CrmReports({ deals, pipelines, members }: { deals: ReportDeal[]; pipelines: Option[]; members: Option[] }) {
+export function CrmReports({
+  deals,
+  pipelines,
+  members,
+  goalMembers,
+  goals,
+  canManageGoals,
+}: {
+  deals: ReportDeal[];
+  pipelines: PipelineOption[];
+  members: Option[];
+  goalMembers: Option[];
+  goals: Goal[];
+  canManageGoals: boolean;
+}) {
   const [filters, setFilters] = useState(DEFAULTS);
   const [metric, setMetric] = useState<Metric>("value");
   const isClient = useIsClient();
@@ -260,27 +277,46 @@ export function CrmReports({ deals, pipelines, members }: { deals: ReportDeal[];
     .filter((d) => isWon(d, range) || isLost(d, range))
     .sort((a, b) => b.closedAt!.localeCompare(a.closedAt!));
 
-  const exportCsv = () => {
-    const rows = [
+  const exportCsv = () =>
+    downloadCsv(`relatorio-negocios-${range.from.toLocaleDateString("sv-SE")}.csv`, [
       ["Número", "Negócio", "Status", "Valor", "Fechado em", "Responsável", "Funil", "Origem", "Tipo"],
       ...closed.map((d) => [
         d.number,
         d.title,
         d.status === "WON" ? "Ganho" : "Perdido",
-        d.value.toFixed(2).replace(".", ","),
+        csvMoney(d.value),
         showDate(new Date(d.closedAt!)),
         memberName(d.responsibleId ?? NONE),
         pipelineName(d.pipelineId),
         sourceOf(d),
         typeOf(d),
       ]),
-    ];
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(";")).join("\r\n");
-    const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
-    const a = Object.assign(document.createElement("a"), { href: url, download: `relatorio-negocios-${range.from.toLocaleDateString("sv-SE")}.csv` });
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+    ]);
+
+  // Funnel: open deals per stage of one pipeline (the filtered one, else the first), today, whatever the period
+  const funnelPipeline = pipelines.find((p) => p.id === f.pipelineId) ?? pipelines[0];
+  const funnelDeals = open.filter((d) => d.pipelineId === funnelPipeline?.id);
+  const funnelTotal = funnelDeals.reduce((s, d) => s + d.value, 0);
+  const funnel = (funnelPipeline?.stages ?? []).map((stage) => {
+    const inStage = funnelDeals.filter((d) => d.stageId === stage.id);
+    return { name: stage.name, count: inStage.length, value: inStage.reduce((s, d) => s + d.value, 0) };
+  });
+  const stageName = (id: string) => funnelPipeline?.stages.find((s) => s.id === id)?.name ?? "";
+
+  const exportFunnelCsv = () =>
+    downloadCsv(`negocios-em-aberto-${funnelPipeline?.name ?? "funil"}.csv`, [
+      ["Número", "Negócio", "Etapa", "Valor", "Criado em", "Responsável", "Origem", "Tipo"],
+      ...funnelDeals.map((d) => [
+        d.number,
+        d.title,
+        stageName(d.stageId),
+        csvMoney(d.value),
+        showDate(new Date(d.createdAt)),
+        memberName(d.responsibleId ?? NONE),
+        sourceOf(d),
+        typeOf(d),
+      ]),
+    ]);
 
   return (
     <>
@@ -386,6 +422,44 @@ export function CrmReports({ deals, pipelines, members }: { deals: ReportDeal[];
             </BarChart>
           </ChartCard>
         </section>
+
+        <CrmGoals deals={deals} members={goalMembers} goals={goals} canManage={canManageGoals} />
+
+        {funnelPipeline && (
+          <section className="crm-reports__section">
+            <div className="crm-reports__section-head">
+              <h2>
+                Funil em aberto: {funnelPipeline.name} ({funnelDeals.length} · {brl.format(funnelTotal)})
+              </h2>
+              <button type="button" className="btn-secondary" onClick={exportFunnelCsv} disabled={!funnelDeals.length}>
+                <Download size={16} /> Exportar CSV
+              </button>
+            </div>
+            <div className="crm-reports__table">
+              <table className="crm-table">
+                <thead>
+                  <tr>
+                    <th>Etapa</th>
+                    <th>Negócios</th>
+                    <th>Valor</th>
+                    <th>% do valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {funnel.map((s) => (
+                    <tr key={s.name}>
+                      <td>{s.name}</td>
+                      <td>{s.count}</td>
+                      <td>{brl.format(s.value)}</td>
+                      <td>{funnelTotal ? pct.format(s.value / funnelTotal) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {!f.pipelineId && pipelines.length > 1 && <p className="crm-reports__caption">Filtre por funil para ver outro.</p>}
+          </section>
+        )}
 
         <section className="crm-reports__section">
           <h2>Desempenho por responsável</h2>

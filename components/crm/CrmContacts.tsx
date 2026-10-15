@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, Users } from "lucide-react";
+import { Building2, Download, Users } from "lucide-react";
 import { matches } from "@/lib/text-search";
+import { downloadCsv } from "@/lib/csv";
 
 type DealLink = { number: number; title: string };
 
@@ -47,6 +48,19 @@ export function CrmContacts({ contacts, companies }: { contacts: ContactRow[]; c
   const [search, setSearch] = useState("");
   const shownContacts = contacts.filter((c) => matches(search, c.name, c.email, c.phone, c.company));
   const shownCompanies = companies.filter((c) => matches(search, c.name, c.email, c.phone, c.document));
+  const dealList = (deals: DealLink[]) => deals.map((d) => `#${d.number} ${d.title}`).join(", ");
+
+  // Exports what is on screen (current tab and search)
+  const exportCsv = () =>
+    view === "contacts"
+      ? downloadCsv("contatos.csv", [
+          ["Nome", "Empresa", "Telefone", "E-mail", "Negócios"],
+          ...shownContacts.map((c) => [c.name, c.company, c.phone, c.email, dealList(c.deals)]),
+        ])
+      : downloadCsv("empresas.csv", [
+          ["Nome", "CNPJ", "Telefone", "E-mail", "Contatos", "Negócios"],
+          ...shownCompanies.map((c) => [c.name, c.document, c.phone, c.email, c.contacts, dealList(c.deals)]),
+        ]);
 
   return (
     <>
@@ -60,6 +74,14 @@ export function CrmContacts({ contacts, companies }: { contacts: ContactRow[]; c
             <Building2 size={16} /> Empresas ({companies.length})
           </button>
         </div>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={exportCsv}
+          disabled={!(view === "contacts" ? shownContacts : shownCompanies).length}
+        >
+          <Download size={16} /> Exportar CSV
+        </button>
       </header>
       <div className="crm-content crm-access">
         <input
