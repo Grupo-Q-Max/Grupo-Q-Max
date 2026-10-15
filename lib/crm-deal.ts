@@ -51,6 +51,7 @@ const dealDetailsInclude = {
       pipeline: {
         select: {
           id: true,
+          kind: true,
           fieldsConfig: true,
           stages: { orderBy: { order: "asc" }, select: { id: true, name: true } },
         },

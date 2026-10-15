@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { denyUnless } from "@/lib/crm-access";
+import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { onDealEnteredStage } from "@/lib/crm-automation";
 import { checkStageEntry, StageEntryError } from "@/lib/crm-qxback";
@@ -15,6 +15,8 @@ export async function POST(req: Request) {
     if (!cardId || !newStageId) {
       return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
     }
+    const hidden = await denyUnlessPipeline({ cardId, stageId: newStageId });
+    if (hidden) return hidden;
 
     const current = await prisma.crmCard.findUnique({
       where: { id: cardId },

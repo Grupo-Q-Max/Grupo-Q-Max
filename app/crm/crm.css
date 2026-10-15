@@ -116,6 +116,58 @@
   border-left: 3px solid #d90f81;
 }
 
+/* Pipelines grouped by space under "Pipelines"; scrolls when the list is long */
+.crm-spaces {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -4px 0 4px 16px;
+  min-height: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.crm-space__name {
+  cursor: pointer;
+  padding: 6px 8px;
+  color: #6f6a75;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.crm-space__name:hover {
+  color: #a5a0aa;
+}
+
+.crm-space__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: #a5a0aa;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.crm-space__item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-space__item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.crm-space__item.is-active {
+  color: #fff;
+  background: rgba(217, 15, 129, 0.12);
+}
+
 .crm-main {
   flex: 1;
   display: flex;
@@ -1363,6 +1415,34 @@ button.crm-bell {
   font-size: 14px;
 }
 
+.crm-settings__list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.crm-settings__list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.crm-settings__list li > span {
+  flex: 1;
+}
+
+.crm-settings__list small {
+  color: #6f6a75;
+}
+
+.crm-settings__list .btn-secondary {
+  padding: 6px 8px;
+}
+
 /* REPORTS (/crm/reports) */
 .crm-content.crm-reports {
   overflow-y: auto;
@@ -1529,19 +1609,87 @@ button.crm-bell {
   }
 }
 
-/* /crm/activities */
-.crm-activities__section {
-  margin-bottom: 28px;
+/* MINHAS TAREFAS (/crm/me) */
+.crm-my-tasks a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.crm-activities__section h2 {
-  font-size: 1rem;
-  margin: 0 0 10px;
+.crm-my-tasks a:hover {
+  text-decoration: underline;
 }
 
-.crm-activities__section.is-overdue h2,
-.crm-activities__error {
-  color: #e5484d;
+.crm-my-tasks__due {
+  white-space: nowrap;
+}
+
+.crm-my-tasks__state {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.crm-my-tasks tr.is-overdue td {
+  background: rgba(255, 59, 59, 0.08);
+}
+
+.crm-my-tasks tr.is-overdue .crm-my-tasks__due {
+  color: #ff6b6b;
+  box-shadow: inset 3px 0 0 #ff3b3b;
+}
+
+.crm-my-tasks tr.is-today .crm-my-tasks__due {
+  color: #ffb547;
+}
+
+.crm-my-tasks__context {
+  color: #a5a0aa;
+  font-size: 14px;
+}
+
+.crm-my-tasks__empty {
+  color: #a5a0aa;
+}
+
+/* Phones: each row becomes a stacked card (due + type, then title, then where) */
+@media (max-width: 640px) {
+  .crm-my-tasks thead {
+    display: none;
+  }
+
+  .crm-list-view .crm-my-tasks,
+  .crm-my-tasks tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  .crm-my-tasks tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .crm-my-tasks.crm-table tr td {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .crm-my-tasks td:nth-child(3),
+  .crm-my-tasks td:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .crm-my-tasks tr.is-overdue {
+    background: rgba(255, 59, 59, 0.08);
+    box-shadow: inset 3px 0 0 #ff3b3b;
+  }
+
+  .crm-my-tasks tr.is-overdue .crm-my-tasks__due {
+    box-shadow: none;
+  }
 }
 
 /* Monthly goals (/crm/reports) */

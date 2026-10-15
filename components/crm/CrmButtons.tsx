@@ -32,13 +32,27 @@ export async function postDeal(body: Record<string, unknown>): Promise<Response 
   return ok ? send(true) : null;
 }
 
-export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; currentMemberId: string | null }) {
+export function CrmButtons({
+  pipeline,
+  spaces,
+  currentMemberId,
+}: {
+  pipeline?: any;
+  spaces: { id: string; name: string }[];
+  currentMemberId: string | null;
+}) {
   const router = useRouter();
   const can = useCan();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDealModalOpen, setIsDealModalOpen] = useState(false);
-  
+  const isTasks = pipeline?.kind === "TASKS";
+
   const [pipelineName, setPipelineName] = useState("");
+  const [pipelineKind, setPipelineKind] = useState<"DEALS" | "TASKS">("DEALS");
+  // New pipelines start in the space of the one on screen
+  const [pipelineSpace, setPipelineSpace] = useState<string>(pipeline?.spaceId ?? "");
+  const [dealDeadline, setDealDeadline] = useState("");
+  const [dealDescription, setDealDescription] = useState("");
   const [dealTitle, setDealTitle] = useState("");
   const [dealValue, setDealValue] = useState("");
   const [dealCompany, setDealCompany] = useState("");
@@ -56,14 +70,16 @@ export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; curr
     const res = await fetch('/api/crm/pipeline', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: pipelineName })
+      body: JSON.stringify({ name: pipelineName, kind: pipelineKind, spaceId: pipelineSpace })
     });
-    
+
     if (res.ok) {
       const created = await res.json();
       setIsModalOpen(false);
       setPipelineName("");
       router.push(`/crm?pipelineId=${created.id}`);
+      // The sidebar lives in the layout, which a search-param navigation keeps: refresh it too
+      router.refresh();
     }
     setIsLoading(false);
   };
@@ -90,6 +106,7 @@ export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; curr
       stageId: pipeline.stages[0].id,
       responsibleId: dealResponsible || null,
       customData,
+      ...(isTasks && { closeDate: dealDeadline || null, comment: dealDescription }),
     });
 
     if (res?.ok) {
@@ -97,6 +114,8 @@ export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; curr
       setDealTitle("");
       setDealCompany("");
       setDealValue("");
+      setDealDeadline("");
+      setDealDescription("");
       setCustomData({});
       setDealResponsible(currentMemberId ?? "");
       router.refresh();
@@ -137,18 +156,36 @@ export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; curr
           <X size={20} />
         </button>
         <h2>Criar Novo Pipeline</h2>
-        <p>O pipeline será criado com as fases padrão do Q-Max.</p>
+        <p>O pipeline será criado com as fases padrão do tipo escolhido.</p>
         <form onSubmit={handleCreatePipeline}>
           <div className="crm-modal-group">
             <label>Nome do Pipeline</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               autoFocus
-              placeholder="Ex: Vendas B2B" 
+              placeholder={pipelineKind === "TASKS" ? "Ex: Sprint Tecnologia" : "Ex: Vendas B2B"}
               value={pipelineName}
               onChange={e => setPipelineName(e.target.value)}
               disabled={isLoading}
             />
+          </div>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div className="crm-modal-group" style={{ flex: 1 }}>
+              <label>Tipo</label>
+              <Select value={pipelineKind} onChange={(e) => setPipelineKind(e.target.value as "DEALS" | "TASKS")} disabled={isLoading} aria-label="Tipo">
+                <option value="DEALS">Negócios</option>
+                <option value="TASKS">Tarefas</option>
+              </Select>
+            </div>
+            <div className="crm-modal-group" style={{ flex: 1 }}>
+              <label>Espaço</label>
+              <Select value={pipelineSpace} onChange={(e) => setPipelineSpace(e.target.value)} disabled={isLoading} aria-label="Espaço">
+                <option value="">Geral</option>
+                {spaces.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </Select>
+            </div>
           </div>
           <div className="crm-modal-actions">
             <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)} disabled={isLoading}>
@@ -174,24 +211,36 @@ export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; curr
         <button className="crm-modal-close" onClick={() => setIsDealModalOpen(false)}>
           <X size={20} />
         </button>
-        <h2>Novo Negócio</h2>
-        <p>Preencha os detalhes do negócio para adicioná-lo à fase inicial.</p>
-        
+        <h2>{isTasks ? "Nova Tarefa" : "Novo Negócio"}</h2>
+        <p>{isTasks ? "A tarefa entra na primeira coluna." : "Preencha os detalhes do negócio para adicioná-lo à fase inicial."}</p>
+
         <form onSubmit={handleCreateDeal} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
+
           <div className="crm-modal-group" style={{ marginBottom: 0 }}>
-            <label>Título do Negócio *</label>
-            <input 
-              type="text" 
+            <label>{isTasks ? "Título da Tarefa *" : "Título do Negócio *"}</label>
+            <input
+              type="text"
               autoFocus
               required
-              placeholder="Ex: Auditoria TechCorp" 
+              placeholder={isTasks ? "Ex: Revisar contrato do cliente" : "Ex: Auditoria TechCorp"}
               value={dealTitle}
               onChange={e => setDealTitle(e.target.value)}
               disabled={isLoading}
             />
           </div>
 
+          {isTasks ? (
+            <>
+              <div className="crm-modal-group" style={{ marginBottom: 0 }}>
+                <label>Prazo</label>
+                <input type="date" value={dealDeadline} onChange={(e) => setDealDeadline(e.target.value)} disabled={isLoading} />
+              </div>
+              <div className="crm-modal-group" style={{ marginBottom: 0 }}>
+                <label>Descrição</label>
+                <textarea rows={3} value={dealDescription} onChange={(e) => setDealDescription(e.target.value)} disabled={isLoading} />
+              </div>
+            </>
+          ) : (
           <div style={{ display: 'flex', gap: '16px' }}>
             <div className="crm-modal-group" style={{ flex: 1, marginBottom: 0 }}>
               <label>Empresa</label>
@@ -215,11 +264,12 @@ export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; curr
               />
             </div>
           </div>
+          )}
 
           <div className="crm-modal-group" style={{ marginBottom: 0 }}>
-            <label>Vendedor</label>
-            <Select value={dealResponsible} onChange={(e) => setDealResponsible(e.target.value)} disabled={isLoading} aria-label="Vendedor">
-              <option value="">Sem vendedor</option>
+            <label>{isTasks ? "Responsável" : "Vendedor"}</label>
+            <Select value={dealResponsible} onChange={(e) => setDealResponsible(e.target.value)} disabled={isLoading} aria-label={isTasks ? "Responsável" : "Vendedor"}>
+              <option value="">{isTasks ? "Sem responsável" : "Sem vendedor"}</option>
               {team.map((member) => (
                 <option key={member.id} value={member.id}>
                   {member.name} — {member.role}
@@ -253,7 +303,7 @@ export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; curr
               Cancelar
             </button>
             <button type="submit" className="btn-primary" disabled={isLoading || !dealTitle.trim()}>
-              {isLoading ? "Criando..." : "Criar Negócio"}
+              {isLoading ? "Criando..." : isTasks ? "Criar Tarefa" : "Criar Negócio"}
             </button>
           </div>
         </form>
@@ -278,7 +328,7 @@ export function CrmButtons({ pipeline, currentMemberId }: { pipeline?: any; curr
             setIsDealModalOpen(true);
           }}>
             <Plus size={18} />
-            Novo Negócio
+            {isTasks ? "Nova Tarefa" : "Novo Negócio"}
           </button>
         )}
       </div>

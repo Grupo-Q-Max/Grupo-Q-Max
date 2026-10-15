@@ -62,7 +62,7 @@ export type DealDetails = {
   history: DealHistory[];
   /** Restore points: the deal's state when it left each stage. */
   stageSnapshots: { stageId: string; savedAt: string; data: Omit<DealDraft, "products"> & { products: Omit<DealProduct, "id">[] } }[];
-  pipeline: { id: string; fieldsConfig: CustomFieldConfig[] | null; stages: { id: string; name: string }[] };
+  pipeline: { id: string; kind: "DEALS" | "TASKS"; fieldsConfig: CustomFieldConfig[] | null; stages: { id: string; name: string }[] };
 };
 
 /** Fields edited in the "Geral" form and saved together by SALVAR. */

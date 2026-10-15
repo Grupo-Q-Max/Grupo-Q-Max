@@ -1,11 +1,12 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_COOKIE, readSession, SESSION_COOKIE } from "@/lib/auth";
 import { isAdminToken } from "@/lib/settings";
 import { ALL_PERMISSIONS, DEFAULT_USER_PERMISSIONS, isPermission, type Permission } from "@/lib/crm-permissions";
 
-const groupSelect = { isAdmin: true, permissions: { select: { permission: true } } } as const;
+const groupSelect = { id: true, isAdmin: true, permissions: { select: { permission: true } } } as const;
 
 let groupsReady: Promise<void> | null = null;
 
@@ -30,13 +31,18 @@ export function ensureGroups() {
   return groupsReady;
 }
 
-/** Permissions of a team member: those of their group, or of the default group when they have none. Blocked members have none. */
-export async function memberPermissions(memberId: string | null): Promise<Set<Permission>> {
-  if (!memberId) return new Set();
+/** Group of a team member, or the default group when they have none. Null for blocked or unknown members. */
+async function memberGroup(memberId: string | null) {
+  if (!memberId) return null;
   await ensureGroups();
   const member = await prisma.teamMember.findUnique({ where: { id: memberId }, select: { crmActive: true, crmGroup: { select: groupSelect } } });
-  if (!member?.crmActive) return new Set();
-  const group = member.crmGroup ?? (await prisma.crmGroup.findFirst({ where: { isDefault: true }, select: groupSelect }));
+  if (!member?.crmActive) return null;
+  return member.crmGroup ?? (await prisma.crmGroup.findFirst({ where: { isDefault: true }, select: groupSelect }));
+}
+
+/** Permissions of a team member: those of their group, or of the default group when they have none. Blocked members have none. */
+export async function memberPermissions(memberId: string | null): Promise<Set<Permission>> {
+  const group = await memberGroup(memberId);
   if (!group) return new Set();
   if (group.isAdmin) return new Set(ALL_PERMISSIONS);
   return new Set(group.permissions.map((p) => p.permission).filter(isPermission));
@@ -57,4 +63,32 @@ export async function currentPermissions() {
 export async function denyUnless(permission: Permission) {
   if ((await currentPermissions()).has(permission)) return null;
   return NextResponse.json({ error: "Você não tem permissão para esta ação." }, { status: 403 });
+}
+
+/**
+ * Pipelines the current user sees: admin groups see all; others see pipelines with no
+ * group (open to everyone) or opened to their group. Use as `where` on CrmPipeline.
+ */
+export async function visiblePipelineWhere(): Promise<Prisma.CrmPipelineWhereInput> {
+  const group = await memberGroup(readSession((await cookies()).get(SESSION_COOKIE)?.value));
+  if (group?.isAdmin) return {};
+  return { OR: [{ groups: { none: {} } }, ...(group ? [{ groups: { some: { groupId: group.id } } }] : [])] };
+}
+
+type PipelineRef = { pipelineId?: string | null; stageId?: string | null; cardId?: string | null };
+
+/** True when every given pipeline/stage/card exists and belongs to a pipeline the current user sees. */
+export async function canSeePipeline(ref: PipelineRef) {
+  const visible = await visiblePipelineWhere();
+  const checks: Promise<number>[] = [];
+  if (ref.pipelineId) checks.push(prisma.crmPipeline.count({ where: { id: ref.pipelineId, ...visible } }));
+  if (ref.stageId) checks.push(prisma.crmStage.count({ where: { id: ref.stageId, pipeline: visible } }));
+  if (ref.cardId) checks.push(prisma.crmCard.count({ where: { id: ref.cardId, stage: { pipeline: visible } } }));
+  return checks.length > 0 && (await Promise.all(checks)).every((n) => n > 0);
+}
+
+/** 404 when the pipeline/stage/card is missing or hidden from the current user (hidden looks missing), else null. */
+export async function denyUnlessPipeline(ref: PipelineRef) {
+  if (await canSeePipeline(ref)) return null;
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
 }

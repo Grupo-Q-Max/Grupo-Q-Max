@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { boardAutomations } from "@/lib/crm-automation";
-import { currentPermissions } from "@/lib/crm-access";
+import { currentPermissions, visiblePipelineWhere } from "@/lib/crm-access";
 import { CrmForbidden } from "@/components/crm/CrmForbidden";
 import { CrmAutomationBoard } from "@/components/crm/automation/CrmAutomationBoard";
 import type { AutomationStage, CustomField } from "@/components/crm/automation/types";
@@ -12,10 +12,11 @@ export const dynamic = "force-dynamic";
 export default async function AutomationPage({ params }: { params: Promise<{ pipelineId: string }> }) {
   const { pipelineId } = await params;
   if (!(await currentPermissions()).has("automation.view")) return <CrmForbidden />;
+  const visible = await visiblePipelineWhere();
 
   const [pipeline, pipelines, members] = await Promise.all([
-    prisma.crmPipeline.findUnique({
-      where: { id: pipelineId },
+    prisma.crmPipeline.findFirst({
+      where: { id: pipelineId, ...visible },
       include: {
         stages: {
           orderBy: { order: "asc" },
@@ -26,7 +27,7 @@ export default async function AutomationPage({ params }: { params: Promise<{ pip
         },
       },
     }),
-    prisma.crmPipeline.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
+    prisma.crmPipeline.findMany({ where: visible, orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
     prisma.teamMember.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
   ]);
   if (!pipeline) notFound();

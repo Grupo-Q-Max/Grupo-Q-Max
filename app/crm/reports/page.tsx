@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { currentPermissions } from "@/lib/crm-access";
+import { currentPermissions, visiblePipelineWhere } from "@/lib/crm-access";
 import { CrmForbidden } from "@/components/crm/CrmForbidden";
 import { CrmReports } from "@/components/crm/reports/CrmReports";
 
@@ -13,10 +13,14 @@ export default async function ReportsPage() {
   const goalsFrom = new Date();
   goalsFrom.setMonth(goalsFrom.getMonth() - 2, 1);
 
+  // Sales boards the user sees; task boards have no value to report
+  const pipelineWhere = { ...(await visiblePipelineWhere()), kind: "DEALS" as const };
+
   // ponytail: every deal goes to the client (scalar fields only) and is aggregated there;
   // move to groupBy in a /api/crm/reports route if the table grows past ~20k deals
   const [deals, pipelines, members, goalMembers, goals] = await Promise.all([
     prisma.crmCard.findMany({
+      where: { stage: { pipeline: pipelineWhere } },
       select: {
         id: true,
         number: true,
@@ -33,6 +37,7 @@ export default async function ReportsPage() {
       },
     }),
     prisma.crmPipeline.findMany({
+      where: pipelineWhere,
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true, stages: { orderBy: { order: "asc" }, select: { id: true, name: true } } },
     }),

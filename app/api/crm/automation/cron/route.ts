@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { processDueRuns } from "@/lib/crm-automation";
-import { remindOverdueActivities } from "@/lib/crm-activities";
+import { remindDueTasks } from "@/lib/crm-my-tasks";
 
 /**
- * Runs the delayed automation rules that are due. Called every minute by the
- * in-process ticker (instrumentation.ts) and, when scaled out, by an external
+ * Runs the delayed automation rules that are due and reminds responsibles of due
+ * tasks/activities. Same work as the in-process ticker (instrumentation-node.ts);
+ * called, when scaled out, by an external
  * scheduler with the `Authorization: Bearer <CRON_SECRET>` header.
  */
 async function handler(req: Request) {
@@ -14,7 +15,7 @@ async function handler(req: Request) {
   }
 
   const processed = await processDueRuns();
-  const reminded = await remindOverdueActivities();
+  const reminded = await remindDueTasks();
   return NextResponse.json({ processed, reminded });
 }
 

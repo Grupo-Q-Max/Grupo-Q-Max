@@ -1,5 +1,6 @@
 import { subscribeToMember, subscribeToPipeline, subscribeToRequests } from "@/lib/crm-realtime";
 import { sessionMemberId } from "@/lib/auth";
+import { canSeePipeline } from "@/lib/crm-access";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -20,6 +21,7 @@ export async function GET(req: Request) {
   if (!pipelineId && !memberId && !requests) {
     return Response.json({ error: "Missing pipelineId, notifications or requests" }, { status: 400 });
   }
+  if (pipelineId && !(await canSeePipeline({ pipelineId }))) return Response.json({ error: "Not found" }, { status: 404 });
 
   const encoder = new TextEncoder();
   let cleanup = () => {};
