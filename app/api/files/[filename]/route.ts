@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { getUploadsDir } from "@/lib/storage";
+import { findUploadedFile } from "@/lib/storage";
 
 // Serve uploaded files from persistent storage with fallback to public/team/ and public/brands/
 // This works reliably in dev, local build, and Azure App Service (Next.js standalone)
@@ -16,35 +16,8 @@ export async function GET(
     }
 
     // Decode and prevent path traversal
-    const decodedName = decodeURIComponent(filename);
-    const safeName = path.basename(decodedName);
-    const lowerSafeName = safeName.toLowerCase();
-
-    // Search locations in priority order:
-    const persistentUploads = getUploadsDir();
-    const searchDirs = [
-      persistentUploads,
-      path.join(process.cwd(), "data", "uploads"),
-      path.join(process.cwd(), "public", "team"),
-      path.join(persistentUploads, "brands"),
-      path.join(process.cwd(), "data", "uploads", "brands"),
-      path.join(process.cwd(), "public", "brands"),
-    ];
-
-    let resolvedPath: string | null = null;
-    let actualFilename = safeName;
-    for (const dir of searchDirs) {
-      if (fs.existsSync(/*turbopackIgnore: true*/ dir)) {
-        const files = fs.readdirSync(/*turbopackIgnore: true*/ dir);
-        const match = files.find(f => f.toLowerCase() === lowerSafeName);
-        if (match) {
-          resolvedPath = path.join(dir, match);
-          actualFilename = match;
-          break;
-        }
-      }
-    }
-
+    const safeName = path.basename(decodeURIComponent(filename));
+    const resolvedPath = findUploadedFile(safeName);
     if (!resolvedPath) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }

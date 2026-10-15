@@ -2,9 +2,14 @@ import fs from "fs";
 import path from "path";
 import type { TeamMember } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getUploadsDir } from "@/lib/storage";
+import { findUploadedFile, getUploadsDir } from "@/lib/storage";
 
 const GRAPH = "https://graph.microsoft.com/v1.0";
+const FILES = "/api/files/";
+
+/** A photo whose uploaded file is gone (404 on /api/files) counts as none, so the next sign-in replaces it. */
+const hasPhoto = (photo: string | null) =>
+  Boolean(photo) && (!photo!.startsWith(FILES) || findUploadedFile(photo!.slice(FILES.length)) !== null);
 
 /**
  * Copies the Microsoft profile photo to a member that has none yet (a photo set in the admin is kept).
@@ -12,7 +17,7 @@ const GRAPH = "https://graph.microsoft.com/v1.0";
  * oid, so a token of another account can't set this member's photo. Best effort: errors are only logged.
  */
 export async function syncMicrosoftPhoto(member: TeamMember, accessToken: unknown) {
-  if (member.photo || typeof accessToken !== "string" || !accessToken) return;
+  if (hasPhoto(member.photo) || typeof accessToken !== "string" || !accessToken) return;
   try {
     const headers = { Authorization: `Bearer ${accessToken}` };
     const me = await fetch(`${GRAPH}/me?$select=id`, { headers });
