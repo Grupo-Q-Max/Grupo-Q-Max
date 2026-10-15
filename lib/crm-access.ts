@@ -79,13 +79,21 @@ export async function denyUnless(permission: Permission) {
 }
 
 /**
- * Pipelines the current user sees: admin groups see all; others see pipelines with no
- * group (open to everyone) or opened to their group. Use as `where` on CrmPipeline.
+ * Pipelines the current user sees: admin groups see all; others see pipelines with no group
+ * and no member (open to everyone), or opened to their group or to them. Use as `where` on CrmPipeline.
  */
 export async function visiblePipelineWhere(): Promise<Prisma.CrmPipelineWhereInput> {
-  const group = await memberGroup(readSession((await cookies()).get(SESSION_COOKIE)?.value));
+  const memberId = readSession((await cookies()).get(SESSION_COOKIE)?.value);
+  const group = await memberGroup(memberId);
   if (group?.isAdmin) return {};
-  return { OR: [{ groups: { none: {} } }, ...(group ? [{ groups: { some: { groupId: group.id } } }] : [])] };
+  return {
+    OR: [
+      { groups: { none: {} }, members: { none: {} } },
+      ...(group && memberId
+        ? [{ groups: { some: { groupId: group.id } } }, { members: { some: { memberId } } }]
+        : []),
+    ],
+  };
 }
 
 type PipelineRef = { pipelineId?: string | null; stageId?: string | null; cardId?: string | null };

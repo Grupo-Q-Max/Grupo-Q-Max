@@ -10,9 +10,11 @@ import { alertDialog } from "@/components/ui/Dialogs";
 export type PipelineOptions = {
   spaces: { id: string; name: string }[];
   groups: { id: string; name: string; isAdmin: boolean }[];
+  members: { id: string; name: string; role: string }[];
 };
 
 const groupIdsOf = (pipeline: any): string[] => (pipeline.groups ?? []).map((g: { groupId: string }) => g.groupId);
+const memberIdsOf = (pipeline: any): string[] => (pipeline.members ?? []).map((m: { memberId: string }) => m.memberId);
 
 export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; options: PipelineOptions }) {
   const router = useRouter();
@@ -31,6 +33,7 @@ export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; opti
   const [spaceId, setSpaceId] = useState<string>(pipeline.spaceId ?? "");
   const [kind, setKind] = useState<"DEALS" | "TASKS">(pipeline.kind);
   const [groupIds, setGroupIds] = useState<string[]>(groupIdsOf(pipeline));
+  const [memberIds, setMemberIds] = useState<string[]>(memberIdsOf(pipeline));
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -39,10 +42,13 @@ export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; opti
     setSpaceId(pipeline.spaceId ?? "");
     setKind(pipeline.kind);
     setGroupIds(groupIdsOf(pipeline));
+    setMemberIds(memberIdsOf(pipeline));
   }, [pipeline]);
 
   const toggleGroup = (id: string, on: boolean) =>
     setGroupIds((ids) => (on ? [...ids, id] : ids.filter((g) => g !== id)));
+  const toggleMember = (id: string, on: boolean) =>
+    setMemberIds((ids) => (on ? [...ids, id] : ids.filter((m) => m !== id)));
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,7 +86,7 @@ export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; opti
     const res = await fetch('/api/crm/pipeline/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: pipeline.id, fieldsConfig: fields, name: pipelineName, spaceId, kind, groupIds })
+      body: JSON.stringify({ id: pipeline.id, fieldsConfig: fields, name: pipelineName, spaceId, kind, groupIds, memberIds })
     });
 
     if (res.ok) {
@@ -142,8 +148,19 @@ export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; opti
               </label>
             ))}
           </div>
+          {options.members.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              {options.members.map((m) => (
+                <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#a5a0aa', fontSize: '13px' }}>
+                  <input type="checkbox" checked={memberIds.includes(m.id)} onChange={(e) => toggleMember(m.id, e.target.checked)} />
+                  {m.name}
+                  {m.role && <span style={{ color: '#6f6a75' }}>· {m.role}</span>}
+                </label>
+              ))}
+            </div>
+          )}
           <small style={{ color: '#6f6a75', fontSize: '12px' }}>
-            Nenhum marcado = todos os usuários do CRM. Administradores sempre veem.
+            Marque grupos e/ou pessoas. Nenhum marcado = todos os usuários do CRM. Administradores sempre veem.
           </small>
         </div>
 
