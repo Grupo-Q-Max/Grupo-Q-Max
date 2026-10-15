@@ -1650,3 +1650,44 @@ button.crm-bell {
 .crm-my-tasks__empty {
   color: #a5a0aa;
 }
+
+/* Phones: each row becomes a stacked card (due + type, then title, then where) */
+@media (max-width: 640px) {
+  .crm-my-tasks thead {
+    display: none;
+  }
+
+  .crm-list-view .crm-my-tasks,
+  .crm-my-tasks tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  .crm-my-tasks tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .crm-my-tasks.crm-table tr td {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .crm-my-tasks td:nth-child(3),
+  .crm-my-tasks td:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .crm-my-tasks tr.is-overdue {
+    background: rgba(255, 59, 59, 0.08);
+    box-shadow: inset 3px 0 0 #ff3b3b;
+  }
+
+  .crm-my-tasks tr.is-overdue .crm-my-tasks__due {
+    box-shadow: none;
+  }
+}
