@@ -1,10 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Mail, Phone, Plus, Trash2, X } from "lucide-react";
 import {
   CURRENCIES,
   DEAL_TYPES,
+  PRIORITIES,
   RECURRENCES,
+  type CrmTagDto,
+  type Priority,
   SOURCES,
   emptyCompany,
   emptyContact,
@@ -97,6 +101,104 @@ function CustomFieldsSection({ deal, draft, onChange }: Pick<Props, "deal" | "dr
   );
 }
 
+const jsonRequest = (method: string, body: unknown): RequestInit => ({
+  method,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+});
+
+const TAG_COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#64748b"];
+
+function TagsField({ tags, onChange }: { tags: string[]; onChange: Props["onChange"] }) {
+  const [all, setAll] = useState<CrmTagDto[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const [color, setColor] = useState(TAG_COLORS[0]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/crm/tag", { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setAll)
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
+  const create = async () => {
+    setError(null);
+    const res = await fetch("/api/crm/tag", jsonRequest("POST", { name, color }));
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return setError(body?.error ?? "Não foi possível criar.");
+    setAll((list) => [...list, body].sort((a, b) => a.name.localeCompare(b.name)));
+    onChange({ tags: [...tags, body.id] });
+    setName("");
+    setCreating(false);
+  };
+
+  return (
+    <Field label="Etiquetas">
+      <div className="deal-chips">
+        {tags.map((id) => {
+          const tag = all.find((t) => t.id === id);
+          if (!tag) return null;
+          return (
+            <span className="deal-chip crm-tag" key={id} style={{ "--tag-color": tag.color } as React.CSSProperties}>
+              {tag.name}
+              <button type="button" title="Remover etiqueta" onClick={() => onChange({ tags: tags.filter((t) => t !== id) })}>
+                <X size={12} />
+              </button>
+            </span>
+          );
+        })}
+        <Select
+          className="deal-input deal-input--inline"
+          value=""
+          onChange={(e) => {
+            if (e.target.value === "__new") setCreating(true);
+            else if (e.target.value) onChange({ tags: [...tags, e.target.value] });
+          }}
+        >
+          <option value="">+ Adicionar etiqueta</option>
+          {all
+            .filter((t) => !tags.includes(t.id))
+            .map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          <option value="__new">Nova etiqueta…</option>
+        </Select>
+      </div>
+      {creating && (
+        <div className="deal-row crm-tag-new">
+          <input className="deal-input" placeholder="Nome da etiqueta" maxLength={50} value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          <span className="crm-tag-colors">
+            {TAG_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                title={c}
+                aria-pressed={color === c}
+                className={`crm-tag-color ${color === c ? "is-active" : ""}`}
+                style={{ background: c }}
+                onClick={() => setColor(c)}
+              />
+            ))}
+          </span>
+          <button type="button" className="deal-link-btn" disabled={!name.trim()} onClick={create}>
+            criar
+          </button>
+          <button type="button" className="deal-icon-btn" title="Cancelar" onClick={() => setCreating(false)}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {error && <span className="deal-field__hint">{error}</span>}
+    </Field>
+  );
+}
+
 /** Task boards (pipeline kind TASKS): same card, only what an internal to-do needs. Checklist = activities in the timeline. */
 function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) {
   const responsible = team.find((m) => m.id === draft.responsibleId);
@@ -139,10 +241,33 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) 
             </Select>
           </div>
         </Field>
+        <Field label="Prioridade">
+          <Select className="deal-input" value={draft.priority ?? ""} onChange={(e) => onChange({ priority: (e.target.value || null) as Priority | null })}>
+            <option value="">Sem prioridade</option>
+            {PRIORITIES.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <TagsField tags={draft.tags} onChange={onChange} />
         <Field label="Descrição">
           <textarea className="deal-input" rows={6} value={draft.comment ?? ""} onChange={(e) => onChange({ comment: e.target.value })} />
         </Field>
         <ObserversField observers={draft.observers} team={team} onChange={onChange} />
+        <Field
+          label="Repetir"
+          aside={draft.recurrence !== "NONE" && <span className="deal-field__hint">cria a próxima ao concluir</span>}
+        >
+          <Select className="deal-input" value={draft.recurrence} onChange={(e) => onChange({ recurrence: e.target.value })}>
+            {RECURRENCES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
       </Section>
       <CustomFieldsSection deal={deal} draft={draft} onChange={onChange} />
     </div>

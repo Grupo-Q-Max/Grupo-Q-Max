@@ -395,6 +395,23 @@ main.crm-main {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.crm-table__row--link { cursor: pointer; }
+.crm-table__done { text-decoration: line-through; opacity: 0.7; }
+.crm-table__overdue { color: #ff4d6d; font-weight: 600; }
+.crm-table__sort {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.crm-table__sort.is-active { color: #fff; }
+
 .crm-badge {
   background: rgba(217, 15, 129, 0.15);
   color: #ff2b91;

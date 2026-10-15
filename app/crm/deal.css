@@ -684,6 +684,30 @@
 .kanban-card--won { border-left: 3px solid #4ceb95; }
 .kanban-card--lost { border-left: 3px solid #ff4d6d; opacity: 0.75; }
 .kanban-card--done .kanban-card__title { text-decoration: line-through; opacity: 0.7; }
+.kanban-card__tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; position: relative; }
+
+/* TASK PRIORITY AND TAGS */
+.crm-priority, .crm-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.crm-tag { --tag-color: #8b5cf6; background: color-mix(in srgb, var(--tag-color) 22%, transparent); color: color-mix(in srgb, var(--tag-color) 60%, #fff); }
+.deal-chip.crm-tag { padding: 4px 10px; font-size: 12px; }
+.crm-priority--low { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; }
+.crm-priority--medium { background: rgba(59, 130, 246, 0.18); color: #93c5fd; }
+.crm-priority--high { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+.crm-priority--urgent { background: rgba(255, 77, 109, 0.2); color: var(--deal-red); }
+.crm-tag-new { align-items: center; margin-top: 8px; }
+.crm-tag-colors { display: inline-flex; gap: 4px; }
+.crm-tag-color { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+.crm-tag-color.is-active { border-color: #fff; }
 
 /* LOOKUP (link existing company / contact / product) */
 .deal-lookup { position: relative; }

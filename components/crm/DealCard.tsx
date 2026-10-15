@@ -1,6 +1,6 @@
 import { Calendar, ListTodo, Trash2 } from "lucide-react";
 import { Avatar } from "./deal/ui";
-import type { TeamMember } from "./deal/types";
+import { priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
 
 export type CrmDeal = {
   id: string;
@@ -21,6 +21,8 @@ export type CrmDeal = {
   createdAt?: string | Date;
   /** Planned end date; the deadline on task boards */
   closeDate?: string | Date | null;
+  priority?: Priority | null;
+  tags?: CrmTagDto[];
 };
 
 /** End of the due day (closeDate is a date-only column stored as UTC midnight). */
@@ -50,6 +52,16 @@ export function DealCard({
       onClick={onOpen}
     >
       <div className="kanban-card__glow" />
+      {(deal.priority || !!deal.tags?.length) && (
+        <div className="kanban-card__tags">
+          {deal.priority && <span className={`crm-priority crm-priority--${deal.priority.toLowerCase()}`}>{priorityLabel(deal.priority)}</span>}
+          {deal.tags?.map((tag) => (
+            <span key={tag.id} className="crm-tag" style={{ "--tag-color": tag.color } as React.CSSProperties}>
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
       <h3 className="kanban-card__title">{deal.title}</h3>
       {(deal.company || deal.contactName) && (
         <div className="kanban-card__company">{[deal.contactName, deal.company].filter(Boolean).join(" · ")}</div>

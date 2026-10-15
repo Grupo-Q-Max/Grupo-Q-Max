@@ -55,6 +55,9 @@ export type DealDetails = {
   utm: Record<string, string> | null;
   products: DealProduct[];
   recurrence: string;
+  priority: Priority | null;
+  /** Tag ids */
+  tags: string[];
   customData: Record<string, string> | null;
   createdAt: string;
   updatedAt: string;
@@ -85,6 +88,8 @@ export type DealDraft = Pick<
   | "comment"
   | "products"
   | "recurrence"
+  | "priority"
+  | "tags"
   | "customData"
 >;
 
@@ -167,6 +172,22 @@ export function pickDraft(deal: DealDetails): DealDraft {
     comment: deal.comment,
     products: deal.products,
     recurrence: deal.recurrence,
+    priority: deal.priority,
+    tags: deal.tags,
     customData: deal.customData,
   };
 }
+
+export type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
+/** Lowest to highest; the index is the sort weight. */
+export const PRIORITIES: { value: Priority; label: string }[] = [
+  { value: "LOW", label: "Baixa" },
+  { value: "MEDIUM", label: "Média" },
+  { value: "HIGH", label: "Alta" },
+  { value: "URGENT", label: "Urgente" },
+];
+
+export const priorityLabel = (value: string | null | undefined) => PRIORITIES.find((p) => p.value === value)?.label ?? null;
+
+export type CrmTagDto = { id: string; name: string; color: string };

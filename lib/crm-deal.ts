@@ -1,4 +1,5 @@
-import { Prisma, type CrmDealStatus, type CrmRecurrence } from "@prisma/client";
+import { Prisma, type CrmDealStatus, type CrmPriority, type CrmRecurrence } from "@prisma/client";
+import { priorityLabel } from "@/components/crm/deal/types";
 import { prisma } from "@/lib/prisma";
 
 type Tx = Prisma.TransactionClient;
@@ -19,18 +20,20 @@ export const cardListInclude = {
     select: { id: true, title: true, deadline: true, type: true },
   },
   _count: { select: { activities: { where: { completed: false, type: { not: "COMMENT" } } } } },
+  tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
 } satisfies Prisma.CrmCardInclude;
 
 type ListCard = Prisma.CrmCardGetPayload<{ include: typeof cardListInclude }>;
 
 /** Flattens relations and converts Decimal so the card can cross the server → client boundary. */
-export function serializeListCard({ company, contacts, responsible, ...card }: ListCard) {
+export function serializeListCard({ company, contacts, responsible, tags, ...card }: ListCard) {
   return {
     ...card,
     value: card.value.toNumber(),
     company: company?.name ?? null,
     contactName: contacts[0]?.contact.name ?? null,
     responsible: responsible && { id: responsible.id, name: responsible.name, role: responsible.role, image: responsible.photo },
+    tags: tags.map((t) => t.tag),
   };
 }
 
@@ -42,6 +45,7 @@ const dealDetailsInclude = {
   company: true,
   contacts: { orderBy: { order: "asc" }, include: { contact: true } },
   observers: { select: { memberId: true } },
+  tags: { select: { tagId: true } },
   products: { orderBy: { order: "asc" } },
   activities: { orderBy: { createdAt: "desc" } },
   history: { orderBy: { createdAt: "desc" } },
@@ -63,7 +67,7 @@ const dealDetailsInclude = {
 type DealRow = Prisma.CrmCardGetPayload<{ include: typeof dealDetailsInclude }>;
 
 const toDto = (row: DealRow) => {
-  const { stage, company, contacts, observers, products, ...deal } = row;
+  const { stage, company, contacts, observers, products, tags, ...deal } = row;
   return {
     ...deal,
     value: deal.value.toNumber(),
@@ -85,6 +89,7 @@ const toDto = (row: DealRow) => {
       info: contact.info ?? "",
     })),
     observers: observers.map((o) => o.memberId),
+    tags: tags.map((t) => t.tagId),
     products: products.map((p) => ({
       id: p.id,
       productId: p.productId,
@@ -124,6 +129,8 @@ function snapshotOf(dto: DealDto) {
     responsibleId: dto.responsibleId,
     comment: dto.comment,
     recurrence: dto.recurrence,
+    priority: dto.priority,
+    tags: dto.tags,
     customData: dto.customData,
     company: dto.company,
     contacts: dto.contacts,
@@ -227,6 +234,7 @@ export const SCALAR_FIELDS = {
   responsibleId: "Responsável",
   comment: "Comentário",
   recurrence: "Negócio recorrente",
+  priority: "Prioridade",
   customData: "Campos adicionais",
 } as const;
 
@@ -235,6 +243,7 @@ export const RELATION_FIELDS = {
   contacts: "Contatos",
   observers: "Observadores",
   products: "Serviços",
+  tags: "Etiquetas",
 } as const;
 
 type ScalarField = keyof typeof SCALAR_FIELDS;
@@ -242,6 +251,7 @@ type RelationField = keyof typeof RELATION_FIELDS;
 
 const RECURRENCES = new Set<CrmRecurrence>(["NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"]);
 export const STATUSES = new Set<CrmDealStatus>(["OPEN", "WON", "LOST"]);
+const PRIORITY_VALUES = new Set<CrmPriority>(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 
 function parseScalar(field: ScalarField, value: unknown) {
   switch (field) {
@@ -258,6 +268,8 @@ function parseScalar(field: ScalarField, value: unknown) {
       return Boolean(value);
     case "recurrence":
       return RECURRENCES.has(value as CrmRecurrence) ? value : "NONE";
+    case "priority":
+      return PRIORITY_VALUES.has(value as CrmPriority) ? value : null;
     case "customData":
       return value && typeof value === "object" ? value : null;
     case "referredBy":
@@ -357,8 +369,20 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
       });
     }
 
+    if (field === "tags") {
+      const requested = [...new Set((changes.tags as string[] | null) ?? [])];
+      // Drops tags deleted meanwhile (e.g. restoring an old snapshot)
+      const found = await tx.crmTag.findMany({ where: { id: { in: [...currentDto.tags, ...requested] } }, select: { id: true, name: true } });
+      const ids = requested.filter((id) => found.some((t) => t.id === id));
+      if (comparable([...currentDto.tags].sort()) === comparable([...ids].sort())) continue;
+      await tx.crmCardTag.deleteMany({ where: { cardId: dealId } });
+      if (ids.length) await tx.crmCardTag.createMany({ data: ids.map((tagId) => ({ cardId: dealId, tagId })) });
+      const tagNames = (list: string[]) => list.map((id) => found.find((t) => t.id === id)?.name).filter(Boolean).join(", ") || null;
+      history.push({ type: "FIELD_CHANGED", data: { field, label, from: tagNames(currentDto.tags), to: tagNames(ids) } });
+    }
+
     if (field === "products") {
-      const input = ((changes.products as ProductInput[] | null) ?? []).filter((p) => p.name?.trim());
+      const input =((changes.products as ProductInput[] | null) ?? []).filter((p) => p.name?.trim());
       const normalize = (list: ProductInput[]) =>
         list.map((p) => ({
           name: p.name.trim(),
@@ -417,12 +441,6 @@ export async function findDuplicateDeals(
 }
 
 /**
- * Full deal update (deal panel and "Modificar negócio" automation): fields
- * from applyDealChanges plus `stageId` and `status`, all recorded in the
- * history. Running the new stage's rules / "campo alterado" triggers is left
- * to the caller (lib/crm-automation imports this module).
- */
-/**
  * Task boards have no Ganho/Perdido: their last column means "done", so entering it closes the
  * task (WON) and leaving it reopens it (OPEN). Null on deal boards, where the status is set by hand.
  */
@@ -452,6 +470,12 @@ export async function syncTaskStatus(tx: Tx, cardId: string) {
   return status === "WON" ? createRecurringCopy(tx, cardId) : null;
 }
 
+/**
+ * Full deal update (deal panel and "Modificar negócio" automation): fields
+ * from applyDealChanges plus `stageId` and `status`, all recorded in the
+ * history. Running the new stage's rules / "campo alterado" triggers is left
+ * to the caller (lib/crm-automation imports this module).
+ */
 export async function updateDeal(
   id: string,
   { stageId, status, ...changes }: { stageId?: string | null; status?: string | null } & Record<string, unknown>,
@@ -522,6 +546,7 @@ async function fieldHistory(tx: Tx, field: ScalarField, label: string, from: unk
     const name = (id: unknown) => members.find((m) => m.id === id)?.name ?? null;
     return { type: "FIELD_CHANGED", data: { field, label, from: name(from), to: name(to) } };
   }
+  if (field === "priority") return { type: "FIELD_CHANGED", data: { field, label, from: priorityLabel(from as string), to: priorityLabel(to as string) } };
   return { type: "FIELD_CHANGED", data: { field, label, from: displayScalar(from), to: displayScalar(to) } };
 }
 
@@ -662,6 +687,7 @@ export async function createRecurringCopy(tx: Tx, id: string) {
       contacts: true,
       observers: true,
       products: true,
+      tags: true,
       stage: { select: { pipeline: { select: { stages: { orderBy: { order: "asc" }, take: 1 } } } } },
     },
   });
@@ -683,11 +709,13 @@ export async function createRecurringCopy(tx: Tx, id: string) {
       referredBy: deal.referredBy,
       isPublic: deal.isPublic,
       recurrence: deal.recurrence,
+      priority: deal.priority,
       customData: deal.customData ?? Prisma.DbNull,
       startDate: shiftDate(deal.startDate ?? deal.createdAt, deal.recurrence),
       closeDate: shiftDate(deal.closeDate ?? new Date(), deal.recurrence),
       contacts: { createMany: { data: deal.contacts.map(({ contactId, order }) => ({ contactId, order })) } },
       observers: { createMany: { data: deal.observers.map(({ memberId }) => ({ memberId })) } },
+      tags: { createMany: { data: deal.tags.map(({ tagId }) => ({ tagId })) } },
       products: {
         createMany: {
           data: deal.products.map(({ productId, name, price, quantity, order }) => ({ productId, name, price, quantity, order })),

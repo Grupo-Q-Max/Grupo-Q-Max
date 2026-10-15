@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Kanban, type KanbanColumnData } from "@/components/kanban";
 import { DealCard, type CrmDeal } from "./DealCard";
-import { DealDetailsPanel } from "./deal/DealDetailsPanel";
 import { useCan } from "./CrmAccess";
 import { postDeal } from "./CrmButtons";
 import { sendStageMove } from "./stageEntry";
@@ -24,48 +23,20 @@ const jsonRequest = (method: string, body: unknown): RequestInit => ({
 
 export function CrmKanban({
   pipeline,
-  initialDealId,
+  onOpenDeal,
+  syncBoardRef,
   isDealVisible,
 }: {
   pipeline: CrmPipeline;
-  initialDealId?: string;
+  onOpenDeal: (deal: CrmDeal) => void;
+  /** Set while the board listens for changes; calling it resyncs the columns */
+  syncBoardRef: React.RefObject<(() => void) | null>;
   isDealVisible?: (deal: CrmDeal) => boolean;
 }) {
   const router = useRouter();
   const can = useCan();
   const columns = useMemo(() => toColumns(pipeline.stages), [pipeline.stages]);
   const isTasks = pipeline.kind === "TASKS";
-  const [openDealId, setOpenDealId] = useState<string | null>(initialDealId ?? null);
-  const dealChangedRef = useRef(false);
-  const syncBoardRef = useRef<(() => void) | null>(null);
-
-  // Legacy links (/crm?deal=<id>) still open the panel; the URL is fixed once the deal loads
-  useEffect(() => {
-    const legacyId = new URLSearchParams(window.location.search).get("deal");
-    if (legacyId) setOpenDealId(legacyId);
-  }, []);
-
-  // The open deal lives in the URL path, like Bitrix24: /crm/deal/details/<number>
-  const showDealUrl = useCallback((number: number) => {
-    window.history.replaceState(null, "", `/crm/deal/details/${number}`);
-  }, []);
-
-  const openDeal = useCallback(
-    (deal: CrmDeal) => {
-      dealChangedRef.current = false;
-      setOpenDealId(deal.id);
-      showDealUrl(deal.number);
-    },
-    [showDealUrl]
-  );
-
-  const closeDeal = useCallback(() => {
-    setOpenDealId(null);
-    window.history.replaceState(null, "", `/crm?pipelineId=${pipeline.id}`);
-    // Server data (list view, header) is refreshed only once the panel closes, so the
-    // board isn't re-rendered for the deal URL while it's open
-    if (dealChangedRef.current) router.refresh();
-  }, [pipeline.id, router]);
 
   const fetchColumns = useCallback(async () => {
     const res = await fetch(`/api/crm/pipeline?id=${pipeline.id}`);
@@ -93,7 +64,7 @@ export function CrmKanban({
         source.close();
       };
     },
-    [pipeline.id]
+    [pipeline.id, syncBoardRef]
   );
 
   return (
@@ -110,7 +81,7 @@ export function CrmKanban({
           renameColumn: "Renomear Coluna",
           deleteColumn: "Excluir Coluna",
         }}
-        renderItem={(deal, { remove }) => <DealCard deal={deal} isTask={isTasks} onOpen={() => openDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
+        renderItem={(deal, { remove }) => <DealCard deal={deal} isTask={isTasks} onOpen={() => onOpenDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
         onMoveItem={can("deal.edit") ? async (cardId, newStageId, index) => {
           const res = await sendStageMove((extra) => fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index, ...extra })));
           if (!res) return false;
@@ -153,18 +124,6 @@ export function CrmKanban({
           return { id: stage.id, title: stage.name, items: stage.cards };
         } : undefined}
       />
-
-      {openDealId && (
-        <DealDetailsPanel
-          dealId={openDealId}
-          onLoad={(deal) => showDealUrl(deal.number)}
-          onClose={closeDeal}
-          onChanged={() => {
-            dealChangedRef.current = true;
-            syncBoardRef.current?.();
-          }}
-        />
-      )}
     </>
   );
 }
