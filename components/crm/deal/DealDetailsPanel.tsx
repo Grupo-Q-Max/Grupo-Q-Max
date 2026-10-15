@@ -5,9 +5,10 @@ import { createPortal } from "react-dom";
 import { Check, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
 import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
-import { pickDraft, type DealDetails, type DealDraft, type TeamMember } from "./types";
+import { formatMoney, pickDraft, type DealDetails, type DealDraft, type TeamMember } from "./types";
 import { formatDateOnly } from "./ui";
 import { useCan } from "../CrmAccess";
+import { sendStageMove } from "../stageEntry";
 import { confirmDialog } from "@/components/ui/Dialogs";
 
 type Tab = "general" | "products" | "history";
@@ -128,12 +129,18 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
   /** Immediate change (stage, status) — keeps unsaved edits in the form. */
   const patch = async (changes: Record<string, unknown>) => {
     setError(null);
-    const res = await fetch("/api/crm/card", jsonRequest("PATCH", { id: dealId, ...changes }));
+    const send = (extra: Record<string, unknown> = {}) => fetch("/api/crm/card", jsonRequest("PATCH", { id: dealId, ...changes, ...extra }));
+    // Stage moves follow the QXBACK stage rules (required services / lost reason)
+    const res = "stageId" in changes ? await sendStageMove(send) : await send();
+    if (!res) return;
     if (!res.ok) {
       setError((await res.json().catch(() => null))?.error ?? "Não foi possível salvar.");
       return;
     }
-    setDeal(await res.json());
+    const updated: DealDetails = await res.json();
+    // The lost reason is saved in a custom field: refresh it in the form unless it has unsaved edits
+    if (deal && !dirtyFields.includes("customData")) updateDraft({ customData: updated.customData });
+    setDeal(updated);
     onChanged();
   };
 
@@ -179,6 +186,26 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
     if (deal) setDraft(pickDraft(deal));
     setEditingTitle(false);
     setError(null);
+  };
+
+  const restore = async (stageId: string) => {
+    const confirmed = await confirmDialog(
+      "As informações atuais do card serão substituídas pelos dados salvos quando ele estava nesta coluna." +
+        (isDirty ? " As alterações não salvas serão descartadas." : "") +
+        " Deseja continuar?",
+      { title: "Restaurar informações?", confirmLabel: "Restaurar informações", danger: true }
+    );
+    if (!confirmed) return;
+    setError(null);
+    const res = await fetch("/api/crm/card", jsonRequest("PATCH", { id: dealId, restoreStageId: stageId }));
+    if (!res.ok) {
+      setError((await res.json().catch(() => null))?.error ?? "Não foi possível restaurar.");
+      return;
+    }
+    const updated: DealDetails = await res.json();
+    setDeal(updated);
+    setDraft(pickDraft(updated));
+    onChanged();
   };
 
   const remove = async () => {
@@ -299,7 +326,12 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
                 </div>
               )}
               {tab === "products" && <DealProductsEditor draft={draft} onChange={updateDraft} />}
-              {tab === "history" && <DealHistoryTable deal={deal} />}
+              {tab === "history" && (
+                <>
+                  <StageSnapshots deal={deal} onRestore={can("deal.edit") ? restore : undefined} />
+                  <DealHistoryTable deal={deal} />
+                </>
+              )}
             </div>
 
             {(isDirty || error) && (
@@ -418,7 +450,53 @@ const HISTORY_LABELS: Record<string, string> = {
   STATUS_CHANGED: "Status alterado",
   FIELD_CHANGED: "Campo alterado",
   RECURRENCE_CREATED: "Negócio recorrente criado",
+  STATE_RESTORED: "Informações restauradas",
 };
+
+/** Restore points: the deal's state when it left each stage, in pipeline order. */
+function StageSnapshots({ deal, onRestore }: { deal: DealDetails; onRestore?: (stageId: string) => void }) {
+  const rows = deal.pipeline.stages.flatMap((stage) => {
+    const snap = deal.stageSnapshots.find((s) => s.stageId === stage.id);
+    return snap ? [{ stage, snap }] : [];
+  });
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="deal-history deal-snapshots">
+      <h3>Informações salvas por etapa</h3>
+      <table className="crm-table">
+        <thead>
+          <tr>
+            <th>Etapa</th>
+            <th>Salvo em</th>
+            <th>Valor</th>
+            <th>Serviços</th>
+            <th>Contato</th>
+            {onRestore && <th />}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ stage, snap }) => (
+            <tr key={stage.id}>
+              <td>{stage.name}</td>
+              <td>{new Date(snap.savedAt).toLocaleString("pt-BR")}</td>
+              <td>{formatMoney(snap.data.value, snap.data.currency)}</td>
+              <td>{snap.data.products.map((p) => p.name).join(", ") || "—"}</td>
+              <td>{snap.data.contacts[0]?.name || "—"}</td>
+              {onRestore && (
+                <td>
+                  <button type="button" className="btn-secondary" onClick={() => onRestore(stage.id)}>
+                    <RotateCcw size={14} /> Restaurar informações
+                  </button>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 const STATUS_LABELS: Record<string, string> = { OPEN: "Em andamento", WON: "Ganho", LOST: "Perdido" };
 
@@ -431,6 +509,8 @@ function DealHistoryTable({ deal }: { deal: DealDetails }) {
         return data.title ?? "";
       case "STAGE_CHANGED":
         return `${data.from} → ${data.to}`;
+      case "STATE_RESTORED":
+        return `Dados da etapa ${data.stage ?? ""}`.trim();
       case "STATUS_CHANGED":
         return `${STATUS_LABELS[data.from ?? ""] ?? data.from} → ${STATUS_LABELS[data.to ?? ""] ?? data.to}`;
       default: {

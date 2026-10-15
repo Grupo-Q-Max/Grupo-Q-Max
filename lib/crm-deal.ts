@@ -45,6 +45,7 @@ const dealDetailsInclude = {
   products: { orderBy: { order: "asc" } },
   activities: { orderBy: { createdAt: "desc" } },
   history: { orderBy: { createdAt: "desc" } },
+  stageSnapshots: { select: { stageId: true, savedAt: true, data: true } },
   stage: {
     select: {
       pipeline: {
@@ -100,6 +101,99 @@ export type DealDto = ReturnType<typeof toDto>;
 export async function getDealDetails(id: string, tx: Tx = prisma) {
   const row = await tx.crmCard.findUnique({ where: { id }, include: dealDetailsInclude });
   return row && toDto(row);
+}
+
+// ---------------------------------------------------------------------------
+// Stage snapshots (restore points)
+// ---------------------------------------------------------------------------
+
+/** The deal panel fields (DealDraft) — everything needed to rebuild the deal's state. */
+function snapshotOf(dto: DealDto) {
+  return {
+    title: dto.title,
+    value: dto.value,
+    currency: dto.currency,
+    startDate: dto.startDate,
+    closeDate: dto.closeDate,
+    dealType: dto.dealType,
+    source: dto.source,
+    sourceInfo: dto.sourceInfo,
+    referredBy: dto.referredBy,
+    isPublic: dto.isPublic,
+    responsibleId: dto.responsibleId,
+    comment: dto.comment,
+    recurrence: dto.recurrence,
+    customData: dto.customData,
+    company: dto.company,
+    contacts: dto.contacts,
+    observers: dto.observers,
+    products: dto.products.map(({ id: _id, ...line }) => line),
+  };
+}
+
+type Snapshot = ReturnType<typeof snapshotOf>;
+
+/** Saves the deal's state as the restore point of the stage it is leaving. */
+async function saveStageSnapshot(tx: Tx, dealId: string, stageId: string, dto?: DealDto | null) {
+  const state = dto ?? (await getDealDetails(dealId, tx));
+  if (!state) return;
+  const data = JSON.parse(JSON.stringify(snapshotOf(state))) as Prisma.InputJsonObject;
+  await tx.crmDealStageSnapshot.upsert({
+    where: { dealId_stageId: { dealId, stageId } },
+    create: { dealId, stageId, data },
+    update: { data },
+  });
+}
+
+/** Stage move used by the kanban drag and the stage triggers: snapshots the stage being left. */
+export async function snapshotBeforeMove(tx: Tx, dealId: string, fromStageId: string, toStageId: string) {
+  if (fromStageId !== toStageId) await saveStageSnapshot(tx, dealId, fromStageId);
+}
+
+/**
+ * Changes for updateDeal that bring the deal back to its state when it left `stageId`.
+ * Company and contacts are shared between deals: they are relinked with their current
+ * registry data, never rewritten. Removed team members are dropped.
+ */
+export async function restoreChanges(dealId: string, stageId: string) {
+  const row = await prisma.crmDealStageSnapshot.findUnique({
+    where: { dealId_stageId: { dealId, stageId } },
+    include: { stage: { select: { name: true } } },
+  });
+  if (!row) throw new DealValidationError("Nenhum estado salvo para esta etapa");
+  const snap = row.data as unknown as Snapshot;
+
+  const company = snap.company?.id ? await prisma.crmCompany.findUnique({ where: { id: snap.company.id } }) : null;
+  const contactIds = snap.contacts.flatMap((c) => (c.id ? [c.id] : []));
+  const contacts = await prisma.crmContact.findMany({ where: { id: { in: contactIds } } });
+  const memberIds = [...snap.observers, snap.responsibleId].filter(Boolean) as string[];
+  const members = new Set((await prisma.teamMember.findMany({ where: { id: { in: memberIds } }, select: { id: true } })).map((m) => m.id));
+
+  // Linked record still exists: keep its current data; otherwise the saved data recreates it
+  type Registry = { name: string; phone: string | null; email: string | null; address: string | null; info: string | null; document?: string | null };
+  const current = <T extends { id?: string }>(saved: T, found: Registry | null | undefined) =>
+    found
+      ? {
+          ...saved,
+          name: found.name,
+          phone: found.phone ?? "",
+          email: found.email ?? "",
+          address: found.address ?? "",
+          info: found.info ?? "",
+          ...(found.document !== undefined && { document: found.document ?? "" }),
+        }
+      : { ...saved, id: undefined };
+
+  return {
+    stage: row.stage.name,
+    changes: {
+      ...snap,
+      company: snap.company && current(snap.company, company),
+      contacts: snap.contacts.map((c) => current(c, contacts.find((x) => x.id === c.id))),
+      observers: snap.observers.filter((id) => members.has(id)),
+      responsibleId: snap.responsibleId && members.has(snap.responsibleId) ? snap.responsibleId : null,
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -329,7 +423,9 @@ export async function findDuplicateDeals(
  */
 export async function updateDeal(
   id: string,
-  { stageId, status, ...changes }: { stageId?: string | null; status?: string | null } & Record<string, unknown>
+  { stageId, status, ...changes }: { stageId?: string | null; status?: string | null } & Record<string, unknown>,
+  /** Extra timeline entry recorded when something changed (e.g. "informações restauradas"). */
+  note?: HistoryEntry
 ) {
   if (status && !STATUSES.has(status as CrmDealStatus)) throw new DealValidationError("Status inválido");
 
@@ -343,6 +439,8 @@ export async function updateDeal(
       ]);
       if (!to || to.pipelineId !== from.pipelineId) throw new DealValidationError("Etapa inválida");
 
+      // `current` was read before the changes above: the state the deal had in the stage it leaves
+      await saveStageSnapshot(tx, id, from.id, toDto(current));
       data.stageId = to.id;
       data.order = await tx.crmCard.count({ where: { stageId: to.id } });
       history.push({ type: "STAGE_CHANGED", data: { from: from.name, to: to.name } });
@@ -353,6 +451,8 @@ export async function updateDeal(
       data.closedAt = status === "OPEN" ? null : new Date();
       history.push({ type: "STATUS_CHANGED", data: { from: current.status, to: status } });
     }
+
+    if (note && history.length > 0) history.unshift(note);
 
     let recurringCopy = null;
     if (history.length > 0) {

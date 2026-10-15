@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { onDealEnteredStage } from "@/lib/crm-automation";
+import { checkStageEntry, StageEntryError } from "@/lib/crm-qxback";
+import { snapshotBeforeMove } from "@/lib/crm-deal";
 
 export async function POST(req: Request) {
   try {
     const denied = await denyUnless("deal.edit");
     if (denied) return denied;
-    const { cardId, newStageId, index } = await req.json();
+    const { cardId, newStageId, index, lostReason } = await req.json();
 
     if (!cardId || !newStageId) {
       return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
@@ -19,6 +21,7 @@ export async function POST(req: Request) {
       select: { stageId: true, stage: { select: { name: true } } },
     });
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (current.stageId !== newStageId) await checkStageEntry(cardId, newStageId, lostReason);
 
     // Record the stage change in the deal timeline and run the new stage's automation rules
     const stageHistory = async () => {
@@ -30,19 +33,16 @@ export async function POST(req: Request) {
       });
     };
 
-    // Without an index, just move the card to the stage (appended by its current order)
-    if (typeof index !== "number") {
-      const updatedCard = await prisma.crmCard.update({
-        where: { id: cardId },
-        data: { stageId: newStageId },
-      });
-      await stageHistory();
-      await notifyStageChanged(newStageId);
-      return NextResponse.json({ success: true, card: updatedCard });
-    }
-
-    // With an index, insert the card at that position and renumber the stage's cards
     const updatedCard = await prisma.$transaction(async (tx) => {
+      // The state the deal had in the stage it leaves becomes that stage's restore point
+      await snapshotBeforeMove(tx, cardId, current.stageId, newStageId);
+
+      // Without an index, just move the card to the stage (appended by its current order)
+      if (typeof index !== "number") {
+        return tx.crmCard.update({ where: { id: cardId }, data: { stageId: newStageId } });
+      }
+
+      // With an index, insert the card at that position and renumber the stage's cards
       const siblings = await tx.crmCard.findMany({
         where: { stageId: newStageId, NOT: { id: cardId } },
         orderBy: { order: "asc" },
@@ -68,6 +68,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, card: updatedCard });
   } catch (error) {
+    if (error instanceof StageEntryError) return error.toResponse();
     console.error("Error moving card:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

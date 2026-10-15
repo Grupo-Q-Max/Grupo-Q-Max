@@ -18,8 +18,15 @@ jobs:
       MICROSOFT_TENANT_ID: ${{ secrets.MICROSOFT_TENANT_ID }}
       MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
       MICROSOFT_ALLOWED_DOMAINS: ${{ secrets.MICROSOFT_ALLOWED_DOMAINS }}
+      # Signs the CRM session and /admin cookies (lib/auth.ts); /admin password when none was saved from /admin
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      # Integração QXBACK (lib/crm-qxback.ts); secret vazio = variável fora do .env
+      QXBACK_TOKEN: ${{ secrets.QXBACK_TOKEN }}
+      QXBACK_STAGES: ${{ secrets.QXBACK_STAGES }}
+      QXBACK_FIELDS: ${{ secrets.QXBACK_FIELDS }}
+      QXBACK_WEBHOOK_URL: ${{ secrets.QXBACK_WEBHOOK_URL }}
+      QXBACK_WEBHOOK_SECRET: ${{ secrets.QXBACK_WEBHOOK_SECRET }}
 
     steps:
       - name: Checkout Repository
@@ -93,8 +100,10 @@ jobs:
           echo "MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID}" >> deploy/.env
           echo "MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}" >> deploy/.env
           echo "MICROSOFT_ALLOWED_DOMAINS=${MICROSOFT_ALLOWED_DOMAINS}" >> deploy/.env
-          if [ -n "${AUTH_SECRET}" ]; then echo "AUTH_SECRET=${AUTH_SECRET}" >> deploy/.env; fi
-          if [ -n "${ADMIN_PASSWORD}" ]; then echo "ADMIN_PASSWORD=${ADMIN_PASSWORD}" >> deploy/.env; fi
+          # Aspas simples: QXBACK_STAGES/QXBACK_FIELDS são JSON; secret vazio = variável fora do .env (node --env-file)
+          for name in AUTH_SECRET ADMIN_PASSWORD QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET; do
+            if [ -n "${!name}" ]; then echo "${name}='${!name}'" >> deploy/.env; fi
+          done
 
           echo ""
           echo "4. Validando logos obrigatorias..."
