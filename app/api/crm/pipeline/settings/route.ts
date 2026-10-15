@@ -6,14 +6,14 @@ import { notifyPipelineChanged } from "@/lib/crm-realtime";
 import { isQxbackStage } from "@/lib/crm-qxback";
 
 /**
- * Pipeline settings: name, custom fields, space, kind (DEALS/TASKS) and the groups that see it
- * (`groupIds: []` = every CRM user). Only the fields sent are changed.
+ * Pipeline settings: name, custom fields, space, kind (DEALS/TASKS) and the groups and members
+ * that see it (`groupIds: []` + `memberIds: []` = every CRM user). Only the fields sent are changed.
  */
 export async function PUT(req: Request) {
   try {
     const denied = await denyUnless("pipeline.edit");
     if (denied) return denied;
-    const { id, fieldsConfig, name, spaceId, kind, groupIds } = await req.json();
+    const { id, fieldsConfig, name, spaceId, kind, groupIds, memberIds } = await req.json();
     if (!id) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
@@ -45,6 +45,12 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: "Invalid groupIds" }, { status: 400 });
       }
       dataToUpdate.groups = { deleteMany: {}, create: [...new Set<string>(groupIds)].map((groupId) => ({ groupId })) };
+    }
+    if (memberIds !== undefined) {
+      if (!Array.isArray(memberIds) || !memberIds.every((m) => typeof m === "string")) {
+        return NextResponse.json({ error: "Invalid memberIds" }, { status: 400 });
+      }
+      dataToUpdate.members = { deleteMany: {}, create: [...new Set<string>(memberIds)].map((memberId) => ({ memberId })) };
     }
 
     const updated = await prisma.crmPipeline.update({

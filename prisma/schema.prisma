@@ -68,6 +68,7 @@ model TeamMember {
   automationActivities  CrmAutomationActivity[]
   automationDealUpdates CrmAutomationDealUpdate[]
   notifications         CrmNotification[]
+  pipelineAccess        CrmPipelineMember[]
   goals                 CrmGoal[]
   authLogs              AuthLog[]
   requests              CrmRequest[]
@@ -216,8 +217,9 @@ model CrmPipeline {
   /// Position inside its space in the sidebar
   order        Int                @default(0)
   stages       CrmStage[]
-  /// Groups that see the pipeline; none = every CRM user. Admin groups see all.
+  /// Groups and members that see the pipeline; neither = every CRM user. Admin groups see all.
   groups       CrmPipelineGroup[]
+  members      CrmPipelineMember[]
   fieldsConfig Json? // Array of field definitions
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
@@ -233,6 +235,17 @@ model CrmPipelineGroup {
 
   @@id([pipelineId, groupId])
   @@index([groupId])
+}
+
+/// Team member allowed to see a restricted pipeline, besides its groups.
+model CrmPipelineMember {
+  pipelineId String
+  pipeline   CrmPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  memberId   String
+  member     TeamMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([pipelineId, memberId])
+  @@index([memberId])
 }
 
 model CrmStage {

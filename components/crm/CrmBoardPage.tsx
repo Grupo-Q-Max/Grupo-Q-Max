@@ -16,6 +16,7 @@ const pipelineInclude = {
     include: { cards: { orderBy: { order: "asc" as const }, include: cardListInclude } },
   },
   groups: { select: { groupId: true } },
+  members: { select: { memberId: true } },
 };
 
 async function createDefaultPipeline() {
@@ -60,9 +61,12 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
   }
   const qxback = pipeline.stages.some((stage) => isQxbackStage(stage.id));
   // Choices for the pipeline settings and the "Criar Pipeline" modal
-  const [spaces, groups] = await Promise.all([
+  const [spaces, groups, members] = await Promise.all([
     prisma.crmSpace.findMany({ orderBy: { order: "asc" }, select: { id: true, name: true } }),
     can.has("pipeline.edit") ? prisma.crmGroup.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, isAdmin: true } }) : [],
+    can.has("pipeline.edit")
+      ? prisma.teamMember.findMany({ where: { crmActive: true, email: { not: null } }, orderBy: { name: "asc" }, select: { id: true, name: true, role: true } })
+      : [],
   ]);
 
   // Serialize Decimal/relations so the pipeline can be passed to Client Components
@@ -87,7 +91,7 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
               Integrado QXBACK
             </span>
           )}
-          {can.has("pipeline.edit") && <CrmPipelineSettings pipeline={serializedPipeline} options={{ spaces, groups }} />}
+          {can.has("pipeline.edit") && <CrmPipelineSettings pipeline={serializedPipeline} options={{ spaces, groups, members }} />}
           {can.has("automation.view") && (
             <Link
               href={`/crm/automation/${pipeline.id}`}
