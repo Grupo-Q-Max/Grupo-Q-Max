@@ -74,9 +74,9 @@ const appBase = () => (process.env.APP_URL || "https://qmaxbrasil.com.br").repla
 
 /**
  * Notifies the responsible (bell + e-mail) once per task card (TASKS pipelines, by closeDate) and per pending
- * activity (by deadline) that is due today or overdue. `remindedFor` keeps the date already
- * reminded: a new date gets a new reminder, and the conditional claim makes the ticker and the
- * external cron safe to overlap.
+ * activity (by deadline) that is due today or overdue, and once per task card due tomorrow. `remindedFor`
+ * (`dueSoonRemindedFor` for the day-before notice) keeps the date already reminded: a new date gets a new
+ * reminder, and the conditional claim makes the ticker and the external cron safe to overlap.
  */
 export async function remindDueTasks(limit = 100) {
   const today = todayKey();
@@ -84,8 +84,12 @@ export async function remindDueTasks(limit = 100) {
   const activityCutoff = endOfDay(today);
   const cardPending = { OR: [{ remindedFor: null }, { remindedFor: { not: { equals: prisma.crmCard.fields.closeDate } } }] } satisfies Prisma.CrmCardWhereInput;
   const activityPending = { OR: [{ remindedFor: null }, { remindedFor: { not: { equals: prisma.crmActivity.fields.deadline } } }] } satisfies Prisma.CrmActivityWhereInput;
+  const tomorrow = new Date(cardCutoff.getTime() + 86_400_000);
+  const dueSoonPending = {
+    OR: [{ dueSoonRemindedFor: null }, { dueSoonRemindedFor: { not: { equals: prisma.crmCard.fields.closeDate } } }],
+  } satisfies Prisma.CrmCardWhereInput;
 
-  const [cards, activities] = await Promise.all([
+  const [cards, activities, dueSoon] = await Promise.all([
     prisma.crmCard.findMany({
       where: {
         ...cardPending,
@@ -108,6 +112,18 @@ export async function remindDueTasks(limit = 100) {
       take: limit,
       select: { id: true, type: true, title: true, deadline: true, cardId: true, responsibleId: true, responsible: { select: { email: true } }, card: { select: { number: true } } },
     }),
+    // Task cards due tomorrow get a heads-up the day before
+    prisma.crmCard.findMany({
+      where: {
+        ...dueSoonPending,
+        status: "OPEN",
+        closeDate: tomorrow,
+        responsible: { crmActive: true },
+        stage: { pipeline: { kind: "TASKS" } },
+      },
+      take: limit,
+      select: { id: true, number: true, title: true, closeDate: true, responsibleId: true, responsible: { select: { email: true } } },
+    }),
   ]);
 
   const reminders = [
@@ -128,6 +144,15 @@ export async function remindDueTasks(limit = 100) {
       message: `${ACTIVITY_LABELS[a.type]} "${a.title}" (negócio #${a.card.number}) ${dueState(a.deadline, false) === "overdue" ? "está atrasada" : "vence hoje"}`,
       claim: (tx: Prisma.TransactionClient) =>
         tx.crmActivity.updateMany({ where: { id: a.id, deadline: a.deadline, ...activityPending }, data: { remindedFor: a.deadline } }),
+    })),
+    ...dueSoon.map((c) => ({
+      email: c.responsible?.email,
+      number: c.number,
+      memberId: c.responsibleId!,
+      cardId: c.id,
+      message: `Tarefa #${c.number} "${c.title}" vence amanhã`,
+      claim: (tx: Prisma.TransactionClient) =>
+        tx.crmCard.updateMany({ where: { id: c.id, closeDate: c.closeDate, ...dueSoonPending }, data: { dueSoonRemindedFor: c.closeDate } }),
     })),
   ];
 
