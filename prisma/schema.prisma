@@ -266,29 +266,31 @@ enum CrmRecurrence {
 
 /// A deal (negócio) shown as a card on the kanban.
 model CrmCard {
-  id         String        @id @default(cuid())
+  id          String        @id @default(cuid())
   /// Short sequential number used in the URL: /crm/deal/details/<number>
-  number     Int           @unique @default(autoincrement())
-  title      String
+  number      Int           @unique @default(autoincrement())
+  title       String
   /// Cached sum of the deal products (kept in sync by the API) so the board doesn't aggregate on every load
-  value      Decimal       @default(0.00) @db.Decimal(10, 2)
-  currency   String        @default("BRL") @db.VarChar(3)
-  status     CrmDealStatus @default(OPEN)
+  value       Decimal       @default(0.00) @db.Decimal(10, 2)
+  currency    String        @default("BRL") @db.VarChar(3)
+  status      CrmDealStatus @default(OPEN)
   /// When the status became WON/LOST (null while OPEN); used by the reports. closeDate is the planned end date
-  closedAt   DateTime?
-  order      Int           @default(0)
-  startDate  DateTime?     @db.Date
-  closeDate  DateTime?     @db.Date
-  dealType   String?
-  source     String?
-  sourceInfo String?       @db.Text
+  closedAt    DateTime?
+  order       Int           @default(0)
+  startDate   DateTime?     @db.Date
+  closeDate   DateTime?     @db.Date
+  /// closeDate whose due reminder already went out (task boards); a new closeDate gets its own reminder
+  remindedFor DateTime?     @db.Date
+  dealType    String?
+  source      String?
+  sourceInfo  String?       @db.Text
   /// Who brought the lead: free text (team member or external person), set by the webhook or by hand
-  referredBy String?       @db.VarChar(200)
-  isPublic   Boolean       @default(true)
-  comment    String?       @db.Text
-  recurrence CrmRecurrence @default(NONE)
-  utm        Json? // { source, medium, campaign, content, term } captured from forms
-  customData Json? // values of the pipeline's user-defined fields (fieldsConfig)
+  referredBy  String?       @db.VarChar(200)
+  isPublic    Boolean       @default(true)
+  comment     String?       @db.Text
+  recurrence  CrmRecurrence @default(NONE)
+  utm         Json? // { source, medium, campaign, content, term } captured from forms
+  customData  Json? // values of the pipeline's user-defined fields (fieldsConfig)
 
   stageId       String
   stage         CrmStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)
@@ -313,6 +315,7 @@ model CrmCard {
   @@index([companyId])
   @@index([responsibleId])
   @@index([status, closedAt])
+  @@index([status, closeDate])
 }
 
 /// Companies are shared between deals: editing one updates every deal linked to it.
@@ -384,11 +387,11 @@ model CrmProduct {
 /// Product line of a deal. Name and price are a snapshot of the sale, so later
 /// catalog changes don't rewrite closed deals.
 model CrmDealProduct {
-  id        String      @id @default(cuid())
-  dealId    String
-  deal      CrmCard     @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  productId String?
-  product   CrmProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  id          String      @id @default(cuid())
+  dealId      String
+  deal        CrmCard     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     CrmProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
   name        String
   description String?     @db.Text
   price       Decimal     @default(0.00) @db.Decimal(10, 2)
@@ -419,11 +422,14 @@ model CrmActivity {
   responsible   TeamMember?     @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
   completed     Boolean         @default(false)
   completedAt   DateTime?
+  /// deadline whose due reminder already went out; a new deadline gets its own reminder
+  remindedFor   DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
   @@index([cardId])
   @@index([responsibleId])
+  @@index([completed, deadline])
 }
 
 /// Append-only audit log of the deal timeline. `data` is a snapshot of the change

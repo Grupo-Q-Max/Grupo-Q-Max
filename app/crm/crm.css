@@ -1608,3 +1608,45 @@ button.crm-bell {
     font-size: 18px;
   }
 }
+
+/* MINHAS TAREFAS (/crm/me) */
+.crm-my-tasks a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.crm-my-tasks a:hover {
+  text-decoration: underline;
+}
+
+.crm-my-tasks__due {
+  white-space: nowrap;
+}
+
+.crm-my-tasks__state {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.crm-my-tasks tr.is-overdue td {
+  background: rgba(255, 59, 59, 0.08);
+}
+
+.crm-my-tasks tr.is-overdue .crm-my-tasks__due {
+  color: #ff6b6b;
+  box-shadow: inset 3px 0 0 #ff3b3b;
+}
+
+.crm-my-tasks tr.is-today .crm-my-tasks__due {
+  color: #ffb547;
+}
+
+.crm-my-tasks__context {
+  color: #a5a0aa;
+  font-size: 14px;
+}
+
+.crm-my-tasks__empty {
+  color: #a5a0aa;
+}
