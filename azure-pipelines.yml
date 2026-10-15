@@ -28,17 +28,17 @@ steps:
 - script: npx prisma db push
   displayName: 'Sincronizar Banco de Dados (DB Push)'
   env:
-    DATABASE_URL: "mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website"
+    DATABASE_URL: $(DATABASE_URL)
  
 - script: node scripts/seed-prod-team.cjs
   displayName: 'Seed Sócios no Banco de Dados'
   env:
-    DATABASE_URL: "mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website"
+    DATABASE_URL: $(DATABASE_URL)
 
 - script: node test-db.js
   displayName: 'Robô de Testes Automatizados'
   env:
-    DATABASE_URL: "mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website"
+    DATABASE_URL: $(DATABASE_URL)
  
 - script: npm run build
   displayName: 'Build Next.js'
@@ -85,10 +85,15 @@ steps:
  
     echo ""
     echo "3.2. Criando .env para o servidor..."
-    echo "DATABASE_URL=mysql://qmax_website:%5B%5BYz6rAAQ5iFwhZV@74.249.25.198:33306/qmax_website" > deploy/.env
+    # Azure keeps an undefined $(VAR) as literal text: treat it as unset
+    defined() { case "$1" in ""|'$('*) return 1;; esac; }
+    defined "${DATABASE_URL}" || { echo "DATABASE_URL nao definido no grupo CI-CD credenciais"; exit 1; }
+    echo "DATABASE_URL=${DATABASE_URL}" > deploy/.env
     echo "MICROSOFT_TENANT_ID=e3a65ea4-591b-4eab-acf5-059083274f98" >> deploy/.env
     echo "MICROSOFT_CLIENT_ID=365625d9-2647-489d-b319-48b960f9edab" >> deploy/.env
     echo "MICROSOFT_ALLOWED_DOMAINS=grupoqmax.com.br" >> deploy/.env
+    if defined "${AUTH_SECRET}"; then echo "AUTH_SECRET=${AUTH_SECRET}" >> deploy/.env; fi
+    if defined "${ADMIN_PASSWORD}"; then echo "ADMIN_PASSWORD=${ADMIN_PASSWORD}" >> deploy/.env; fi
 
     echo ""
     echo "4. Validando logos obrigatorias..."
@@ -138,6 +143,10 @@ steps:
     ls -lh site.zip
  
   displayName: 'Montar pacote standalone'
+  env:
+    DATABASE_URL: $(DATABASE_URL)
+    AUTH_SECRET: $(AUTH_SECRET)
+    ADMIN_PASSWORD: $(ADMIN_PASSWORD)
  
 - task: PowerShell@2
   displayName: 'Diagnostico das credenciais'

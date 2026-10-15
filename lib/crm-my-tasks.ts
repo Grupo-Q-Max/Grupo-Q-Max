@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notifyMember } from "@/lib/crm-realtime";
 import { ACTIVITY_LABELS } from "@/components/crm/deal/types";
 import { dueState, todayKey } from "@/lib/crm-due";
+import { escapeHtml, sendMail } from "@/lib/mail";
 
 /** End of a Brazilian day, so date-only closeDates sort among activity deadlines of that day. */
 const endOfDay = (day: string) => new Date(`${day}T23:59:59.999-03:00`);
@@ -65,8 +66,10 @@ export async function listMyTasks(memberId: string, visible: Prisma.CrmPipelineW
   return items.sort((a, b) => a.sort - b.sort).map(({ sort: _, ...item }) => item);
 }
 
+const appBase = () => (process.env.APP_URL || "https://qmaxbrasil.com.br").replace(/\/+$/, "");
+
 /**
- * Notifies the responsible once per task card (TASKS pipelines, by closeDate) and per pending
+ * Notifies the responsible (bell + e-mail) once per task card (TASKS pipelines, by closeDate) and per pending
  * activity (by deadline) that is due today or overdue. `remindedFor` keeps the date already
  * reminded: a new date gets a new reminder, and the conditional claim makes the ticker and the
  * external cron safe to overlap.
@@ -88,7 +91,7 @@ export async function remindDueTasks(limit = 100) {
         stage: { pipeline: { kind: "TASKS" } },
       },
       take: limit,
-      select: { id: true, number: true, title: true, closeDate: true, responsibleId: true },
+      select: { id: true, number: true, title: true, closeDate: true, responsibleId: true, responsible: { select: { email: true } } },
     }),
     prisma.crmActivity.findMany({
       where: {
@@ -99,12 +102,14 @@ export async function remindDueTasks(limit = 100) {
         responsible: { crmActive: true },
       },
       take: limit,
-      select: { id: true, type: true, title: true, deadline: true, cardId: true, responsibleId: true, card: { select: { number: true } } },
+      select: { id: true, type: true, title: true, deadline: true, cardId: true, responsibleId: true, responsible: { select: { email: true } }, card: { select: { number: true } } },
     }),
   ]);
 
   const reminders = [
     ...cards.map((c) => ({
+      email: c.responsible?.email,
+      number: c.number,
       memberId: c.responsibleId!,
       cardId: c.id,
       message: `Tarefa #${c.number} "${c.title}" ${dueState(c.closeDate, true) === "overdue" ? "está atrasada" : "vence hoje"}`,
@@ -112,6 +117,8 @@ export async function remindDueTasks(limit = 100) {
         tx.crmCard.updateMany({ where: { id: c.id, closeDate: c.closeDate, ...cardPending }, data: { remindedFor: c.closeDate } }),
     })),
     ...activities.map((a) => ({
+      email: a.responsible?.email,
+      number: a.card.number,
       memberId: a.responsibleId!,
       cardId: a.cardId,
       message: `${ACTIVITY_LABELS[a.type]} "${a.title}" (negócio #${a.card.number}) ${dueState(a.deadline, false) === "overdue" ? "está atrasada" : "vence hoje"}`,
@@ -121,7 +128,7 @@ export async function remindDueTasks(limit = 100) {
   ];
 
   let sent = 0;
-  for (const { claim, ...notification } of reminders) {
+  for (const { claim, email, number, ...notification } of reminders) {
     const created = await prisma.$transaction(async (tx) => {
       if (!(await claim(tx)).count) return false;
       await tx.crmNotification.create({ data: notification });
@@ -130,6 +137,13 @@ export async function remindDueTasks(limit = 100) {
     if (!created) continue;
     notifyMember(notification.memberId);
     sent++;
+    if (email) {
+      const link = `${appBase()}/crm/deal/details/${number}`;
+      // The bell already has it: a mail failure is logged, never retried
+      await sendMail(email, "Lembrete de prazo no CRM", `<p>${escapeHtml(notification.message)}.</p><p><a href="${link}">Abrir no CRM</a></p>`).catch((error) =>
+        console.error("[crm-my-tasks] reminder e-mail failed:", error instanceof Error ? error.message : error)
+      );
+    }
   }
   return sent;
 }

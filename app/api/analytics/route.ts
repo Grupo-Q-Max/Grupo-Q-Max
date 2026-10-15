@@ -25,14 +25,12 @@ export async function POST(req: NextRequest) {
 }
 
 import { cookies } from "next/headers";
-import { readSettings } from "@/lib/settings";
+import { isAdminToken } from "@/lib/settings";
+import { ADMIN_COOKIE } from "@/lib/auth";
 
 export async function GET() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("qmax_admin")?.value;
-  const settings = readSettings();
-
-  if (token !== settings.adminPassword && token !== "qmax2025") {
+  if (!isAdminToken(cookieStore.get(ADMIN_COOKIE)?.value)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {

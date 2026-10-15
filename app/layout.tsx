@@ -8,7 +8,7 @@ import { ClientLayoutElements } from "@/components/ClientLayoutElements";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
 import { SettingsProvider } from "@/components/SettingsProvider";
-import { readSettings } from "@/lib/settings";
+import { readSettings, withoutPassword } from "@/lib/settings";
 import { PageTracker } from "@/components/PageTracker";
 import type { Metadata, Viewport } from "next";
 import "./qmax-base.css";
@@ -97,7 +97,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const settings = readSettings();
+  // Goes to every visitor (SettingsProvider is a client component): never the admin password
+  const settings = withoutPassword(readSettings());
 
   return (
     // suppressHydrationWarning: extensões do navegador (ex.: réguas/grids) injetam

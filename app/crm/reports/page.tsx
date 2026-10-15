@@ -5,16 +5,20 @@ import { CrmReports } from "@/components/crm/reports/CrmReports";
 
 export const dynamic = "force-dynamic";
 
-/** /crm/reports — won/lost deals and values per period, compared with an earlier period. */
+/** /crm/reports — won/lost deals and values per period, the open-deal funnel and the monthly goals. */
 export default async function ReportsPage() {
-  if (!(await currentPermissions()).has("report.view")) return <CrmForbidden />;
+  const permissions = await currentPermissions();
+  if (!permissions.has("report.view")) return <CrmForbidden />;
+
+  const goalsFrom = new Date();
+  goalsFrom.setMonth(goalsFrom.getMonth() - 2, 1);
 
   // Sales boards the user sees; task boards have no value to report
   const pipelineWhere = { ...(await visiblePipelineWhere()), kind: "DEALS" as const };
 
   // ponytail: every deal goes to the client (scalar fields only) and is aggregated there;
   // move to groupBy in a /api/crm/reports route if the table grows past ~20k deals
-  const [deals, pipelines, members] = await Promise.all([
+  const [deals, pipelines, members, goalMembers, goals] = await Promise.all([
     prisma.crmCard.findMany({
       where: { stage: { pipeline: pipelineWhere } },
       select: {
@@ -28,11 +32,23 @@ export default async function ReportsPage() {
         source: true,
         dealType: true,
         responsibleId: true,
+        stageId: true,
         stage: { select: { pipelineId: true } },
       },
     }),
-    prisma.crmPipeline.findMany({ where: pipelineWhere, orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
+    prisma.crmPipeline.findMany({
+      where: pipelineWhere,
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, stages: { orderBy: { order: "asc" }, select: { id: true, name: true } } },
+    }),
     prisma.teamMember.findMany({ where: { responsibleDeals: { some: {} } }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.teamMember.findMany({
+      // CRM users (signed in at least once, or responsible for a deal) plus anyone who already has a goal
+      where: { OR: [{ crmActive: true, OR: [{ microsoftOid: { not: null } }, { responsibleDeals: { some: {} } }] }, { goals: { some: {} } }] },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.crmGoal.findMany({ where: { month: { gte: goalsFrom } }, select: { memberId: true, month: true, amount: true } }),
   ]);
 
   return (
@@ -46,6 +62,9 @@ export default async function ReportsPage() {
       }))}
       pipelines={pipelines}
       members={members}
+      goalMembers={goalMembers}
+      goals={goals.map((g) => ({ memberId: g.memberId, month: g.month.toISOString().slice(0, 7), amount: Number(g.amount) }))}
+      canManageGoals={permissions.has("goal.manage")}
     />
   );
 }

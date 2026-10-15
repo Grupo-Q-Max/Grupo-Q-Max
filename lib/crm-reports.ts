@@ -16,6 +16,7 @@ export type ReportDeal = {
   dealType: string | null;
   responsibleId: string | null;
   pipelineId: string;
+  stageId: string;
 };
 
 /** `months` is set for calendar periods, so the comparison shifts by whole months (Oct 1–5 vs Sep 1–5). */

@@ -53,6 +53,7 @@ export const PERMISSION_SECTIONS = [
     label: "Relatórios",
     permissions: {
       "report.view": "Ver relatórios de negócios ganhos e perdidos",
+      "goal.manage": "Definir as metas mensais de vendas da equipe",
     },
   },
   {

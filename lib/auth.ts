@@ -8,8 +8,12 @@ import { createHmac, timingSafeEqual } from "crypto";
 export const SESSION_COOKIE = "qmax_crm_session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
-// ponytail: falls back to DATABASE_URL (also server-only) so deploys without AUTH_SECRET keep working
-const secret = () => process.env.AUTH_SECRET || process.env.DATABASE_URL || "";
+// Dev falls back to DATABASE_URL (server-only) so a fresh checkout works; production must set AUTH_SECRET
+const secret = () => {
+  if (process.env.AUTH_SECRET) return process.env.AUTH_SECRET;
+  if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET is not set");
+  return process.env.DATABASE_URL || "dev-secret";
+};
 
 const sign = (payload: string) => createHmac("sha256", secret()).update(payload).digest("base64url");
 
@@ -35,6 +39,14 @@ function readToken(purpose: string, token: string | undefined) {
 
 export const createSession = (memberId: string) => createToken("session", memberId, SESSION_MAX_AGE);
 export const readSession = (token: string | undefined) => readToken("session", token);
+
+/** Site admin (/admin) cookie. The admin password is signed too, so changing it ends every admin session. */
+export const ADMIN_COOKIE = "qmax_admin";
+export const createAdminToken = (password: string) => createToken(`admin:${password}`, "admin", SESSION_MAX_AGE);
+export const readAdminToken = (token: string | undefined, password: string) => readToken(`admin:${password}`, token) === "admin";
+
+/** Constant-time password check; an empty expected password never matches. */
+export const samePassword = (input: unknown, expected: string) => typeof input === "string" && !!expected && sameText(input, expected);
 
 /** Signs `memberId` in on `res`. */
 export function setSessionCookie(res: NextResponse, memberId: string) {
