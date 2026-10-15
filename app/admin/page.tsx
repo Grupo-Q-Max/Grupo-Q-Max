@@ -60,6 +60,8 @@ interface TeamMember {
   email?: string | null;
   crmLinked?: boolean;
   showOnSite?: boolean;
+  /** In the CRM admin group: every permission and every pipeline */
+  crmAdmin?: boolean;
 }
 
 type MemberInput = Partial<TeamMember>;
@@ -201,6 +203,7 @@ function MemberModal({
   const [email, setEmail] = useState(initialData?.email || "");
   const [area, setArea] = useState<keyof typeof AREAS | "">(initialData?.area ?? "");
   const [showOnSite, setShowOnSite] = useState(initialData?.showOnSite ?? true);
+  const [crmAdmin, setCrmAdmin] = useState(initialData?.crmAdmin ?? false);
 
   // Extract valid 6-char hex for native <input type="color">
   const hexValue =
@@ -274,6 +277,10 @@ function MemberModal({
             <input type="checkbox" checked={showOnSite} onChange={(e) => setShowOnSite(e.target.checked)} />
             <span>Mostrar na seção "Nossos Sócios" do site</span>
           </label>
+          <label className="qadmin-modal__check">
+            <input type="checkbox" checked={crmAdmin} onChange={(e) => setCrmAdmin(e.target.checked)} />
+            <span>Administrador do CRM (todas as permissões, vê todos os pipelines e telas de administração)</span>
+          </label>
 
           {/* Color selector for details/glow/tags */}
           <div className="qadmin-color-picker">
@@ -346,7 +353,7 @@ function MemberModal({
           </button>
           <button
             className="qadmin-btn qadmin-btn--primary"
-            onClick={() => onSave({ name, role, sector, area: area || null, accentColor, email, showOnSite })}
+            onClick={() => onSave({ name, role, sector, area: area || null, accentColor, email, showOnSite, crmAdmin })}
             disabled={!name.trim()}
           >
             <CheckCircle2 size={16} />
@@ -954,7 +961,10 @@ function TeamTab({
                   />
                 </div>
                 <strong className="qadmin__cardName">{member.name}</strong>
-                <span className="qadmin__cardRole">{member.role}</span>
+                <span className="qadmin__cardRole">
+                  {member.role}
+                  {member.crmAdmin && " · Admin CRM"}
+                </span>
               </div>
 
               <div className="qadmin__cardActions">

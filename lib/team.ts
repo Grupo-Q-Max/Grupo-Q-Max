@@ -6,7 +6,7 @@ import { isArea } from "@/lib/crm-areas";
  * responsável / observadores). The API keeps the shape the admin and the site
  * already use, where the photo is called `image`.
  */
-export function toTeamDto(member: TeamMember) {
+export function toTeamDto(member: TeamMember & { crmGroup?: { isAdmin: boolean } | null }) {
   return {
     id: member.id,
     name: member.name,
@@ -22,12 +22,17 @@ export function toTeamDto(member: TeamMember) {
     /** Already signed in to the CRM with Microsoft */
     crmLinked: Boolean(member.microsoftOid),
     showOnSite: member.showOnSite,
+    /** In the CRM admin group (every permission, sees every pipeline); needs `include: teamInclude` */
+    crmAdmin: Boolean(member.crmGroup?.isAdmin),
   };
 }
 
+/** Include for TeamMember queries whose result goes through toTeamDto. */
+export const teamInclude = { crmGroup: { select: { isAdmin: true } } } as const;
+
 /** What the public site may see: no CRM login data. */
 export function toPublicTeamDto(member: TeamMember) {
-  const { email, crmLinked, area, ...dto } = toTeamDto(member);
+  const { email, crmLinked, area, crmAdmin, ...dto } = toTeamDto(member);
   return dto;
 }
 

@@ -31,6 +31,19 @@ export function ensureGroups() {
   return groupsReady;
 }
 
+/**
+ * crmGroupId change for the /admin "Administrador do CRM" switch: true moves the member to the
+ * admin group, false takes them out of it (to the default group). Other groups are left alone.
+ */
+export async function adminGroupChange(crmAdmin: unknown, currentGroupId: string | null) {
+  if (typeof crmAdmin !== "boolean") return {};
+  await ensureGroups();
+  const admin = await prisma.crmGroup.findFirst({ where: { isAdmin: true }, select: { id: true } });
+  if (!admin) return {};
+  if (crmAdmin) return { crmGroupId: admin.id };
+  return currentGroupId === admin.id ? { crmGroupId: null } : {};
+}
+
 /** Group of a team member, or the default group when they have none. Null for blocked or unknown members. */
 async function memberGroup(memberId: string | null) {
   if (!memberId) return null;

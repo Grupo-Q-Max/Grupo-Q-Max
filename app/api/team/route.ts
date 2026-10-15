@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { emailTakenResponse, parseTeamInput, toPublicTeamDto, toTeamDto } from "@/lib/team";
+import { emailTakenResponse, parseTeamInput, teamInclude, toPublicTeamDto, toTeamDto } from "@/lib/team";
+import { adminGroupChange } from "@/lib/crm-access";
 import { ADMIN_COOKIE, sessionMemberId } from "@/lib/auth";
 import { isAdminToken } from "@/lib/settings";
 
@@ -14,8 +15,9 @@ export async function GET(req: NextRequest) {
     const team = await prisma.teamMember.findMany({
       where: internal ? undefined : { showOnSite: true },
       orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      include: teamInclude,
     });
-    return NextResponse.json(team.map(internal ? toTeamDto : toPublicTeamDto), {
+    return NextResponse.json(team.map((m) => (internal ? toTeamDto(m) : toPublicTeamDto(m))), {
       headers: {
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
       },
@@ -35,8 +37,10 @@ export async function POST(req: NextRequest) {
         role: "Cargo",
         sector: "Setor",
         ...parseTeamInput(body),
+        ...(await adminGroupChange(body.crmAdmin, null)),
         order: await prisma.teamMember.count(),
       },
+      include: teamInclude,
     })
     .catch(emailTakenResponse);
   if (member instanceof Response) return member;
@@ -49,6 +53,6 @@ export async function PATCH(req: NextRequest) {
   if (!Array.isArray(order)) return NextResponse.json({ error: "Missing order" }, { status: 400 });
 
   await prisma.$transaction(order.map((id, idx) => prisma.teamMember.update({ where: { id }, data: { order: idx } })));
-  const team = await prisma.teamMember.findMany({ orderBy: { order: "asc" } });
-  return NextResponse.json(team.map(toTeamDto));
+  const team = await prisma.teamMember.findMany({ orderBy: { order: "asc" }, include: teamInclude });
+  return NextResponse.json(team.map((m) => toTeamDto(m)));
 }
