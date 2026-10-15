@@ -36,6 +36,29 @@ export function getUploadsDir(): string {
   return dir;
 }
 
+/**
+ * Path of a file served by /api/files: persistent uploads first, then the packaged fallbacks
+ * (public/team, public/brands). Case-insensitive; null when not found.
+ */
+export function findUploadedFile(fileName: string): string | null {
+  const lower = path.basename(fileName).toLowerCase();
+  const uploads = getUploadsDir();
+  const dirs = [
+    uploads,
+    path.join(process.cwd(), "data", "uploads"),
+    path.join(process.cwd(), "public", "team"),
+    path.join(uploads, "brands"),
+    path.join(process.cwd(), "data", "uploads", "brands"),
+    path.join(process.cwd(), "public", "brands"),
+  ];
+  for (const dir of dirs) {
+    if (!fs.existsSync(/*turbopackIgnore: true*/ dir)) continue;
+    const match = fs.readdirSync(/*turbopackIgnore: true*/ dir).find((f) => f.toLowerCase() === lower);
+    if (match) return path.join(dir, match);
+  }
+  return null;
+}
+
 export function getSettingsJsonPath(): string {
   return path.join(getDataDir(), "settings.json");
 }

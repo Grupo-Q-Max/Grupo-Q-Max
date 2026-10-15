@@ -44,10 +44,25 @@ const initials = (name: string) =>
     .join("");
 
 export function Avatar({ member, size = 28 }: { member?: TeamMember | null; size?: number }) {
+  // Image URLs can point to files missing from storage (404): fall back to initials.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (!member) return null;
+  const showImage = member.image && member.image !== failedSrc;
   return (
     <span className="deal-avatar" style={{ width: size, height: size, fontSize: size * 0.38 }} title={member.name}>
-      {member.image ? <img src={member.image} alt={member.name} /> : initials(member.name)}
+      {showImage ? (
+        <img
+          src={member.image!}
+          alt={member.name}
+          onError={() => setFailedSrc(member.image)}
+          // Server-rendered images can fail before hydration, when onError isn't attached yet
+          ref={(img) => {
+            if (img?.complete && !img.naturalWidth) setFailedSrc(member.image);
+          }}
+        />
+      ) : (
+        initials(member.name)
+      )}
     </span>
   );
 }
