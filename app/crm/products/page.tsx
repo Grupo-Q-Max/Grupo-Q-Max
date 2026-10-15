@@ -9,14 +9,14 @@ export default async function ProductsPage() {
   const [products, permissions] = await Promise.all([
     prisma.crmProduct.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true, price: true, _count: { select: { dealItems: true } } },
+      select: { id: true, name: true, price: true, hasBonus: true, _count: { select: { dealItems: true } } },
     }),
     currentPermissions(),
   ]);
 
   return (
     <CrmProducts
-      products={products.map((p) => ({ id: p.id, name: p.name, price: p.price.toNumber(), deals: p._count.dealItems }))}
+      products={products.map((p) => ({ id: p.id, name: p.name, price: p.price.toNumber(), hasBonus: p.hasBonus, deals: p._count.dealItems }))}
       canManage={permissions.has("product.manage")}
     />
   );

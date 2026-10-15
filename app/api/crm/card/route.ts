@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
-import { isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
+import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
 import {
   DealValidationError,
   DuplicateDealError,
@@ -11,6 +11,7 @@ import {
   companyIdByName,
   findDuplicateDeals,
   getDealDetails,
+  restoreChanges,
   serializeListCard,
   updateDeal,
 } from "@/lib/crm-deal";
@@ -93,13 +94,24 @@ export async function PATCH(req: Request) {
   try {
     const denied = await denyUnless("deal.edit");
     if (denied) return denied;
-    const { id, ...changes } = await req.json();
+    const { id, lostReason, restoreStageId, ...changes } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     // A stage change must also land in a pipeline the user sees
     const hidden = await denyUnlessPipeline({ cardId: id, stageId: typeof changes.stageId === "string" ? changes.stageId : null });
     if (hidden) return hidden;
 
-    const result = await updateDeal(id, changes);
+    let result;
+    if (typeof restoreStageId === "string") {
+      // Back to the state saved when the deal left that stage (fields only; stage and status stay)
+      const restore = await restoreChanges(id, restoreStageId);
+      result = await updateDeal(id, restore.changes, { type: "STATE_RESTORED", data: { stage: restore.stage } });
+    } else {
+      if (typeof changes.stageId === "string") {
+        const current = await prisma.crmCard.findUnique({ where: { id }, select: { stageId: true } });
+        if (current && current.stageId !== changes.stageId) await checkStageEntry(id, changes.stageId, lostReason);
+      }
+      result = await updateDeal(id, changes);
+    }
 
     if (result.changed) await notifyStageChanged(result.stageId);
     after(async () => {
@@ -121,6 +133,7 @@ export async function PATCH(req: Request) {
     if (error instanceof DealValidationError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+    if (error instanceof StageEntryError) return error.toResponse();
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

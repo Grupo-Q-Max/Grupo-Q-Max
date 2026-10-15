@@ -26,7 +26,8 @@ export type DealHistory = {
     | "STATUS_CHANGED"
     | "RECURRENCE_CREATED"
     | "AUTOMATION_RUN"
-    | "TRIGGER_FIRED";
+    | "TRIGGER_FIRED"
+    | "STATE_RESTORED";
   data: Record<string, string | null> | null;
   createdAt: string;
 };
@@ -59,6 +60,8 @@ export type DealDetails = {
   updatedAt: string;
   activities: DealActivity[];
   history: DealHistory[];
+  /** Restore points: the deal's state when it left each stage. */
+  stageSnapshots: { stageId: string; savedAt: string; data: Omit<DealDraft, "products"> & { products: Omit<DealProduct, "id">[] } }[];
   pipeline: { id: string; kind: "DEALS" | "TASKS"; fieldsConfig: CustomFieldConfig[] | null; stages: { id: string; name: string }[] };
 };
 
