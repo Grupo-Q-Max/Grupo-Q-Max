@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { processDueRuns } from "@/lib/crm-automation";
+import { remindOverdueActivities } from "@/lib/crm-activities";
 
 /**
  * Runs the delayed automation rules that are due. Called every minute by the
@@ -13,7 +14,8 @@ async function handler(req: Request) {
   }
 
   const processed = await processDueRuns();
-  return NextResponse.json({ processed });
+  const reminded = await remindOverdueActivities();
+  return NextResponse.json({ processed, reminded });
 }
 
 export { handler as GET, handler as POST };

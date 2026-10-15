@@ -387,11 +387,14 @@ model CrmActivity {
   responsible   TeamMember?     @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
   completed     Boolean         @default(false)
   completedAt   DateTime?
+  /// When the overdue reminder went out; cleared when the deadline changes so the new one is reminded too
+  remindedAt    DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
   @@index([cardId])
   @@index([responsibleId])
+  @@index([completed, deadline])
 }
 
 /// Append-only audit log of the deal timeline. `data` is a snapshot of the change

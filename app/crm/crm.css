@@ -1528,3 +1528,18 @@ button.crm-bell {
     font-size: 18px;
   }
 }
+
+/* /crm/activities */
+.crm-activities__section {
+  margin-bottom: 28px;
+}
+
+.crm-activities__section h2 {
+  font-size: 1rem;
+  margin: 0 0 10px;
+}
+
+.crm-activities__section.is-overdue h2,
+.crm-activities__error {
+  color: #e5484d;
+}
