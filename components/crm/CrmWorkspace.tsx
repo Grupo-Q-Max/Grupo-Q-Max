@@ -13,6 +13,7 @@ import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
 import { Kanban, List, Calendar, CalendarDays, TrendingUp, ArrowDown } from "lucide-react";
 import { CrmCalendar } from "./CrmCalendar";
+import { CrmBulkBar } from "./CrmBulkBar";
 import { alertDialog } from "@/components/ui/Dialogs";
 
 type DealFilters = {
@@ -121,6 +122,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   const router = useRouter();
   const [filters, setFilters] = useState(NO_FILTERS);
   const [sort, setSort] = useState<"due" | "priority" | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const set = (changes: Partial<DealFilters>) => setFilters((f) => ({ ...f, ...changes }));
   const filtering = Object.values(filters).some(Boolean);
   const isDealVisible = useCallback((deal: CrmDeal) => matchesDeal(deal, filters), [filters]);
@@ -159,6 +161,31 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     filters.from && { key: "from", label: `Criado de ${showDay(filters.from)}`, onRemove: () => set({ from: "" }) },
     filters.to && { key: "to", label: `Criado até ${showDay(filters.to)}`, onRemove: () => set({ to: "" }) },
   ].filter((c): c is FilterChip => Boolean(c));
+
+  // Only rows still visible count as selected (filters may hide some after picking them)
+  const selectedIds = allCards.filter((c) => selected.has(c.id)).map((c) => c.id);
+  const toggle = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  const allSelected = allCards.length > 0 && selectedIds.length === allCards.length;
+  const selectAllHeader = (
+    <th className="crm-table__check">
+      <input
+        type="checkbox"
+        aria-label="Selecionar todos"
+        checked={allSelected}
+        onChange={() => setSelected(allSelected ? new Set() : new Set(allCards.map((c) => c.id)))}
+      />
+    </th>
+  );
+  const checkCell = (id: string) => (
+    <td className="crm-table__check" onClick={(e) => e.stopPropagation()}>
+      <input type="checkbox" aria-label="Selecionar" checked={selected.has(id)} onChange={() => toggle(id)} />
+    </td>
+  );
 
   const sortHeader = (key: "due" | "priority", label: string) => (
     <th>
@@ -289,10 +316,12 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
 
         {view === "list" && (
           <div className="crm-list-view">
+            <CrmBulkBar ids={selectedIds} stages={pipeline.stages} isTasks={isTasks} onDone={() => setSelected(new Set())} />
             <table className="crm-table">
               <thead>
                 {isTasks ? (
                   <tr>
+                    {selectAllHeader}
                     <th>Tarefa</th>
                     <th>Coluna</th>
                     {sortHeader("priority", "Prioridade")}
@@ -302,6 +331,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                   </tr>
                 ) : (
                   <tr>
+                    {selectAllHeader}
                     <th>Negócio</th>
                     <th>Empresa</th>
                     <th>Fase</th>
@@ -314,6 +344,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                 {allCards.map((card) =>
                   isTasks ? (
                     <tr key={card.id} className="crm-table__row--link" onClick={() => openDeal(card)}>
+                      {checkCell(card.id)}
                       <td className={card.status === "WON" ? "crm-table__done" : undefined} style={{ fontWeight: 600, color: "#fff" }}>
                         {card.title}
                       </td>
@@ -337,6 +368,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                     </tr>
                   ) : (
                     <tr key={card.id}>
+                      {checkCell(card.id)}
                       <td style={{ fontWeight: 600, color: "#fff" }}>{card.title}</td>
                       <td>{card.company || "—"}</td>
                       <td>
@@ -351,7 +383,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                 )}
                 {allCards.length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#a5a0aa" }}>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "40px", color: "#a5a0aa" }}>
                       {emptyMessage ?? `Nenhum ${isTasks ? "item" : "negócio"} encontrado neste pipeline.`}
                     </td>
                   </tr>

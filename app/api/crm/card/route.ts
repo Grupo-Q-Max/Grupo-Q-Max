@@ -1,4 +1,3 @@
-import fs from "fs/promises";
 import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
@@ -7,7 +6,7 @@ import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
 import { notifyAssigned } from "@/lib/crm-card-notify";
 import { sessionMemberId } from "@/lib/auth";
-import { attachmentPath } from "@/lib/crm-attachments";
+import { deleteCardWithFiles } from "@/lib/crm-attachments";
 import {
   DealValidationError,
   DuplicateDealError,
@@ -156,12 +155,7 @@ export async function DELETE(req: Request) {
     const hidden = await denyUnlessPipeline({ cardId: id });
     if (hidden) return hidden;
 
-    const files = await prisma.crmAttachment.findMany({ where: { cardId: id }, select: { fileName: true } });
-    const card = await prisma.crmCard.delete({
-      where: { id }
-    });
-    // Rows went with the card (cascade); their files are removed by hand
-    await Promise.all(files.map((f) => fs.rm(attachmentPath(f.fileName), { force: true })));
+    const card = await deleteCardWithFiles(id);
     await notifyStageChanged(card.stageId);
 
     return NextResponse.json({ success: true });

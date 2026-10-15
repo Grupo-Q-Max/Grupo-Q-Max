@@ -1847,3 +1847,23 @@ button.crm-bell {
   .crm-calendar__item { font-size: 10px; padding: 2px 3px; }
   .crm-calendar__weekday { padding: 6px 2px; font-size: 10px; }
 }
+
+/* LIST SELECTION AND BULK ACTIONS */
+.crm-table th.crm-table__check, .crm-table td.crm-table__check { width: 36px; padding-right: 0; }
+.crm-table__check input { width: 16px; height: 16px; accent-color: #ff2b91; cursor: pointer; }
+.crm-bulk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: #1b1720;
+  border: 1px solid rgba(255, 43, 145, 0.35);
+  color: #fff;
+}
+.crm-bulk-bar .crm-access__select { width: auto; min-width: 150px; }

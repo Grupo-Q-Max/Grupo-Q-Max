@@ -1,6 +1,8 @@
 import fs from "fs";
+import fsp from "fs/promises";
 import path from "path";
 import { getUploadsDir } from "@/lib/storage";
+import { prisma } from "@/lib/prisma";
 
 /** Below the 10 MB the proxy buffers per request (proxyClientMaxBodySize), leaving room for the multipart envelope. */
 export const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
@@ -37,3 +39,11 @@ export function attachmentsDir() {
 export const attachmentPath = (fileName: string) => path.join(attachmentsDir(), path.basename(fileName));
 
 export const attachmentSelect = { id: true, originalName: true, mimeType: true, size: true, createdAt: true, uploadedBy: { select: { name: true } } } as const;
+
+/** Deletes a card; its attachment rows go with it (cascade) and their files are removed here. Returns the card. */
+export async function deleteCardWithFiles(id: string) {
+  const files = await prisma.crmAttachment.findMany({ where: { cardId: id }, select: { fileName: true } });
+  const card = await prisma.crmCard.delete({ where: { id } });
+  await Promise.all(files.map((f) => fsp.rm(attachmentPath(f.fileName), { force: true })));
+  return card;
+}
