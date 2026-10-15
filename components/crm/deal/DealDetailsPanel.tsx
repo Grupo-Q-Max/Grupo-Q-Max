@@ -5,13 +5,14 @@ import { createPortal } from "react-dom";
 import { Check, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
 import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
+import { DealAttachments } from "./DealAttachments";
 import { formatMoney, pickDraft, type DealDetails, type DealDraft, type TeamMember } from "./types";
 import { formatDateOnly } from "./ui";
 import { useCan } from "../CrmAccess";
 import { sendStageMove } from "../stageEntry";
 import { confirmDialog } from "@/components/ui/Dialogs";
 
-type Tab = "general" | "products" | "history";
+type Tab = "general" | "products" | "files" | "history";
 
 type Props = {
   dealId: string;
@@ -269,7 +270,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
                 <span className="deal-header__number">#{deal.number}</span>
                 {deal.status !== "OPEN" && (
                   <span className={`deal-status deal-status--${deal.status.toLowerCase()}`}>
-                    {deal.status === "WON" ? "Ganho" : "Perdido"}
+                    {deal.status === "WON" ? (isTasks ? "Concluída" : "Ganho") : "Perdido"}
                   </span>
                 )}
               </div>
@@ -306,6 +307,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
                 [
                   ["general", "Geral"],
                   ["products", `Serviços${deal.products.length ? ` (${deal.products.length})` : ""}`],
+                  ["files", "Anexos"],
                   ["history", "Histórico"],
                 ] as [Tab, string][]
               ).filter(([value]) => !isTasks || value !== "products").map(([value, label]) => (
@@ -330,6 +332,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
                 </div>
               )}
               {tab === "products" && <DealProductsEditor draft={draft} onChange={updateDraft} />}
+              {tab === "files" && <DealAttachments dealId={deal.id} />}
               {tab === "history" && (
                 <>
                   <StageSnapshots deal={deal} onRestore={can("deal.edit") ? restore : undefined} />

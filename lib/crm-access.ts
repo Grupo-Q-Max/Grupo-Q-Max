@@ -83,7 +83,11 @@ export async function denyUnless(permission: Permission) {
  * and no member (open to everyone), or opened to their group or to them. Use as `where` on CrmPipeline.
  */
 export async function visiblePipelineWhere(): Promise<Prisma.CrmPipelineWhereInput> {
-  const memberId = readSession((await cookies()).get(SESSION_COOKIE)?.value);
+  return pipelineWhereFor(readSession((await cookies()).get(SESSION_COOKIE)?.value));
+}
+
+/** visiblePipelineWhere for any member (e.g. who may be notified about a card). Blocked members see only open pipelines. */
+export async function pipelineWhereFor(memberId: string | null): Promise<Prisma.CrmPipelineWhereInput> {
   const group = await memberGroup(memberId);
   if (group?.isAdmin) return {};
   return {

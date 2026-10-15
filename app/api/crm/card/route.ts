@@ -1,9 +1,13 @@
+import fs from "fs/promises";
 import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
+import { notifyAssigned } from "@/lib/crm-card-notify";
+import { sessionMemberId } from "@/lib/auth";
+import { attachmentPath } from "@/lib/crm-attachments";
 import {
   DealValidationError,
   DuplicateDealError,
@@ -114,8 +118,10 @@ export async function PATCH(req: Request) {
     }
 
     if (result.changed) await notifyStageChanged(result.stageId);
+    const authorId = sessionMemberId(req);
     after(async () => {
       if (result.recurringCopy) await onDealEnteredStage(result.recurringCopy.id, result.recurringCopy.stageId);
+      if (result.changedFields.includes("responsibleId")) await notifyAssigned(id, authorId);
       // A manual stage change runs the new stage's rules; other changes may fire a "campo alterado" trigger
       if (result.movedTo) await onDealEnteredStage(id, result.movedTo);
       else if (result.changedFields.length) await fireTriggers(id, { type: "FIELD_CHANGED", fields: result.changedFields });
@@ -150,9 +156,12 @@ export async function DELETE(req: Request) {
     const hidden = await denyUnlessPipeline({ cardId: id });
     if (hidden) return hidden;
 
+    const files = await prisma.crmAttachment.findMany({ where: { cardId: id }, select: { fileName: true } });
     const card = await prisma.crmCard.delete({
       where: { id }
     });
+    // Rows went with the card (cascade); their files are removed by hand
+    await Promise.all(files.map((f) => fs.rm(attachmentPath(f.fileName), { force: true })));
     await notifyStageChanged(card.stageId);
 
     return NextResponse.json({ success: true });

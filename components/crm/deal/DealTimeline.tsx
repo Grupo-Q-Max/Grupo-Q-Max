@@ -162,6 +162,11 @@ function ActivityComposer({
   const [responsible, setResponsible] = useState(defaultResponsible ?? "");
   const [saving, setSaving] = useState(false);
 
+  /** Text typed after "@" while picking a member to mention; null when not mentioning */
+  const [mention, setMention] = useState<string | null>(null);
+  const mentionOptions =
+    mention === null ? [] : team.filter((m) => m.name.toLowerCase().startsWith(mention.trimStart().toLowerCase())).slice(0, 6);
+
   const isComment = mode === "COMMENT";
   const hasTitleField = mode === "TASK" || mode === "CALL" || mode === "MEETING";
 
@@ -259,11 +264,36 @@ function ActivityComposer({
           }
           value={description}
           onFocus={() => setExpanded(true)}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            // "@na" right before the caret opens the member list (comments only)
+            const before = e.target.value.slice(0, e.target.selectionStart ?? e.target.value.length);
+            setMention(isComment ? (before.match(/(?:^|\s)@([\p{L} ]{0,30})$/u)?.[1] ?? null) : null);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit();
+            if (e.key === "Escape") setMention(null);
           }}
         />
+        {mention !== null && mentionOptions.length > 0 && (
+          <div className="deal-menu deal-mention-menu">
+            {mentionOptions.map((member) => (
+              <button
+                key={member.id}
+                type="button"
+                onClick={() => {
+                  setDescription((text) => {
+                    const at = text.lastIndexOf(`@${mention}`);
+                    return at < 0 ? text : `${text.slice(0, at)}@${member.name} ${text.slice(at + mention.length + 1)}`;
+                  });
+                  setMention(null);
+                }}
+              >
+                <Avatar member={member} size={20} /> {member.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {expanded && (
           <>
