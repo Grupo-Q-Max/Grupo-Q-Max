@@ -683,6 +683,7 @@
 .kanban-card { cursor: pointer; }
 .kanban-card--won { border-left: 3px solid #4ceb95; }
 .kanban-card--lost { border-left: 3px solid #ff4d6d; opacity: 0.75; }
+.kanban-card--done .kanban-card__title { text-decoration: line-through; opacity: 0.7; }
 
 /* LOOKUP (link existing company / contact / product) */
 .deal-lookup { position: relative; }

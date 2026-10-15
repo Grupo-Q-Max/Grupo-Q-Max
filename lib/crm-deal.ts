@@ -422,6 +422,36 @@ export async function findDuplicateDeals(
  * history. Running the new stage's rules / "campo alterado" triggers is left
  * to the caller (lib/crm-automation imports this module).
  */
+/**
+ * Task boards have no Ganho/Perdido: their last column means "done", so entering it closes the
+ * task (WON) and leaving it reopens it (OPEN). Null on deal boards, where the status is set by hand.
+ */
+export async function taskStatusForStage(tx: Tx, stageId: string): Promise<CrmDealStatus | null> {
+  const stage = await tx.crmStage.findUnique({ where: { id: stageId }, select: { pipelineId: true, pipeline: { select: { kind: true } } } });
+  if (stage?.pipeline.kind !== "TASKS") return null;
+  const last = await tx.crmStage.findFirst({ where: { pipelineId: stage.pipelineId }, orderBy: { order: "desc" }, select: { id: true } });
+  return last?.id === stageId ? "WON" : "OPEN";
+}
+
+/**
+ * taskStatusForStage for moves that bypass updateDeal (kanban drag, automation triggers), after the
+ * card moved. Returns the recurring copy created by closing the task, if any.
+ */
+export async function syncTaskStatus(tx: Tx, cardId: string) {
+  const card = await tx.crmCard.findUniqueOrThrow({ where: { id: cardId }, select: { stageId: true, status: true } });
+  const status = await taskStatusForStage(tx, card.stageId);
+  if (!status || status === card.status) return null;
+  await tx.crmCard.update({
+    where: { id: cardId },
+    data: {
+      status,
+      closedAt: status === "OPEN" ? null : new Date(),
+      history: { create: { type: "STATUS_CHANGED", data: { from: card.status, to: status } } },
+    },
+  });
+  return status === "WON" ? createRecurringCopy(tx, cardId) : null;
+}
+
 export async function updateDeal(
   id: string,
   { stageId, status, ...changes }: { stageId?: string | null; status?: string | null } & Record<string, unknown>,
@@ -445,6 +475,7 @@ export async function updateDeal(
       data.stageId = to.id;
       data.order = await tx.crmCard.count({ where: { stageId: to.id } });
       history.push({ type: "STAGE_CHANGED", data: { from: from.name, to: to.name } });
+      status = (await taskStatusForStage(tx, to.id)) ?? status;
     }
 
     if (status && status !== current.status) {

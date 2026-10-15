@@ -41,11 +41,12 @@ export function DealCard({
   const nextActivity = deal.activities?.[0];
   const pendingCount = deal._count?.activities ?? 0;
   const overdue = nextActivity?.deadline && new Date(nextActivity.deadline).getTime() < Date.now();
-  const taskOverdue = isTask && deal.closeDate && dueEnd(deal.closeDate) < Date.now();
+  const taskDone = isTask && deal.status === "WON";
+  const taskOverdue = isTask && !taskDone && deal.closeDate && dueEnd(deal.closeDate) < Date.now();
 
   return (
     <div
-      className={`kanban-card ${deal.status && deal.status !== "OPEN" ? `kanban-card--${deal.status.toLowerCase()}` : ""}`}
+      className={`kanban-card ${deal.status && deal.status !== "OPEN" ? `kanban-card--${deal.status.toLowerCase()}` : ""} ${taskDone ? "kanban-card--done" : ""}`}
       onClick={onOpen}
     >
       <div className="kanban-card__glow" />
@@ -99,7 +100,7 @@ export function DealCard({
               (isTask
                 ? `${pendingCount} ${pendingCount === 1 ? "item pendente" : "itens pendentes"}`
                 : `${pendingCount} ${pendingCount === 1 ? "atividade" : "atividades"}`),
-            deal.status === "WON" && "Ganho",
+            deal.status === "WON" && (isTask ? "Concluída" : "Ganho"),
             deal.status === "LOST" && "Perdido",
           ]
             .filter(Boolean)
