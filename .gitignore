@@ -26,3 +26,19 @@ data/settings.json
 /.claude/skills/project-grupo-qmax/
 /.claude/skills/project-grupo-qmax-prisma/
 /.claude/skills/project-grupo-qmax-azure-pipelines/
+
+# Local scratch: brand manuals, archives, one-off scripts, pipeline backups (kept on disk, not versioned)
+*.zip
+*.deck
+*.pptx
+temp_manual/
+*.tsbuildinfo
+azure-pipelines-*.yml
+azure-pipelines.backup-*.yml
+/check.js
+/create_pipeline.js
+/create_qxback.ts
+/parse-pptx.js
+/replace_colors.js
+/runs.json
+/seed_socios.*
