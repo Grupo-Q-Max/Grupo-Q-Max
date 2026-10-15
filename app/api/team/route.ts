@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { emailTakenResponse, parseTeamInput, toPublicTeamDto, toTeamDto } from "@/lib/team";
-import { sessionMemberId } from "@/lib/auth";
+import { ADMIN_COOKIE, sessionMemberId } from "@/lib/auth";
 import { isAdminToken } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export const revalidate = 0;
 
 /** Whole team for the admin and CRM users; the public site only gets members shown on it, without login data. */
 export async function GET(req: NextRequest) {
-  const internal = Boolean(sessionMemberId(req)) || isAdminToken(req.cookies.get("qmax_admin")?.value);
+  const internal = Boolean(sessionMemberId(req)) || isAdminToken(req.cookies.get(ADMIN_COOKIE)?.value);
   try {
     const team = await prisma.teamMember.findMany({
       where: internal ? undefined : { showOnSite: true },

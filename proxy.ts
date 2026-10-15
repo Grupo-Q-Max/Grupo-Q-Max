@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readSession, SESSION_COOKIE } from "@/lib/auth";
+import { ADMIN_COOKIE, readSession, SESSION_COOKIE } from "@/lib/auth";
 import { isAdminToken } from "@/lib/settings";
 
 // These authenticate on their own (webhook token / CRON_SECRET / QXBACK_TOKEN) and are called by other servers
@@ -39,7 +39,7 @@ export function proxy(req: NextRequest) {
 
   if (pathname.startsWith("/api/team")) {
     if (req.method === "GET") return NextResponse.next();
-    return isAdminToken(req.cookies.get("qmax_admin")?.value) ? NextResponse.next() : unauthorized();
+    return isAdminToken(req.cookies.get(ADMIN_COOKIE)?.value) ? NextResponse.next() : unauthorized();
   }
 
   if (readSession(req.cookies.get(SESSION_COOKIE)?.value)) return NextResponse.next();
