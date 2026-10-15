@@ -15,6 +15,8 @@ export type MyTaskItem = {
   title: string;
   /** Pipeline / stage for cards, parent deal for activities */
   context: string;
+  /** Pipeline name (of the parent card for activities), for the filters */
+  pipeline: string;
   number: number;
   due: string | null;
   dateOnly: boolean;
@@ -35,7 +37,7 @@ export async function listMyTasks(memberId: string, visible: Prisma.CrmPipelineW
     prisma.crmActivity.findMany({
       where: { responsibleId: memberId, completed: false, type: { not: "COMMENT" }, deadline: { not: null }, card: { stage: { pipeline: visible } } },
       take: 500,
-      select: { id: true, type: true, title: true, deadline: true, card: { select: { number: true, title: true } } },
+      select: { id: true, type: true, title: true, deadline: true, card: { select: { number: true, title: true, stage: { select: { pipeline: { select: { name: true } } } } } } },
     }),
   ]);
 
@@ -46,6 +48,7 @@ export async function listMyTasks(memberId: string, visible: Prisma.CrmPipelineW
       label: c.stage.pipeline.kind === "TASKS" ? "Tarefa" : "Negócio",
       title: c.title,
       context: `${c.stage.pipeline.name} · ${c.stage.name}`,
+      pipeline: c.stage.pipeline.name,
       number: c.number,
       due: c.closeDate?.toISOString() ?? null,
       dateOnly: true,
@@ -57,6 +60,7 @@ export async function listMyTasks(memberId: string, visible: Prisma.CrmPipelineW
       label: ACTIVITY_LABELS[a.type],
       title: a.title,
       context: `#${a.card.number} ${a.card.title}`,
+      pipeline: a.card.stage.pipeline.name,
       number: a.card.number,
       due: a.deadline!.toISOString(),
       dateOnly: false,

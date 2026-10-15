@@ -684,7 +684,9 @@
 .kanban-card--won { border-left: 3px solid #4ceb95; }
 .kanban-card--lost { border-left: 3px solid #ff4d6d; opacity: 0.75; }
 .kanban-card--done .kanban-card__title { text-decoration: line-through; opacity: 0.7; }
-.kanban-card__tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; position: relative; }
+.kanban-card__checklist { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #a5a0aa; position: relative; }
+.kanban-card__checklist.is-complete { color: #4ceb95; }
+.kanban-card__tags {display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; position: relative; }
 
 /* TASK PRIORITY AND TAGS */
 .crm-priority, .crm-tag {

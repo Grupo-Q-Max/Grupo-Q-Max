@@ -8,25 +8,29 @@ type Tx = Prisma.TransactionClient;
 // Kanban list
 // ---------------------------------------------------------------------------
 
-/** What the kanban card needs: company, main contact, responsible and next pending activity. */
+/**
+ * What the kanban card needs: company, main contact, responsible, tags and the card's activities
+ * (reduced by serializeListCard to the next pending one, the pending count and the checklist count).
+ */
 export const cardListInclude = {
   company: { select: { name: true } },
   contacts: { orderBy: { order: "asc" }, take: 1, select: { contact: { select: { name: true } } } },
   responsible: { select: { id: true, name: true, role: true, photo: true } },
+  // ponytail: loads every activity of the card; fine while cards hold a handful, aggregate in SQL if that grows
   activities: {
-    where: { completed: false, type: { not: "COMMENT" } },
+    where: { type: { not: "COMMENT" } },
     orderBy: [{ deadline: "asc" }, { createdAt: "asc" }],
-    take: 1,
-    select: { id: true, title: true, deadline: true, type: true },
+    select: { id: true, title: true, deadline: true, type: true, completed: true },
   },
-  _count: { select: { activities: { where: { completed: false, type: { not: "COMMENT" } } } } },
   tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
 } satisfies Prisma.CrmCardInclude;
 
 type ListCard = Prisma.CrmCardGetPayload<{ include: typeof cardListInclude }>;
 
 /** Flattens relations and converts Decimal so the card can cross the server → client boundary. */
-export function serializeListCard({ company, contacts, responsible, tags, ...card }: ListCard) {
+export function serializeListCard({ company, contacts, responsible, tags, activities, ...card }: ListCard) {
+  const pending = activities.filter((a) => !a.completed);
+  const checklist = activities.filter((a) => a.type === "TODO");
   return {
     ...card,
     value: card.value.toNumber(),
@@ -34,6 +38,9 @@ export function serializeListCard({ company, contacts, responsible, tags, ...car
     contactName: contacts[0]?.contact.name ?? null,
     responsible: responsible && { id: responsible.id, name: responsible.name, role: responsible.role, image: responsible.photo },
     tags: tags.map((t) => t.tag),
+    activities: pending.slice(0, 1).map(({ completed: _, ...a }) => a),
+    _count: { activities: pending.length },
+    checklist: { done: checklist.filter((a) => a.completed).length, total: checklist.length },
   };
 }
 

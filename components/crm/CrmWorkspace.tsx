@@ -11,7 +11,9 @@ import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
-import { Kanban, List, Calendar, TrendingUp, ArrowDown } from "lucide-react";
+import { Kanban, List, Calendar, CalendarDays, TrendingUp, ArrowDown } from "lucide-react";
+import { CrmCalendar } from "./CrmCalendar";
+import { alertDialog } from "@/components/ui/Dialogs";
 
 type DealFilters = {
   q: string;
@@ -115,7 +117,8 @@ function useDealPanel(pipelineId: string, initialDealId?: string) {
 
 export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initialDealId?: string }) {
   const isTasks = pipeline.kind === "TASKS";
-  const [view, setView] = useState<"kanban" | "list" | "activities">("kanban");
+  const [view, setView] = useState<"kanban" | "list" | "calendar" | "activities">("kanban");
+  const router = useRouter();
   const [filters, setFilters] = useState(NO_FILTERS);
   const [sort, setSort] = useState<"due" | "priority" | null>(null);
   const set = (changes: Partial<DealFilters>) => setFilters((f) => ({ ...f, ...changes }));
@@ -265,6 +268,11 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
           >
             <List size={16} /> Lista
           </button>
+          {isTasks && (
+            <button className={`view-btn ${view === "calendar" ? "is-active" : ""}`} onClick={() => setView("calendar")}>
+              <CalendarDays size={16} /> Calendário
+            </button>
+          )}
           <button
             className={`view-btn ${view === "activities" ? "is-active" : ""}`}
             onClick={() => setView("activities")}
@@ -351,6 +359,34 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
               </tbody>
             </table>
           </div>
+        )}
+
+        {view === "calendar" && (
+          <CrmCalendar
+            undated={allCards.filter((c) => !c.closeDate).length}
+            items={allCards.flatMap((card) =>
+              card.closeDate
+                ? [
+                    {
+                      key: card.id,
+                      day: new Date(card.closeDate).toISOString().slice(0, 10),
+                      title: card.title,
+                      tone: card.status === "WON" ? ("done" as const) : matchesDue(card, "overdue") ? ("overdue" as const) : undefined,
+                      onOpen: () => openDeal(card),
+                    },
+                  ]
+                : []
+            )}
+            onMove={async (id, closeDate) => {
+              const res = await fetch("/api/crm/card", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, closeDate }),
+              });
+              if (!res.ok) return alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível alterar o prazo.");
+              router.refresh();
+            }}
+          />
         )}
 
         {view === "activities" && (

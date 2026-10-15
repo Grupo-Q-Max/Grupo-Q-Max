@@ -1,4 +1,4 @@
-import { Calendar, ListTodo, Trash2 } from "lucide-react";
+import { Calendar, ListChecks, ListTodo, Trash2 } from "lucide-react";
 import { Avatar } from "./deal/ui";
 import { priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
 
@@ -17,6 +17,8 @@ export type CrmDeal = {
   /** Next pending activity (see cardListInclude) */
   activities?: { id: string; title: string; deadline: string | null }[];
   _count?: { activities: number };
+  /** Checklist (TODO activities) of task cards */
+  checklist?: { done: number; total: number };
   /** Date from the server render, ISO string after a client sync */
   createdAt?: string | Date;
   /** Planned end date; the deadline on task boards */
@@ -106,9 +108,18 @@ export function DealCard({
 
       <div className="kanban-card__footer">
         <Avatar member={deal.responsible} size={26} />
+        {isTask && !!deal.checklist?.total && (
+          <span
+            className={`kanban-card__checklist ${deal.checklist.done === deal.checklist.total ? "is-complete" : ""}`}
+            title="Atividades concluídas / total"
+          >
+            <ListChecks size={12} /> {deal.checklist.done}/{deal.checklist.total}
+          </span>
+        )}
         <span className="kanban-card__date">
           {[
             pendingCount > 0 &&
+              !(isTask && deal.checklist?.total) &&
               (isTask
                 ? `${pendingCount} ${pendingCount === 1 ? "item pendente" : "itens pendentes"}`
                 : `${pendingCount} ${pendingCount === 1 ? "atividade" : "atividades"}`),
