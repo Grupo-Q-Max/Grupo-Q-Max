@@ -1721,3 +1721,36 @@ button.crm-bell {
 .crm-my-tasks__card.is-today .crm-my-tasks__due {
   color: #ffb547;
 }
+
+/* Monthly goals (/crm/reports) */
+.crm-goals__input {
+  width: 140px;
+}
+
+.crm-goals__progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crm-goals__bar {
+  width: 120px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.crm-goals__bar > span {
+  display: block;
+  height: 100%;
+  background: #ff2b91;
+}
+
+.crm-goals__bar > span.is-done {
+  background: #2dd4a0;
+}
+
+.crm-goals__error {
+  color: #ff4d6d;
+}
