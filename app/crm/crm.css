@@ -1975,3 +1975,7 @@ button.crm-bell {
 .crm-timeline-view__bar.is-overdue { outline: 2px solid #ff4d6d; outline-offset: -2px; }
 .crm-timeline-view__bar.is-done { background: rgba(76, 235, 149, 0.35); opacity: 0.7; }
 .crm-timeline-view__empty { grid-column: 1 / -1; padding: 32px; text-align: center; color: #a5a0aa; }
+
+/* Toolbar: saved views ("Visualizações") next to the view switcher */
+.crm-saved-views { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.crm-saved-views .crm-access__select { width: auto; min-width: 170px; }

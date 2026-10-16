@@ -72,6 +72,7 @@ model TeamMember {
   automationDealUpdates CrmAutomationDealUpdate[]
   notifications         CrmNotification[]
   pipelineAccess        CrmPipelineMember[]
+  savedViews            CrmSavedView[]
   goals                 CrmGoal[]
   authLogs              AuthLog[]
   requests              CrmRequest[]
@@ -224,6 +225,7 @@ model CrmPipeline {
   /// Groups and members that see the pipeline; neither = every CRM user. Admin groups see all.
   groups       CrmPipelineGroup[]
   members      CrmPipelineMember[]
+  savedViews   CrmSavedView[]
   fieldsConfig Json? // Array of field definitions
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
@@ -968,4 +970,19 @@ model CrmAutomationRunStep {
   @@unique([runId, seq])
   @@index([stepId])
   @@index([actionType, status, updatedAt])
+}
+
+/// Named board filters of a member ("Visualizações salvas"): the board URL query (filters, view, sort).
+model CrmSavedView {
+  id         String      @id @default(cuid())
+  memberId   String
+  member     TeamMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  pipelineId String
+  pipeline   CrmPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name       String      @db.VarChar(60)
+  query      String      @db.VarChar(1000)
+  createdAt  DateTime    @default(now())
+
+  @@unique([memberId, pipelineId, name])
+  @@index([pipelineId])
 }

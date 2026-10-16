@@ -14,6 +14,7 @@ import { dueState, todayKey } from "@/lib/crm-due";
 import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download } from "lucide-react";
 import { CrmCalendar } from "./CrmCalendar";
 import { CrmTimeline } from "./CrmTimeline";
+import { CrmSavedViews } from "./CrmSavedViews";
 import { CrmBulkBar } from "./CrmBulkBar";
 import { alertDialog } from "@/components/ui/Dialogs";
 import { downloadCsv } from "@/lib/csv";
@@ -42,16 +43,22 @@ type Sort = "due" | "priority" | null;
 
 /** Board URL with the filters, view and sort, so a filtered board can be shared and survives a reload. */
 function boardUrl(pipelineId: string, filters: DealFilters, view: View, sort: Sort) {
-  const params = new URLSearchParams({ pipelineId });
+  const query = boardQuery(filters, view, sort);
+  return `/crm?pipelineId=${encodeURIComponent(pipelineId)}${query && `&${query}`}`;
+}
+
+/** The filters, view and sort as a query string ("" = the default board); also what a saved view stores. */
+function boardQuery(filters: DealFilters, view: View, sort: Sort) {
+  const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);
   if (view !== "kanban") params.set("view", view);
   if (sort) params.set("sort", sort);
-  return `/crm?${params}`;
+  return params.toString();
 }
 
-/** Reverse of boardUrl, from the current address. */
-function readBoardUrl() {
-  const params = new URLSearchParams(window.location.search);
+/** Reverse of boardUrl / boardQuery, from the current address by default. */
+function readBoardUrl(search = window.location.search) {
+  const params = new URLSearchParams(search);
   const filters = Object.fromEntries(Object.keys(NO_FILTERS).map((key) => [key, params.get(key) ?? ""])) as DealFilters;
   const view = VIEWS.find((v) => v === params.get("view")) ?? "kanban";
   const sort = params.get("sort");
@@ -188,13 +195,16 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   // overwrite the URL with the empty defaults first (and Strict Mode's second read would see that)
   const [urlRead, setUrlRead] = useState(false);
   const closeUrl = useRef("");
-  useEffect(() => {
-    const fromUrl = readBoardUrl();
+  const applyQuery = useCallback((search?: string) => {
+    const fromUrl = readBoardUrl(search);
     setFilters(fromUrl.filters);
     setView(fromUrl.view);
     setSort(fromUrl.sort);
-    setUrlRead(true);
   }, []);
+  useEffect(() => {
+    applyQuery();
+    setUrlRead(true);
+  }, [applyQuery]);
   useEffect(() => {
     if (!urlRead) return;
     closeUrl.current = boardUrl(pipeline.id, filters, view, sort);
@@ -405,6 +415,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
             </div>
           </FilterField>
         </FilterSearch>
+        <CrmSavedViews pipelineId={pipeline.id} query={boardQuery(filters, view, sort)} onApply={applyQuery} />
         <div className="crm-toolbar__views">
           <button
             className={`view-btn ${view === "kanban" ? "is-active" : ""}`}
