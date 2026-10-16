@@ -318,6 +318,8 @@ model CrmCard {
   recurrence         CrmRecurrence @default(NONE)
   utm                Json? // { source, medium, campaign, content, term } captured from forms
   customData         Json? // values of the pipeline's user-defined fields (fieldsConfig)
+  /// Set = archived: hidden from boards, lists, reports and reminders, still reachable by its URL
+  archivedAt         DateTime?
 
   stageId       String
   stage         CrmStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)

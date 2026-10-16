@@ -8,6 +8,9 @@ type Tx = Prisma.TransactionClient;
 // Kanban list
 // ---------------------------------------------------------------------------
 
+/** Cards that show on boards, lists, reports and reminders (archived ones stay out). */
+export const activeCard = { archivedAt: null } satisfies Prisma.CrmCardWhereInput;
+
 /**
  * What the kanban card needs: company, main contact, responsible, tags and the card's activities
  * (reduced by serializeListCard to the next pending one, the pending count and the checklist count).
@@ -329,6 +332,12 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
     history.push(await fieldHistory(tx, field, SCALAR_FIELDS[field], current[field], next));
   }
 
+  if ("archived" in changes && Boolean(changes.archived) !== Boolean(current.archivedAt)) {
+    const archived = Boolean(changes.archived);
+    data.archivedAt = archived ? new Date() : null;
+    history.push({ type: "FIELD_CHANGED", data: { field: "archived", label: "Arquivado", from: archived ? "Não" : "Sim", to: archived ? "Sim" : "Não" } });
+  }
+
   for (const key of Object.keys(changes)) {
     if (!(key in RELATION_FIELDS)) continue;
     const field = key as RelationField;
@@ -435,6 +444,7 @@ export async function findDuplicateDeals(
     where: {
       title: d.title,
       status: "OPEN",
+      ...activeCard,
       stage: { pipelineId: d.pipelineId },
       companyId: d.companyId,
       responsibleId: d.responsibleId,

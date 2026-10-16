@@ -4,6 +4,7 @@ import { notifyMember } from "@/lib/crm-realtime";
 import { ACTIVITY_LABELS } from "@/components/crm/deal/types";
 import { dueState, todayKey } from "@/lib/crm-due";
 import { escapeHtml, sendMail } from "@/lib/mail";
+import { activeCard } from "@/lib/crm-deal";
 
 /** End of a Brazilian day, so date-only closeDates sort among activity deadlines of that day. */
 const endOfDay = (day: string) => new Date(`${day}T23:59:59.999-03:00`);
@@ -30,12 +31,12 @@ export async function listMyTasks(memberId: string, visible: Prisma.CrmPipelineW
   // ponytail: no pagination; add when someone owns more than a few hundred open items
   const [cards, activities] = await Promise.all([
     prisma.crmCard.findMany({
-      where: { responsibleId: memberId, status: "OPEN", stage: { pipeline: visible } },
+      where: { responsibleId: memberId, status: "OPEN", ...activeCard, stage: { pipeline: visible } },
       take: 500,
       select: { id: true, number: true, title: true, closeDate: true, stage: { select: { name: true, pipeline: { select: { name: true, kind: true } } } } },
     }),
     prisma.crmActivity.findMany({
-      where: { responsibleId: memberId, completed: false, type: { not: "COMMENT" }, deadline: { not: null }, card: { stage: { pipeline: visible } } },
+      where: { responsibleId: memberId, completed: false, type: { not: "COMMENT" }, deadline: { not: null }, card: { ...activeCard, stage: { pipeline: visible } } },
       take: 500,
       select: { id: true, type: true, title: true, deadline: true, card: { select: { number: true, title: true, stage: { select: { pipeline: { select: { name: true } } } } } } },
     }),
@@ -94,6 +95,7 @@ export async function remindDueTasks(limit = 100) {
       where: {
         ...cardPending,
         status: "OPEN",
+        ...activeCard,
         closeDate: { lte: cardCutoff },
         responsible: { crmActive: true },
         stage: { pipeline: { kind: "TASKS" } },
@@ -108,6 +110,7 @@ export async function remindDueTasks(limit = 100) {
         type: { not: "COMMENT" },
         deadline: { lte: activityCutoff },
         responsible: { crmActive: true },
+        card: activeCard,
       },
       take: limit,
       select: { id: true, type: true, title: true, deadline: true, cardId: true, responsibleId: true, responsible: { select: { email: true } }, card: { select: { number: true } } },
@@ -117,6 +120,7 @@ export async function remindDueTasks(limit = 100) {
       where: {
         ...dueSoonPending,
         status: "OPEN",
+        ...activeCard,
         closeDate: tomorrow,
         responsible: { crmActive: true },
         stage: { pipeline: { kind: "TASKS" } },

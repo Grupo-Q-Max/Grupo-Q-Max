@@ -11,7 +11,7 @@ import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
-import { Kanban, List, Calendar, CalendarDays, TrendingUp, ArrowDown } from "lucide-react";
+import { Kanban, List, Calendar, CalendarDays, TrendingUp, ArrowDown, Archive } from "lucide-react";
 import { CrmCalendar } from "./CrmCalendar";
 import { CrmBulkBar } from "./CrmBulkBar";
 import { alertDialog } from "@/components/ui/Dialogs";
@@ -74,6 +74,8 @@ function useDealPanel(pipelineId: string, initialDealId?: string) {
   const [openDealId, setOpenDealId] = useState<string | null>(initialDealId ?? null);
   const dealChangedRef = useRef(false);
   const syncBoardRef = useRef<(() => void) | null>(null);
+  /** Extra refresh run on every change made in the panel */
+  const changedRef = useRef<(() => void) | null>(null);
 
   // Legacy links (/crm?deal=<id>) still open the panel; the URL is fixed once the deal loads
   useEffect(() => {
@@ -116,10 +118,11 @@ function useDealPanel(pipelineId: string, initialDealId?: string) {
       onChanged={() => {
         dealChangedRef.current = true;
         syncBoardRef.current?.();
+        changedRef.current?.();
       }}
     />
   );
-  return { openDeal, panel, syncBoardRef };
+  return { openDeal, panel, syncBoardRef, changedRef };
 }
 
 export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initialDealId?: string }) {
@@ -129,17 +132,27 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   const [filters, setFilters] = useState(NO_FILTERS);
   const [sort, setSort] = useState<"due" | "priority" | null>(null);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  // List view "Arquivados": archived cards, loaded on demand (null = showing the board's cards)
+  const [archived, setArchived] = useState<CrmDeal[] | null>(null);
+  const loadArchived = useCallback(async () => {
+    const res = await fetch(`/api/crm/card?archivedOf=${pipeline.id}`, { cache: "no-store" });
+    setArchived(res.ok ? await res.json() : []);
+  }, [pipeline.id]);
+  const { openDeal, panel, syncBoardRef, changedRef } = useDealPanel(pipeline.id, initialDealId);
+  // Archiving or restoring from the panel changes the archived list too
+  changedRef.current = archived ? loadArchived : null;
   const set = (changes: Partial<DealFilters>) => setFilters((f) => ({ ...f, ...changes }));
   const filtering = Object.values(filters).some(Boolean);
   const isDealVisible = useCallback((deal: CrmDeal) => matchesDeal(deal, filters), [filters]);
-  const { openDeal, panel, syncBoardRef } = useDealPanel(pipeline.id, initialDealId);
   const statuses = isTasks ? TASK_STATUSES : DEAL_STATUSES;
 
   // Collect all cards across all stages for list and activity views
   const everyCard: (CrmDeal & { stageName: string; updatedAt: string | Date })[] = pipeline.stages.flatMap((stage: any) =>
     stage.cards.map((card: any) => ({ ...card, stageName: stage.name }))
   );
-  const allCards = everyCard.filter(isDealVisible);
+  const stageName = (id: string) => pipeline.stages.find((s: any) => s.id === id)?.name ?? "";
+  const listed = view === "list" && archived ? archived.map((card) => ({ ...card, stageName: stageName(card.stageId) } as (typeof everyCard)[number])) : everyCard;
+  const allCards = listed.filter(isDealVisible);
   if (sort === "due") allCards.sort((a, b) => (a.closeDate ? new Date(a.closeDate).getTime() : Infinity) - (b.closeDate ? new Date(b.closeDate).getTime() : Infinity));
   if (sort === "priority") allCards.sort((a, b) => priorityRank(b) - priorityRank(a));
   const emptyMessage = filtering ? `Nenhum ${isTasks ? "item" : "negócio"} corresponde aos filtros.` : null;
@@ -322,7 +335,29 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
 
         {view === "list" && (
           <div className="crm-list-view">
-            <CrmBulkBar ids={selectedIds} stages={pipeline.stages} isTasks={isTasks} onDone={() => setSelected(new Set())} />
+            <div className="crm-list-view__bar">
+              <button
+                type="button"
+                className={`view-btn ${archived ? "is-active" : ""}`}
+                onClick={() => {
+                  setSelected(new Set());
+                  if (archived) setArchived(null);
+                  else loadArchived();
+                }}
+              >
+                <Archive size={16} /> Arquivados
+              </button>
+            </div>
+            <CrmBulkBar
+              ids={selectedIds}
+              stages={pipeline.stages}
+              isTasks={isTasks}
+              archived={!!archived}
+              onDone={() => {
+                setSelected(new Set());
+                if (archived) loadArchived();
+              }}
+            />
             <table className="crm-table">
               <thead>
                 {isTasks ? (
@@ -390,7 +425,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                 {allCards.length === 0 && (
                   <tr>
                     <td colSpan={7} style={{ textAlign: "center", padding: "40px", color: "#a5a0aa" }}>
-                      {emptyMessage ?? `Nenhum ${isTasks ? "item" : "negócio"} encontrado neste pipeline.`}
+                      {emptyMessage ?? (archived ? "Nenhum item arquivado." : `Nenhum ${isTasks ? "item" : "negócio"} encontrado neste pipeline.`)}
                     </td>
                   </tr>
                 )}

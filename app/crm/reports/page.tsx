@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { activeCard } from "@/lib/crm-deal";
 import { currentPermissions, visiblePipelineWhere } from "@/lib/crm-access";
 import { CrmForbidden } from "@/components/crm/CrmForbidden";
 import { CrmReports } from "@/components/crm/reports/CrmReports";
@@ -22,7 +23,7 @@ export default async function ReportsPage() {
   // move to groupBy in a /api/crm/reports route if the table grows past ~20k deals
   const [deals, pipelines, members, goalMembers, goals, tasks] = await Promise.all([
     prisma.crmCard.findMany({
-      where: { stage: { pipeline: pipelineWhere } },
+      where: { ...activeCard, stage: { pipeline: pipelineWhere } },
       select: {
         id: true,
         number: true,
@@ -52,7 +53,7 @@ export default async function ReportsPage() {
     }),
     prisma.crmGoal.findMany({ where: { month: { gte: goalsFrom } }, select: { memberId: true, month: true, amount: true } }),
     prisma.crmCard.findMany({
-      where: { stage: { pipeline: { ...visible, kind: "TASKS" } } },
+      where: { ...activeCard, stage: { pipeline: { ...visible, kind: "TASKS" } } },
       select: { responsibleId: true, status: true, closedAt: true, closeDate: true, createdAt: true, responsible: { select: { id: true, name: true } } },
     }),
   ]);

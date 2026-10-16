@@ -11,7 +11,8 @@ import { updateDeal } from "@/lib/crm-deal";
 const MAX_IDS = 200;
 
 /**
- * Same change on several cards: `{ ids, action: "move" | "responsible" | "priority" | "delete", value }`.
+ * Same change on several cards: `{ ids, action: "move" | "responsible" | "priority" | "archive" | "delete", value }`
+ * ("archive" with value "restore" unarchives).
  * Each card goes through the single-card path (history, stage rules, notifications); cards the user can't
  * see or that a stage rule refuses are skipped and counted in `failed`.
  */
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
       changes = { stageId };
     } else if (action === "responsible") changes = { responsibleId: stageId };
     else if (action === "priority") changes = { priority: stageId };
+    else if (action === "archive") changes = { archived: value !== "restore" };
     else if (action === "delete") changes = {};
     else return NextResponse.json({ error: "Ação inválida." }, { status: 400 });
 

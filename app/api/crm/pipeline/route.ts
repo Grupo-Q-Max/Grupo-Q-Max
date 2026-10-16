@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
-import { cardListInclude, serializeListCard } from "@/lib/crm-deal";
+import { activeCard, cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
 /** Starting columns of a new pipeline, by kind. */
 const DEFAULT_STAGES = {
@@ -56,6 +56,7 @@ export async function GET(req: Request) {
           orderBy: { order: "asc" },
           include: {
             cards: {
+              where: activeCard,
               orderBy: { order: "asc" },
               include: cardListInclude
             }

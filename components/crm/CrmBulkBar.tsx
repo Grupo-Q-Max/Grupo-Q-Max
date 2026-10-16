@@ -2,22 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, Trash2, X } from "lucide-react";
 import { Select } from "@/components/ui/Select";
 import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
 import { useCan } from "./CrmAccess";
 import { PRIORITIES, type TeamMember } from "./deal/types";
 
-/** Actions on the cards selected in the list view (move, responsible, priority, delete) through /api/crm/card/bulk. */
+/** Actions on the cards selected in the list view (move, responsible, priority, archive, delete) through /api/crm/card/bulk. */
 export function CrmBulkBar({
   ids,
   stages,
   isTasks,
+  archived,
   onDone,
 }: {
   ids: string[];
   stages: { id: string; name: string }[];
   isTasks: boolean;
+  /** Showing the archived cards: the archive button restores them */
+  archived: boolean;
   onDone: () => void;
 }) {
   const router = useRouter();
@@ -87,6 +90,15 @@ export function CrmBulkBar({
               <option value="none">Sem prioridade</option>
             </Select>
           )}
+          <button
+            type="button"
+            className="deal-icon-btn"
+            disabled={busy}
+            title={archived ? "Restaurar selecionados" : "Arquivar selecionados"}
+            onClick={() => run("archive", archived ? "restore" : null)}
+          >
+            {archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}
+          </button>
         </>
       )}
       {can("deal.delete") && (

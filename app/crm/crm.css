@@ -1867,3 +1867,10 @@ button.crm-bell {
   color: #fff;
 }
 .crm-bulk-bar .crm-access__select { width: auto; min-width: 150px; }
+
+/* List view: "Arquivados" toggle above the table */
+.crm-list-view__bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}

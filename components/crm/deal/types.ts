@@ -59,6 +59,7 @@ export type DealDetails = {
   /** Tag ids */
   tags: string[];
   customData: Record<string, string> | null;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
   activities: DealActivity[];

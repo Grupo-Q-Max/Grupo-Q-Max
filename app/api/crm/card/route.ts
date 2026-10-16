@@ -22,7 +22,10 @@ import {
 
 export async function GET(req: Request) {
   try {
-    const id = new URL(req.url).searchParams.get("id");
+    const params = new URL(req.url).searchParams;
+    const archivedOf = params.get("archivedOf");
+    if (archivedOf) return listArchived(archivedOf);
+    const id = params.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     const hidden = await denyUnlessPipeline({ cardId: id });
     if (hidden) return hidden;
@@ -89,6 +92,19 @@ export async function POST(req: Request) {
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
+}
+
+/** Archived cards of a pipeline (list view "Arquivados"), most recently archived first. */
+async function listArchived(pipelineId: string) {
+  const hidden = await denyUnlessPipeline({ pipelineId });
+  if (hidden) return hidden;
+  const cards = await prisma.crmCard.findMany({
+    where: { archivedAt: { not: null }, stage: { pipelineId } },
+    orderBy: { archivedAt: "desc" },
+    take: 500,
+    include: cardListInclude,
+  });
+  return NextResponse.json(cards.map(serializeListCard));
 }
 
 /** "Duplicar": copy of the card (relations, description, checklist) at the end of the same column. */

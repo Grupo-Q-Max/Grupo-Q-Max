@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, Check, Copy, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
 import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
 import { DealAttachments } from "./DealAttachments";
@@ -282,6 +282,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
                   {copied ? <Check size={15} /> : <Link2 size={15} />}
                 </button>
                 <span className="deal-header__number">#{deal.number}</span>
+                {deal.archivedAt && <span className="deal-status">Arquivado</span>}
                 {deal.status !== "OPEN" && (
                   <span className={`deal-status deal-status--${deal.status.toLowerCase()}`}>
                     {deal.status === "WON" ? (isTasks ? "Concluída" : "Ganho") : "Perdido"}
@@ -294,6 +295,16 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
                 {can("deal.create") && (
                   <button type="button" className="deal-icon-btn deal-icon-btn--boxed" title="Duplicar" onClick={duplicate}>
                     <Copy size={16} />
+                  </button>
+                )}
+                {can("deal.edit") && (
+                  <button
+                    type="button"
+                    className="deal-icon-btn deal-icon-btn--boxed"
+                    title={deal.archivedAt ? "Restaurar do arquivo" : "Arquivar"}
+                    onClick={() => patch({ archived: !deal.archivedAt })}
+                  >
+                    {deal.archivedAt ? <ArchiveRestore size={16} /> : <Archive size={16} />}
                   </button>
                 )}
                 {can("deal.delete") && (
