@@ -1983,3 +1983,5 @@ button.crm-bell {
 /* Kanban card: responsible plus up to two co-assignees, overlapped */
 .kanban-card__people { display: inline-flex; align-items: center; }
 .kanban-card__people .deal-avatar + .deal-avatar { margin-left: -8px; box-shadow: 0 0 0 2px #1a1a1c; }
+.crm-timeline-view .crm-calendar__title { text-transform: none; min-width: 220px; }
+.crm-toolbar__views .view-btn { white-space: nowrap; }
