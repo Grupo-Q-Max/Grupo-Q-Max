@@ -6,6 +6,8 @@ export type KanbanColumnData<T extends KanbanItemBase> = {
   id: string;
   title: string;
   items: T[];
+  /** WIP limit: the count turns red above it (a warning only) */
+  limit?: number | null;
 };
 
 /**
@@ -25,6 +27,7 @@ export type KanbanLabels = {
   addColumn: string;
   renameColumn: string;
   deleteColumn: string;
+  setColumnLimit: string;
   syncing: string;
 };
 
@@ -57,6 +60,8 @@ export type KanbanProps<T extends KanbanItemBase> = {
 
   /** Enables renaming a column by double-clicking its title. */
   onRenameColumn?: (columnId: string, title: string) => MaybeCancel | Promise<MaybeCancel>;
+  /** Enables the column menu item that sets the WIP limit. */
+  onSetColumnLimit?: (columnId: string, limit: number | null) => void;
   /** Enables the column menu with "delete column". */
   onDeleteColumn?: (columnId: string) => MaybeCancel | Promise<MaybeCancel>;
   /** Enables the "add column" button. Return the created column to show it on the board. */

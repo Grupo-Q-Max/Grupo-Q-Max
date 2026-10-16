@@ -253,6 +253,8 @@ model CrmStage {
   id              String                    @id @default(cuid())
   name            String
   order           Int                       @default(0)
+  /// WIP limit: the column header turns red with more cards than this (only a warning, drops are allowed)
+  wipLimit        Int?
   pipelineId      String
   pipeline        CrmPipeline               @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
   cards           CrmCard[]

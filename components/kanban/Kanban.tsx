@@ -21,6 +21,7 @@ const DEFAULT_LABELS: KanbanLabels = {
   addColumn: "+ Adicionar coluna",
   renameColumn: "Renomear coluna",
   deleteColumn: "Excluir coluna",
+  setColumnLimit: "Limite de itens",
   syncing: "Sincronizando...",
 };
 
@@ -47,6 +48,7 @@ export function Kanban<T extends KanbanItemBase>({
   onDeleteItem,
   onRenameColumn,
   onDeleteColumn,
+  onSetColumnLimit,
   onAddColumn,
   sync,
   labels: labelOverrides,
@@ -278,6 +280,7 @@ export function Kanban<T extends KanbanItemBase>({
             onAddItem={onAddItem && ((title) => addItem(column.id, title))}
             onRename={onRenameColumn && ((title) => renameColumn(column.id, title))}
             onDelete={onDeleteColumn && (() => deleteColumn(column.id))}
+            onSetLimit={onSetColumnLimit && (() => onSetColumnLimit(column.id, column.limit ?? null))}
           />
         ))}
 

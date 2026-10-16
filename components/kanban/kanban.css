@@ -93,6 +93,12 @@
   color: var(--kanban-text-muted);
 }
 
+.kanban-column__count.is-over {
+  background: rgba(255, 77, 109, 0.18);
+  color: #ff4d6d;
+  font-weight: 600;
+}
+
 .kanban-column__menu {
   position: relative;
 }

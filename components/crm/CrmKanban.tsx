@@ -9,11 +9,11 @@ import { postDeal } from "./CrmButtons";
 import { sendStageMove } from "./stageEntry";
 import { alertDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 
-type CrmStage = { id: string; name: string; cards: CrmDeal[] };
+type CrmStage = { id: string; name: string; wipLimit?: number | null; cards: CrmDeal[] };
 type CrmPipeline = { id: string; kind?: "DEALS" | "TASKS"; stages: CrmStage[] };
 
 const toColumns = (stages: CrmStage[]): KanbanColumnData<CrmDeal>[] =>
-  stages.map((stage) => ({ id: stage.id, title: stage.name, items: stage.cards }));
+  stages.map((stage) => ({ id: stage.id, title: stage.name, items: stage.cards, limit: stage.wipLimit }));
 
 const jsonRequest = (method: string, body: unknown): RequestInit => ({
   method,
@@ -80,6 +80,7 @@ export function CrmKanban({
           addColumn: "+ Adicionar Coluna",
           renameColumn: "Renomear Coluna",
           deleteColumn: "Excluir Coluna",
+          setColumnLimit: "Limite de cards",
         }}
         renderItem={(deal, { remove }) => <DealCard deal={deal} isTask={isTasks} onOpen={() => onOpenDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
         onMoveItem={can("deal.edit") ? async (cardId, newStageId, index) => {
@@ -107,6 +108,13 @@ export function CrmKanban({
         onRenameColumn={can("stage.edit") ? async (stageId, name) => {
           const res = await fetch("/api/crm/stage", jsonRequest("PUT", { id: stageId, name }));
           if (!res.ok) return false;
+          router.refresh();
+        } : undefined}
+        onSetColumnLimit={can("stage.edit") ? async (stageId, limit) => {
+          const text = await promptDialog("Máximo de cards nesta coluna (vazio = sem limite):", { confirmLabel: "Salvar", defaultValue: limit == null ? "" : String(limit) });
+          if (text === null) return;
+          const res = await fetch("/api/crm/stage", jsonRequest("PUT", { id: stageId, wipLimit: text.trim() === "" ? null : Number(text) }));
+          if (!res.ok) return alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível salvar o limite.");
           router.refresh();
         } : undefined}
         onDeleteColumn={can("stage.delete") ? async (stageId) => {
