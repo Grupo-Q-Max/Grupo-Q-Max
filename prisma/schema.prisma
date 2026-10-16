@@ -64,6 +64,7 @@ model TeamMember {
 
   responsibleDeals      CrmCard[]                 @relation("DealResponsible")
   observedDeals         CrmDealObserver[]
+  assignedCards         CrmCardAssignee[]
   activities            CrmActivity[]             @relation("ActivityResponsible")
   authoredActivities    CrmActivity[]             @relation("ActivityAuthor")
   historyActions        CrmHistory[]
@@ -353,6 +354,8 @@ model CrmCard {
 
   contacts       CrmDealContact[]
   observers      CrmDealObserver[]
+  /// Co-assignees besides the main responsible ("Corresponsáveis")
+  assignees      CrmCardAssignee[]
   products       CrmDealProduct[]
   tags           CrmCardTag[]
   attachments    CrmAttachment[]
@@ -1001,4 +1004,16 @@ model CrmCardLink {
 
   @@id([cardId, linkedId])
   @@index([linkedId])
+}
+
+/// Co-assignee of a card besides CrmCard.responsibleId (the main one, used by reports and automations).
+/// Co-assignees see the card in "Minhas tarefas" and get its reminders and notifications.
+model CrmCardAssignee {
+  cardId   String
+  card     CrmCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  memberId String
+  member   TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, memberId])
+  @@index([memberId])
 }

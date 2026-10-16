@@ -15,6 +15,8 @@ export type CrmDeal = {
   status?: string;
   contactName?: string | null;
   responsible?: TeamMember | null;
+  /** Co-assignees besides the responsible (task boards) */
+  assignees?: TeamMember[];
   /** Next pending activity (see cardListInclude) */
   activities?: { id: string; title: string; deadline: string | null }[];
   _count?: { activities: number };
@@ -126,7 +128,10 @@ export function DealCard({
       )}
 
       <div className="kanban-card__footer">
-        <Avatar member={deal.responsible} size={26} />
+        <span className="kanban-card__people" title={[deal.responsible, ...(deal.assignees ?? [])].map((m) => m?.name).filter(Boolean).join(", ")}>
+          <Avatar member={deal.responsible} size={26} />
+          {deal.assignees?.filter((m) => m.id !== deal.responsible?.id).slice(0, 2).map((m) => <Avatar key={m.id} member={m} size={22} />)}
+        </span>
         {isTask && !!deal.checklist?.total && (
           <span
             className={`kanban-card__checklist ${deal.checklist.done === deal.checklist.total ? "is-complete" : ""}`}

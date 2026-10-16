@@ -102,7 +102,8 @@ function matchesDue(deal: CrmDeal, due: string) {
 function matchesDeal(deal: CrmDeal, f: DealFilters) {
   const next = deal.activities?.[0];
   if (!matches(f.q, deal.title, deal.company, deal.contactName, `#${deal.number}`)) return false;
-  if (f.responsibleId && (deal.responsible?.id ?? NO_RESPONSIBLE) !== f.responsibleId) return false;
+  // A co-assignee counts as responsible for the filter
+  if (f.responsibleId && (deal.responsible?.id ?? NO_RESPONSIBLE) !== f.responsibleId && !deal.assignees?.some((m) => m.id === f.responsibleId)) return false;
   if (f.status && (deal.status ?? "OPEN") !== f.status) return false;
   // Same overdue rule as DealCard
   if (f.activity === "overdue" && !(next?.deadline && new Date(next.deadline).getTime() < Date.now())) return false;

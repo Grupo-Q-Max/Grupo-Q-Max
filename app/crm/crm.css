@@ -1979,3 +1979,7 @@ button.crm-bell {
 /* Toolbar: saved views ("Visualizações") next to the view switcher */
 .crm-saved-views { display: flex; align-items: center; gap: 4px; margin-left: auto; }
 .crm-saved-views .crm-access__select { width: auto; min-width: 170px; }
+
+/* Kanban card: responsible plus up to two co-assignees, overlapped */
+.kanban-card__people { display: inline-flex; align-items: center; }
+.kanban-card__people .deal-avatar + .deal-avatar { margin-left: -8px; box-shadow: 0 0 0 2px #1a1a1c; }
