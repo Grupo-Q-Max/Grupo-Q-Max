@@ -11,8 +11,9 @@ import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
-import { Kanban, List, Calendar, CalendarDays, TrendingUp, ArrowDown, Archive, Download } from "lucide-react";
+import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download } from "lucide-react";
 import { CrmCalendar } from "./CrmCalendar";
+import { CrmTimeline } from "./CrmTimeline";
 import { CrmBulkBar } from "./CrmBulkBar";
 import { alertDialog } from "@/components/ui/Dialogs";
 import { downloadCsv } from "@/lib/csv";
@@ -35,7 +36,7 @@ const DEAL_STATUSES: Record<string, string> = { OPEN: "Aberto", WON: "Ganho", LO
 const TASK_STATUSES: Record<string, string> = { OPEN: "Aberta", WON: "Concluída" };
 const ACTIVITIES: Record<string, string> = { overdue: "Atividade atrasada", none: "Sem atividade pendente" };
 const DUE: Record<string, string> = { overdue: "Atrasada", today: "Vence hoje", week: "Próximos 7 dias", none: "Sem prazo" };
-const VIEWS = ["kanban", "list", "calendar", "activities"] as const;
+const VIEWS = ["kanban", "list", "calendar", "timeline", "activities"] as const;
 type View = (typeof VIEWS)[number];
 type Sort = "due" | "priority" | null;
 
@@ -422,6 +423,11 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
               <CalendarDays size={16} /> Calendário
             </button>
           )}
+          {isTasks && (
+            <button className={`view-btn ${view === "timeline" ? "is-active" : ""}`} onClick={() => setView("timeline")}>
+              <ChartGantt size={16} /> Linha do tempo
+            </button>
+          )}
           <button
             className={`view-btn ${view === "activities" ? "is-active" : ""}`}
             onClick={() => setView("activities")}
@@ -565,6 +571,27 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
               if (!res.ok) return alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível alterar o prazo.");
               router.refresh();
             }}
+          />
+        )}
+
+        {view === "timeline" && (
+          <CrmTimeline
+            undated={allCards.filter((c) => !c.closeDate).length}
+            items={allCards.flatMap((card) => {
+              if (!card.closeDate) return [];
+              const end = new Date(card.closeDate).toISOString().slice(0, 10);
+              return [
+                {
+                  key: card.id,
+                  title: card.title,
+                  start: card.startDate ? new Date(card.startDate).toISOString().slice(0, 10) : end,
+                  end,
+                  priority: card.priority,
+                  tone: card.status === "WON" ? ("done" as const) : matchesDue(card, "overdue") ? ("overdue" as const) : undefined,
+                  onOpen: () => openDeal(card),
+                },
+              ];
+            })}
           />
         )}
 

@@ -24,6 +24,8 @@ export type CrmDeal = {
   createdAt?: string | Date;
   /** Planned end date; the deadline on task boards */
   closeDate?: string | Date | null;
+  /** Start date (task boards: where the timeline bar begins) */
+  startDate?: string | Date | null;
   /** "HH:MM" the task is due on closeDate */
   dueTime?: string | null;
   /** Active subtasks of a task card */

@@ -1911,3 +1911,67 @@ button.crm-bell {
   font-size: 15px;
   font-weight: 600;
 }
+
+/* TIMELINE VIEW (task boards): one row per dated task, bar from start date to deadline */
+.crm-timeline-view__scroll {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(20, 20, 22, 0.5);
+}
+.crm-timeline-view__grid {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) repeat(var(--days), minmax(26px, 1fr));
+  row-gap: 4px;
+  min-width: max-content;
+  padding-bottom: 8px;
+}
+.crm-timeline-view__row { display: contents; }
+.crm-timeline-view__corner,
+.crm-timeline-view__day {
+  position: sticky;
+  top: 0;
+  padding: 8px 0;
+  font-size: 12px;
+  color: #a5a0aa;
+  text-align: center;
+  background: #0b0b0c;
+}
+.crm-timeline-view__corner { left: 0; z-index: 2; text-align: left; padding-left: 12px; text-transform: uppercase; }
+.crm-timeline-view__day.is-weekend { color: #5f5a66; }
+.crm-timeline-view__day.is-today { color: #fff; background: #ff2b91; border-radius: 0 0 6px 6px; }
+.crm-timeline-view__name {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  grid-column: 1;
+  padding: 4px 12px;
+  border: none;
+  background: #141416;
+  color: #e9e6ee;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.crm-timeline-view__name:hover { color: #fff; text-decoration: underline; }
+.crm-timeline-view__bar {
+  height: 22px;
+  align-self: center;
+  margin: 0 2px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(139, 92, 246, 0.55);
+  cursor: pointer;
+}
+.crm-timeline-view__bar:hover { filter: brightness(1.25); }
+.crm-timeline-view__bar--low { background: rgba(165, 160, 170, 0.5); }
+.crm-timeline-view__bar--medium { background: rgba(59, 130, 246, 0.6); }
+.crm-timeline-view__bar--high { background: rgba(245, 158, 11, 0.65); }
+.crm-timeline-view__bar--urgent { background: rgba(255, 77, 109, 0.7); }
+.crm-timeline-view__bar.is-overdue { outline: 2px solid #ff4d6d; outline-offset: -2px; }
+.crm-timeline-view__bar.is-done { background: rgba(76, 235, 149, 0.35); opacity: 0.7; }
+.crm-timeline-view__empty { grid-column: 1 / -1; padding: 32px; text-align: center; color: #a5a0aa; }
