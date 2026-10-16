@@ -60,6 +60,7 @@ export type DealDetails = {
   tags: string[];
   customData: Record<string, string> | null;
   archivedAt: string | null;
+  isTemplate: boolean;
   createdAt: string;
   updatedAt: string;
   activities: DealActivity[];

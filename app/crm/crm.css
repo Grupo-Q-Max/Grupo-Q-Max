@@ -1874,3 +1874,17 @@ button.crm-bell {
   justify-content: flex-end;
   margin-bottom: 12px;
 }
+
+/* "Nova Tarefa" modal: template select with edit/delete */
+.crm-template-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.crm-template-pick > :first-child { flex: 1; }
+.crm-modal-hint {
+  display: block;
+  margin-top: 6px;
+  color: #a5a0aa;
+  font-size: 12px;
+}

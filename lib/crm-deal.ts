@@ -8,8 +8,8 @@ type Tx = Prisma.TransactionClient;
 // Kanban list
 // ---------------------------------------------------------------------------
 
-/** Cards that show on boards, lists, reports and reminders (archived ones stay out). */
-export const activeCard = { archivedAt: null } satisfies Prisma.CrmCardWhereInput;
+/** Cards that show on boards, lists, reports and reminders (archived ones and templates stay out). */
+export const activeCard = { archivedAt: null, isTemplate: false } satisfies Prisma.CrmCardWhereInput;
 
 /**
  * What the kanban card needs: company, main contact, responsible, tags and the card's activities
@@ -697,6 +697,9 @@ type CopyOptions = {
   /** Default: the pipeline's first stage */
   stageId?: string;
   title?: string;
+  /** Default: the source's responsible */
+  responsibleId?: string | null;
+  isTemplate?: boolean;
   startDate: Date | null;
   closeDate: Date | null;
   /** Extra data of the copy's CREATED history entry (where it came from) */
@@ -730,7 +733,8 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
       stageId,
       order: await tx.crmCard.count({ where: { stageId } }),
       companyId: deal.companyId,
-      responsibleId: deal.responsibleId,
+      responsibleId: options.responsibleId === undefined ? deal.responsibleId : options.responsibleId,
+      isTemplate: options.isTemplate ?? false,
       dealType: deal.dealType,
       source: deal.source,
       sourceInfo: deal.sourceInfo,

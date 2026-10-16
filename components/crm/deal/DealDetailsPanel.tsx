@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Archive, ArchiveRestore, Check, Copy, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, BookmarkPlus, Check, Copy, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
 import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
 import { DealAttachments } from "./DealAttachments";
@@ -10,7 +10,7 @@ import { formatMoney, pickDraft, type DealDetails, type DealDraft, type TeamMemb
 import { formatDateOnly } from "./ui";
 import { useCan } from "../CrmAccess";
 import { sendStageMove } from "../stageEntry";
-import { confirmDialog } from "@/components/ui/Dialogs";
+import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
 
 type Tab = "general" | "products" | "files" | "history";
 
@@ -231,6 +231,16 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
     onOpenCard(await res.json());
   };
 
+  const saveAsTemplate = async () => {
+    setError(null);
+    const res = await fetch("/api/crm/card", jsonRequest("POST", { saveAsTemplate: dealId }));
+    if (!res.ok) {
+      setError((await res.json().catch(() => null))?.error ?? "Não foi possível salvar o modelo.");
+      return;
+    }
+    alertDialog("Modelo salvo. Use-o em \"Nova Tarefa\".");
+  };
+
   const copyLink = async () => {
     if (!deal) return;
     const url = `${window.location.origin}/crm/deal/details/${deal.number}`;
@@ -283,6 +293,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
                 </button>
                 <span className="deal-header__number">#{deal.number}</span>
                 {deal.archivedAt && <span className="deal-status">Arquivado</span>}
+                {deal.isTemplate && <span className="deal-status">Modelo</span>}
                 {deal.status !== "OPEN" && (
                   <span className={`deal-status deal-status--${deal.status.toLowerCase()}`}>
                     {deal.status === "WON" ? (isTasks ? "Concluída" : "Ganho") : "Perdido"}
@@ -292,12 +303,17 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
 
               <div className="deal-header__actions">
                 {!isTasks && <ContactActions deal={deal} />}
-                {can("deal.create") && (
+                {isTasks && !deal.isTemplate && can("deal.create") && (
+                  <button type="button" className="deal-icon-btn deal-icon-btn--boxed" title="Salvar como modelo" onClick={saveAsTemplate}>
+                    <BookmarkPlus size={16} />
+                  </button>
+                )}
+                {!deal.isTemplate && can("deal.create") && (
                   <button type="button" className="deal-icon-btn deal-icon-btn--boxed" title="Duplicar" onClick={duplicate}>
                     <Copy size={16} />
                   </button>
                 )}
-                {can("deal.edit") && (
+                {!deal.isTemplate && can("deal.edit") && (
                   <button
                     type="button"
                     className="deal-icon-btn deal-icon-btn--boxed"

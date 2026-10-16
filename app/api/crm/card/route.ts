@@ -25,6 +25,8 @@ export async function GET(req: Request) {
     const params = new URL(req.url).searchParams;
     const archivedOf = params.get("archivedOf");
     if (archivedOf) return listArchived(archivedOf);
+    const templatesOf = params.get("templatesOf");
+    if (templatesOf) return listTemplates(templatesOf);
     const id = params.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     const hidden = await denyUnlessPipeline({ cardId: id });
@@ -45,6 +47,8 @@ export async function POST(req: Request) {
     if (denied) return denied;
     const body = await req.json();
     if (typeof body.duplicateOf === "string") return duplicate(body.duplicateOf);
+    if (typeof body.saveAsTemplate === "string") return saveAsTemplate(body.saveAsTemplate);
+    if (typeof body.fromTemplate === "string") return createFromTemplate(body.fromTemplate, body);
     const { title, company, value, stageId, customData, referredBy, responsibleId, closeDate, comment, force } = body;
     if (!title || !stageId) return NextResponse.json({ error: "Missing title or stageId" }, { status: 400 });
     const hidden = await denyUnlessPipeline({ stageId });
@@ -99,12 +103,58 @@ async function listArchived(pipelineId: string) {
   const hidden = await denyUnlessPipeline({ pipelineId });
   if (hidden) return hidden;
   const cards = await prisma.crmCard.findMany({
-    where: { archivedAt: { not: null }, stage: { pipelineId } },
+    where: { archivedAt: { not: null }, isTemplate: false, stage: { pipelineId } },
     orderBy: { archivedAt: "desc" },
     take: 500,
     include: cardListInclude,
   });
   return NextResponse.json(cards.map(serializeListCard));
+}
+
+/** Templates of a pipeline, for the "Nova tarefa" modal. */
+async function listTemplates(pipelineId: string) {
+  const hidden = await denyUnlessPipeline({ pipelineId });
+  if (hidden) return hidden;
+  const templates = await prisma.crmCard.findMany({
+    where: { isTemplate: true, stage: { pipelineId } },
+    orderBy: { title: "asc" },
+    select: { id: true, number: true, title: true },
+  });
+  return NextResponse.json(templates);
+}
+
+/** "Salvar como modelo": template copy of the card (dates dropped), kept out of the board. */
+async function saveAsTemplate(id: string) {
+  const hidden = await denyUnlessPipeline({ cardId: id });
+  if (hidden) return hidden;
+  const template = await prisma.$transaction((tx) => copyCard(tx, id, { isTemplate: true, startDate: null, closeDate: null, history: { templateFrom: id } }));
+  return NextResponse.json({ id: template.id, number: template.number });
+}
+
+/** "Nova tarefa" from a template: copy in the first column with the title, deadline and responsible typed in the modal. */
+async function createFromTemplate(id: string, body: { title?: unknown; closeDate?: unknown; responsibleId?: unknown }) {
+  const hidden = await denyUnlessPipeline({ cardId: id });
+  if (hidden) return hidden;
+  const template = await prisma.crmCard.findUnique({ where: { id }, select: { isTemplate: true } });
+  if (!template?.isTemplate) return NextResponse.json({ error: "Modelo não encontrado." }, { status: 404 });
+
+  const title = typeof body.title === "string" ? body.title.trim().slice(0, 191) : "";
+  const closeDate = typeof body.closeDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.closeDate) ? new Date(body.closeDate) : null;
+  const card = await prisma.$transaction((tx) =>
+    copyCard(tx, id, {
+      ...(title && { title }),
+      responsibleId: typeof body.responsibleId === "string" && body.responsibleId ? body.responsibleId : null,
+      startDate: null,
+      closeDate,
+      history: { templateId: id },
+    })
+  );
+
+  await notifyStageChanged(card.stageId);
+  after(async () => {
+    if (!(await fireTriggers(card.id, { type: "DEAL_CREATED" }))) await onDealEnteredStage(card.id, card.stageId);
+  });
+  return NextResponse.json({ id: card.id, number: card.number });
 }
 
 /** "Duplicar": copy of the card (relations, description, checklist) at the end of the same column. */

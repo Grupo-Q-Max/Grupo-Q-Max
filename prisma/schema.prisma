@@ -320,6 +320,8 @@ model CrmCard {
   customData         Json? // values of the pipeline's user-defined fields (fieldsConfig)
   /// Set = archived: hidden from boards, lists, reports and reminders, still reachable by its URL
   archivedAt         DateTime?
+  /// Template of its pipeline ("Salvar como modelo"): never on the board, copied by "Nova tarefa" → modelo
+  isTemplate         Boolean       @default(false)
 
   stageId       String
   stage         CrmStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)
