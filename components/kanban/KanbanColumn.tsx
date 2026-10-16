@@ -47,10 +47,11 @@ export function KanbanColumn<T extends KanbanItemBase>({
 
   const { setNodeRef } = useDroppable({ id: column.id, data: { type: "column" } });
 
+  // Enter keeps the input open so several items can be typed in a row; Escape or an empty blur closes it
   const submitNewItem = () => {
     if (newItemTitle.trim() && onAddItem) onAddItem(newItemTitle.trim());
+    else setIsAdding(false);
     setNewItemTitle("");
-    setIsAdding(false);
   };
 
   return (
