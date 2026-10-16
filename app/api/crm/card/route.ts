@@ -4,7 +4,7 @@ import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
-import { notifyAssigned } from "@/lib/crm-card-notify";
+import { notifyAssigned, notifyMoved } from "@/lib/crm-card-notify";
 import { sessionMemberId } from "@/lib/auth";
 import { deleteCardWithFiles } from "@/lib/crm-attachments";
 import {
@@ -16,6 +16,7 @@ import {
   findDuplicateDeals,
   getDealDetails,
   restoreChanges,
+  validParent,
   serializeListCard,
   updateDeal,
 } from "@/lib/crm-deal";
@@ -46,10 +47,11 @@ export async function POST(req: Request) {
     const denied = await denyUnless("deal.create");
     if (denied) return denied;
     const body = await req.json();
-    if (typeof body.duplicateOf === "string") return duplicate(body.duplicateOf);
-    if (typeof body.saveAsTemplate === "string") return saveAsTemplate(body.saveAsTemplate);
-    if (typeof body.fromTemplate === "string") return createFromTemplate(body.fromTemplate, body);
-    const { title, company, value, stageId, customData, referredBy, responsibleId, closeDate, comment, force } = body;
+    const actorId = sessionMemberId(req);
+    if (typeof body.duplicateOf === "string") return duplicate(body.duplicateOf, actorId);
+    if (typeof body.saveAsTemplate === "string") return saveAsTemplate(body.saveAsTemplate, actorId);
+    if (typeof body.fromTemplate === "string") return createFromTemplate(body.fromTemplate, body, actorId);
+    const { title, company, value, stageId, customData, referredBy, responsibleId, closeDate, comment, force, parentId } = body;
     if (!title || !stageId) return NextResponse.json({ error: "Missing title or stageId" }, { status: 400 });
     const hidden = await denyUnlessPipeline({ stageId });
     if (hidden) return hidden;
@@ -57,8 +59,10 @@ export async function POST(req: Request) {
 
     const card = await prisma.$transaction(async (tx) => {
       const { pipelineId } = await tx.crmStage.findUniqueOrThrow({ where: { id: stageId }, select: { pipelineId: true } });
+      // Subtask ("Adicionar subtarefa" in the panel): parent of the same board, one level only
+      const parent = typeof parentId === "string" && parentId ? await validParent(tx, null, parentId, pipelineId) : null;
       const companyId = await companyIdByName(tx, company);
-      if (!force) {
+      if (!force && !parent) {
         // Throwing rolls back a company created just above
         const duplicates = await findDuplicateDeals(tx, { title, pipelineId, companyId, responsibleId: responsible, value: Number(value) || 0 });
         if (duplicates.length) throw new DuplicateDealError(duplicates);
@@ -76,7 +80,8 @@ export async function POST(req: Request) {
           closeDate: typeof closeDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(closeDate) ? new Date(closeDate) : null,
           comment: typeof comment === "string" ? comment.trim() || null : null,
           order: await tx.crmCard.count({ where: { stageId } }),
-          history: { create: { type: "CREATED", data: { title } } },
+          parentId: parent?.id ?? null,
+          history: { create: { type: "CREATED", data: { title }, actorId } },
         },
         include: cardListInclude,
       });
@@ -93,6 +98,7 @@ export async function POST(req: Request) {
     if (error instanceof DuplicateDealError) {
       return NextResponse.json({ error: "duplicate", deals: error.deals }, { status: 409 });
     }
+    if (error instanceof DealValidationError) return NextResponse.json({ error: error.message }, { status: 400 });
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -124,15 +130,15 @@ async function listTemplates(pipelineId: string) {
 }
 
 /** "Salvar como modelo": template copy of the card (dates dropped), kept out of the board. */
-async function saveAsTemplate(id: string) {
+async function saveAsTemplate(id: string, actorId: string | null) {
   const hidden = await denyUnlessPipeline({ cardId: id });
   if (hidden) return hidden;
-  const template = await prisma.$transaction((tx) => copyCard(tx, id, { isTemplate: true, startDate: null, closeDate: null, history: { templateFrom: id } }));
+  const template = await prisma.$transaction((tx) => copyCard(tx, id, { isTemplate: true, startDate: null, closeDate: null, history: { templateFrom: id }, actorId }));
   return NextResponse.json({ id: template.id, number: template.number });
 }
 
 /** "Nova tarefa" from a template: copy in the first column with the title, deadline and responsible typed in the modal. */
-async function createFromTemplate(id: string, body: { title?: unknown; closeDate?: unknown; responsibleId?: unknown }) {
+async function createFromTemplate(id: string, body: { title?: unknown; closeDate?: unknown; responsibleId?: unknown }, actorId: string | null) {
   const hidden = await denyUnlessPipeline({ cardId: id });
   if (hidden) return hidden;
   const template = await prisma.crmCard.findUnique({ where: { id }, select: { isTemplate: true } });
@@ -140,13 +146,18 @@ async function createFromTemplate(id: string, body: { title?: unknown; closeDate
 
   const title = typeof body.title === "string" ? body.title.trim().slice(0, 191) : "";
   const closeDate = typeof body.closeDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.closeDate) ? new Date(body.closeDate) : null;
+  const responsibleId = typeof body.responsibleId === "string" && body.responsibleId ? body.responsibleId : null;
+  if (responsibleId && !(await prisma.teamMember.count({ where: { id: responsibleId } }))) {
+    return NextResponse.json({ error: "Responsável não encontrado." }, { status: 400 });
+  }
   const card = await prisma.$transaction((tx) =>
     copyCard(tx, id, {
       ...(title && { title }),
-      responsibleId: typeof body.responsibleId === "string" && body.responsibleId ? body.responsibleId : null,
+      responsibleId,
       startDate: null,
       closeDate,
       history: { templateId: id },
+      actorId,
     })
   );
 
@@ -158,7 +169,7 @@ async function createFromTemplate(id: string, body: { title?: unknown; closeDate
 }
 
 /** "Duplicar": copy of the card (relations, description, checklist) at the end of the same column. */
-async function duplicate(id: string) {
+async function duplicate(id: string, actorId: string | null) {
   const hidden = await denyUnlessPipeline({ cardId: id });
   if (hidden) return hidden;
   const card = await prisma.$transaction(async (tx) => {
@@ -170,6 +181,7 @@ async function duplicate(id: string) {
       startDate: source.startDate,
       closeDate: source.closeDate,
       history: { duplicatedFrom: id },
+      actorId,
     });
   });
   if (!card) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -195,26 +207,27 @@ export async function PATCH(req: Request) {
     // A stage change must also land in a pipeline the user sees
     const hidden = await denyUnlessPipeline({ cardId: id, stageId: typeof changes.stageId === "string" ? changes.stageId : null });
     if (hidden) return hidden;
+    const authorId = sessionMemberId(req);
 
     let result;
     if (typeof restoreStageId === "string") {
       // Back to the state saved when the deal left that stage (fields only; stage and status stay)
       const restore = await restoreChanges(id, restoreStageId);
-      result = await updateDeal(id, restore.changes, { type: "STATE_RESTORED", data: { stage: restore.stage } });
+      result = await updateDeal(id, restore.changes, { note: { type: "STATE_RESTORED", data: { stage: restore.stage } }, actorId: authorId });
     } else {
       if (typeof changes.stageId === "string") {
         const current = await prisma.crmCard.findUnique({ where: { id }, select: { stageId: true } });
         if (current && current.stageId !== changes.stageId) await checkStageEntry(id, changes.stageId, lostReason);
       }
-      result = await updateDeal(id, changes);
+      result = await updateDeal(id, changes, { actorId: authorId });
     }
 
     if (result.changed) await notifyStageChanged(result.stageId);
-    const authorId = sessionMemberId(req);
     after(async () => {
       if (result.recurringCopy) await onDealEnteredStage(result.recurringCopy.id, result.recurringCopy.stageId);
       if (result.changedFields.includes("responsibleId")) await notifyAssigned(id, authorId);
       // A manual stage change runs the new stage's rules; other changes may fire a "campo alterado" trigger
+      if (result.movedTo) await notifyMoved(id, result.movedTo, authorId);
       if (result.movedTo) await onDealEnteredStage(id, result.movedTo);
       else if (result.changedFields.length) await fireTriggers(id, { type: "FIELD_CHANGED", fields: result.changedFields });
 

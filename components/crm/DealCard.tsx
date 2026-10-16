@@ -1,4 +1,5 @@
-import { Calendar, Clock, ListChecks, ListTodo, Lock, Trash2 } from "lucide-react";
+import { Calendar, Clock, ListChecks, ListTodo, ListTree, Lock, Trash2 } from "lucide-react";
+import { dueAt } from "@/lib/crm-due";
 import { Avatar } from "./deal/ui";
 import { formatMinutes, priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
 
@@ -23,6 +24,10 @@ export type CrmDeal = {
   createdAt?: string | Date;
   /** Planned end date; the deadline on task boards */
   closeDate?: string | Date | null;
+  /** "HH:MM" the task is due on closeDate */
+  dueTime?: string | null;
+  /** Active subtasks of a task card */
+  subtasks?: { done: number; total: number };
   priority?: Priority | null;
   tags?: CrmTagDto[];
   /** Waits for a card that is not done yet ("Bloqueada por") */
@@ -31,9 +36,6 @@ export type CrmDeal = {
   estimateMinutes?: number | null;
   spentMinutes?: number | null;
 };
-
-/** End of the due day (closeDate is a date-only column stored as UTC midnight). */
-const dueEnd = (date: string | Date) => new Date(date).getTime() + 86_400_000;
 
 export function DealCard({
   deal,
@@ -51,7 +53,7 @@ export function DealCard({
   const pendingCount = deal._count?.activities ?? 0;
   const overdue = nextActivity?.deadline && new Date(nextActivity.deadline).getTime() < Date.now();
   const taskDone = isTask && deal.status === "WON";
-  const taskOverdue = isTask && !taskDone && deal.closeDate && dueEnd(deal.closeDate) < Date.now();
+  const taskOverdue = isTask && !taskDone && deal.closeDate && dueAt(deal.closeDate, deal.dueTime).getTime() < Date.now();
 
   return (
     <div
@@ -83,7 +85,10 @@ export function DealCard({
         deal.closeDate && (
           <div className={`kanban-card__activity ${taskOverdue ? "is-overdue" : ""}`}>
             <Calendar size={12} />
-            <span>Prazo {new Date(deal.closeDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", timeZone: "UTC" })}</span>
+            <span>
+              Prazo {new Date(deal.closeDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", timeZone: "UTC" })}
+              {deal.dueTime && ` ${deal.dueTime}`}
+            </span>
           </div>
         )
       ) : (
@@ -124,6 +129,14 @@ export function DealCard({
             title="Atividades concluídas / total"
           >
             <ListChecks size={12} /> {deal.checklist.done}/{deal.checklist.total}
+          </span>
+        )}
+        {isTask && !!deal.subtasks?.total && (
+          <span
+            className={`kanban-card__checklist ${deal.subtasks.done === deal.subtasks.total ? "is-complete" : ""}`}
+            title="Subtarefas concluídas / total"
+          >
+            <ListTree size={12} /> {deal.subtasks.done}/{deal.subtasks.total}
           </span>
         )}
         {isTask && (deal.estimateMinutes != null || deal.spentMinutes != null) && (

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyPipelineChanged } from "@/lib/crm-realtime";
 import { isQxbackStage } from "@/lib/crm-qxback";
+import { resyncTaskStatuses } from "@/lib/crm-deal";
 
 /**
  * Pipeline settings: name, custom fields, space, kind (DEALS/TASKS) and the groups and members
@@ -53,9 +54,11 @@ export async function PUT(req: Request) {
       dataToUpdate.members = { deleteMany: {}, create: [...new Set<string>(memberIds)].map((memberId) => ({ memberId })) };
     }
 
-    const updated = await prisma.crmPipeline.update({
-      where: { id },
-      data: dataToUpdate
+    const updated = await prisma.$transaction(async (tx) => {
+      const row = await tx.crmPipeline.update({ where: { id }, data: dataToUpdate });
+      // A board that became a task board: its last column now means "done" (LOST cards reopen)
+      if (kind === "TASKS") await resyncTaskStatuses(tx, id);
+      return row;
     });
     notifyPipelineChanged(id);
 

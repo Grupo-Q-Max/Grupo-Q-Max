@@ -8,7 +8,7 @@ import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
 import { useCan } from "./CrmAccess";
 import { PRIORITIES, type TeamMember } from "./deal/types";
 
-/** Actions on the cards selected in the list view (move, responsible, priority, archive, delete) through /api/crm/card/bulk. */
+/** Actions on the cards selected in the list view (move, responsible, priority, tag, deadline, archive, delete) through /api/crm/card/bulk. */
 export function CrmBulkBar({
   ids,
   stages,
@@ -26,6 +26,7 @@ export function CrmBulkBar({
   const router = useRouter();
   const can = useCan();
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -33,6 +34,10 @@ export function CrmBulkBar({
     fetch("/api/team", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : []))
       .then(setTeam)
+      .catch(() => {});
+    fetch("/api/crm/tag", { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setTags)
       .catch(() => {});
     return () => controller.abort();
   }, []);
@@ -90,6 +95,25 @@ export function CrmBulkBar({
               <option value="none">Sem prioridade</option>
             </Select>
           )}
+          {tags.length > 0 && (
+            <Select className="crm-access__select" value="" disabled={busy} onChange={(e) => e.target.value && run("tag", e.target.value)} aria-label="Adicionar etiqueta">
+              <option value="">Etiqueta…</option>
+              {tags.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          )}
+          <input
+            type="date"
+            className="deal-input crm-bulk-bar__date"
+            disabled={busy}
+            title={isTasks ? "Prazo dos selecionados" : "Data de término dos selecionados"}
+            aria-label={isTasks ? "Prazo" : "Data de término"}
+            value=""
+            onChange={(e) => e.target.value && run("due", e.target.value)}
+          />
           <button
             type="button"
             className="deal-icon-btn"

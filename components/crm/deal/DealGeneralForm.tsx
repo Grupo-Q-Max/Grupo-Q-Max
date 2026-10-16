@@ -26,6 +26,7 @@ import {
   type TeamMember,
 } from "./types";
 import { Avatar, Field, LinkedBadge, LookupInput, Section } from "./ui";
+import { TimeTracker, Subtasks } from "./DealTaskTools";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 
@@ -36,7 +37,19 @@ type Props = {
   team: TeamMember[];
   onStageChange: (stageId: string) => void;
   onOpenProducts: () => void;
+  /** Reloads the deal keeping unsaved edits (after the timer or a subtask changed it) */
+  onReload: () => void;
+  onOpenCard: (card: { id: string; number: number }) => void;
 };
+
+/** "Lembrar antes" options for a due time, in minutes */
+const REMINDER_OPTIONS = [
+  [15, "15 min antes"],
+  [30, "30 min antes"],
+  [60, "1 hora antes"],
+  [120, "2 horas antes"],
+  [1440, "1 dia antes"],
+] as const;
 
 const UTM_LABELS: Record<string, string> = {
   source: "utm_source",
@@ -205,57 +218,80 @@ function TagsField({ tags, onChange }: { tags: string[]; onChange: Props["onChan
 /** Duration typed as "1h30" / "90" and kept in minutes; the text is read when the field loses focus. */
 function DurationInput({ minutes, onChange }: { minutes: number | null; onChange: (minutes: number | null) => void }) {
   const [text, setText] = useState(formatMinutes(minutes) ?? "");
+  const [invalid, setInvalid] = useState(false);
   useEffect(() => setText(formatMinutes(minutes) ?? ""), [minutes]);
   return (
-    <input
-      className="deal-input"
-      placeholder="Ex: 1h30"
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={() => {
-        const parsed = parseMinutes(text);
-        if (parsed === minutes) setText(formatMinutes(minutes) ?? "");
-        else onChange(parsed);
-      }}
-    />
+    <>
+      <input
+        className="deal-input"
+        placeholder="Ex: 1h30"
+        value={text}
+        aria-invalid={invalid}
+        onChange={(e) => {
+          setText(e.target.value);
+          setInvalid(false);
+        }}
+        onBlur={() => {
+          const parsed = parseMinutes(text);
+          // Unreadable text keeps the saved value instead of clearing it
+          if (parsed === null && text.trim()) return setInvalid(true);
+          if (parsed === minutes) setText(formatMinutes(minutes) ?? "");
+          else onChange(parsed);
+        }}
+      />
+      {invalid && <span className="deal-field__hint">Use formatos como 1h30, 90 ou 1,5h.</span>}
+    </>
   );
 }
 
-/** "Bloqueada por": cards of the same pipeline that must be done before this one. */
+/** "Bloqueada por": cards of the same pipeline that must be done before this one. Also lists the cards this one blocks. */
 function BlockedByField({ deal, blockedBy, onChange }: { deal: DealDetails; blockedBy: BlockerCard[]; onChange: Props["onChange"] }) {
   const [query, setQuery] = useState("");
   return (
-    <Field label="Bloqueada por">
-      {blockedBy.length > 0 && (
-        <div className="deal-chips">
-          {blockedBy.map((card) => (
-            <span key={card.id} className={`deal-chip ${card.status === "OPEN" ? "" : "deal-chip--done"}`}>
-              {card.status === "OPEN" && <Lock size={11} />}
-              <a href={`/crm/deal/details/${card.number}`}>#{card.number} {card.title}</a>
-              <button type="button" title="Remover" onClick={() => onChange({ blockedBy: blockedBy.filter((c) => c.id !== card.id) })}>
-                <X size={12} />
-              </button>
-            </span>
-          ))}
-        </div>
+    <>
+      {deal.blocks.length > 0 && (
+        <Field label="Bloqueia">
+          <div className="deal-chips">
+            {deal.blocks.map((card) => (
+              <span key={card.id} className={`deal-chip ${card.status === "OPEN" ? "" : "deal-chip--done"}`}>
+                <a href={`/crm/deal/details/${card.number}`}>#{card.number} {card.title}</a>
+              </span>
+            ))}
+          </div>
+        </Field>
       )}
-      <LookupInput<BlockerCard & { name: string }>
-        type="card"
-        params={`&pipelineId=${encodeURIComponent(deal.pipeline.id)}`}
-        value={query}
-        placeholder="Buscar tarefa por nome ou #nº"
-        onChange={setQuery}
-        onPick={({ name: _, ...card }) => {
-          setQuery("");
-          if (card.id !== deal.id && !blockedBy.some((c) => c.id === card.id)) onChange({ blockedBy: [...blockedBy, card] });
-        }}
-      />
-    </Field>
+      <Field label="Bloqueada por">
+        {blockedBy.length > 0 && (
+          <div className="deal-chips">
+            {blockedBy.map((card) => (
+              <span key={card.id} className={`deal-chip ${card.status === "OPEN" ? "" : "deal-chip--done"}`}>
+                {card.status === "OPEN" && <Lock size={11} />}
+                <a href={`/crm/deal/details/${card.number}`}>#{card.number} {card.title}</a>
+                <button type="button" title="Remover" onClick={() => onChange({ blockedBy: blockedBy.filter((c) => c.id !== card.id) })}>
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <LookupInput<BlockerCard & { name: string }>
+          type="card"
+          params={`&pipelineId=${encodeURIComponent(deal.pipeline.id)}`}
+          value={query}
+          placeholder="Buscar tarefa por nome ou #nº"
+          onChange={setQuery}
+          onPick={({ name: _, ...card }) => {
+            setQuery("");
+            if (card.id !== deal.id && !blockedBy.some((c) => c.id === card.id)) onChange({ blockedBy: [...blockedBy, card] });
+          }}
+        />
+      </Field>
+    </>
   );
 }
 
 /** Task boards (pipeline kind TASKS): same card, only what an internal to-do needs. Checklist = activities in the timeline. */
-function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) {
+function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload, onOpenCard }: Props) {
   const responsible = team.find((m) => m.id === draft.responsibleId);
   return (
     <div className="deal-form">
@@ -273,11 +309,37 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) 
           </Select>
         </Field>
         <Field label="Prazo">
-          <DatePicker
-            className="deal-input deal-input--date"
-            value={toDateInput(draft.closeDate)}
-            onChange={(e) => onChange({ closeDate: e.target.value || null })}
-          />
+          <div className="deal-row">
+            <DatePicker
+              className="deal-input deal-input--date"
+              value={toDateInput(draft.closeDate)}
+              onChange={(e) => onChange({ closeDate: e.target.value || null, ...(!e.target.value && { dueTime: null, reminderMinutes: null }) })}
+            />
+            <input
+              type="time"
+              className="deal-input"
+              aria-label="Hora do prazo"
+              title="Hora do prazo (opcional)"
+              disabled={!draft.closeDate}
+              value={draft.dueTime ?? ""}
+              onChange={(e) => onChange({ dueTime: e.target.value || null, ...(!e.target.value && { reminderMinutes: null }) })}
+            />
+          </div>
+          {draft.dueTime && (
+            <Select
+              className="deal-input"
+              aria-label="Lembrete antes do prazo"
+              value={String(draft.reminderMinutes ?? "")}
+              onChange={(e) => onChange({ reminderMinutes: e.target.value ? Number(e.target.value) : null })}
+            >
+              <option value="">Sem lembrete antes</option>
+              {REMINDER_OPTIONS.map(([minutes, label]) => (
+                <option key={minutes} value={minutes}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
         <Field label="Responsável">
           <div className="deal-person">
@@ -308,14 +370,11 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) 
         </Field>
         <TagsField tags={draft.tags} onChange={onChange} />
         <BlockedByField deal={deal} blockedBy={draft.blockedBy} onChange={onChange} />
-        <div className="deal-row">
-          <Field label="Estimativa">
-            <DurationInput minutes={draft.estimateMinutes} onChange={(estimateMinutes) => onChange({ estimateMinutes })} />
-          </Field>
-          <Field label="Tempo gasto">
-            <DurationInput minutes={draft.spentMinutes} onChange={(spentMinutes) => onChange({ spentMinutes })} />
-          </Field>
-        </div>
+        <Subtasks deal={deal} team={team} onReload={onReload} onOpenCard={onOpenCard} />
+        <Field label="Estimativa">
+          <DurationInput minutes={draft.estimateMinutes} onChange={(estimateMinutes) => onChange({ estimateMinutes })} />
+        </Field>
+        {!deal.isTemplate && <TimeTracker deal={deal} team={team} onReload={onReload} />}
         <Field label="Descrição">
           <textarea className="deal-input" rows={6} value={draft.comment ?? ""} onChange={(e) => onChange({ comment: e.target.value })} />
         </Field>

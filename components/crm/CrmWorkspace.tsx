@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import { CrmKanban } from "./CrmKanban";
 import type { CrmDeal } from "./DealCard";
 import { DealDetailsPanel } from "./deal/DealDetailsPanel";
-import { PRIORITIES, priorityLabel } from "./deal/types";
+import { PRIORITIES, formatMinutes, priorityLabel } from "./deal/types";
 import { FilterField, FilterSearch, type FilterChip } from "./FilterSearch";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
-import { Kanban, List, Calendar, CalendarDays, TrendingUp, ArrowDown, Archive } from "lucide-react";
+import { Kanban, List, Calendar, CalendarDays, TrendingUp, ArrowDown, Archive, Download } from "lucide-react";
 import { CrmCalendar } from "./CrmCalendar";
 import { CrmBulkBar } from "./CrmBulkBar";
 import { alertDialog } from "@/components/ui/Dialogs";
+import { downloadCsv } from "@/lib/csv";
 
 type DealFilters = {
   q: string;
@@ -34,6 +35,45 @@ const DEAL_STATUSES: Record<string, string> = { OPEN: "Aberto", WON: "Ganho", LO
 const TASK_STATUSES: Record<string, string> = { OPEN: "Aberta", WON: "Concluída" };
 const ACTIVITIES: Record<string, string> = { overdue: "Atividade atrasada", none: "Sem atividade pendente" };
 const DUE: Record<string, string> = { overdue: "Atrasada", today: "Vence hoje", week: "Próximos 7 dias", none: "Sem prazo" };
+const VIEWS = ["kanban", "list", "calendar", "activities"] as const;
+type View = (typeof VIEWS)[number];
+type Sort = "due" | "priority" | null;
+
+/** Board URL with the filters, view and sort, so a filtered board can be shared and survives a reload. */
+function boardUrl(pipelineId: string, filters: DealFilters, view: View, sort: Sort) {
+  const params = new URLSearchParams({ pipelineId });
+  for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);
+  if (view !== "kanban") params.set("view", view);
+  if (sort) params.set("sort", sort);
+  return `/crm?${params}`;
+}
+
+/** Reverse of boardUrl, from the current address. */
+function readBoardUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const filters = Object.fromEntries(Object.keys(NO_FILTERS).map((key) => [key, params.get(key) ?? ""])) as DealFilters;
+  const view = VIEWS.find((v) => v === params.get("view")) ?? "kanban";
+  const sort = params.get("sort");
+  return { filters, view, sort: (sort === "due" || sort === "priority" ? sort : null) as Sort };
+}
+
+/** Shortcuts outside text fields: "/" focuses the search, "n" opens "Nova tarefa / Novo negócio". */
+function useBoardShortcuts() {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (e.ctrlKey || e.metaKey || e.altKey || target.closest("input, textarea, select, [contenteditable=true], [role=dialog]")) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        document.querySelector<HTMLInputElement>(".crm-toolbar input[type=search]")?.focus();
+      } else if (e.key === "n" || e.key === "N") {
+        document.querySelector<HTMLButtonElement>("[data-shortcut=new-card]")?.click();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+}
 
 /** Local YYYY-MM-DD, comparable with <input type="date"> values. */
 const dayOf = (date: string | Date) => new Date(date).toLocaleDateString("sv-SE");
@@ -69,7 +109,7 @@ function matchesDeal(deal: CrmDeal, f: DealFilters) {
 }
 
 /** Opens the deal panel over any view; the open deal lives in the URL path, like Bitrix24: /crm/deal/details/<number> */
-function useDealPanel(pipelineId: string, initialDealId?: string) {
+function useDealPanel(pipelineId: string, initialDealId?: string, closeUrl?: React.RefObject<string>) {
   const router = useRouter();
   const [openDealId, setOpenDealId] = useState<string | null>(initialDealId ?? null);
   const dealChangedRef = useRef(false);
@@ -98,7 +138,7 @@ function useDealPanel(pipelineId: string, initialDealId?: string) {
 
   const closeDeal = useCallback(() => {
     setOpenDealId(null);
-    window.history.replaceState(null, "", `/crm?pipelineId=${pipelineId}`);
+    window.history.replaceState(null, "", closeUrl?.current || `/crm?pipelineId=${pipelineId}`);
     // Server data (list view, header) is refreshed only once the panel closes, so the
     // board isn't re-rendered for the deal URL while it's open
     if (dealChangedRef.current) router.refresh();
@@ -127,10 +167,29 @@ function useDealPanel(pipelineId: string, initialDealId?: string) {
 
 export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initialDealId?: string }) {
   const isTasks = pipeline.kind === "TASKS";
-  const [view, setView] = useState<"kanban" | "list" | "calendar" | "activities">("kanban");
+  const [view, setView] = useState<View>("kanban");
   const router = useRouter();
   const [filters, setFilters] = useState(NO_FILTERS);
-  const [sort, setSort] = useState<"due" | "priority" | null>(null);
+  const [sort, setSort] = useState<Sort>(null);
+  useBoardShortcuts();
+
+  // Filters, view and sort live in the URL (read once on mount, written back while the panel is closed)
+  // State, not a ref: the write below must wait for the render that has the URL's values, or it would
+  // overwrite the URL with the empty defaults first (and Strict Mode's second read would see that)
+  const [urlRead, setUrlRead] = useState(false);
+  const closeUrl = useRef("");
+  useEffect(() => {
+    const fromUrl = readBoardUrl();
+    setFilters(fromUrl.filters);
+    setView(fromUrl.view);
+    setSort(fromUrl.sort);
+    setUrlRead(true);
+  }, []);
+  useEffect(() => {
+    if (!urlRead) return;
+    closeUrl.current = boardUrl(pipeline.id, filters, view, sort);
+    if (window.location.pathname === "/crm") window.history.replaceState(null, "", closeUrl.current);
+  }, [urlRead, pipeline.id, filters, view, sort]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   // List view "Arquivados": archived cards, loaded on demand (null = showing the board's cards)
   const [archived, setArchived] = useState<CrmDeal[] | null>(null);
@@ -138,7 +197,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     const res = await fetch(`/api/crm/card?archivedOf=${pipeline.id}`, { cache: "no-store" });
     setArchived(res.ok ? await res.json() : []);
   }, [pipeline.id]);
-  const { openDeal, panel, syncBoardRef, changedRef } = useDealPanel(pipeline.id, initialDealId);
+  const { openDeal, panel, syncBoardRef, changedRef } = useDealPanel(pipeline.id, initialDealId, closeUrl);
   // Archiving or restoring from the panel changes the archived list too
   changedRef.current = archived ? loadArchived : null;
   const set = (changes: Partial<DealFilters>) => setFilters((f) => ({ ...f, ...changes }));
@@ -205,6 +264,40 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
       <input type="checkbox" aria-label="Selecionar" checked={selected.has(id)} onChange={() => toggle(id)} />
     </td>
   );
+
+  const day = (date: string | Date | null | undefined) => (date ? new Date(date).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "");
+  // Exports the rows on screen (filters, sort and "Arquivados" applied)
+  const exportCsv = () =>
+    isTasks
+      ? downloadCsv(`tarefas-${todayKey(new Date())}.csv`, [
+          ["Nº", "Tarefa", "Coluna", "Status", "Prioridade", "Etiquetas", "Prazo", "Responsável", "Estimativa", "Tempo gasto", "Criada em"],
+          ...allCards.map((c) => [
+            c.number,
+            c.title,
+            c.stageName,
+            TASK_STATUSES[c.status ?? "OPEN"] ?? c.status,
+            priorityLabel(c.priority ?? null),
+            c.tags?.map((t) => t.name).join(", "),
+            [day(c.closeDate), c.closeDate && c.dueTime].filter(Boolean).join(" "),
+            c.responsible?.name,
+            formatMinutes(c.estimateMinutes ?? null),
+            formatMinutes(c.spentMinutes ?? null),
+            c.createdAt ? new Date(c.createdAt).toLocaleDateString("pt-BR") : "",
+          ]),
+        ])
+      : downloadCsv(`negocios-${todayKey(new Date())}.csv`, [
+          ["Nº", "Negócio", "Empresa", "Fase", "Status", "Valor", "Responsável", "Criado em"],
+          ...allCards.map((c) => [
+            c.number,
+            c.title,
+            c.company,
+            c.stageName,
+            DEAL_STATUSES[c.status ?? "OPEN"] ?? c.status,
+            Number(c.value).toFixed(2).replace(".", ","),
+            c.responsible?.name,
+            c.createdAt ? new Date(c.createdAt).toLocaleDateString("pt-BR") : "",
+          ]),
+        ]);
 
   const sortHeader = (key: "due" | "priority", label: string) => (
     <th>
@@ -336,6 +429,9 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
         {view === "list" && (
           <div className="crm-list-view">
             <div className="crm-list-view__bar">
+              <button type="button" className="view-btn" onClick={exportCsv} disabled={allCards.length === 0} title="Exportar as linhas da lista">
+                <Download size={16} /> Exportar CSV
+              </button>
               <button
                 type="button"
                 className={`view-btn ${archived ? "is-active" : ""}`}
@@ -403,12 +499,12 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                         </span>
                       </td>
                       <td className={card.status !== "WON" && matchesDue(card, "overdue") ? "crm-table__overdue" : undefined}>
-                        {card.closeDate ? new Date(card.closeDate).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "—"}
+                        {card.closeDate ? `${new Date(card.closeDate).toLocaleDateString("pt-BR", { timeZone: "UTC" })}${card.dueTime ? ` ${card.dueTime}` : ""}` : "—"}
                       </td>
                       <td>{card.responsible?.name ?? "—"}</td>
                     </tr>
                   ) : (
-                    <tr key={card.id}>
+                    <tr key={card.id} className="crm-table__row--link" onClick={() => openDeal(card)}>
                       {checkCell(card.id)}
                       <td style={{ fontWeight: 600, color: "#fff" }}>{card.title}</td>
                       <td>{card.company || "—"}</td>
@@ -479,7 +575,8 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                     </div>
                     <div className="crm-timeline-content">
                       <div className="crm-timeline-title">
-                        {isTasks ? "Tarefa" : "Negócio"} <strong>{card.title}</strong> atualizad{isTasks ? "a" : "o"} para a {isTasks ? "coluna" : "fase"}{" "}
+                        {/* updatedAt is any change, not only a column move */}
+                        {isTasks ? "Tarefa" : "Negócio"} <strong>{card.title}</strong> atualizad{isTasks ? "a" : "o"} · {isTasks ? "coluna" : "fase"}{" "}
                         <span className="crm-badge">{card.stageName}</span>
                       </div>
                       <div className="crm-timeline-time">{new Date(card.updatedAt).toLocaleString("pt-BR")}</div>

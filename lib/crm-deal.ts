@@ -1,6 +1,7 @@
 import { Prisma, type CrmDealStatus, type CrmPriority, type CrmRecurrence } from "@prisma/client";
 import { formatMinutes, priorityLabel } from "@/components/crm/deal/types";
 import { prisma } from "@/lib/prisma";
+import { isDueTime } from "@/lib/crm-due";
 
 type Tx = Prisma.TransactionClient;
 
@@ -28,12 +29,13 @@ export const cardListInclude = {
   tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
   // Open blockers only: a card is "Bloqueada" while one of them is not done
   blockedBy: { where: { blockedBy: { status: "OPEN" } }, select: { blockedById: true } },
+  subtasks: { where: activeCard, select: { status: true } },
 } satisfies Prisma.CrmCardInclude;
 
 type ListCard = Prisma.CrmCardGetPayload<{ include: typeof cardListInclude }>;
 
 /** Flattens relations and converts Decimal so the card can cross the server → client boundary. */
-export function serializeListCard({ company, contacts, responsible, tags, activities, blockedBy, ...card }: ListCard) {
+export function serializeListCard({ company, contacts, responsible, tags, activities, blockedBy, subtasks, ...card }: ListCard) {
   const pending = activities.filter((a) => !a.completed);
   const checklist = activities.filter((a) => a.type === "TODO");
   return {
@@ -47,6 +49,7 @@ export function serializeListCard({ company, contacts, responsible, tags, activi
     _count: { activities: pending.length },
     checklist: { done: checklist.filter((a) => a.completed).length, total: checklist.length },
     blocked: blockedBy.length > 0,
+    subtasks: { done: subtasks.filter((s) => s.status === "WON").length, total: subtasks.length },
   };
 }
 
@@ -60,6 +63,15 @@ const dealDetailsInclude = {
   observers: { select: { memberId: true } },
   tags: { select: { tagId: true } },
   blockedBy: { orderBy: { createdAt: "asc" }, select: { blockedBy: { select: { id: true, number: true, title: true, status: true } } } },
+  // "Bloqueia": the reverse side, active cards that wait for this one
+  blocks: { where: { card: activeCard }, orderBy: { createdAt: "asc" }, select: { card: { select: { id: true, number: true, title: true, status: true } } } },
+  parent: { select: { id: true, number: true, title: true } },
+  subtasks: {
+    where: activeCard,
+    orderBy: { createdAt: "asc" },
+    select: { id: true, number: true, title: true, status: true, responsibleId: true, closeDate: true },
+  },
+  timeEntries: { orderBy: { startedAt: "desc" }, select: { id: true, memberId: true, startedAt: true, endedAt: true, minutes: true } },
   products: { orderBy: { order: "asc" } },
   activities: { orderBy: { createdAt: "desc" } },
   history: { orderBy: { createdAt: "desc" } },
@@ -81,7 +93,7 @@ const dealDetailsInclude = {
 type DealRow = Prisma.CrmCardGetPayload<{ include: typeof dealDetailsInclude }>;
 
 const toDto = (row: DealRow) => {
-  const { stage, company, contacts, observers, products, tags, blockedBy, ...deal } = row;
+  const { stage, company, contacts, observers, products, tags, blockedBy, blocks, ...deal } = row;
   return {
     ...deal,
     value: deal.value.toNumber(),
@@ -105,6 +117,7 @@ const toDto = (row: DealRow) => {
     observers: observers.map((o) => o.memberId),
     tags: tags.map((t) => t.tagId),
     blockedBy: blockedBy.map((d) => d.blockedBy),
+    blocks: blocks.map((d) => d.card),
     products: products.map((p) => ({
       id: p.id,
       productId: p.productId,
@@ -145,7 +158,11 @@ function snapshotOf(dto: DealDto) {
     comment: dto.comment,
     recurrence: dto.recurrence,
     priority: dto.priority,
+    dueTime: dto.dueTime,
+    reminderMinutes: dto.reminderMinutes,
+    estimateMinutes: dto.estimateMinutes,
     tags: dto.tags,
+    blockedBy: dto.blockedBy.map((c) => c.id),
     customData: dto.customData,
     company: dto.company,
     contacts: dto.contacts,
@@ -250,8 +267,9 @@ export const SCALAR_FIELDS = {
   comment: "Comentário",
   recurrence: "Negócio recorrente",
   priority: "Prioridade",
+  dueTime: "Hora do prazo",
+  reminderMinutes: "Lembrete antes do prazo",
   estimateMinutes: "Estimativa",
-  spentMinutes: "Tempo gasto",
   customData: "Campos adicionais",
 } as const;
 
@@ -293,11 +311,13 @@ function parseScalar(field: ScalarField, value: unknown) {
     case "referredBy":
       return blankToNull(value)?.slice(0, 200) ?? null;
     case "estimateMinutes":
-    case "spentMinutes": {
-      // Whole minutes, up to a year of work; anything else clears the field
+    case "reminderMinutes": {
+      // Whole minutes, up to a year; anything else clears the field
       const minutes = Math.round(Number(value));
       return value !== null && value !== "" && Number.isFinite(minutes) && minutes >= 0 ? Math.min(minutes, 525_600) : null;
     }
+    case "dueTime":
+      return isDueTime(value) ? value : null;
     default:
       return blankToNull(value);
   }
@@ -340,7 +360,9 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
     const field = key as ScalarField;
     const next = parseScalar(field, changes[field]);
     if (comparable(next) === comparable(current[field])) continue;
-    if (field === "title" && !next) throw new DealValidationError("O nome do negócio é obrigatório");
+    if (field === "title" && !next) {
+      throw new DealValidationError(current.stage.pipeline.kind === "TASKS" ? "O título da tarefa é obrigatório" : "O nome do negócio é obrigatório");
+    }
 
     (data as Record<string, unknown>)[field] = field === "customData" && next === null ? Prisma.DbNull : next;
     history.push(await fieldHistory(tx, field, SCALAR_FIELDS[field], current[field], next));
@@ -350,6 +372,14 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
     const archived = Boolean(changes.archived);
     data.archivedAt = archived ? new Date() : null;
     history.push({ type: "FIELD_CHANGED", data: { field: "archived", label: "Arquivado", from: archived ? "Não" : "Sim", to: archived ? "Sim" : "Não" } });
+  }
+
+  if ("parentId" in changes && (changes.parentId || null) !== current.parentId) {
+    const parentId = typeof changes.parentId === "string" && changes.parentId ? changes.parentId : null;
+    const parent = parentId ? await validParent(tx, dealId, parentId, current.stage.pipeline.id) : null;
+    data.parentId = parentId;
+    const label = (c: { number: number; title: string } | null) => (c ? `#${c.number} ${c.title}` : null);
+    history.push({ type: "FIELD_CHANGED", data: { field: "parentId", label: "Subtarefa de", from: label(current.parent), to: label(parent) } });
   }
 
   for (const key of Object.keys(changes)) {
@@ -412,10 +442,15 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
     }
 
     if (field === "blockedBy") {
-      // Ids or { id } items; never the card itself, nor a card that already waits for this one (direct cycle)
+      // Ids or { id } items: active cards of the same pipeline, never the card itself nor one that waits for it
       const requested = [...new Set(((changes.blockedBy as (string | { id: string })[] | null) ?? []).map((x) => (typeof x === "string" ? x : x?.id)))];
+      const waiting = await cardsWaitingFor(tx, dealId);
       const found = await tx.crmCard.findMany({
-        where: { id: { in: requested.filter((id) => id && id !== dealId) }, blockedBy: { none: { blockedById: dealId } } },
+        where: {
+          id: { in: requested.filter((id) => id && id !== dealId && !waiting.has(id)) },
+          ...activeCard,
+          stage: { pipelineId: current.stage.pipeline.id },
+        },
         select: { id: true, number: true, title: true },
       });
       const before = currentDto.blockedBy.map((c) => c.id);
@@ -448,6 +483,34 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
   }
 
   return { data, history, current };
+}
+
+/** Every card that waits for `cardId`, directly or through a chain of "Bloqueada por" (would close a cycle). */
+async function cardsWaitingFor(tx: Tx, cardId: string) {
+  const seen = new Set<string>();
+  let frontier = [cardId];
+  while (frontier.length) {
+    const rows = await tx.crmCardDependency.findMany({ where: { blockedById: { in: frontier } }, select: { cardId: true } });
+    frontier = rows.map((r) => r.cardId).filter((id) => !seen.has(id));
+    frontier.forEach((id) => seen.add(id));
+  }
+  return seen;
+}
+
+/**
+ * Parent for a subtask: an active card of the same pipeline that is not itself a subtask, and only
+ * when `cardId` (null = a card being created) has no subtasks of its own. One level keeps cycles out.
+ */
+export async function validParent(tx: Tx, cardId: string | null, parentId: string, pipelineId: string) {
+  const parent = await tx.crmCard.findFirst({
+    where: { id: parentId, ...activeCard, parentId: null, stage: { pipelineId } },
+    select: { id: true, number: true, title: true },
+  });
+  if (!parent || parent.id === cardId) throw new DealValidationError("Tarefa pai inválida: escolha uma tarefa ativa do mesmo quadro que não seja subtarefa.");
+  if (cardId && (await tx.crmCard.count({ where: { parentId: cardId } }))) {
+    throw new DealValidationError("Esta tarefa tem subtarefas e não pode virar subtarefa de outra.");
+  }
+  return parent;
 }
 
 export class DealValidationError extends Error {}
@@ -499,10 +562,28 @@ export async function taskStatusForStage(tx: Tx, stageId: string): Promise<CrmDe
 }
 
 /**
+ * Re-applies the "last column = done" rule to every card of a task pipeline, after its columns were
+ * added, removed or reordered, or the pipeline became a task board. No-op on deal boards.
+ */
+export async function resyncTaskStatuses(tx: Tx, pipelineId: string) {
+  const pipeline = await tx.crmPipeline.findUnique({
+    where: { id: pipelineId },
+    select: { kind: true, stages: { orderBy: { order: "desc" }, take: 1, select: { id: true } } },
+  });
+  const last = pipeline?.stages[0]?.id;
+  if (pipeline?.kind !== "TASKS" || !last) return;
+  // ponytail: bulk update without history entries or recurring copies; a column edit is not a task being done.
+  // closedAt is kept when reopening (reports only read it with status WON), so moving the column back restores the date.
+  await tx.crmCard.updateMany({ where: { stage: { pipelineId }, stageId: { not: last }, status: { not: "OPEN" } }, data: { status: "OPEN" } });
+  await tx.crmCard.updateMany({ where: { stageId: last, status: { not: "WON" }, closedAt: { not: null } }, data: { status: "WON" } });
+  await tx.crmCard.updateMany({ where: { stageId: last, status: { not: "WON" } }, data: { status: "WON", closedAt: new Date() } });
+}
+
+/**
  * taskStatusForStage for moves that bypass updateDeal (kanban drag, automation triggers), after the
  * card moved. Returns the recurring copy created by closing the task, if any.
  */
-export async function syncTaskStatus(tx: Tx, cardId: string) {
+export async function syncTaskStatus(tx: Tx, cardId: string, actorId: string | null = null) {
   const card = await tx.crmCard.findUniqueOrThrow({ where: { id: cardId }, select: { stageId: true, status: true } });
   const status = await taskStatusForStage(tx, card.stageId);
   if (!status || status === card.status) return null;
@@ -511,7 +592,7 @@ export async function syncTaskStatus(tx: Tx, cardId: string) {
     data: {
       status,
       closedAt: status === "OPEN" ? null : new Date(),
-      history: { create: { type: "STATUS_CHANGED", data: { from: card.status, to: status } } },
+      history: { create: { type: "STATUS_CHANGED", data: { from: card.status, to: status }, actorId } },
     },
   });
   return status === "WON" ? createRecurringCopy(tx, cardId) : null;
@@ -526,8 +607,15 @@ export async function syncTaskStatus(tx: Tx, cardId: string) {
 export async function updateDeal(
   id: string,
   { stageId, status, ...changes }: { stageId?: string | null; status?: string | null } & Record<string, unknown>,
-  /** Extra timeline entry recorded when something changed (e.g. "informações restauradas"). */
-  note?: HistoryEntry
+  {
+    note,
+    actorId = null,
+  }: {
+    /** Extra timeline entry recorded when something changed (e.g. "informações restauradas"). */
+    note?: HistoryEntry;
+    /** Team member making the change (null = automation, trigger, QXBACK) */
+    actorId?: string | null;
+  } = {}
 ) {
   if (status && !STATUSES.has(status as CrmDealStatus)) throw new DealValidationError("Status inválido");
 
@@ -559,7 +647,7 @@ export async function updateDeal(
 
     let recurringCopy = null;
     if (history.length > 0) {
-      await tx.crmCard.update({ where: { id }, data: { ...data, history: { createMany: { data: history } } } });
+      await tx.crmCard.update({ where: { id }, data: { ...data, history: { createMany: { data: history.map((h) => ({ ...h, actorId })) } } } });
       if (data.status === "WON") recurringCopy = await createRecurringCopy(tx, id);
     }
 
@@ -594,7 +682,7 @@ async function fieldHistory(tx: Tx, field: ScalarField, label: string, from: unk
     return { type: "FIELD_CHANGED", data: { field, label, from: name(from), to: name(to) } };
   }
   if (field === "priority") return { type: "FIELD_CHANGED", data: { field, label, from: priorityLabel(from as string), to: priorityLabel(to as string) } };
-  if (field === "estimateMinutes" || field === "spentMinutes") {
+  if (field === "estimateMinutes" || field === "reminderMinutes") {
     return { type: "FIELD_CHANGED", data: { field, label, from: formatMinutes(from as number | null), to: formatMinutes(to as number | null) } };
   }
   return { type: "FIELD_CHANGED", data: { field, label, from: displayScalar(from), to: displayScalar(to) } };
@@ -737,6 +825,8 @@ type CopyOptions = {
   closeDate: Date | null;
   /** Extra data of the copy's CREATED history entry (where it came from) */
   history: Prisma.InputJsonObject;
+  /** Who made the copy (null = recurrence) */
+  actorId?: string | null;
 };
 
 /**
@@ -776,6 +866,11 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
       comment: deal.comment,
       recurrence: deal.recurrence,
       priority: deal.priority,
+      estimateMinutes: deal.estimateMinutes,
+      dueTime: deal.dueTime,
+      reminderMinutes: deal.reminderMinutes,
+      // A copied subtask stays under the same parent; templates stand alone
+      parentId: options.isTemplate ? null : deal.parentId,
       customData: deal.customData ?? Prisma.DbNull,
       startDate: options.startDate,
       closeDate: options.closeDate,
@@ -792,7 +887,7 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
           data: deal.activities.map(({ type, title, description, responsibleId }) => ({ type, title, description, responsibleId })),
         },
       },
-      history: { create: { type: "CREATED", data: { title, ...options.history } } },
+      history: { create: { type: "CREATED", data: { title, ...options.history }, actorId: options.actorId ?? null } },
     },
   });
 }
@@ -804,9 +899,10 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
 export async function createRecurringCopy(tx: Tx, id: string) {
   const deal = await tx.crmCard.findUnique({
     where: { id },
-    select: { id: true, recurrence: true, startDate: true, closeDate: true, createdAt: true },
+    select: { id: true, recurrence: true, startDate: true, closeDate: true, createdAt: true, isTemplate: true, archivedAt: true },
   });
-  if (!deal || !(deal.recurrence in RECURRENCE_STEP)) return null;
+  // A template or archived card closed by hand is not a real occurrence
+  if (!deal || deal.isTemplate || deal.archivedAt || !(deal.recurrence in RECURRENCE_STEP)) return null;
 
   const copy = await copyCard(tx, id, {
     startDate: shiftDate(deal.startDate ?? deal.createdAt, deal.recurrence),

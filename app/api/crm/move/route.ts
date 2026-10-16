@@ -4,7 +4,9 @@ import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { onDealEnteredStage } from "@/lib/crm-automation";
 import { checkStageEntry, StageEntryError } from "@/lib/crm-qxback";
-import { snapshotBeforeMove, syncTaskStatus } from "@/lib/crm-deal";
+import { activeCard, snapshotBeforeMove, syncTaskStatus } from "@/lib/crm-deal";
+import { notifyMoved } from "@/lib/crm-card-notify";
+import { sessionMemberId } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -24,14 +26,16 @@ export async function POST(req: Request) {
     });
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (current.stageId !== newStageId) await checkStageEntry(cardId, newStageId, lostReason);
+    const actorId = sessionMemberId(req);
 
     // Record the stage change in the deal timeline and run the new stage's automation rules
     const stageHistory = async () => {
       if (current.stageId === newStageId) return;
+      after(() => notifyMoved(cardId, newStageId, actorId));
       after(() => onDealEnteredStage(cardId, newStageId));
       const stage = await prisma.crmStage.findUnique({ where: { id: newStageId }, select: { name: true } });
       await prisma.crmHistory.create({
-        data: { cardId, type: "STAGE_CHANGED", data: { from: current.stage.name, to: stage?.name ?? "" } },
+        data: { cardId, type: "STAGE_CHANGED", data: { from: current.stage.name, to: stage?.name ?? "" }, actorId },
       });
     };
 
@@ -42,13 +46,14 @@ export async function POST(req: Request) {
       // Without an index, just move the card to the stage (appended by its current order)
       if (typeof index !== "number") {
         await tx.crmCard.update({ where: { id: cardId }, data: { stageId: newStageId } });
-        const recurringCopy = await syncTaskStatus(tx, cardId);
+        const recurringCopy = await syncTaskStatus(tx, cardId, actorId);
         return { card: await tx.crmCard.findUniqueOrThrow({ where: { id: cardId } }), recurringCopy };
       }
 
       // With an index, insert the card at that position and renumber the stage's cards
       const siblings = await tx.crmCard.findMany({
-        where: { stageId: newStageId, NOT: { id: cardId } },
+        // Same cards the board shows, so `index` (counted on the board) lands where it was dropped
+        where: { stageId: newStageId, NOT: { id: cardId }, ...activeCard },
         orderBy: { order: "asc" },
         select: { id: true },
       });
@@ -66,7 +71,7 @@ export async function POST(req: Request) {
         where: { id: cardId },
         data: { stageId: newStageId, order: ids.indexOf(cardId) },
       });
-      const recurringCopy = await syncTaskStatus(tx, cardId);
+      const recurringCopy = await syncTaskStatus(tx, cardId, actorId);
       return { card: await tx.crmCard.findUniqueOrThrow({ where: { id: cardId } }), recurringCopy };
     });
     await stageHistory();

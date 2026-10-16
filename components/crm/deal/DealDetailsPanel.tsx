@@ -154,7 +154,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
   const save = async () => {
     if (!deal || !draft) return;
     if (!draft.title.trim()) {
-      setError("O nome do negócio é obrigatório.");
+      setError(deal.pipeline.kind === "TASKS" ? "O título da tarefa é obrigatório." : "O nome do negócio é obrigatório.");
       return;
     }
     const missing = (deal.pipeline.fieldsConfig ?? []).find((f) => f.required && !draft.customData?.[f.id]);
@@ -337,7 +337,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
 
             <div className="deal-meta">
               Criado em {formatDateOnly(deal.createdAt)}
-              {deal.closeDate && <> · {isTasks ? "Prazo" : "Término previsto"} {formatDateOnly(deal.closeDate)}</>}
+              {deal.closeDate && <> · {isTasks ? "Prazo" : "Término previsto"} {formatDateOnly(deal.closeDate)}{deal.dueTime && ` às ${deal.dueTime}`}</>}
             </div>
 
             <StageBar
@@ -377,6 +377,8 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
                     team={team}
                     onStageChange={(stageId) => patch({ stageId })}
                     onOpenProducts={() => setTab("products")}
+                    onReload={() => load(false)}
+                    onOpenCard={onOpenCard}
                   />
                   <DealTimeline deal={deal} team={team} onChanged={() => load(false)} />
                 </div>
@@ -386,7 +388,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
               {tab === "history" && (
                 <>
                   <StageSnapshots deal={deal} onRestore={can("deal.edit") ? restore : undefined} />
-                  <DealHistoryTable deal={deal} />
+                  <DealHistoryTable deal={deal} team={team} />
                 </>
               )}
             </div>
@@ -560,7 +562,7 @@ function StageSnapshots({ deal, onRestore }: { deal: DealDetails; onRestore?: (s
 
 const STATUS_LABELS: Record<string, string> = { OPEN: "Em andamento", WON: "Ganho", LOST: "Perdido" };
 
-function DealHistoryTable({ deal }: { deal: DealDetails }) {
+function DealHistoryTable({ deal, team }: { deal: DealDetails; team: TeamMember[] }) {
   const describe = (item: DealDetails["history"][number]) => {
     const data = item.data ?? {};
     switch (item.type) {
@@ -592,6 +594,7 @@ function DealHistoryTable({ deal }: { deal: DealDetails }) {
             <th>Data</th>
             <th>Evento</th>
             <th>Detalhes</th>
+            <th>Por</th>
           </tr>
         </thead>
         <tbody>
@@ -600,11 +603,12 @@ function DealHistoryTable({ deal }: { deal: DealDetails }) {
               <td>{new Date(item.createdAt).toLocaleString("pt-BR")}</td>
               <td>{HISTORY_LABELS[item.type] ?? item.type}</td>
               <td>{describe(item)}</td>
+              <td>{team.find((m) => m.id === item.actorId)?.name ?? "—"}</td>
             </tr>
           ))}
           {deal.history.length === 0 && (
             <tr>
-              <td colSpan={3} className="deal-empty">
+              <td colSpan={4} className="deal-empty">
                 Nenhuma alteração registrada.
               </td>
             </tr>

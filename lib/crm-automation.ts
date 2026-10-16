@@ -9,7 +9,10 @@ import type {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notifyMember, notifyPipelineChanged } from "@/lib/crm-realtime";
-import { snapshotBeforeMove, syncTaskStatus, updateDeal } from "@/lib/crm-deal";
+import { activeCard, snapshotBeforeMove, syncTaskStatus, updateDeal } from "@/lib/crm-deal";
+
+/** Templates and archived cards are off the board: no rules, triggers or QXBACK pushes for them. */
+const isHiddenCard = async (cardId: string) => (await prisma.crmCard.count({ where: { id: cardId, NOT: activeCard } })) > 0;
 import { notifyQxbackStage } from "@/lib/crm-qxback";
 import {
   DEAL_STATUSES,
@@ -104,6 +107,7 @@ export async function dealContext(cardId: string) {
 
 /** Queues the stage's active rules for a deal that just entered it, then runs the due ones. */
 export async function onDealEnteredStage(cardId: string, stageId: string) {
+  if (await isHiddenCard(cardId)) return;
   // Every stage entry passes here (move, PATCH, automations, triggers, QXBACK route)
   await notifyQxbackStage(cardId, stageId).catch((error) => console.error("[crm-automation] QXBACK stage push failed", error));
   try {
@@ -695,6 +699,7 @@ function triggerMatchesEvent(trigger: CrmTrigger, event: TriggerEvent) {
  */
 export async function fireTriggers(cardId: string, event: TriggerEvent) {
   try {
+    if (await isHiddenCard(cardId)) return null;
     const deal = await dealContext(cardId);
     if (!deal) return null;
 

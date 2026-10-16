@@ -391,7 +391,7 @@ export function CrmButtons({
           </button>
         )}
         {can("deal.create") && (
-          <button className="btn-primary" onClick={() => {
+          <button className="btn-primary" data-shortcut="new-card" title="Atalho: N" onClick={() => {
             if (!pipeline) {
               alertDialog("Crie um pipeline primeiro.");
               return;

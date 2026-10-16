@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Gauge, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Gauge, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { KanbanItem } from "./KanbanItem";
 import type { KanbanColumnData, KanbanItemBase, KanbanLabels } from "./types";
 
@@ -16,6 +16,8 @@ type KanbanColumnProps<T extends KanbanItemBase> = {
   onRename?: (title: string) => void;
   onDelete?: () => void;
   onSetLimit?: () => void;
+  onMoveLeft?: () => void;
+  onMoveRight?: () => void;
 };
 
 export function KanbanColumn<T extends KanbanItemBase>({
@@ -27,6 +29,8 @@ export function KanbanColumn<T extends KanbanItemBase>({
   onRename,
   onDelete,
   onSetLimit,
+  onMoveLeft,
+  onMoveRight,
 }: KanbanColumnProps<T>) {
   const overLimit = column.limit != null && column.items.length > column.limit;
   const visibleItems = isItemVisible ? column.items.filter(isItemVisible) : column.items;
@@ -91,7 +95,7 @@ export function KanbanColumn<T extends KanbanItemBase>({
           </span>
         </div>
 
-        {(onRename || onDelete || onSetLimit) && (
+        {(onRename || onDelete || onSetLimit || onMoveLeft || onMoveRight) && (
           <div className="kanban-column__menu">
             <button className="kanban-column__menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
               <MoreHorizontal size={18} />
@@ -118,6 +122,28 @@ export function KanbanColumn<T extends KanbanItemBase>({
                     }}
                   >
                     <Gauge size={14} /> {labels.setColumnLimit}
+                  </button>
+                )}
+                {onMoveLeft && (
+                  <button
+                    className="kanban-column__menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onMoveLeft();
+                    }}
+                  >
+                    <ArrowLeft size={14} /> {labels.moveColumnLeft}
+                  </button>
+                )}
+                {onMoveRight && (
+                  <button
+                    className="kanban-column__menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onMoveRight();
+                    }}
+                  >
+                    <ArrowRight size={14} /> {labels.moveColumnRight}
                   </button>
                 )}
                 {onDelete && (
