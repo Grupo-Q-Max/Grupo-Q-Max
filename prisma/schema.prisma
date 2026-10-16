@@ -359,6 +359,9 @@ model CrmCard {
   /// Cards that must be done before this one ("Bloqueada por") / cards this one blocks
   blockedBy      CrmCardDependency[]    @relation("CardBlockedBy")
   blocks         CrmCardDependency[]    @relation("CardBlocks")
+  /// Cards linked across boards (e.g. a task and the deal it serves); see CrmCardLink
+  links          CrmCardLink[]          @relation("CardLinks")
+  linkedFrom     CrmCardLink[]          @relation("CardLinkedFrom")
   activities     CrmActivity[]
   history        CrmHistory[]
   stageSnapshots CrmDealStageSnapshot[]
@@ -985,4 +988,17 @@ model CrmSavedView {
 
   @@unique([memberId, pipelineId, name])
   @@index([pipelineId])
+}
+
+/// Two cards linked, usually across boards (a task and the deal it serves). Symmetric: stored once with
+/// cardId < linkedId (app/api/crm/link) and shown on both cards.
+model CrmCardLink {
+  cardId    String
+  card      CrmCard  @relation("CardLinks", fields: [cardId], references: [id], onDelete: Cascade)
+  linkedId  String
+  linked    CrmCard  @relation("CardLinkedFrom", fields: [linkedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([cardId, linkedId])
+  @@index([linkedId])
 }

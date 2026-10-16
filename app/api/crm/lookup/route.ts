@@ -65,19 +65,22 @@ export async function GET(req: Request) {
     }
 
     if (type === "card") {
-      const pipelineId = url.searchParams.get("pipelineId") ?? "";
+      // Without pipelineId: any board the user sees ("Vínculos"), with the board name
+      const pipelineId = url.searchParams.get("pipelineId");
       const number = Number(q.replace(/^#/, ""));
       const cards = await prisma.crmCard.findMany({
         where: {
           ...activeCard,
-          stage: { pipelineId, pipeline: await visiblePipelineWhere() },
+          stage: { ...(pipelineId && { pipelineId }), pipeline: await visiblePipelineWhere() },
           OR: [{ title: { contains: q } }, ...(Number.isInteger(number) && number > 0 ? [{ number }] : [])],
         },
         orderBy: { number: "desc" },
         take: LIMIT,
-        select: { id: true, number: true, title: true, status: true },
+        select: { id: true, number: true, title: true, status: true, stage: { select: { pipeline: { select: { name: true } } } } },
       });
-      return NextResponse.json(cards.map((c) => ({ ...c, name: `#${c.number} ${c.title}` })));
+      return NextResponse.json(
+        cards.map(({ stage, ...c }) => ({ ...c, name: `#${c.number} ${c.title}${pipelineId ? "" : ` · ${stage.pipeline.name}`}` }))
+      );
     }
 
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });

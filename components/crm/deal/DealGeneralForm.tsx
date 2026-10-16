@@ -27,6 +27,7 @@ import {
 } from "./types";
 import { Avatar, Field, LinkedBadge, LookupInput, Section } from "./ui";
 import { TimeTracker, Subtasks } from "./DealTaskTools";
+import { DealLinks } from "./DealLinks";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 
@@ -371,6 +372,7 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload,
         <TagsField tags={draft.tags} onChange={onChange} />
         <BlockedByField deal={deal} blockedBy={draft.blockedBy} onChange={onChange} />
         <Subtasks deal={deal} team={team} onReload={onReload} onOpenCard={onOpenCard} />
+        <DealLinks deal={deal} onOpenCard={onOpenCard} />
         <Field label="Estimativa">
           <DurationInput minutes={draft.estimateMinutes} onChange={(estimateMinutes) => onChange({ estimateMinutes })} />
         </Field>
@@ -399,7 +401,7 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload,
 
 export function DealGeneralForm(props: Props) {
   if (props.deal.pipeline.kind === "TASKS") return <TaskGeneralForm {...props} />;
-  const { deal, draft, onChange, team, onStageChange, onOpenProducts } = props;
+  const { deal, draft, onChange, team, onStageChange, onOpenProducts, onOpenCard } = props;
   const contacts = draft.contacts.length ? draft.contacts : [emptyContact()];
   const company = draft.company ?? emptyCompany();
   const observers = draft.observers;
@@ -688,6 +690,8 @@ export function DealGeneralForm(props: Props) {
         </Field>
 
         <ObserversField observers={observers} team={team} onChange={onChange} />
+
+        <DealLinks deal={deal} onOpenCard={onOpenCard} />
 
         <Field label="Comentário">
           <textarea
