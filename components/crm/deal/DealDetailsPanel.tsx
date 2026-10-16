@@ -6,6 +6,7 @@ import { Archive, ArchiveRestore, BookmarkPlus, Check, Copy, Link2, Mail, Pencil
 import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
 import { DealAttachments } from "./DealAttachments";
+import { offerParentDone } from "./DealTaskTools";
 import { formatMoney, pickDraft, type DealDetails, type DealDraft, type TeamMember } from "./types";
 import { formatDateOnly } from "./ui";
 import { useCan } from "../CrmAccess";
@@ -23,6 +24,8 @@ type Props = {
   onChanged: () => void;
   /** Opens another card in the panel (e.g. the copy made by "Duplicar"). */
   onOpenCard: (card: { id: string; number: number }) => void;
+  /** "j" / "k": opens the next (1) or previous (-1) card of the board. */
+  onNavigate?: (step: 1 | -1) => void;
 };
 
 const jsonRequest = (method: string, body: unknown): RequestInit => ({
@@ -53,7 +56,7 @@ function changedFields(draft: DealDraft, deal: DealDetails) {
   return (Object.keys(current) as (keyof DealDraft)[]).filter((key) => !sameValue(current[key], original[key]));
 }
 
-export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCard }: Props) {
+export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCard, onNavigate }: Props) {
   const can = useCan();
   const [deal, setDeal] = useState<DealDetails | null>(null);
   const [draft, setDraft] = useState<DealDraft | null>(null);
@@ -119,13 +122,33 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
     onClose();
   }, [onClose]);
 
+  // Shortcuts: Esc closes, Ctrl+S saves; outside text fields "j"/"k" next/previous card,
+  // "c" writes a comment, "t" starts or stops the timer
+  const saveRef = useRef<() => void>(() => {});
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") requestClose();
+    const onKeyDown = async (e: KeyboardEvent) => {
+      if (e.key === "Escape") return requestClose();
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (dirtyRef.current) saveRef.current();
+        return;
+      }
+      const target = e.target as HTMLElement;
+      if (e.ctrlKey || e.metaKey || e.altKey || target.closest("input, textarea, select, [contenteditable=true]") || document.querySelector(".qdialog")) return;
+      const key = e.key.toLowerCase();
+      if ((key === "j" || key === "k") && onNavigate) {
+        if (dirtyRef.current && !(await confirmDialog("Existem alterações não salvas. Deseja descartá-las?", { danger: true, confirmLabel: "Descartar" }))) return;
+        onNavigate(key === "j" ? 1 : -1);
+      } else if (key === "c") {
+        e.preventDefault();
+        document.querySelector<HTMLTextAreaElement>(".deal-panel .deal-composer__text")?.focus();
+      } else if (key === "t") {
+        document.querySelector<HTMLButtonElement>(".deal-panel [data-shortcut=timer]")?.click();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [requestClose]);
+  }, [requestClose, onNavigate]);
 
   const updateDraft = (changes: Partial<DealDraft>) => setDraft((d) => (d ? { ...d, ...changes } : d));
 
@@ -149,6 +172,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
     if (deal && !dirtyFields.includes("customData")) updateDraft({ customData: updated.customData });
     setDeal(updated);
     onChanged();
+    if (isTasks && deal?.status !== "WON" && updated.status === "WON" && (await offerParentDone(updated.parent?.id))) onChanged();
   };
 
   const save = async () => {
@@ -188,6 +212,8 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
     setEditingTitle(false);
     onChanged();
   };
+
+  saveRef.current = save;
 
   const cancel = () => {
     if (deal) setDraft(pickDraft(deal));

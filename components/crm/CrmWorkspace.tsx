@@ -110,6 +110,8 @@ function matchesDeal(deal: CrmDeal, f: DealFilters) {
 
 /** Opens the deal panel over any view; the open deal lives in the URL path, like Bitrix24: /crm/deal/details/<number> */
 function useDealPanel(pipelineId: string, initialDealId?: string, closeUrl?: React.RefObject<string>) {
+  /** Cards in the order the current view shows them, for "j" / "k" in the panel */
+  const orderRef = useRef<CrmDeal[]>([]);
   const router = useRouter();
   const [openDealId, setOpenDealId] = useState<string | null>(initialDealId ?? null);
   const dealChangedRef = useRef(false);
@@ -155,6 +157,13 @@ function useDealPanel(pipelineId: string, initialDealId?: string, closeUrl?: Rea
         setOpenDealId(card.id);
         showDealUrl(card.number);
       }}
+      onNavigate={(step) => {
+        const list = orderRef.current;
+        const next = list[list.findIndex((c) => c.id === openDealId) + step];
+        if (!next) return;
+        setOpenDealId(next.id);
+        showDealUrl(next.number);
+      }}
       onChanged={() => {
         dealChangedRef.current = true;
         syncBoardRef.current?.();
@@ -162,7 +171,7 @@ function useDealPanel(pipelineId: string, initialDealId?: string, closeUrl?: Rea
       }}
     />
   );
-  return { openDeal, panel, syncBoardRef, changedRef };
+  return { openDeal, panel, syncBoardRef, changedRef, orderRef };
 }
 
 export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initialDealId?: string }) {
@@ -197,7 +206,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     const res = await fetch(`/api/crm/card?archivedOf=${pipeline.id}`, { cache: "no-store" });
     setArchived(res.ok ? await res.json() : []);
   }, [pipeline.id]);
-  const { openDeal, panel, syncBoardRef, changedRef } = useDealPanel(pipeline.id, initialDealId, closeUrl);
+  const { openDeal, panel, syncBoardRef, changedRef, orderRef } = useDealPanel(pipeline.id, initialDealId, closeUrl);
   // Archiving or restoring from the panel changes the archived list too
   changedRef.current = archived ? loadArchived : null;
   const set = (changes: Partial<DealFilters>) => setFilters((f) => ({ ...f, ...changes }));
@@ -214,6 +223,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   const allCards = listed.filter(isDealVisible);
   if (sort === "due") allCards.sort((a, b) => (a.closeDate ? new Date(a.closeDate).getTime() : Infinity) - (b.closeDate ? new Date(b.closeDate).getTime() : Infinity));
   if (sort === "priority") allCards.sort((a, b) => priorityRank(b) - priorityRank(a));
+  orderRef.current = allCards;
   const emptyMessage = filtering ? `Nenhum ${isTasks ? "item" : "negócio"} corresponde aos filtros.` : null;
 
   const responsibles = [

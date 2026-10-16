@@ -20,6 +20,21 @@ async function send(url: string, init: RequestInit) {
   return res.ok;
 }
 
+/**
+ * After a subtask is done: when every subtask of its parent is done and the parent is still open,
+ * asks whether to close the parent too (moves it to the last column). True when it was closed.
+ */
+export async function offerParentDone(parentId: string | null | undefined) {
+  if (!parentId) return false;
+  const res = await fetch(`/api/crm/card?id=${parentId}`, { cache: "no-store" });
+  if (!res.ok) return false;
+  const parent: DealDetails = await res.json();
+  const last = parent.pipeline.stages.at(-1)?.id;
+  if (parent.status !== "OPEN" || !last || !parent.subtasks.length || parent.subtasks.some((s) => s.status !== "WON")) return false;
+  if (!(await confirmDialog(`Todas as subtarefas de #${parent.number} "${parent.title}" foram concluídas. Concluir a tarefa principal também?`, { confirmLabel: "Concluir" }))) return false;
+  return send("/api/crm/card", jsonRequest("PATCH", { id: parent.id, stageId: last }));
+}
+
 const elapsed = (startedAt: string, now: number) => Math.max(0, Math.round((now - new Date(startedAt).getTime()) / 60_000));
 
 /** "Tempo gasto": timer (one running per person), time typed by hand and the entries, per member. */
@@ -66,11 +81,11 @@ export function TimeTracker({ deal, team, onReload }: { deal: DealDetails; team:
       {can("deal.edit") && (
         <div className="deal-timer">
           {mine ? (
-            <button type="button" className="btn-secondary deal-timer__stop" disabled={busy} onClick={() => act({ action: "stop" })}>
+            <button type="button" className="btn-secondary deal-timer__stop" disabled={busy} onClick={() => act({ action: "stop" })} data-shortcut="timer" title="Parar (T)">
               <Square size={13} /> Parar · {formatMinutes(elapsed(mine.startedAt, now))}
             </button>
           ) : (
-            <button type="button" className="btn-secondary" disabled={busy} onClick={() => act({ action: "start" })} title="Inicia o cronômetro (para o que estiver rodando em outra tarefa)">
+            <button type="button" className="btn-secondary" disabled={busy} onClick={() => act({ action: "start" })} data-shortcut="timer" title="Inicia o cronômetro (T) — para o que estiver rodando em outra tarefa">
               <Play size={13} /> Iniciar
             </button>
           )}

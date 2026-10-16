@@ -28,6 +28,8 @@ export type CrmDeal = {
   dueTime?: string | null;
   /** Active subtasks of a task card */
   subtasks?: { done: number; total: number };
+  /** Parent task when this card is a subtask */
+  parentId?: string | null;
   priority?: Priority | null;
   tags?: CrmTagDto[];
   /** Waits for a card that is not done yet ("Bloqueada por") */

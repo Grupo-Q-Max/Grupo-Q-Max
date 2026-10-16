@@ -7,6 +7,7 @@ import { DealCard, type CrmDeal } from "./DealCard";
 import { useCan } from "./CrmAccess";
 import { postDeal } from "./CrmButtons";
 import { sendStageMove } from "./stageEntry";
+import { offerParentDone } from "./deal/DealTaskTools";
 import { alertDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 
 type CrmStage = { id: string; name: string; wipLimit?: number | null; cards: CrmDeal[] };
@@ -97,8 +98,9 @@ export function CrmKanban({
         renderItem={(deal, { remove }) => <DealCard deal={deal} isTask={isTasks} onOpen={() => onOpenDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
         onMoveItem={can("deal.edit") ? async (cardId, newStageId, index) => {
           // Task boards: the last column means done; warn when the task still waits for another one
-          const blocked = pipeline.stages.flatMap((s) => s.cards).find((c) => c.id === cardId)?.blocked;
-          if (isTasks && blocked && newStageId === pipeline.stages.at(-1)?.id) {
+          const card = pipeline.stages.flatMap((s) => s.cards).find((c) => c.id === cardId);
+          const closing = isTasks && card?.stageId !== newStageId && newStageId === pipeline.stages.at(-1)?.id;
+          if (closing && card?.blocked) {
             if (!(await confirmDialog("Esta tarefa está bloqueada por outra que ainda não foi concluída. Concluir mesmo assim?", { confirmLabel: "Concluir" }))) return false;
           }
           // WIP limit is a warning: dropping into a full column asks first
@@ -110,6 +112,7 @@ export function CrmKanban({
           const res = await sendStageMove((extra) => fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index, ...extra })));
           if (!res) return false;
           router.refresh();
+          if (closing && (await offerParentDone(card?.parentId))) router.refresh();
         } : undefined}
         onAddItem={can("deal.create") ? async (stageId, title) => {
           const res = await postDeal({ title, stageId });
