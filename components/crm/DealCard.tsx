@@ -1,4 +1,4 @@
-import { Calendar, ListChecks, ListTodo, Trash2 } from "lucide-react";
+import { Calendar, ListChecks, ListTodo, Lock, Trash2 } from "lucide-react";
 import { Avatar } from "./deal/ui";
 import { priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
 
@@ -25,6 +25,8 @@ export type CrmDeal = {
   closeDate?: string | Date | null;
   priority?: Priority | null;
   tags?: CrmTagDto[];
+  /** Waits for a card that is not done yet ("Bloqueada por") */
+  blocked?: boolean;
 };
 
 /** End of the due day (closeDate is a date-only column stored as UTC midnight). */
@@ -54,8 +56,13 @@ export function DealCard({
       onClick={onOpen}
     >
       <div className="kanban-card__glow" />
-      {(deal.priority || !!deal.tags?.length) && (
+      {(deal.priority || !!deal.tags?.length || (deal.blocked && !taskDone)) && (
         <div className="kanban-card__tags">
+          {deal.blocked && !taskDone && (
+            <span className="crm-blocked" title="Aguarda outra tarefa ser concluída">
+              <Lock size={11} /> Bloqueada
+            </span>
+          )}
           {deal.priority && <span className={`crm-priority crm-priority--${deal.priority.toLowerCase()}`}>{priorityLabel(deal.priority)}</span>}
           {deal.tags?.map((tag) => (
             <span key={tag.id} className="crm-tag" style={{ "--tag-color": tag.color } as React.CSSProperties}>

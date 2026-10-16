@@ -335,6 +335,9 @@ model CrmCard {
   products       CrmDealProduct[]
   tags           CrmCardTag[]
   attachments    CrmAttachment[]
+  /// Cards that must be done before this one ("Bloqueada por") / cards this one blocks
+  blockedBy      CrmCardDependency[] @relation("CardBlockedBy")
+  blocks         CrmCardDependency[] @relation("CardBlocks")
   activities     CrmActivity[]
   history        CrmHistory[]
   stageSnapshots CrmDealStageSnapshot[]
@@ -440,6 +443,18 @@ model CrmCardTag {
 
   @@id([cardId, tagId])
   @@index([tagId])
+}
+
+/// "Bloqueada por": card `cardId` waits for `blockedById` to be done (WON).
+model CrmCardDependency {
+  cardId      String
+  card        CrmCard  @relation("CardBlockedBy", fields: [cardId], references: [id], onDelete: Cascade)
+  blockedById String
+  blockedBy   CrmCard  @relation("CardBlocks", fields: [blockedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@id([cardId, blockedById])
+  @@index([blockedById])
 }
 
 /// File attached to a card, stored in <uploads>/crm/<fileName> and served only through the card's access check.

@@ -132,6 +132,10 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
   /** Immediate change (stage, status) — keeps unsaved edits in the form. */
   const patch = async (changes: Record<string, unknown>) => {
     setError(null);
+    const lastStage = deal?.pipeline.stages.at(-1)?.id;
+    if (isTasks && changes.stageId === lastStage && deal?.blockedBy.some((c) => c.status === "OPEN")) {
+      if (!(await confirmDialog("Esta tarefa está bloqueada por outra que ainda não foi concluída. Concluir mesmo assim?", { confirmLabel: "Concluir" }))) return;
+    }
     const send = (extra: Record<string, unknown> = {}) => fetch("/api/crm/card", jsonRequest("PATCH", { id: dealId, ...changes, ...extra }));
     // Stage moves follow the QXBACK stage rules (required services / lost reason)
     const res = "stageId" in changes ? await sendStageMove(send) : await send();

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mail, Phone, Plus, Trash2, X } from "lucide-react";
+import { Lock, Mail, Phone, Plus, Trash2, X } from "lucide-react";
 import {
   CURRENCIES,
   DEAL_TYPES,
   PRIORITIES,
   RECURRENCES,
+  type BlockerCard,
   type CrmTagDto,
   type Priority,
   SOURCES,
@@ -199,6 +200,39 @@ function TagsField({ tags, onChange }: { tags: string[]; onChange: Props["onChan
   );
 }
 
+/** "Bloqueada por": cards of the same pipeline that must be done before this one. */
+function BlockedByField({ deal, blockedBy, onChange }: { deal: DealDetails; blockedBy: BlockerCard[]; onChange: Props["onChange"] }) {
+  const [query, setQuery] = useState("");
+  return (
+    <Field label="Bloqueada por">
+      {blockedBy.length > 0 && (
+        <div className="deal-chips">
+          {blockedBy.map((card) => (
+            <span key={card.id} className={`deal-chip ${card.status === "OPEN" ? "" : "deal-chip--done"}`}>
+              {card.status === "OPEN" && <Lock size={11} />}
+              <a href={`/crm/deal/details/${card.number}`}>#{card.number} {card.title}</a>
+              <button type="button" title="Remover" onClick={() => onChange({ blockedBy: blockedBy.filter((c) => c.id !== card.id) })}>
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <LookupInput<BlockerCard & { name: string }>
+        type="card"
+        params={`&pipelineId=${encodeURIComponent(deal.pipeline.id)}`}
+        value={query}
+        placeholder="Buscar tarefa por nome ou #nº"
+        onChange={setQuery}
+        onPick={({ name: _, ...card }) => {
+          setQuery("");
+          if (card.id !== deal.id && !blockedBy.some((c) => c.id === card.id)) onChange({ blockedBy: [...blockedBy, card] });
+        }}
+      />
+    </Field>
+  );
+}
+
 /** Task boards (pipeline kind TASKS): same card, only what an internal to-do needs. Checklist = activities in the timeline. */
 function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) {
   const responsible = team.find((m) => m.id === draft.responsibleId);
@@ -252,6 +286,7 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) 
           </Select>
         </Field>
         <TagsField tags={draft.tags} onChange={onChange} />
+        <BlockedByField deal={deal} blockedBy={draft.blockedBy} onChange={onChange} />
         <Field label="Descrição">
           <textarea className="deal-input" rows={6} value={draft.comment ?? ""} onChange={(e) => onChange({ comment: e.target.value })} />
         </Field>

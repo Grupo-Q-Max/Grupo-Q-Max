@@ -26,12 +26,14 @@ export const cardListInclude = {
     select: { id: true, title: true, deadline: true, type: true, completed: true },
   },
   tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+  // Open blockers only: a card is "Bloqueada" while one of them is not done
+  blockedBy: { where: { blockedBy: { status: "OPEN" } }, select: { blockedById: true } },
 } satisfies Prisma.CrmCardInclude;
 
 type ListCard = Prisma.CrmCardGetPayload<{ include: typeof cardListInclude }>;
 
 /** Flattens relations and converts Decimal so the card can cross the server → client boundary. */
-export function serializeListCard({ company, contacts, responsible, tags, activities, ...card }: ListCard) {
+export function serializeListCard({ company, contacts, responsible, tags, activities, blockedBy, ...card }: ListCard) {
   const pending = activities.filter((a) => !a.completed);
   const checklist = activities.filter((a) => a.type === "TODO");
   return {
@@ -44,6 +46,7 @@ export function serializeListCard({ company, contacts, responsible, tags, activi
     activities: pending.slice(0, 1).map(({ completed: _, ...a }) => a),
     _count: { activities: pending.length },
     checklist: { done: checklist.filter((a) => a.completed).length, total: checklist.length },
+    blocked: blockedBy.length > 0,
   };
 }
 
@@ -56,6 +59,7 @@ const dealDetailsInclude = {
   contacts: { orderBy: { order: "asc" }, include: { contact: true } },
   observers: { select: { memberId: true } },
   tags: { select: { tagId: true } },
+  blockedBy: { orderBy: { createdAt: "asc" }, select: { blockedBy: { select: { id: true, number: true, title: true, status: true } } } },
   products: { orderBy: { order: "asc" } },
   activities: { orderBy: { createdAt: "desc" } },
   history: { orderBy: { createdAt: "desc" } },
@@ -77,7 +81,7 @@ const dealDetailsInclude = {
 type DealRow = Prisma.CrmCardGetPayload<{ include: typeof dealDetailsInclude }>;
 
 const toDto = (row: DealRow) => {
-  const { stage, company, contacts, observers, products, tags, ...deal } = row;
+  const { stage, company, contacts, observers, products, tags, blockedBy, ...deal } = row;
   return {
     ...deal,
     value: deal.value.toNumber(),
@@ -100,6 +104,7 @@ const toDto = (row: DealRow) => {
     })),
     observers: observers.map((o) => o.memberId),
     tags: tags.map((t) => t.tagId),
+    blockedBy: blockedBy.map((d) => d.blockedBy),
     products: products.map((p) => ({
       id: p.id,
       productId: p.productId,
@@ -254,6 +259,7 @@ export const RELATION_FIELDS = {
   observers: "Observadores",
   products: "Serviços",
   tags: "Etiquetas",
+  blockedBy: "Bloqueada por",
 } as const;
 
 type ScalarField = keyof typeof SCALAR_FIELDS;
@@ -395,6 +401,22 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
       if (ids.length) await tx.crmCardTag.createMany({ data: ids.map((tagId) => ({ cardId: dealId, tagId })) });
       const tagNames = (list: string[]) => list.map((id) => found.find((t) => t.id === id)?.name).filter(Boolean).join(", ") || null;
       history.push({ type: "FIELD_CHANGED", data: { field, label, from: tagNames(currentDto.tags), to: tagNames(ids) } });
+    }
+
+    if (field === "blockedBy") {
+      // Ids or { id } items; never the card itself, nor a card that already waits for this one (direct cycle)
+      const requested = [...new Set(((changes.blockedBy as (string | { id: string })[] | null) ?? []).map((x) => (typeof x === "string" ? x : x?.id)))];
+      const found = await tx.crmCard.findMany({
+        where: { id: { in: requested.filter((id) => id && id !== dealId) }, blockedBy: { none: { blockedById: dealId } } },
+        select: { id: true, number: true, title: true },
+      });
+      const before = currentDto.blockedBy.map((c) => c.id);
+      const ids = requested.filter((id) => found.some((c) => c.id === id));
+      if (comparable([...before].sort()) === comparable([...ids].sort())) continue;
+      await tx.crmCardDependency.deleteMany({ where: { cardId: dealId } });
+      if (ids.length) await tx.crmCardDependency.createMany({ data: ids.map((blockedById) => ({ cardId: dealId, blockedById })) });
+      const label = (list: { number: number; title: string }[]) => list.map((c) => `#${c.number} ${c.title}`).join(", ") || null;
+      history.push({ type: "FIELD_CHANGED", data: { field, label: RELATION_FIELDS.blockedBy, from: label(currentDto.blockedBy), to: label(ids.map((id) => found.find((c) => c.id === id)!)) } });
     }
 
     if (field === "products") {

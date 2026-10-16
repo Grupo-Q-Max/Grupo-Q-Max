@@ -58,6 +58,8 @@ export type DealDetails = {
   priority: Priority | null;
   /** Tag ids */
   tags: string[];
+  /** "Bloqueada por": cards that must be done first */
+  blockedBy: BlockerCard[];
   customData: Record<string, string> | null;
   archivedAt: string | null;
   isTemplate: boolean;
@@ -92,8 +94,11 @@ export type DealDraft = Pick<
   | "recurrence"
   | "priority"
   | "tags"
+  | "blockedBy"
   | "customData"
 >;
+
+export type BlockerCard = { id: string; number: number; title: string; status: "OPEN" | "WON" | "LOST" };
 
 export type TeamMember = { id: string; name: string; role: string; image: string | null };
 
@@ -176,6 +181,7 @@ export function pickDraft(deal: DealDetails): DealDraft {
     recurrence: deal.recurrence,
     priority: deal.priority,
     tags: deal.tags,
+    blockedBy: deal.blockedBy,
     customData: deal.customData,
   };
 }

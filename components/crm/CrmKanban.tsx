@@ -83,6 +83,11 @@ export function CrmKanban({
         }}
         renderItem={(deal, { remove }) => <DealCard deal={deal} isTask={isTasks} onOpen={() => onOpenDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
         onMoveItem={can("deal.edit") ? async (cardId, newStageId, index) => {
+          // Task boards: the last column means done; warn when the task still waits for another one
+          const blocked = pipeline.stages.flatMap((s) => s.cards).find((c) => c.id === cardId)?.blocked;
+          if (isTasks && blocked && newStageId === pipeline.stages.at(-1)?.id) {
+            if (!(await confirmDialog("Esta tarefa está bloqueada por outra que ainda não foi concluída. Concluir mesmo assim?", { confirmLabel: "Concluir" }))) return false;
+          }
           const res = await sendStageMove((extra) => fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index, ...extra })));
           if (!res) return false;
           router.refresh();

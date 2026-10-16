@@ -827,3 +827,9 @@
 }
 .deal-attachments__name { color: #fff; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
 .deal-attachments__name:hover { text-decoration: underline; }
+
+/* "Bloqueada por" chips: link to the blocking card; done blockers are faded */
+.deal-chip a { color: inherit; text-decoration: none; padding-left: 6px; }
+.deal-chip a:hover { text-decoration: underline; }
+.deal-chip--done { opacity: 0.55; }
+.deal-chip--done a { text-decoration: line-through; }
