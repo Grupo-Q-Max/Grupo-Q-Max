@@ -223,7 +223,10 @@ export async function PATCH(req: Request) {
         const current = await prisma.crmCard.findUnique({ where: { id }, select: { stageId: true } });
         if (current && current.stageId !== changes.stageId) await checkStageEntry(id, changes.stageId, lostReason);
       }
-      result = await updateDeal(id, changes, { actorId: authorId });
+      if (changes.status === "LOST" && !(typeof lostReason === "string" && lostReason.trim())) {
+        return NextResponse.json({ error: "Informe o motivo da perda." }, { status: 400 });
+      }
+      result = await updateDeal(id, changes, { actorId: authorId, lostReason: typeof lostReason === "string" ? lostReason : null });
     }
 
     if (result.changed) await notifyStageChanged(result.stageId);

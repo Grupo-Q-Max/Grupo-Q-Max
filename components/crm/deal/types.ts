@@ -49,6 +49,8 @@ export type DealDetails = {
   value: number;
   currency: string;
   status: "OPEN" | "WON" | "LOST";
+  /** Filled while status is LOST */
+  lostReason: string | null;
   stageId: string;
   startDate: string | null;
   closeDate: string | null;

@@ -623,11 +623,14 @@ export async function updateDeal(
   {
     note,
     actorId = null,
+    lostReason = null,
   }: {
     /** Extra timeline entry recorded when something changed (e.g. "informações restauradas"). */
     note?: HistoryEntry;
     /** Team member making the change (null = automation, trigger, QXBACK) */
     actorId?: string | null;
+    /** Saved when the status becomes LOST (the deal panel requires it; automations may leave it empty) */
+    lostReason?: string | null;
   } = {}
 ) {
   if (status && !STATUSES.has(status as CrmDealStatus)) throw new DealValidationError("Status inválido");
@@ -653,7 +656,8 @@ export async function updateDeal(
     if (status && status !== current.status) {
       data.status = status as CrmDealStatus;
       data.closedAt = status === "OPEN" ? null : new Date();
-      history.push({ type: "STATUS_CHANGED", data: { from: current.status, to: status } });
+      data.lostReason = status === "LOST" ? lostReason?.trim().slice(0, 500) || null : null;
+      history.push({ type: "STATUS_CHANGED", data: { from: current.status, to: status, ...(data.lostReason ? { reason: data.lostReason } : {}) } });
     }
 
     if (note && history.length > 0) history.unshift(note);
