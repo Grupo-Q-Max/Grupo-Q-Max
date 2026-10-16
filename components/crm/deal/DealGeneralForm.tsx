@@ -205,52 +205,75 @@ function TagsField({ tags, onChange }: { tags: string[]; onChange: Props["onChan
 /** Duration typed as "1h30" / "90" and kept in minutes; the text is read when the field loses focus. */
 function DurationInput({ minutes, onChange }: { minutes: number | null; onChange: (minutes: number | null) => void }) {
   const [text, setText] = useState(formatMinutes(minutes) ?? "");
+  const [invalid, setInvalid] = useState(false);
   useEffect(() => setText(formatMinutes(minutes) ?? ""), [minutes]);
   return (
-    <input
-      className="deal-input"
-      placeholder="Ex: 1h30"
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={() => {
-        const parsed = parseMinutes(text);
-        if (parsed === minutes) setText(formatMinutes(minutes) ?? "");
-        else onChange(parsed);
-      }}
-    />
+    <>
+      <input
+        className="deal-input"
+        placeholder="Ex: 1h30"
+        value={text}
+        aria-invalid={invalid}
+        onChange={(e) => {
+          setText(e.target.value);
+          setInvalid(false);
+        }}
+        onBlur={() => {
+          const parsed = parseMinutes(text);
+          // Unreadable text keeps the saved value instead of clearing it
+          if (parsed === null && text.trim()) return setInvalid(true);
+          if (parsed === minutes) setText(formatMinutes(minutes) ?? "");
+          else onChange(parsed);
+        }}
+      />
+      {invalid && <span className="deal-field__hint">Use formatos como 1h30, 90 ou 1,5h.</span>}
+    </>
   );
 }
 
-/** "Bloqueada por": cards of the same pipeline that must be done before this one. */
+/** "Bloqueada por": cards of the same pipeline that must be done before this one. Also lists the cards this one blocks. */
 function BlockedByField({ deal, blockedBy, onChange }: { deal: DealDetails; blockedBy: BlockerCard[]; onChange: Props["onChange"] }) {
   const [query, setQuery] = useState("");
   return (
-    <Field label="Bloqueada por">
-      {blockedBy.length > 0 && (
-        <div className="deal-chips">
-          {blockedBy.map((card) => (
-            <span key={card.id} className={`deal-chip ${card.status === "OPEN" ? "" : "deal-chip--done"}`}>
-              {card.status === "OPEN" && <Lock size={11} />}
-              <a href={`/crm/deal/details/${card.number}`}>#{card.number} {card.title}</a>
-              <button type="button" title="Remover" onClick={() => onChange({ blockedBy: blockedBy.filter((c) => c.id !== card.id) })}>
-                <X size={12} />
-              </button>
-            </span>
-          ))}
-        </div>
+    <>
+      {deal.blocks.length > 0 && (
+        <Field label="Bloqueia">
+          <div className="deal-chips">
+            {deal.blocks.map((card) => (
+              <span key={card.id} className={`deal-chip ${card.status === "OPEN" ? "" : "deal-chip--done"}`}>
+                <a href={`/crm/deal/details/${card.number}`}>#{card.number} {card.title}</a>
+              </span>
+            ))}
+          </div>
+        </Field>
       )}
-      <LookupInput<BlockerCard & { name: string }>
-        type="card"
-        params={`&pipelineId=${encodeURIComponent(deal.pipeline.id)}`}
-        value={query}
-        placeholder="Buscar tarefa por nome ou #nº"
-        onChange={setQuery}
-        onPick={({ name: _, ...card }) => {
-          setQuery("");
-          if (card.id !== deal.id && !blockedBy.some((c) => c.id === card.id)) onChange({ blockedBy: [...blockedBy, card] });
-        }}
-      />
-    </Field>
+      <Field label="Bloqueada por">
+        {blockedBy.length > 0 && (
+          <div className="deal-chips">
+            {blockedBy.map((card) => (
+              <span key={card.id} className={`deal-chip ${card.status === "OPEN" ? "" : "deal-chip--done"}`}>
+                {card.status === "OPEN" && <Lock size={11} />}
+                <a href={`/crm/deal/details/${card.number}`}>#{card.number} {card.title}</a>
+                <button type="button" title="Remover" onClick={() => onChange({ blockedBy: blockedBy.filter((c) => c.id !== card.id) })}>
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <LookupInput<BlockerCard & { name: string }>
+          type="card"
+          params={`&pipelineId=${encodeURIComponent(deal.pipeline.id)}`}
+          value={query}
+          placeholder="Buscar tarefa por nome ou #nº"
+          onChange={setQuery}
+          onPick={({ name: _, ...card }) => {
+            setQuery("");
+            if (card.id !== deal.id && !blockedBy.some((c) => c.id === card.id)) onChange({ blockedBy: [...blockedBy, card] });
+          }}
+        />
+      </Field>
+    </>
   );
 }
 

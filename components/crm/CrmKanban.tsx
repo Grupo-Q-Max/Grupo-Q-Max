@@ -82,12 +82,30 @@ export function CrmKanban({
           deleteColumn: "Excluir Coluna",
           setColumnLimit: "Limite de cards",
         }}
+        onMoveColumn={can("stage.edit") ? async (stageIds) => {
+          // Task boards: the last column means "done"; changing it reopens or closes tasks
+          const last = pipeline.stages.at(-1);
+          if (isTasks && last && stageIds.at(-1) !== last.id) {
+            const next = pipeline.stages.find((s) => s.id === stageIds.at(-1));
+            const message = `A última coluna marca a tarefa como concluída. As tarefas de "${last.name}" deixarão de estar concluídas e as de "${next?.name}" passarão a estar. Continuar?`;
+            if (!(await confirmDialog(message, { confirmLabel: "Mover" }))) return false;
+          }
+          const res = await fetch("/api/crm/stage", jsonRequest("PUT", { pipelineId: pipeline.id, stageIds }));
+          if (!res.ok) return false;
+          router.refresh();
+        } : undefined}
         renderItem={(deal, { remove }) => <DealCard deal={deal} isTask={isTasks} onOpen={() => onOpenDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
         onMoveItem={can("deal.edit") ? async (cardId, newStageId, index) => {
           // Task boards: the last column means done; warn when the task still waits for another one
           const blocked = pipeline.stages.flatMap((s) => s.cards).find((c) => c.id === cardId)?.blocked;
           if (isTasks && blocked && newStageId === pipeline.stages.at(-1)?.id) {
             if (!(await confirmDialog("Esta tarefa está bloqueada por outra que ainda não foi concluída. Concluir mesmo assim?", { confirmLabel: "Concluir" }))) return false;
+          }
+          // WIP limit is a warning: dropping into a full column asks first
+          const target = pipeline.stages.find((s) => s.id === newStageId);
+          const entering = target && !target.cards.some((c) => c.id === cardId);
+          if (entering && target.wipLimit != null && target.cards.length >= target.wipLimit) {
+            if (!(await confirmDialog(`A coluna "${target.name}" já está no limite de ${target.wipLimit} cards. Mover mesmo assim?`, { confirmLabel: "Mover" }))) return false;
           }
           const res = await sendStageMove((extra) => fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index, ...extra })));
           if (!res) return false;
@@ -113,12 +131,14 @@ export function CrmKanban({
         onSetColumnLimit={can("stage.edit") ? async (stageId, limit) => {
           const text = await promptDialog("Máximo de cards nesta coluna (vazio = sem limite):", { confirmLabel: "Salvar", defaultValue: limit == null ? "" : String(limit) });
           if (text === null) return;
-          const res = await fetch("/api/crm/stage", jsonRequest("PUT", { id: stageId, wipLimit: text.trim() === "" ? null : Number(text) }));
+          const wipLimit = text.trim() === "" ? null : Number(text.trim());
+          if (wipLimit !== null && !(Number.isInteger(wipLimit) && wipLimit > 0 && wipLimit <= 1000)) return alertDialog("Informe um número inteiro de 1 a 1000.");
+          const res = await fetch("/api/crm/stage", jsonRequest("PUT", { id: stageId, wipLimit }));
           if (!res.ok) return alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível salvar o limite.");
           router.refresh();
         } : undefined}
         onDeleteColumn={can("stage.delete") ? async (stageId) => {
-          if (!(await confirmDialog("Certeza que deseja excluir esta coluna inteira?", { danger: true, confirmLabel: "Excluir" }))) return false;
+          if (!(await confirmDialog("Certeza que deseja excluir esta coluna?", { danger: true, confirmLabel: "Excluir" }))) return false;
           const res = await fetch(`/api/crm/stage?id=${stageId}`, { method: "DELETE" });
           if (!res.ok) {
             const message = (await res.json().catch(() => null))?.error;
@@ -133,6 +153,8 @@ export function CrmKanban({
           const res = await fetch("/api/crm/stage", jsonRequest("POST", { name, pipelineId: pipeline.id }));
           if (!res.ok) return;
           router.refresh();
+          // Task boards insert it before "done": the refresh shows it in place
+          if (isTasks) return;
           const stage: CrmStage = await res.json();
           return { id: stage.id, title: stage.name, items: stage.cards };
         } : undefined}

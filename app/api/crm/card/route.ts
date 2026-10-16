@@ -4,7 +4,7 @@ import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
-import { notifyAssigned } from "@/lib/crm-card-notify";
+import { notifyAssigned, notifyMoved } from "@/lib/crm-card-notify";
 import { sessionMemberId } from "@/lib/auth";
 import { deleteCardWithFiles } from "@/lib/crm-attachments";
 import {
@@ -140,10 +140,14 @@ async function createFromTemplate(id: string, body: { title?: unknown; closeDate
 
   const title = typeof body.title === "string" ? body.title.trim().slice(0, 191) : "";
   const closeDate = typeof body.closeDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.closeDate) ? new Date(body.closeDate) : null;
+  const responsibleId = typeof body.responsibleId === "string" && body.responsibleId ? body.responsibleId : null;
+  if (responsibleId && !(await prisma.teamMember.count({ where: { id: responsibleId } }))) {
+    return NextResponse.json({ error: "Responsável não encontrado." }, { status: 400 });
+  }
   const card = await prisma.$transaction((tx) =>
     copyCard(tx, id, {
       ...(title && { title }),
-      responsibleId: typeof body.responsibleId === "string" && body.responsibleId ? body.responsibleId : null,
+      responsibleId,
       startDate: null,
       closeDate,
       history: { templateId: id },
@@ -215,6 +219,7 @@ export async function PATCH(req: Request) {
       if (result.recurringCopy) await onDealEnteredStage(result.recurringCopy.id, result.recurringCopy.stageId);
       if (result.changedFields.includes("responsibleId")) await notifyAssigned(id, authorId);
       // A manual stage change runs the new stage's rules; other changes may fire a "campo alterado" trigger
+      if (result.movedTo) await notifyMoved(id, result.movedTo, authorId);
       if (result.movedTo) await onDealEnteredStage(id, result.movedTo);
       else if (result.changedFields.length) await fireTriggers(id, { type: "FIELD_CHANGED", fields: result.changedFields });
 

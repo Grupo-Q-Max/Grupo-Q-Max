@@ -60,6 +60,8 @@ const dealDetailsInclude = {
   observers: { select: { memberId: true } },
   tags: { select: { tagId: true } },
   blockedBy: { orderBy: { createdAt: "asc" }, select: { blockedBy: { select: { id: true, number: true, title: true, status: true } } } },
+  // "Bloqueia": the reverse side, active cards that wait for this one
+  blocks: { where: { card: activeCard }, orderBy: { createdAt: "asc" }, select: { card: { select: { id: true, number: true, title: true, status: true } } } },
   products: { orderBy: { order: "asc" } },
   activities: { orderBy: { createdAt: "desc" } },
   history: { orderBy: { createdAt: "desc" } },
@@ -81,7 +83,7 @@ const dealDetailsInclude = {
 type DealRow = Prisma.CrmCardGetPayload<{ include: typeof dealDetailsInclude }>;
 
 const toDto = (row: DealRow) => {
-  const { stage, company, contacts, observers, products, tags, blockedBy, ...deal } = row;
+  const { stage, company, contacts, observers, products, tags, blockedBy, blocks, ...deal } = row;
   return {
     ...deal,
     value: deal.value.toNumber(),
@@ -105,6 +107,7 @@ const toDto = (row: DealRow) => {
     observers: observers.map((o) => o.memberId),
     tags: tags.map((t) => t.tagId),
     blockedBy: blockedBy.map((d) => d.blockedBy),
+    blocks: blocks.map((d) => d.card),
     products: products.map((p) => ({
       id: p.id,
       productId: p.productId,
@@ -145,7 +148,10 @@ function snapshotOf(dto: DealDto) {
     comment: dto.comment,
     recurrence: dto.recurrence,
     priority: dto.priority,
+    estimateMinutes: dto.estimateMinutes,
+    spentMinutes: dto.spentMinutes,
     tags: dto.tags,
+    blockedBy: dto.blockedBy.map((c) => c.id),
     customData: dto.customData,
     company: dto.company,
     contacts: dto.contacts,
@@ -340,7 +346,9 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
     const field = key as ScalarField;
     const next = parseScalar(field, changes[field]);
     if (comparable(next) === comparable(current[field])) continue;
-    if (field === "title" && !next) throw new DealValidationError("O nome do negócio é obrigatório");
+    if (field === "title" && !next) {
+      throw new DealValidationError(current.stage.pipeline.kind === "TASKS" ? "O título da tarefa é obrigatório" : "O nome do negócio é obrigatório");
+    }
 
     (data as Record<string, unknown>)[field] = field === "customData" && next === null ? Prisma.DbNull : next;
     history.push(await fieldHistory(tx, field, SCALAR_FIELDS[field], current[field], next));
@@ -412,10 +420,15 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
     }
 
     if (field === "blockedBy") {
-      // Ids or { id } items; never the card itself, nor a card that already waits for this one (direct cycle)
+      // Ids or { id } items: active cards of the same pipeline, never the card itself nor one that waits for it
       const requested = [...new Set(((changes.blockedBy as (string | { id: string })[] | null) ?? []).map((x) => (typeof x === "string" ? x : x?.id)))];
+      const waiting = await cardsWaitingFor(tx, dealId);
       const found = await tx.crmCard.findMany({
-        where: { id: { in: requested.filter((id) => id && id !== dealId) }, blockedBy: { none: { blockedById: dealId } } },
+        where: {
+          id: { in: requested.filter((id) => id && id !== dealId && !waiting.has(id)) },
+          ...activeCard,
+          stage: { pipelineId: current.stage.pipeline.id },
+        },
         select: { id: true, number: true, title: true },
       });
       const before = currentDto.blockedBy.map((c) => c.id);
@@ -448,6 +461,18 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
   }
 
   return { data, history, current };
+}
+
+/** Every card that waits for `cardId`, directly or through a chain of "Bloqueada por" (would close a cycle). */
+async function cardsWaitingFor(tx: Tx, cardId: string) {
+  const seen = new Set<string>();
+  let frontier = [cardId];
+  while (frontier.length) {
+    const rows = await tx.crmCardDependency.findMany({ where: { blockedById: { in: frontier } }, select: { cardId: true } });
+    frontier = rows.map((r) => r.cardId).filter((id) => !seen.has(id));
+    frontier.forEach((id) => seen.add(id));
+  }
+  return seen;
 }
 
 export class DealValidationError extends Error {}
@@ -496,6 +521,24 @@ export async function taskStatusForStage(tx: Tx, stageId: string): Promise<CrmDe
   if (stage?.pipeline.kind !== "TASKS") return null;
   const last = await tx.crmStage.findFirst({ where: { pipelineId: stage.pipelineId }, orderBy: { order: "desc" }, select: { id: true } });
   return last?.id === stageId ? "WON" : "OPEN";
+}
+
+/**
+ * Re-applies the "last column = done" rule to every card of a task pipeline, after its columns were
+ * added, removed or reordered, or the pipeline became a task board. No-op on deal boards.
+ */
+export async function resyncTaskStatuses(tx: Tx, pipelineId: string) {
+  const pipeline = await tx.crmPipeline.findUnique({
+    where: { id: pipelineId },
+    select: { kind: true, stages: { orderBy: { order: "desc" }, take: 1, select: { id: true } } },
+  });
+  const last = pipeline?.stages[0]?.id;
+  if (pipeline?.kind !== "TASKS" || !last) return;
+  // ponytail: bulk update without history entries or recurring copies; a column edit is not a task being done.
+  // closedAt is kept when reopening (reports only read it with status WON), so moving the column back restores the date.
+  await tx.crmCard.updateMany({ where: { stage: { pipelineId }, stageId: { not: last }, status: { not: "OPEN" } }, data: { status: "OPEN" } });
+  await tx.crmCard.updateMany({ where: { stageId: last, status: { not: "WON" }, closedAt: { not: null } }, data: { status: "WON" } });
+  await tx.crmCard.updateMany({ where: { stageId: last, status: { not: "WON" } }, data: { status: "WON", closedAt: new Date() } });
 }
 
 /**
@@ -776,6 +819,7 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
       comment: deal.comment,
       recurrence: deal.recurrence,
       priority: deal.priority,
+      estimateMinutes: deal.estimateMinutes,
       customData: deal.customData ?? Prisma.DbNull,
       startDate: options.startDate,
       closeDate: options.closeDate,
@@ -804,9 +848,10 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
 export async function createRecurringCopy(tx: Tx, id: string) {
   const deal = await tx.crmCard.findUnique({
     where: { id },
-    select: { id: true, recurrence: true, startDate: true, closeDate: true, createdAt: true },
+    select: { id: true, recurrence: true, startDate: true, closeDate: true, createdAt: true, isTemplate: true, archivedAt: true },
   });
-  if (!deal || !(deal.recurrence in RECURRENCE_STEP)) return null;
+  // A template or archived card closed by hand is not a real occurrence
+  if (!deal || deal.isTemplate || deal.archivedAt || !(deal.recurrence in RECURRENCE_STEP)) return null;
 
   const copy = await copyCard(tx, id, {
     startDate: shiftDate(deal.startDate ?? deal.createdAt, deal.recurrence),

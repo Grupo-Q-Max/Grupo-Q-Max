@@ -28,6 +28,8 @@ export type KanbanLabels = {
   renameColumn: string;
   deleteColumn: string;
   setColumnLimit: string;
+  moveColumnLeft: string;
+  moveColumnRight: string;
   syncing: string;
 };
 
@@ -62,6 +64,8 @@ export type KanbanProps<T extends KanbanItemBase> = {
   onRenameColumn?: (columnId: string, title: string) => MaybeCancel | Promise<MaybeCancel>;
   /** Enables the column menu item that sets the WIP limit. */
   onSetColumnLimit?: (columnId: string, limit: number | null) => void;
+  /** Enables "move left/right" in the column menu; receives every column id in the new order. */
+  onMoveColumn?: (columnIds: string[]) => MaybeCancel | Promise<MaybeCancel>;
   /** Enables the column menu with "delete column". */
   onDeleteColumn?: (columnId: string) => MaybeCancel | Promise<MaybeCancel>;
   /** Enables the "add column" button. Return the created column to show it on the board. */

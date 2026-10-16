@@ -22,6 +22,8 @@ const DEFAULT_LABELS: KanbanLabels = {
   renameColumn: "Renomear coluna",
   deleteColumn: "Excluir coluna",
   setColumnLimit: "Limite de itens",
+  moveColumnLeft: "Mover para a esquerda",
+  moveColumnRight: "Mover para a direita",
   syncing: "Sincronizando...",
 };
 
@@ -49,6 +51,7 @@ export function Kanban<T extends KanbanItemBase>({
   onRenameColumn,
   onDeleteColumn,
   onSetColumnLimit,
+  onMoveColumn,
   onAddColumn,
   sync,
   labels: labelOverrides,
@@ -242,6 +245,13 @@ export function Kanban<T extends KanbanItemBase>({
     setColumns((prev) => prev.filter((c) => c.id !== columnId));
   };
 
+  const moveColumn = async (from: number, to: number) => {
+    const previous = columns;
+    const next = arrayMove(columns, from, to);
+    setColumns(next);
+    if (onMoveColumn && (await onMoveColumn(next.map((c) => c.id))) === false) setColumns(previous);
+  };
+
   const addColumn = async () => {
     const created = await onAddColumn?.();
     if (created) setColumns((prev) => [...prev, created]);
@@ -270,7 +280,7 @@ export function Kanban<T extends KanbanItemBase>({
           </div>
         )}
 
-        {columns.map((column) => (
+        {columns.map((column, index) => (
           <KanbanColumn
             key={column.id}
             column={column}
@@ -281,6 +291,8 @@ export function Kanban<T extends KanbanItemBase>({
             onRename={onRenameColumn && ((title) => renameColumn(column.id, title))}
             onDelete={onDeleteColumn && (() => deleteColumn(column.id))}
             onSetLimit={onSetColumnLimit && (() => onSetColumnLimit(column.id, column.limit ?? null))}
+            onMoveLeft={onMoveColumn && index > 0 ? () => moveColumn(index, index - 1) : undefined}
+            onMoveRight={onMoveColumn && index < columns.length - 1 ? () => moveColumn(index, index + 1) : undefined}
           />
         ))}
 

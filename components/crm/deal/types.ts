@@ -60,6 +60,8 @@ export type DealDetails = {
   tags: string[];
   /** "Bloqueada por": cards that must be done first */
   blockedBy: BlockerCard[];
+  /** "Bloqueia": cards that wait for this one (read-only, set on their side) */
+  blocks: BlockerCard[];
   customData: Record<string, string> | null;
   estimateMinutes: number | null;
   spentMinutes: number | null;
@@ -70,7 +72,7 @@ export type DealDetails = {
   activities: DealActivity[];
   history: DealHistory[];
   /** Restore points: the deal's state when it left each stage. */
-  stageSnapshots: { stageId: string; savedAt: string; data: Omit<DealDraft, "products"> & { products: Omit<DealProduct, "id">[] } }[];
+  stageSnapshots: { stageId: string; savedAt: string; data: Omit<DealDraft, "products" | "blockedBy"> & { products: Omit<DealProduct, "id">[]; blockedBy?: string[] } }[];
   pipeline: { id: string; kind: "DEALS" | "TASKS"; fieldsConfig: CustomFieldConfig[] | null; stages: { id: string; name: string }[] };
 };
 

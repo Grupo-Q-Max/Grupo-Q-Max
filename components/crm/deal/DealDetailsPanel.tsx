@@ -154,7 +154,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
   const save = async () => {
     if (!deal || !draft) return;
     if (!draft.title.trim()) {
-      setError("O nome do negócio é obrigatório.");
+      setError(deal.pipeline.kind === "TASKS" ? "O título da tarefa é obrigatório." : "O nome do negócio é obrigatório.");
       return;
     }
     const missing = (deal.pipeline.fieldsConfig ?? []).find((f) => f.required && !draft.customData?.[f.id]);

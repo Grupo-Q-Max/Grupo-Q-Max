@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers } from "@/lib/crm-automation";
-import { notifyMentions } from "@/lib/crm-card-notify";
+import { notifyMentions, notifyWatchers } from "@/lib/crm-card-notify";
 import { sessionMemberId } from "@/lib/auth";
 
 const TYPES = new Set<CrmActivityType>(["TODO", "TASK", "CALL", "MEETING", "COMMENT"]);
@@ -40,7 +40,12 @@ export async function POST(req: Request) {
     });
     await notifyCard(cardId);
     const authorId = sessionMemberId(req);
-    if (type === "COMMENT") after(() => notifyMentions(cardId, activity.title, authorId));
+    if (type === "COMMENT") {
+      after(async () => {
+        const mentioned = await notifyMentions(cardId, activity.title, authorId);
+        await notifyWatchers(cardId, authorId, (author, card) => `${author} comentou em ${card}`, mentioned);
+      });
+    }
 
     return NextResponse.json(activity);
   } catch (error) {
@@ -75,6 +80,10 @@ export async function PATCH(req: Request) {
       },
     });
     await notifyCard(activity.cardId);
+    if (activity.type === "COMMENT" && activity.title !== current.title) {
+      const authorId = sessionMemberId(req);
+      after(() => notifyMentions(activity.cardId, activity.title, authorId, current.title));
+    }
     if (activity.completed && !current.completed) {
       after(() => fireTriggers(activity.cardId, { type: "ACTIVITY_COMPLETED", activityType: activity.type }));
     }
