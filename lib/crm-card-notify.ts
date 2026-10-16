@@ -69,3 +69,27 @@ export async function notifyMoved(cardId: string, stageId: string, authorId: str
   const stage = await prisma.crmStage.findUnique({ where: { id: stageId }, select: { name: true } });
   if (stage) await notifyWatchers(cardId, authorId, (author, card) => `${author} moveu ${card} para "${stage.name}"`);
 }
+
+/**
+ * After a card is done (WON): tells the observers and responsible of each card it was blocking
+ * that has no other open blocker left. No-op when the card is not WON, so callers can run it
+ * after any status change.
+ */
+export async function notifyUnblocked(cardId: string, authorId: string | null) {
+  const card = await prisma.crmCard.findUnique({
+    where: { id: cardId },
+    select: {
+      number: true,
+      title: true,
+      status: true,
+      blocks: {
+        where: { card: { status: "OPEN", archivedAt: null, isTemplate: false, blockedBy: { none: { blockedBy: { status: "OPEN" } } } } },
+        select: { cardId: true },
+      },
+    },
+  });
+  if (card?.status !== "WON") return;
+  for (const { cardId: blockedId } of card.blocks) {
+    await notifyWatchers(blockedId, authorId, (author, blocked) => `${blocked} foi desbloqueada: ${author} concluiu #${card.number} "${card.title}"`);
+  }
+}

@@ -4,7 +4,7 @@ import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
-import { notifyAssigned, notifyMoved } from "@/lib/crm-card-notify";
+import { notifyAssigned, notifyMoved, notifyUnblocked } from "@/lib/crm-card-notify";
 import { sessionMemberId } from "@/lib/auth";
 import { deleteCardWithFiles } from "@/lib/crm-attachments";
 import {
@@ -226,6 +226,7 @@ export async function PATCH(req: Request) {
     after(async () => {
       if (result.recurringCopy) await onDealEnteredStage(result.recurringCopy.id, result.recurringCopy.stageId);
       if (result.changedFields.includes("responsibleId")) await notifyAssigned(id, authorId);
+      if (result.changedFields.includes("status")) await notifyUnblocked(id, authorId);
       // A manual stage change runs the new stage's rules; other changes may fire a "campo alterado" trigger
       if (result.movedTo) await notifyMoved(id, result.movedTo, authorId);
       if (result.movedTo) await onDealEnteredStage(id, result.movedTo);

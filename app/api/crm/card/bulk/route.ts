@@ -3,7 +3,7 @@ import { canSeePipeline, denyUnless } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { checkStageEntry } from "@/lib/crm-qxback";
-import { notifyAssigned, notifyMoved } from "@/lib/crm-card-notify";
+import { notifyAssigned, notifyMoved, notifyUnblocked } from "@/lib/crm-card-notify";
 import { prisma } from "@/lib/prisma";
 import { deleteCardWithFiles } from "@/lib/crm-attachments";
 import { sessionMemberId } from "@/lib/auth";
@@ -73,6 +73,7 @@ export async function POST(req: Request) {
           if (result.movedTo) await onDealEnteredStage(id, result.movedTo);
           else if (result.changedFields.length) await fireTriggers(id, { type: "FIELD_CHANGED", fields: result.changedFields });
           if (result.changedFields.includes("responsibleId")) await notifyAssigned(id, authorId);
+          if (result.changedFields.includes("status")) await notifyUnblocked(id, authorId);
         });
       } catch (error) {
         console.error(`[crm-bulk] ${action} ${id} failed:`, error instanceof Error ? error.message : error);
