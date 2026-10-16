@@ -833,3 +833,7 @@
 .deal-chip a:hover { text-decoration: underline; }
 .deal-chip--done { opacity: 0.55; }
 .deal-chip--done a { text-decoration: line-through; }
+
+/* Estimate / time spent side by side; spent past the estimate in red on the card */
+.deal-row > .deal-field { flex: 1; min-width: 0; }
+.kanban-card__checklist.is-over { color: #ff4d6d; }

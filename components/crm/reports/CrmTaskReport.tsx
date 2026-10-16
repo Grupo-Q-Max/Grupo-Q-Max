@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Select } from "@/components/ui/Select";
 import { periodRange, type Preset } from "@/lib/crm-reports";
 import { todayKey } from "@/lib/crm-due";
+import { formatMinutes } from "@/components/crm/deal/types";
 
 export type ReportTask = {
   responsibleId: string | null;
@@ -13,6 +14,8 @@ export type ReportTask = {
   /** Due date, YYYY-MM-DD */
   closeDate: string | null;
   createdAt: string;
+  estimateMinutes: number | null;
+  spentMinutes: number | null;
 };
 
 const PRESETS: Partial<Record<Preset, string>> = {
@@ -25,8 +28,8 @@ const PRESETS: Partial<Record<Preset, string>> = {
 };
 const NO_RESPONSIBLE = "";
 
-type Row = { name: string; created: number; done: number; onTime: number; open: number; overdue: number };
-const emptyRow = (name: string): Row => ({ name, created: 0, done: 0, onTime: 0, open: 0, overdue: 0 });
+type Row = { name: string; created: number; done: number; onTime: number; open: number; overdue: number; estimate: number; spent: number };
+const emptyRow = (name: string): Row => ({ name, created: 0, done: 0, onTime: 0, open: 0, overdue: 0, estimate: 0, spent: 0 });
 const pct = (part: number, total: number) => (total ? `${Math.round((part / total) * 100)}%` : "—");
 
 /** Task boards: tasks created and finished in the period, on-time rate and what is open / overdue now, per responsible. */
@@ -49,6 +52,8 @@ export function CrmTaskReport({ tasks, members }: { tasks: ReportTask[]; members
       row.done++;
       // Finished on or before the due day (Brazilian time); no due date counts as on time
       if (!t.closeDate || todayKey(new Date(t.closedAt!)) <= t.closeDate) row.onTime++;
+      row.estimate += t.estimateMinutes ?? 0;
+      row.spent += t.spentMinutes ?? 0;
     }
     if (t.status === "OPEN") {
       row.open++;
@@ -57,7 +62,7 @@ export function CrmTaskReport({ tasks, members }: { tasks: ReportTask[]; members
   }
   const list = [...rows.values()].filter((r) => r.created || r.done || r.open).sort((a, b) => b.done - a.done || a.name.localeCompare(b.name));
   const total = list.reduce(
-    (sum, r) => ({ ...sum, created: sum.created + r.created, done: sum.done + r.done, onTime: sum.onTime + r.onTime, open: sum.open + r.open, overdue: sum.overdue + r.overdue }),
+    (sum, r) => ({ ...sum, created: sum.created + r.created, done: sum.done + r.done, onTime: sum.onTime + r.onTime, open: sum.open + r.open, overdue: sum.overdue + r.overdue, estimate: sum.estimate + r.estimate, spent: sum.spent + r.spent }),
     emptyRow("Total")
   );
 
@@ -73,7 +78,7 @@ export function CrmTaskReport({ tasks, members }: { tasks: ReportTask[]; members
           ))}
         </Select>
       </div>
-      <p className="crm-reports__caption">Criadas e concluídas no período; abertas e atrasadas hoje. Concluída = chegou na última coluna do quadro.</p>
+      <p className="crm-reports__caption">Criadas e concluídas no período; abertas e atrasadas hoje. Concluída = chegou na última coluna do quadro. Estimado e gasto somam as tarefas concluídas no período.</p>
       {list.length === 0 ? (
         <p className="crm-reports__empty">Nenhuma tarefa nos quadros de tarefas que você vê.</p>
       ) : (
@@ -87,6 +92,8 @@ export function CrmTaskReport({ tasks, members }: { tasks: ReportTask[]; members
                 <th>No prazo</th>
                 <th>Abertas</th>
                 <th>Atrasadas</th>
+                <th title="Soma das tarefas concluídas no período">Estimado</th>
+                <th title="Soma das tarefas concluídas no período">Gasto</th>
               </tr>
             </thead>
             <tbody>
@@ -98,6 +105,8 @@ export function CrmTaskReport({ tasks, members }: { tasks: ReportTask[]; members
                   <td>{pct(r.onTime, r.done)}</td>
                   <td>{r.open}</td>
                   <td className={r.overdue ? "crm-table__overdue" : undefined}>{r.overdue}</td>
+                  <td>{r.estimate ? formatMinutes(r.estimate) : "—"}</td>
+                  <td className={r.estimate && r.spent > r.estimate ? "crm-table__overdue" : undefined}>{r.spent ? formatMinutes(r.spent) : "—"}</td>
                 </tr>
               ))}
             </tbody>

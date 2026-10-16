@@ -1,5 +1,5 @@
 import { Prisma, type CrmDealStatus, type CrmPriority, type CrmRecurrence } from "@prisma/client";
-import { priorityLabel } from "@/components/crm/deal/types";
+import { formatMinutes, priorityLabel } from "@/components/crm/deal/types";
 import { prisma } from "@/lib/prisma";
 
 type Tx = Prisma.TransactionClient;
@@ -250,6 +250,8 @@ export const SCALAR_FIELDS = {
   comment: "Comentário",
   recurrence: "Negócio recorrente",
   priority: "Prioridade",
+  estimateMinutes: "Estimativa",
+  spentMinutes: "Tempo gasto",
   customData: "Campos adicionais",
 } as const;
 
@@ -290,6 +292,12 @@ function parseScalar(field: ScalarField, value: unknown) {
       return value && typeof value === "object" ? value : null;
     case "referredBy":
       return blankToNull(value)?.slice(0, 200) ?? null;
+    case "estimateMinutes":
+    case "spentMinutes": {
+      // Whole minutes, up to a year of work; anything else clears the field
+      const minutes = Math.round(Number(value));
+      return value !== null && value !== "" && Number.isFinite(minutes) && minutes >= 0 ? Math.min(minutes, 525_600) : null;
+    }
     default:
       return blankToNull(value);
   }
@@ -586,6 +594,9 @@ async function fieldHistory(tx: Tx, field: ScalarField, label: string, from: unk
     return { type: "FIELD_CHANGED", data: { field, label, from: name(from), to: name(to) } };
   }
   if (field === "priority") return { type: "FIELD_CHANGED", data: { field, label, from: priorityLabel(from as string), to: priorityLabel(to as string) } };
+  if (field === "estimateMinutes" || field === "spentMinutes") {
+    return { type: "FIELD_CHANGED", data: { field, label, from: formatMinutes(from as number | null), to: formatMinutes(to as number | null) } };
+  }
   return { type: "FIELD_CHANGED", data: { field, label, from: displayScalar(from), to: displayScalar(to) } };
 }
 

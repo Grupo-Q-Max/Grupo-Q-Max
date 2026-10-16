@@ -54,7 +54,7 @@ export default async function ReportsPage() {
     prisma.crmGoal.findMany({ where: { month: { gte: goalsFrom } }, select: { memberId: true, month: true, amount: true } }),
     prisma.crmCard.findMany({
       where: { ...activeCard, stage: { pipeline: { ...visible, kind: "TASKS" } } },
-      select: { responsibleId: true, status: true, closedAt: true, closeDate: true, createdAt: true, responsible: { select: { id: true, name: true } } },
+      select: { responsibleId: true, status: true, closedAt: true, closeDate: true, createdAt: true, estimateMinutes: true, spentMinutes: true, responsible: { select: { id: true, name: true } } },
     }),
   ]);
 

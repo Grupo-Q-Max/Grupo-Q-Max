@@ -322,6 +322,9 @@ model CrmCard {
   archivedAt         DateTime?
   /// Template of its pipeline ("Salvar como modelo"): never on the board, copied by "Nova tarefa" → modelo
   isTemplate         Boolean       @default(false)
+  /// Task boards: estimated and spent time, in minutes (typed by hand)
+  estimateMinutes    Int?
+  spentMinutes       Int?
 
   stageId       String
   stage         CrmStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)

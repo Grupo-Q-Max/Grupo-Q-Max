@@ -61,6 +61,8 @@ export type DealDetails = {
   /** "Bloqueada por": cards that must be done first */
   blockedBy: BlockerCard[];
   customData: Record<string, string> | null;
+  estimateMinutes: number | null;
+  spentMinutes: number | null;
   archivedAt: string | null;
   isTemplate: boolean;
   createdAt: string;
@@ -95,6 +97,8 @@ export type DealDraft = Pick<
   | "priority"
   | "tags"
   | "blockedBy"
+  | "estimateMinutes"
+  | "spentMinutes"
   | "customData"
 >;
 
@@ -182,6 +186,8 @@ export function pickDraft(deal: DealDetails): DealDraft {
     priority: deal.priority,
     tags: deal.tags,
     blockedBy: deal.blockedBy,
+    estimateMinutes: deal.estimateMinutes,
+    spentMinutes: deal.spentMinutes,
     customData: deal.customData,
   };
 }
@@ -199,3 +205,22 @@ export const PRIORITIES: { value: Priority; label: string }[] = [
 export const priorityLabel = (value: string | null | undefined) => PRIORITIES.find((p) => p.value === value)?.label ?? null;
 
 export type CrmTagDto = { id: string; name: string; color: string };
+
+/** 90 → "1h30", 45 → "45min", 120 → "2h"; null for no value. */
+export function formatMinutes(minutes: number | null | undefined) {
+  if (minutes === null || minutes === undefined) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (!h) return `${m}min`;
+  return m ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
+}
+
+/** "1h30", "1:30", "1,5h", "90", "90min", "2h" → minutes; null when blank or unreadable. */
+export function parseMinutes(text: string) {
+  const t = text.trim().toLowerCase().replace(",", ".").replace(/\s+/g, "");
+  if (!t) return null;
+  const hm = t.match(/^(\d+(?:\.\d+)?)h(?:(\d{1,2})(?:min|m)?)?$/) ?? t.match(/^(\d+):(\d{1,2})$/);
+  if (hm) return Math.round(Number(hm[1]) * 60) + Number(hm[2] ?? 0);
+  const m = t.match(/^(\d+)(?:min|m)?$/);
+  return m ? Number(m[1]) : null;
+}

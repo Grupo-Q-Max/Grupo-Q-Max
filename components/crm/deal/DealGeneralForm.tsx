@@ -13,7 +13,9 @@ import {
   SOURCES,
   emptyCompany,
   emptyContact,
+  formatMinutes,
   formatMoney,
+  parseMinutes,
   productsTotal,
   toDateInput,
   type DealCompany,
@@ -200,6 +202,25 @@ function TagsField({ tags, onChange }: { tags: string[]; onChange: Props["onChan
   );
 }
 
+/** Duration typed as "1h30" / "90" and kept in minutes; the text is read when the field loses focus. */
+function DurationInput({ minutes, onChange }: { minutes: number | null; onChange: (minutes: number | null) => void }) {
+  const [text, setText] = useState(formatMinutes(minutes) ?? "");
+  useEffect(() => setText(formatMinutes(minutes) ?? ""), [minutes]);
+  return (
+    <input
+      className="deal-input"
+      placeholder="Ex: 1h30"
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => {
+        const parsed = parseMinutes(text);
+        if (parsed === minutes) setText(formatMinutes(minutes) ?? "");
+        else onChange(parsed);
+      }}
+    />
+  );
+}
+
 /** "Bloqueada por": cards of the same pipeline that must be done before this one. */
 function BlockedByField({ deal, blockedBy, onChange }: { deal: DealDetails; blockedBy: BlockerCard[]; onChange: Props["onChange"] }) {
   const [query, setQuery] = useState("");
@@ -287,6 +308,14 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) 
         </Field>
         <TagsField tags={draft.tags} onChange={onChange} />
         <BlockedByField deal={deal} blockedBy={draft.blockedBy} onChange={onChange} />
+        <div className="deal-row">
+          <Field label="Estimativa">
+            <DurationInput minutes={draft.estimateMinutes} onChange={(estimateMinutes) => onChange({ estimateMinutes })} />
+          </Field>
+          <Field label="Tempo gasto">
+            <DurationInput minutes={draft.spentMinutes} onChange={(spentMinutes) => onChange({ spentMinutes })} />
+          </Field>
+        </div>
         <Field label="Descrição">
           <textarea className="deal-input" rows={6} value={draft.comment ?? ""} onChange={(e) => onChange({ comment: e.target.value })} />
         </Field>

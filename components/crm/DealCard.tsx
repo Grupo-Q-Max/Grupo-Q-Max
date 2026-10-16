@@ -1,6 +1,6 @@
-import { Calendar, ListChecks, ListTodo, Lock, Trash2 } from "lucide-react";
+import { Calendar, Clock, ListChecks, ListTodo, Lock, Trash2 } from "lucide-react";
 import { Avatar } from "./deal/ui";
-import { priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
+import { formatMinutes, priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
 
 export type CrmDeal = {
   id: string;
@@ -27,6 +27,9 @@ export type CrmDeal = {
   tags?: CrmTagDto[];
   /** Waits for a card that is not done yet ("Bloqueada por") */
   blocked?: boolean;
+  /** Task boards: estimated / spent time in minutes */
+  estimateMinutes?: number | null;
+  spentMinutes?: number | null;
 };
 
 /** End of the due day (closeDate is a date-only column stored as UTC midnight). */
@@ -121,6 +124,15 @@ export function DealCard({
             title="Atividades concluídas / total"
           >
             <ListChecks size={12} /> {deal.checklist.done}/{deal.checklist.total}
+          </span>
+        )}
+        {isTask && (deal.estimateMinutes != null || deal.spentMinutes != null) && (
+          <span
+            className={`kanban-card__checklist ${deal.estimateMinutes != null && (deal.spentMinutes ?? 0) > deal.estimateMinutes ? "is-over" : ""}`}
+            title="Tempo gasto / estimativa"
+          >
+            <Clock size={12} /> {formatMinutes(deal.spentMinutes ?? 0)}
+            {deal.estimateMinutes != null && `/${formatMinutes(deal.estimateMinutes)}`}
           </span>
         )}
         <span className="kanban-card__date">
