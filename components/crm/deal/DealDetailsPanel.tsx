@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
+import { Check, Copy, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
 import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
 import { DealAttachments } from "./DealAttachments";
@@ -21,6 +21,8 @@ type Props = {
   onClose: () => void;
   /** Called after the deal is changed or deleted so the board can refresh. */
   onChanged: () => void;
+  /** Opens another card in the panel (e.g. the copy made by "Duplicar"). */
+  onOpenCard: (card: { id: string; number: number }) => void;
 };
 
 const jsonRequest = (method: string, body: unknown): RequestInit => ({
@@ -51,7 +53,7 @@ function changedFields(draft: DealDraft, deal: DealDetails) {
   return (Object.keys(current) as (keyof DealDraft)[]).filter((key) => !sameValue(current[key], original[key]));
 }
 
-export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) {
+export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCard }: Props) {
   const can = useCan();
   const [deal, setDeal] = useState<DealDetails | null>(null);
   const [draft, setDraft] = useState<DealDraft | null>(null);
@@ -217,6 +219,18 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
     onClose();
   };
 
+  const duplicate = async () => {
+    if (isDirty && !(await confirmDialog("A cópia é feita do card salvo; as alterações não salvas ficam de fora. Continuar?", { confirmLabel: "Duplicar" }))) return;
+    setError(null);
+    const res = await fetch("/api/crm/card", jsonRequest("POST", { duplicateOf: dealId }));
+    if (!res.ok) {
+      setError((await res.json().catch(() => null))?.error ?? "Não foi possível duplicar.");
+      return;
+    }
+    onChanged();
+    onOpenCard(await res.json());
+  };
+
   const copyLink = async () => {
     if (!deal) return;
     const url = `${window.location.origin}/crm/deal/details/${deal.number}`;
@@ -277,6 +291,11 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
 
               <div className="deal-header__actions">
                 {!isTasks && <ContactActions deal={deal} />}
+                {can("deal.create") && (
+                  <button type="button" className="deal-icon-btn deal-icon-btn--boxed" title="Duplicar" onClick={duplicate}>
+                    <Copy size={16} />
+                  </button>
+                )}
                 {can("deal.delete") && (
                   <button type="button" className="deal-icon-btn deal-icon-btn--boxed deal-icon-btn--danger" title={isTasks ? "Excluir tarefa" : "Excluir negócio"} onClick={remove}>
                     <Trash2 size={16} />

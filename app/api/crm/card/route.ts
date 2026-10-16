@@ -12,6 +12,7 @@ import {
   DuplicateDealError,
   cardListInclude,
   companyIdByName,
+  copyCard,
   findDuplicateDeals,
   getDealDetails,
   restoreChanges,
@@ -39,7 +40,9 @@ export async function POST(req: Request) {
   try {
     const denied = await denyUnless("deal.create");
     if (denied) return denied;
-    const { title, company, value, stageId, customData, referredBy, responsibleId, closeDate, comment, force } = await req.json();
+    const body = await req.json();
+    if (typeof body.duplicateOf === "string") return duplicate(body.duplicateOf);
+    const { title, company, value, stageId, customData, referredBy, responsibleId, closeDate, comment, force } = body;
     if (!title || !stageId) return NextResponse.json({ error: "Missing title or stageId" }, { status: 400 });
     const hidden = await denyUnlessPipeline({ stageId });
     if (hidden) return hidden;
@@ -86,6 +89,30 @@ export async function POST(req: Request) {
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
+}
+
+/** "Duplicar": copy of the card (relations, description, checklist) at the end of the same column. */
+async function duplicate(id: string) {
+  const hidden = await denyUnlessPipeline({ cardId: id });
+  if (hidden) return hidden;
+  const card = await prisma.$transaction(async (tx) => {
+    const source = await tx.crmCard.findUnique({ where: { id }, select: { title: true, stageId: true, startDate: true, closeDate: true } });
+    if (!source) return null;
+    return copyCard(tx, id, {
+      stageId: source.stageId,
+      title: `${source.title} (cópia)`.slice(0, 191),
+      startDate: source.startDate,
+      closeDate: source.closeDate,
+      history: { duplicatedFrom: id },
+    });
+  });
+  if (!card) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  await notifyStageChanged(card.stageId);
+  after(async () => {
+    if (!(await fireTriggers(card.id, { type: "DEAL_CREATED" }))) await onDealEnteredStage(card.id, card.stageId);
+  });
+  return NextResponse.json({ id: card.id, number: card.number });
 }
 
 /**

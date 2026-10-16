@@ -104,9 +104,15 @@ function useDealPanel(pipelineId: string, initialDealId?: string) {
 
   const panel = openDealId && (
     <DealDetailsPanel
+      key={openDealId}
       dealId={openDealId}
       onLoad={(deal) => showDealUrl(deal.number)}
       onClose={closeDeal}
+      onOpenCard={(card) => {
+        dealChangedRef.current = true;
+        setOpenDealId(card.id);
+        showDealUrl(card.number);
+      }}
       onChanged={() => {
         dealChangedRef.current = true;
         syncBoardRef.current?.();

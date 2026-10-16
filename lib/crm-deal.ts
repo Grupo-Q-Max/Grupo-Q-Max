@@ -683,31 +683,42 @@ function shiftDate(date: Date, recurrence: string) {
   return next;
 }
 
+type CopyOptions = {
+  /** Default: the pipeline's first stage */
+  stageId?: string;
+  title?: string;
+  startDate: Date | null;
+  closeDate: Date | null;
+  /** Extra data of the copy's CREATED history entry (where it came from) */
+  history: Prisma.InputJsonObject;
+};
+
 /**
- * "Negócio recorrente": closing a recurring deal as won creates the next one in the first stage.
- * Returns the new deal (null when the deal isn't recurring).
+ * Copies a card with its relations, description and checklist (TODO activities, unchecked) to the end of a
+ * stage. Used by recurring cards and "Duplicar".
  */
-export async function createRecurringCopy(tx: Tx, id: string) {
-  const deal = await tx.crmCard.findUnique({
+export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
+  const deal = await tx.crmCard.findUniqueOrThrow({
     where: { id },
     include: {
       contacts: true,
       observers: true,
       products: true,
       tags: true,
+      activities: { where: { type: "TODO" }, orderBy: { createdAt: "asc" } },
       stage: { select: { pipeline: { select: { stages: { orderBy: { order: "asc" }, take: 1 } } } } },
     },
   });
-  if (!deal || !(deal.recurrence in RECURRENCE_STEP)) return null;
 
-  const firstStage = deal.stage.pipeline.stages[0];
-  const copy = await tx.crmCard.create({
+  const stageId = options.stageId ?? deal.stage.pipeline.stages[0].id;
+  const title = options.title ?? deal.title;
+  return tx.crmCard.create({
     data: {
-      title: deal.title,
+      title,
       value: deal.value,
       currency: deal.currency,
-      stageId: firstStage.id,
-      order: await tx.crmCard.count({ where: { stageId: firstStage.id } }),
+      stageId,
+      order: await tx.crmCard.count({ where: { stageId } }),
       companyId: deal.companyId,
       responsibleId: deal.responsibleId,
       dealType: deal.dealType,
@@ -715,11 +726,12 @@ export async function createRecurringCopy(tx: Tx, id: string) {
       sourceInfo: deal.sourceInfo,
       referredBy: deal.referredBy,
       isPublic: deal.isPublic,
+      comment: deal.comment,
       recurrence: deal.recurrence,
       priority: deal.priority,
       customData: deal.customData ?? Prisma.DbNull,
-      startDate: shiftDate(deal.startDate ?? deal.createdAt, deal.recurrence),
-      closeDate: shiftDate(deal.closeDate ?? new Date(), deal.recurrence),
+      startDate: options.startDate,
+      closeDate: options.closeDate,
       contacts: { createMany: { data: deal.contacts.map(({ contactId, order }) => ({ contactId, order })) } },
       observers: { createMany: { data: deal.observers.map(({ memberId }) => ({ memberId })) } },
       tags: { createMany: { data: deal.tags.map(({ tagId }) => ({ tagId })) } },
@@ -728,8 +740,31 @@ export async function createRecurringCopy(tx: Tx, id: string) {
           data: deal.products.map(({ productId, name, price, quantity, order }) => ({ productId, name, price, quantity, order })),
         },
       },
-      history: { create: { type: "CREATED", data: { title: deal.title, recurringFrom: deal.id } } },
+      activities: {
+        createMany: {
+          data: deal.activities.map(({ type, title, description, responsibleId }) => ({ type, title, description, responsibleId })),
+        },
+      },
+      history: { create: { type: "CREATED", data: { title, ...options.history } } },
     },
+  });
+}
+
+/**
+ * "Negócio recorrente": closing a recurring deal as won creates the next one in the first stage.
+ * Returns the new deal (null when the deal isn't recurring).
+ */
+export async function createRecurringCopy(tx: Tx, id: string) {
+  const deal = await tx.crmCard.findUnique({
+    where: { id },
+    select: { id: true, recurrence: true, startDate: true, closeDate: true, createdAt: true },
+  });
+  if (!deal || !(deal.recurrence in RECURRENCE_STEP)) return null;
+
+  const copy = await copyCard(tx, id, {
+    startDate: shiftDate(deal.startDate ?? deal.createdAt, deal.recurrence),
+    closeDate: shiftDate(deal.closeDate ?? new Date(), deal.recurrence),
+    history: { recurringFrom: deal.id },
   });
 
   await tx.crmHistory.create({
