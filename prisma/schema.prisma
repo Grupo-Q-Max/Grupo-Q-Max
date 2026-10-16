@@ -64,6 +64,7 @@ model TeamMember {
 
   responsibleDeals      CrmCard[]                 @relation("DealResponsible")
   observedDeals         CrmDealObserver[]
+  assignedCards         CrmCardAssignee[]
   activities            CrmActivity[]             @relation("ActivityResponsible")
   authoredActivities    CrmActivity[]             @relation("ActivityAuthor")
   historyActions        CrmHistory[]
@@ -72,6 +73,7 @@ model TeamMember {
   automationDealUpdates CrmAutomationDealUpdate[]
   notifications         CrmNotification[]
   pipelineAccess        CrmPipelineMember[]
+  savedViews            CrmSavedView[]
   goals                 CrmGoal[]
   authLogs              AuthLog[]
   requests              CrmRequest[]
@@ -224,6 +226,7 @@ model CrmPipeline {
   /// Groups and members that see the pipeline; neither = every CRM user. Admin groups see all.
   groups       CrmPipelineGroup[]
   members      CrmPipelineMember[]
+  savedViews   CrmSavedView[]
   fieldsConfig Json? // Array of field definitions
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
@@ -351,12 +354,17 @@ model CrmCard {
 
   contacts       CrmDealContact[]
   observers      CrmDealObserver[]
+  /// Co-assignees besides the main responsible ("Corresponsáveis")
+  assignees      CrmCardAssignee[]
   products       CrmDealProduct[]
   tags           CrmCardTag[]
   attachments    CrmAttachment[]
   /// Cards that must be done before this one ("Bloqueada por") / cards this one blocks
   blockedBy      CrmCardDependency[]    @relation("CardBlockedBy")
   blocks         CrmCardDependency[]    @relation("CardBlocks")
+  /// Cards linked across boards (e.g. a task and the deal it serves); see CrmCardLink
+  links          CrmCardLink[]          @relation("CardLinks")
+  linkedFrom     CrmCardLink[]          @relation("CardLinkedFrom")
   activities     CrmActivity[]
   history        CrmHistory[]
   stageSnapshots CrmDealStageSnapshot[]
@@ -968,4 +976,44 @@ model CrmAutomationRunStep {
   @@unique([runId, seq])
   @@index([stepId])
   @@index([actionType, status, updatedAt])
+}
+
+/// Named board filters of a member ("Visualizações salvas"): the board URL query (filters, view, sort).
+model CrmSavedView {
+  id         String      @id @default(cuid())
+  memberId   String
+  member     TeamMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  pipelineId String
+  pipeline   CrmPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name       String      @db.VarChar(60)
+  query      String      @db.VarChar(1000)
+  createdAt  DateTime    @default(now())
+
+  @@unique([memberId, pipelineId, name])
+  @@index([pipelineId])
+}
+
+/// Two cards linked, usually across boards (a task and the deal it serves). Symmetric: stored once with
+/// cardId < linkedId (app/api/crm/link) and shown on both cards.
+model CrmCardLink {
+  cardId    String
+  card      CrmCard  @relation("CardLinks", fields: [cardId], references: [id], onDelete: Cascade)
+  linkedId  String
+  linked    CrmCard  @relation("CardLinkedFrom", fields: [linkedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([cardId, linkedId])
+  @@index([linkedId])
+}
+
+/// Co-assignee of a card besides CrmCard.responsibleId (the main one, used by reports and automations).
+/// Co-assignees see the card in "Minhas tarefas" and get its reminders and notifications.
+model CrmCardAssignee {
+  cardId   String
+  card     CrmCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  memberId String
+  member   TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, memberId])
+  @@index([memberId])
 }

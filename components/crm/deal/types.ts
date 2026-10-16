@@ -60,6 +60,8 @@ export type DealDetails = {
   isPublic: boolean;
   responsibleId: string | null;
   observers: string[];
+  /** Co-assignees besides the main responsible ("Corresponsáveis") */
+  assignees: string[];
   comment: string | null;
   utm: Record<string, string> | null;
   products: DealProduct[];
@@ -111,6 +113,7 @@ export type DealDraft = Pick<
   | "isPublic"
   | "responsibleId"
   | "observers"
+  | "assignees"
   | "comment"
   | "products"
   | "recurrence"
@@ -201,6 +204,7 @@ export function pickDraft(deal: DealDetails): DealDraft {
     isPublic: deal.isPublic,
     responsibleId: deal.responsibleId,
     observers: deal.observers,
+    assignees: deal.assignees,
     comment: deal.comment,
     products: deal.products,
     recurrence: deal.recurrence,

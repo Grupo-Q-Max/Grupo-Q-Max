@@ -11,8 +11,10 @@ import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
-import { Kanban, List, Calendar, CalendarDays, TrendingUp, ArrowDown, Archive, Download } from "lucide-react";
+import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download } from "lucide-react";
 import { CrmCalendar } from "./CrmCalendar";
+import { CrmTimeline } from "./CrmTimeline";
+import { CrmSavedViews } from "./CrmSavedViews";
 import { CrmBulkBar } from "./CrmBulkBar";
 import { alertDialog } from "@/components/ui/Dialogs";
 import { downloadCsv } from "@/lib/csv";
@@ -35,22 +37,28 @@ const DEAL_STATUSES: Record<string, string> = { OPEN: "Aberto", WON: "Ganho", LO
 const TASK_STATUSES: Record<string, string> = { OPEN: "Aberta", WON: "Concluída" };
 const ACTIVITIES: Record<string, string> = { overdue: "Atividade atrasada", none: "Sem atividade pendente" };
 const DUE: Record<string, string> = { overdue: "Atrasada", today: "Vence hoje", week: "Próximos 7 dias", none: "Sem prazo" };
-const VIEWS = ["kanban", "list", "calendar", "activities"] as const;
+const VIEWS = ["kanban", "list", "calendar", "timeline", "activities"] as const;
 type View = (typeof VIEWS)[number];
 type Sort = "due" | "priority" | null;
 
 /** Board URL with the filters, view and sort, so a filtered board can be shared and survives a reload. */
 function boardUrl(pipelineId: string, filters: DealFilters, view: View, sort: Sort) {
-  const params = new URLSearchParams({ pipelineId });
+  const query = boardQuery(filters, view, sort);
+  return `/crm?pipelineId=${encodeURIComponent(pipelineId)}${query && `&${query}`}`;
+}
+
+/** The filters, view and sort as a query string ("" = the default board); also what a saved view stores. */
+function boardQuery(filters: DealFilters, view: View, sort: Sort) {
+  const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);
   if (view !== "kanban") params.set("view", view);
   if (sort) params.set("sort", sort);
-  return `/crm?${params}`;
+  return params.toString();
 }
 
-/** Reverse of boardUrl, from the current address. */
-function readBoardUrl() {
-  const params = new URLSearchParams(window.location.search);
+/** Reverse of boardUrl / boardQuery, from the current address by default. */
+function readBoardUrl(search = window.location.search) {
+  const params = new URLSearchParams(search);
   const filters = Object.fromEntries(Object.keys(NO_FILTERS).map((key) => [key, params.get(key) ?? ""])) as DealFilters;
   const view = VIEWS.find((v) => v === params.get("view")) ?? "kanban";
   const sort = params.get("sort");
@@ -94,7 +102,8 @@ function matchesDue(deal: CrmDeal, due: string) {
 function matchesDeal(deal: CrmDeal, f: DealFilters) {
   const next = deal.activities?.[0];
   if (!matches(f.q, deal.title, deal.company, deal.contactName, `#${deal.number}`)) return false;
-  if (f.responsibleId && (deal.responsible?.id ?? NO_RESPONSIBLE) !== f.responsibleId) return false;
+  // A co-assignee counts as responsible for the filter
+  if (f.responsibleId && (deal.responsible?.id ?? NO_RESPONSIBLE) !== f.responsibleId && !deal.assignees?.some((m) => m.id === f.responsibleId)) return false;
   if (f.status && (deal.status ?? "OPEN") !== f.status) return false;
   // Same overdue rule as DealCard
   if (f.activity === "overdue" && !(next?.deadline && new Date(next.deadline).getTime() < Date.now())) return false;
@@ -110,6 +119,8 @@ function matchesDeal(deal: CrmDeal, f: DealFilters) {
 
 /** Opens the deal panel over any view; the open deal lives in the URL path, like Bitrix24: /crm/deal/details/<number> */
 function useDealPanel(pipelineId: string, initialDealId?: string, closeUrl?: React.RefObject<string>) {
+  /** Cards in the order the current view shows them, for "j" / "k" in the panel */
+  const orderRef = useRef<CrmDeal[]>([]);
   const router = useRouter();
   const [openDealId, setOpenDealId] = useState<string | null>(initialDealId ?? null);
   const dealChangedRef = useRef(false);
@@ -155,6 +166,13 @@ function useDealPanel(pipelineId: string, initialDealId?: string, closeUrl?: Rea
         setOpenDealId(card.id);
         showDealUrl(card.number);
       }}
+      onNavigate={(step) => {
+        const list = orderRef.current;
+        const next = list[list.findIndex((c) => c.id === openDealId) + step];
+        if (!next) return;
+        setOpenDealId(next.id);
+        showDealUrl(next.number);
+      }}
       onChanged={() => {
         dealChangedRef.current = true;
         syncBoardRef.current?.();
@@ -162,7 +180,7 @@ function useDealPanel(pipelineId: string, initialDealId?: string, closeUrl?: Rea
       }}
     />
   );
-  return { openDeal, panel, syncBoardRef, changedRef };
+  return { openDeal, panel, syncBoardRef, changedRef, orderRef };
 }
 
 export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initialDealId?: string }) {
@@ -178,13 +196,16 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   // overwrite the URL with the empty defaults first (and Strict Mode's second read would see that)
   const [urlRead, setUrlRead] = useState(false);
   const closeUrl = useRef("");
-  useEffect(() => {
-    const fromUrl = readBoardUrl();
+  const applyQuery = useCallback((search?: string) => {
+    const fromUrl = readBoardUrl(search);
     setFilters(fromUrl.filters);
     setView(fromUrl.view);
     setSort(fromUrl.sort);
-    setUrlRead(true);
   }, []);
+  useEffect(() => {
+    applyQuery();
+    setUrlRead(true);
+  }, [applyQuery]);
   useEffect(() => {
     if (!urlRead) return;
     closeUrl.current = boardUrl(pipeline.id, filters, view, sort);
@@ -197,7 +218,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     const res = await fetch(`/api/crm/card?archivedOf=${pipeline.id}`, { cache: "no-store" });
     setArchived(res.ok ? await res.json() : []);
   }, [pipeline.id]);
-  const { openDeal, panel, syncBoardRef, changedRef } = useDealPanel(pipeline.id, initialDealId, closeUrl);
+  const { openDeal, panel, syncBoardRef, changedRef, orderRef } = useDealPanel(pipeline.id, initialDealId, closeUrl);
   // Archiving or restoring from the panel changes the archived list too
   changedRef.current = archived ? loadArchived : null;
   const set = (changes: Partial<DealFilters>) => setFilters((f) => ({ ...f, ...changes }));
@@ -214,6 +235,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   const allCards = listed.filter(isDealVisible);
   if (sort === "due") allCards.sort((a, b) => (a.closeDate ? new Date(a.closeDate).getTime() : Infinity) - (b.closeDate ? new Date(b.closeDate).getTime() : Infinity));
   if (sort === "priority") allCards.sort((a, b) => priorityRank(b) - priorityRank(a));
+  orderRef.current = allCards;
   const emptyMessage = filtering ? `Nenhum ${isTasks ? "item" : "negócio"} corresponde aos filtros.` : null;
 
   const responsibles = [
@@ -394,6 +416,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
             </div>
           </FilterField>
         </FilterSearch>
+        <CrmSavedViews pipelineId={pipeline.id} query={boardQuery(filters, view, sort)} onApply={applyQuery} />
         <div className="crm-toolbar__views">
           <button
             className={`view-btn ${view === "kanban" ? "is-active" : ""}`}
@@ -410,6 +433,11 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
           {isTasks && (
             <button className={`view-btn ${view === "calendar" ? "is-active" : ""}`} onClick={() => setView("calendar")}>
               <CalendarDays size={16} /> Calendário
+            </button>
+          )}
+          {isTasks && (
+            <button className={`view-btn ${view === "timeline" ? "is-active" : ""}`} onClick={() => setView("timeline")}>
+              <ChartGantt size={16} /> Linha do tempo
             </button>
           )}
           <button
@@ -555,6 +583,27 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
               if (!res.ok) return alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível alterar o prazo.");
               router.refresh();
             }}
+          />
+        )}
+
+        {view === "timeline" && (
+          <CrmTimeline
+            undated={allCards.filter((c) => !c.closeDate).length}
+            items={allCards.flatMap((card) => {
+              if (!card.closeDate) return [];
+              const end = new Date(card.closeDate).toISOString().slice(0, 10);
+              return [
+                {
+                  key: card.id,
+                  title: card.title,
+                  start: card.startDate ? new Date(card.startDate).toISOString().slice(0, 10) : end,
+                  end,
+                  priority: card.priority,
+                  tone: card.status === "WON" ? ("done" as const) : matchesDue(card, "overdue") ? ("overdue" as const) : undefined,
+                  onOpen: () => openDeal(card),
+                },
+              ];
+            })}
           />
         )}
 

@@ -5,7 +5,7 @@ import { notifyStageChanged } from "@/lib/crm-realtime";
 import { onDealEnteredStage } from "@/lib/crm-automation";
 import { checkStageEntry, StageEntryError } from "@/lib/crm-qxback";
 import { activeCard, snapshotBeforeMove, syncTaskStatus } from "@/lib/crm-deal";
-import { notifyMoved } from "@/lib/crm-card-notify";
+import { notifyMoved, notifyUnblocked } from "@/lib/crm-card-notify";
 import { sessionMemberId } from "@/lib/auth";
 
 export async function POST(req: Request) {
@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     const stageHistory = async () => {
       if (current.stageId === newStageId) return;
       after(() => notifyMoved(cardId, newStageId, actorId));
+      after(() => notifyUnblocked(cardId, actorId));
       after(() => onDealEnteredStage(cardId, newStageId));
       const stage = await prisma.crmStage.findUnique({ where: { id: newStageId }, select: { name: true } });
       await prisma.crmHistory.create({

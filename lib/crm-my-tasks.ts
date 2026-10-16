@@ -24,14 +24,14 @@ export type MyTaskItem = {
 };
 
 /**
- * /crm/me — open cards the member is responsible for and their pending activities with a
+ * /crm/me — open cards the member is responsible for (or a co-assignee of) and their pending activities with a
  * deadline, in pipelines they can see, soonest due first (cards without closeDate last).
  */
 export async function listMyTasks(memberId: string, visible: Prisma.CrmPipelineWhereInput) {
   // ponytail: no pagination; add when someone owns more than a few hundred open items
   const [cards, activities] = await Promise.all([
     prisma.crmCard.findMany({
-      where: { responsibleId: memberId, status: "OPEN", ...activeCard, stage: { pipeline: visible } },
+      where: { OR: [{ responsibleId: memberId }, { assignees: { some: { memberId } } }], status: "OPEN", ...activeCard, stage: { pipeline: visible } },
       take: 500,
       select: { id: true, number: true, title: true, closeDate: true, dueTime: true, stage: { select: { name: true, pipeline: { select: { name: true, kind: true } } } } },
     }),
@@ -74,6 +74,16 @@ export async function listMyTasks(memberId: string, visible: Prisma.CrmPipelineW
 
 const appBase = () => (process.env.APP_URL || "https://qmaxbrasil.com.br").replace(/\/+$/, "");
 
+/** Active co-assignees of a task card: they get its reminders too */
+const coAssignees = { where: { member: { crmActive: true } }, select: { memberId: true, member: { select: { email: true } } } } as const;
+
+type Recipient = { memberId: string; email: string | null | undefined };
+/** Responsible first, then the co-assignees (without repeating the responsible) */
+const cardRecipients = (c: { responsibleId: string | null; responsible: { email: string | null } | null; assignees: { memberId: string; member: { email: string | null } }[] }): Recipient[] => [
+  { memberId: c.responsibleId!, email: c.responsible?.email },
+  ...c.assignees.filter((a) => a.memberId !== c.responsibleId).map((a) => ({ memberId: a.memberId, email: a.member.email })),
+];
+
 /**
  * Notifies the responsible (bell + e-mail) once per task card (TASKS pipelines, by closeDate) and per pending
  * activity (by deadline) that is due today or overdue, and once per task card due tomorrow. `remindedFor`
@@ -103,7 +113,7 @@ export async function remindDueTasks(limit = 100) {
         stage: { pipeline: { kind: "TASKS" } },
       },
       take: limit,
-      select: { id: true, number: true, title: true, closeDate: true, responsibleId: true, responsible: { select: { email: true } } },
+      select: { id: true, number: true, title: true, closeDate: true, responsibleId: true, responsible: { select: { email: true } }, assignees: coAssignees },
     }),
     prisma.crmActivity.findMany({
       where: {
@@ -128,7 +138,7 @@ export async function remindDueTasks(limit = 100) {
         stage: { pipeline: { kind: "TASKS" } },
       },
       take: limit,
-      select: { id: true, number: true, title: true, closeDate: true, responsibleId: true, responsible: { select: { email: true } } },
+      select: { id: true, number: true, title: true, closeDate: true, responsibleId: true, responsible: { select: { email: true } }, assignees: coAssignees },
     }),
     // Task cards with a due time and "lembrar X min antes" (lead up to a week)
     prisma.crmCard.findMany({
@@ -154,6 +164,7 @@ export async function remindDueTasks(limit = 100) {
         timeRemindedFor: true,
         responsibleId: true,
         responsible: { select: { email: true } },
+        assignees: coAssignees,
       },
     }),
   ]);
@@ -166,36 +177,32 @@ export async function remindDueTasks(limit = 100) {
 
   const reminders = [
     ...cards.map((c) => ({
-      email: c.responsible?.email,
+      to: cardRecipients(c),
       number: c.number,
-      memberId: c.responsibleId!,
       cardId: c.id,
       message: `Tarefa #${c.number} "${c.title}" ${dueState(c.closeDate, true) === "overdue" ? "está atrasada" : "vence hoje"}`,
       claim: (tx: Prisma.TransactionClient) =>
         tx.crmCard.updateMany({ where: { id: c.id, closeDate: c.closeDate, ...cardPending }, data: { remindedFor: c.closeDate } }),
     })),
     ...activities.map((a) => ({
-      email: a.responsible?.email,
+      to: [{ memberId: a.responsibleId!, email: a.responsible?.email }],
       number: a.card.number,
-      memberId: a.responsibleId!,
       cardId: a.cardId,
       message: `${ACTIVITY_LABELS[a.type]} "${a.title}" (negócio #${a.card.number}) ${dueState(a.deadline, false) === "overdue" ? "está atrasada" : "vence hoje"}`,
       claim: (tx: Prisma.TransactionClient) =>
         tx.crmActivity.updateMany({ where: { id: a.id, deadline: a.deadline, ...activityPending }, data: { remindedFor: a.deadline } }),
     })),
     ...dueSoon.map((c) => ({
-      email: c.responsible?.email,
+      to: cardRecipients(c),
       number: c.number,
-      memberId: c.responsibleId!,
       cardId: c.id,
       message: `Tarefa #${c.number} "${c.title}" vence amanhã`,
       claim: (tx: Prisma.TransactionClient) =>
         tx.crmCard.updateMany({ where: { id: c.id, closeDate: c.closeDate, ...dueSoonPending }, data: { dueSoonRemindedFor: c.closeDate } }),
     })),
     ...timed.map((c) => ({
-      email: c.responsible?.email,
+      to: cardRecipients(c),
       number: c.number,
-      memberId: c.responsibleId!,
       cardId: c.id,
       message: `Tarefa #${c.number} "${c.title}" vence ${todayKey(c.due) === today ? "hoje" : `em ${c.due.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`} às ${c.dueTime}`,
       // Same date, time and lead as read, not yet reminded for this instant
@@ -214,16 +221,18 @@ export async function remindDueTasks(limit = 100) {
   ];
 
   let sent = 0;
-  for (const { claim, email, number, ...notification } of reminders) {
+  for (const { claim, to, number, ...notification } of reminders) {
+    // One claim per card/activity; every recipient gets the bell in the same transaction
     const created = await prisma.$transaction(async (tx) => {
       if (!(await claim(tx)).count) return false;
-      await tx.crmNotification.create({ data: notification });
+      await tx.crmNotification.createMany({ data: to.map(({ memberId }) => ({ ...notification, memberId })) });
       return true;
     });
     if (!created) continue;
-    notifyMember(notification.memberId);
     sent++;
-    if (email) {
+    for (const { memberId, email } of to) {
+      notifyMember(memberId);
+      if (!email) continue;
       const link = `${appBase()}/crm/deal/details/${number}`;
       // The bell already has it: a mail failure is logged, never retried
       await sendMail(email, "Lembrete de prazo no CRM", `<p>${escapeHtml(notification.message)}.</p><p><a href="${link}">Abrir no CRM</a></p>`).catch((error) =>

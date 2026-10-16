@@ -39,16 +39,16 @@ export async function notifyMentions(cardId: string, text: string, authorId: str
 }
 
 /**
- * Tells the card's observers and responsible about a change (new comment, column move), except
+ * Tells the card's observers, responsible and co-assignees about a change (new comment, column move), except
  * `skip` (e.g. members already notified by a mention). `message` gets the author's name and "#12 "title"".
  */
 export async function notifyWatchers(cardId: string, authorId: string | null, message: (author: string, card: string) => string, skip: string[] = []) {
   const card = await prisma.crmCard.findUnique({
     where: { id: cardId },
-    select: { number: true, title: true, responsibleId: true, observers: { select: { memberId: true } } },
+    select: { number: true, title: true, responsibleId: true, observers: { select: { memberId: true } }, assignees: { select: { memberId: true } } },
   });
   if (!card) return;
-  const ids = [card.responsibleId, ...card.observers.map((o) => o.memberId)].filter((id): id is string => !!id && !skip.includes(id));
+  const ids = [card.responsibleId, ...card.assignees.map((a) => a.memberId), ...card.observers.map((o) => o.memberId)].filter((id): id is string => !!id && !skip.includes(id));
   if (!ids.length) return;
   await notifyAboutCard(cardId, ids, message(await authorName(authorId), `#${card.number} "${card.title}"`), authorId);
 }
@@ -68,4 +68,40 @@ export async function notifyAssigned(cardId: string, authorId: string | null) {
 export async function notifyMoved(cardId: string, stageId: string, authorId: string | null) {
   const stage = await prisma.crmStage.findUnique({ where: { id: stageId }, select: { name: true } });
   if (stage) await notifyWatchers(cardId, authorId, (author, card) => `${author} moveu ${card} para "${stage.name}"`);
+}
+
+/**
+ * After a card is done (WON): tells the observers and responsible of each card it was blocking
+ * that has no other open blocker left. No-op when the card is not WON, so callers can run it
+ * after any status change.
+ */
+export async function notifyUnblocked(cardId: string, authorId: string | null) {
+  const card = await prisma.crmCard.findUnique({
+    where: { id: cardId },
+    select: {
+      number: true,
+      title: true,
+      status: true,
+      blocks: {
+        where: { card: { status: "OPEN", archivedAt: null, isTemplate: false, blockedBy: { none: { blockedBy: { status: "OPEN" } } } } },
+        select: { cardId: true },
+      },
+    },
+  });
+  if (card?.status !== "WON") return;
+  for (const { cardId: blockedId } of card.blocks) {
+    await notifyWatchers(blockedId, authorId, (author, blocked) => `${blocked} foi desbloqueada: ${author} concluiu #${card.number} "${card.title}"`);
+  }
+}
+
+/** Tells the members added as co-assignees ("Corresponsáveis") that the card was assigned to them. */
+export async function notifyNewAssignees(cardId: string, before: string[], authorId: string | null) {
+  const card = await prisma.crmCard.findUnique({
+    where: { id: cardId },
+    select: { number: true, title: true, assignees: { select: { memberId: true } }, stage: { select: { pipeline: { select: { kind: true } } } } },
+  });
+  const added = card?.assignees.map((a) => a.memberId).filter((id) => !before.includes(id)) ?? [];
+  if (!card || !added.length) return;
+  const where = card.stage.pipeline.kind === "TASKS" ? "na tarefa" : "no negócio";
+  await notifyAboutCard(cardId, added, `${await authorName(authorId)} adicionou você como corresponsável ${where} #${card.number} "${card.title}"`, authorId);
 }

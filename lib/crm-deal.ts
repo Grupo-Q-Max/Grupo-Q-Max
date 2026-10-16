@@ -20,6 +20,7 @@ export const cardListInclude = {
   company: { select: { name: true } },
   contacts: { orderBy: { order: "asc" }, take: 1, select: { contact: { select: { name: true } } } },
   responsible: { select: { id: true, name: true, role: true, photo: true } },
+  assignees: { select: { member: { select: { id: true, name: true, role: true, photo: true } } } },
   // ponytail: loads every activity of the card; fine while cards hold a handful, aggregate in SQL if that grows
   activities: {
     where: { type: { not: "COMMENT" } },
@@ -35,7 +36,7 @@ export const cardListInclude = {
 type ListCard = Prisma.CrmCardGetPayload<{ include: typeof cardListInclude }>;
 
 /** Flattens relations and converts Decimal so the card can cross the server → client boundary. */
-export function serializeListCard({ company, contacts, responsible, tags, activities, blockedBy, subtasks, ...card }: ListCard) {
+export function serializeListCard({ company, contacts, responsible, assignees, tags, activities, blockedBy, subtasks, ...card }: ListCard) {
   const pending = activities.filter((a) => !a.completed);
   const checklist = activities.filter((a) => a.type === "TODO");
   return {
@@ -44,6 +45,7 @@ export function serializeListCard({ company, contacts, responsible, tags, activi
     company: company?.name ?? null,
     contactName: contacts[0]?.contact.name ?? null,
     responsible: responsible && { id: responsible.id, name: responsible.name, role: responsible.role, image: responsible.photo },
+    assignees: assignees.map(({ member: m }) => ({ id: m.id, name: m.name, role: m.role, image: m.photo })),
     tags: tags.map((t) => t.tag),
     activities: pending.slice(0, 1).map(({ completed: _, ...a }) => a),
     _count: { activities: pending.length },
@@ -61,6 +63,7 @@ const dealDetailsInclude = {
   company: true,
   contacts: { orderBy: { order: "asc" }, include: { contact: true } },
   observers: { select: { memberId: true } },
+  assignees: { select: { memberId: true } },
   tags: { select: { tagId: true } },
   blockedBy: { orderBy: { createdAt: "asc" }, select: { blockedBy: { select: { id: true, number: true, title: true, status: true } } } },
   // "Bloqueia": the reverse side, active cards that wait for this one
@@ -93,7 +96,7 @@ const dealDetailsInclude = {
 type DealRow = Prisma.CrmCardGetPayload<{ include: typeof dealDetailsInclude }>;
 
 const toDto = (row: DealRow) => {
-  const { stage, company, contacts, observers, products, tags, blockedBy, blocks, ...deal } = row;
+  const { stage, company, contacts, observers, assignees, products, tags, blockedBy, blocks, ...deal } = row;
   return {
     ...deal,
     value: deal.value.toNumber(),
@@ -115,6 +118,7 @@ const toDto = (row: DealRow) => {
       info: contact.info ?? "",
     })),
     observers: observers.map((o) => o.memberId),
+    assignees: assignees.map((a) => a.memberId),
     tags: tags.map((t) => t.tagId),
     blockedBy: blockedBy.map((d) => d.blockedBy),
     blocks: blocks.map((d) => d.card),
@@ -167,6 +171,7 @@ function snapshotOf(dto: DealDto) {
     company: dto.company,
     contacts: dto.contacts,
     observers: dto.observers,
+    assignees: dto.assignees,
     products: dto.products.map(({ id: _id, ...line }) => line),
   };
 }
@@ -206,7 +211,7 @@ export async function restoreChanges(dealId: string, stageId: string) {
   const company = snap.company?.id ? await prisma.crmCompany.findUnique({ where: { id: snap.company.id } }) : null;
   const contactIds = snap.contacts.flatMap((c) => (c.id ? [c.id] : []));
   const contacts = await prisma.crmContact.findMany({ where: { id: { in: contactIds } } });
-  const memberIds = [...snap.observers, snap.responsibleId].filter(Boolean) as string[];
+  const memberIds = [...snap.observers, ...(snap.assignees ?? []), snap.responsibleId].filter(Boolean) as string[];
   const members = new Set((await prisma.teamMember.findMany({ where: { id: { in: memberIds } }, select: { id: true } })).map((m) => m.id));
 
   // Linked record still exists: keep its current data; otherwise the saved data recreates it
@@ -231,6 +236,8 @@ export async function restoreChanges(dealId: string, stageId: string) {
       company: snap.company && current(snap.company, company),
       contacts: snap.contacts.map((c) => current(c, contacts.find((x) => x.id === c.id))),
       observers: snap.observers.filter((id) => members.has(id)),
+      // Snapshots saved before co-assignees existed keep the current ones (undefined = unchanged)
+      assignees: snap.assignees?.filter((id) => members.has(id)),
       responsibleId: snap.responsibleId && members.has(snap.responsibleId) ? snap.responsibleId : null,
     },
   };
@@ -277,6 +284,7 @@ export const RELATION_FIELDS = {
   company: "Empresa",
   contacts: "Contatos",
   observers: "Observadores",
+  assignees: "Corresponsáveis",
   products: "Serviços",
   tags: "Etiquetas",
   blockedBy: "Bloqueada por",
@@ -415,17 +423,22 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
       });
     }
 
-    if (field === "observers") {
-      const ids = [...new Set((changes.observers as string[] | null) ?? [])];
-      if (comparable([...currentDto.observers].sort()) === comparable([...ids].sort())) continue;
-      await tx.crmDealObserver.deleteMany({ where: { dealId } });
-      if (ids.length) await tx.crmDealObserver.createMany({ data: ids.map((memberId) => ({ dealId, memberId })) });
-      const members = await tx.teamMember.findMany({ where: { id: { in: [...currentDto.observers, ...ids] } } });
+    if ((field === "observers" || field === "assignees") && changes[field] !== undefined) {
+      const ids = [...new Set((changes[field] as string[] | null) ?? [])];
+      if (comparable([...currentDto[field]].sort()) === comparable([...ids].sort())) continue;
+      if (field === "observers") {
+        await tx.crmDealObserver.deleteMany({ where: { dealId } });
+        if (ids.length) await tx.crmDealObserver.createMany({ data: ids.map((memberId) => ({ dealId, memberId })) });
+      } else {
+        await tx.crmCardAssignee.deleteMany({ where: { cardId: dealId } });
+        if (ids.length) await tx.crmCardAssignee.createMany({ data: ids.map((memberId) => ({ cardId: dealId, memberId })) });
+      }
+      const members = await tx.teamMember.findMany({ where: { id: { in: [...currentDto[field], ...ids] } } });
       const memberNames = (list: string[]) =>
         list.map((id) => members.find((m) => m.id === id)?.name).filter(Boolean).join(", ") || null;
       history.push({
         type: "FIELD_CHANGED",
-        data: { field, label, from: memberNames(currentDto.observers), to: memberNames(ids) },
+        data: { field, label, from: memberNames(currentDto[field]), to: memberNames(ids) },
       });
     }
 
@@ -839,6 +852,7 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
     include: {
       contacts: true,
       observers: true,
+      assignees: true,
       products: true,
       tags: true,
       activities: { where: { type: "TODO" }, orderBy: { createdAt: "asc" } },
@@ -876,6 +890,7 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
       closeDate: options.closeDate,
       contacts: { createMany: { data: deal.contacts.map(({ contactId, order }) => ({ contactId, order })) } },
       observers: { createMany: { data: deal.observers.map(({ memberId }) => ({ memberId })) } },
+      assignees: { createMany: { data: deal.assignees.map(({ memberId }) => ({ memberId })) } },
       tags: { createMany: { data: deal.tags.map(({ tagId }) => ({ tagId })) } },
       products: {
         createMany: {

@@ -27,6 +27,7 @@ import {
 } from "./types";
 import { Avatar, Field, LinkedBadge, LookupInput, Section } from "./ui";
 import { TimeTracker, Subtasks } from "./DealTaskTools";
+import { DealLinks } from "./DealLinks";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 
@@ -59,9 +60,29 @@ const UTM_LABELS: Record<string, string> = {
   term: "utm_term",
 };
 
-function ObserversField({ observers, team, onChange }: { observers: string[]; team: Props["team"]; onChange: Props["onChange"] }) {
+const MEMBER_FIELDS = {
+  observers: { label: "Observadores", noun: "observador" },
+  assignees: { label: "Corresponsáveis", noun: "corresponsável" },
+} as const;
+
+/** Member list of the card: observers (watch it) or co-assignees (share it with the responsible). */
+function ObserversField({
+  field = "observers",
+  observers,
+  team,
+  onChange,
+  exclude,
+}: {
+  field?: keyof typeof MEMBER_FIELDS;
+  observers: string[];
+  team: Props["team"];
+  onChange: Props["onChange"];
+  /** Not offered (e.g. the main responsible among the co-assignees) */
+  exclude?: string | null;
+}) {
+  const { label, noun } = MEMBER_FIELDS[field];
   return (
-    <Field label="Observadores">
+    <Field label={label}>
       <div className="deal-chips">
         {observers.map((id) => {
           const member = team.find((m) => m.id === id);
@@ -71,8 +92,8 @@ function ObserversField({ observers, team, onChange }: { observers: string[]; te
               {member?.name ?? "Membro removido"}
               <button
                 type="button"
-                title="Remover observador"
-                onClick={() => onChange({ observers: observers.filter((o) => o !== id) })}
+                title={`Remover ${noun}`}
+                onClick={() => onChange({ [field]: observers.filter((o) => o !== id) })}
               >
                 <X size={12} />
               </button>
@@ -82,11 +103,11 @@ function ObserversField({ observers, team, onChange }: { observers: string[]; te
         <Select
           className="deal-input deal-input--inline"
           value=""
-          onChange={(e) => e.target.value && onChange({ observers: [...observers, e.target.value] })}
+          onChange={(e) => e.target.value && onChange({ [field]: [...observers, e.target.value] })}
         >
-          <option value="">+ Adicionar observador</option>
+          <option value="">+ Adicionar {noun}</option>
           {team
-            .filter((m) => !observers.includes(m.id))
+            .filter((m) => !observers.includes(m.id) && m.id !== exclude)
             .map((member) => (
               <option key={member.id} value={member.id}>
                 {member.name}
@@ -358,6 +379,7 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload,
             </Select>
           </div>
         </Field>
+        <ObserversField field="assignees" observers={draft.assignees} team={team} onChange={onChange} exclude={draft.responsibleId} />
         <Field label="Prioridade">
           <Select className="deal-input" value={draft.priority ?? ""} onChange={(e) => onChange({ priority: (e.target.value || null) as Priority | null })}>
             <option value="">Sem prioridade</option>
@@ -371,6 +393,7 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload,
         <TagsField tags={draft.tags} onChange={onChange} />
         <BlockedByField deal={deal} blockedBy={draft.blockedBy} onChange={onChange} />
         <Subtasks deal={deal} team={team} onReload={onReload} onOpenCard={onOpenCard} />
+        <DealLinks deal={deal} onOpenCard={onOpenCard} />
         <Field label="Estimativa">
           <DurationInput minutes={draft.estimateMinutes} onChange={(estimateMinutes) => onChange({ estimateMinutes })} />
         </Field>
@@ -399,7 +422,7 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload,
 
 export function DealGeneralForm(props: Props) {
   if (props.deal.pipeline.kind === "TASKS") return <TaskGeneralForm {...props} />;
-  const { deal, draft, onChange, team, onStageChange, onOpenProducts } = props;
+  const { deal, draft, onChange, team, onStageChange, onOpenProducts, onOpenCard } = props;
   const contacts = draft.contacts.length ? draft.contacts : [emptyContact()];
   const company = draft.company ?? emptyCompany();
   const observers = draft.observers;
@@ -688,6 +711,8 @@ export function DealGeneralForm(props: Props) {
         </Field>
 
         <ObserversField observers={observers} team={team} onChange={onChange} />
+
+        <DealLinks deal={deal} onOpenCard={onOpenCard} />
 
         <Field label="Comentário">
           <textarea
