@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCan } from "./CrmAccess";
 import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
@@ -59,7 +59,10 @@ export function CrmButtons({
   const [customData, setCustomData] = useState<any>({});
   const [dealResponsible, setDealResponsible] = useState(currentMemberId ?? "");
   const [team, setTeam] = useState<{ id: string; name: string; role: string }[]>([]);
-  
+  // Task boards: templates saved from a card ("Salvar como modelo"); "" = blank task
+  const [templates, setTemplates] = useState<{ id: string; number: number; title: string }[]>([]);
+  const [templateId, setTemplateId] = useState("");
+
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCreatePipeline = async (e: React.FormEvent) => {
@@ -89,7 +92,8 @@ export function CrmButtons({
     if (!dealTitle.trim() || !pipeline?.stages?.[0]) return;
     
     // Validate required custom fields
-    if (pipeline.fieldsConfig && Array.isArray(pipeline.fieldsConfig)) {
+    // A template brings its own custom field values
+    if (!templateId && pipeline.fieldsConfig && Array.isArray(pipeline.fieldsConfig)) {
       for (let field of pipeline.fieldsConfig) {
         if (field.required && !customData[field.id]) {
           alertDialog(`O campo ${field.name} é obrigatório.`);
@@ -99,7 +103,13 @@ export function CrmButtons({
     }
 
     setIsLoading(true);
-    const res = await postDeal({
+    const res = templateId
+      ? await fetch("/api/crm/card", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fromTemplate: templateId, title: dealTitle, closeDate: dealDeadline || null, responsibleId: dealResponsible || null }),
+        })
+      : await postDeal({
       title: dealTitle,
       company: dealCompany,
       value: Number(dealValue) || 0,
@@ -117,10 +127,30 @@ export function CrmButtons({
       setDealDeadline("");
       setDealDescription("");
       setCustomData({});
+      setTemplateId("");
       setDealResponsible(currentMemberId ?? "");
       router.refresh();
     }
     setIsLoading(false);
+  };
+
+  useEffect(() => {
+    if (!isDealModalOpen || !isTasks) return;
+    const controller = new AbortController();
+    fetch(`/api/crm/card?templatesOf=${pipeline.id}`, { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setTemplates)
+      .catch(() => {});
+    return () => controller.abort();
+  }, [isDealModalOpen, isTasks, pipeline?.id]);
+
+  const deleteTemplate = async () => {
+    const template = templates.find((t) => t.id === templateId);
+    if (!template || !(await confirmDialog(`Excluir o modelo "${template.title}"?`, { danger: true, confirmLabel: "Excluir" }))) return;
+    const res = await fetch(`/api/crm/card?id=${template.id}`, { method: "DELETE" });
+    if (!res.ok) return alertDialog("Não foi possível excluir o modelo.");
+    setTemplates((list) => list.filter((t) => t.id !== template.id));
+    setTemplateId("");
   };
 
   useEffect(() => {
@@ -216,6 +246,47 @@ export function CrmButtons({
 
         <form onSubmit={handleCreateDeal} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
+          {isTasks && templates.length > 0 && (
+            <div className="crm-modal-group" style={{ marginBottom: 0 }}>
+              <label>Modelo</label>
+              <div className="crm-template-pick">
+                <Select
+                  value={templateId}
+                  disabled={isLoading}
+                  aria-label="Modelo"
+                  onChange={(e) => {
+                    setTemplateId(e.target.value);
+                    setDealTitle(templates.find((t) => t.id === e.target.value)?.title ?? "");
+                  }}
+                >
+                  <option value="">Tarefa em branco</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
+                </Select>
+                {templateId && (
+                  <>
+                    <a
+                      className="deal-icon-btn"
+                      title="Editar modelo"
+                      href={`/crm/deal/details/${templates.find((t) => t.id === templateId)?.number}`}
+                    >
+                      <Pencil size={16} />
+                    </a>
+                    {can("deal.delete") && (
+                      <button type="button" className="deal-icon-btn deal-icon-btn--danger" title="Excluir modelo" onClick={deleteTemplate}>
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+              {templateId && <small className="crm-modal-hint">Descrição, etiquetas, prioridade e checklist vêm do modelo.</small>}
+            </div>
+          )}
+
           <div className="crm-modal-group" style={{ marginBottom: 0 }}>
             <label>{isTasks ? "Título da Tarefa *" : "Título do Negócio *"}</label>
             <input
@@ -235,10 +306,10 @@ export function CrmButtons({
                 <label>Prazo</label>
                 <input type="date" value={dealDeadline} onChange={(e) => setDealDeadline(e.target.value)} disabled={isLoading} />
               </div>
-              <div className="crm-modal-group" style={{ marginBottom: 0 }}>
+              {!templateId && <div className="crm-modal-group" style={{ marginBottom: 0 }}>
                 <label>Descrição</label>
                 <textarea rows={3} value={dealDescription} onChange={(e) => setDealDescription(e.target.value)} disabled={isLoading} />
-              </div>
+              </div>}
             </>
           ) : (
           <div style={{ display: 'flex', gap: '16px' }}>

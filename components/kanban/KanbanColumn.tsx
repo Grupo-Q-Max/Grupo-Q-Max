@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { Gauge, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { KanbanItem } from "./KanbanItem";
 import type { KanbanColumnData, KanbanItemBase, KanbanLabels } from "./types";
 
@@ -15,6 +15,7 @@ type KanbanColumnProps<T extends KanbanItemBase> = {
   onAddItem?: (title: string) => void;
   onRename?: (title: string) => void;
   onDelete?: () => void;
+  onSetLimit?: () => void;
 };
 
 export function KanbanColumn<T extends KanbanItemBase>({
@@ -25,7 +26,9 @@ export function KanbanColumn<T extends KanbanItemBase>({
   onAddItem,
   onRename,
   onDelete,
+  onSetLimit,
 }: KanbanColumnProps<T>) {
+  const overLimit = column.limit != null && column.items.length > column.limit;
   const visibleItems = isItemVisible ? column.items.filter(isItemVisible) : column.items;
   const [isAdding, setIsAdding] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState("");
@@ -77,14 +80,18 @@ export function KanbanColumn<T extends KanbanItemBase>({
           ) : (
             title
           )}
-          <span className="kanban-column__count">
+          <span
+            className={`kanban-column__count ${overLimit ? "is-over" : ""}`}
+            title={column.limit != null ? `Limite: ${column.limit}` : undefined}
+          >
             {visibleItems.length === column.items.length
               ? column.items.length
               : `${visibleItems.length}/${column.items.length}`}
+            {column.limit != null && ` · máx ${column.limit}`}
           </span>
         </div>
 
-        {(onRename || onDelete) && (
+        {(onRename || onDelete || onSetLimit) && (
           <div className="kanban-column__menu">
             <button className="kanban-column__menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
               <MoreHorizontal size={18} />
@@ -100,6 +107,17 @@ export function KanbanColumn<T extends KanbanItemBase>({
                     }}
                   >
                     <Pencil size={14} /> {labels.renameColumn}
+                  </button>
+                )}
+                {onSetLimit && (
+                  <button
+                    className="kanban-column__menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onSetLimit();
+                    }}
+                  >
+                    <Gauge size={14} /> {labels.setColumnLimit}
                   </button>
                 )}
                 {onDelete && (

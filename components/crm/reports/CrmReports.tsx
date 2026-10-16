@@ -102,6 +102,7 @@ export function CrmReports({
   goalMembers,
   goals,
   canManageGoals,
+  children,
 }: {
   deals: ReportDeal[];
   pipelines: PipelineOption[];
@@ -109,6 +110,8 @@ export function CrmReports({
   goalMembers: Option[];
   goals: Goal[];
   canManageGoals: boolean;
+  /** Extra sections after the deal reports (the task report) */
+  children?: ReactNode;
 }) {
   const [filters, setFilters] = useState(DEFAULTS);
   const [metric, setMetric] = useState<Metric>("value");
@@ -559,6 +562,7 @@ export function CrmReports({
             </table>
           </div>
         </section>
+        {children}
       </div>
     </>
   );

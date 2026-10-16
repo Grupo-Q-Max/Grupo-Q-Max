@@ -4,7 +4,7 @@ import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { onDealEnteredStage } from "@/lib/crm-automation";
 import { checkStageEntry, StageEntryError } from "@/lib/crm-qxback";
-import { snapshotBeforeMove } from "@/lib/crm-deal";
+import { snapshotBeforeMove, syncTaskStatus } from "@/lib/crm-deal";
 
 export async function POST(req: Request) {
   try {
@@ -35,13 +35,15 @@ export async function POST(req: Request) {
       });
     };
 
-    const updatedCard = await prisma.$transaction(async (tx) => {
+    const { card: updatedCard, recurringCopy } = await prisma.$transaction(async (tx) => {
       // The state the deal had in the stage it leaves becomes that stage's restore point
       await snapshotBeforeMove(tx, cardId, current.stageId, newStageId);
 
       // Without an index, just move the card to the stage (appended by its current order)
       if (typeof index !== "number") {
-        return tx.crmCard.update({ where: { id: cardId }, data: { stageId: newStageId } });
+        await tx.crmCard.update({ where: { id: cardId }, data: { stageId: newStageId } });
+        const recurringCopy = await syncTaskStatus(tx, cardId);
+        return { card: await tx.crmCard.findUniqueOrThrow({ where: { id: cardId } }), recurringCopy };
       }
 
       // With an index, insert the card at that position and renumber the stage's cards
@@ -60,12 +62,15 @@ export async function POST(req: Request) {
           .map((id) => tx.crmCard.update({ where: { id }, data: { order: ids.indexOf(id) } }))
       );
 
-      return tx.crmCard.update({
+      await tx.crmCard.update({
         where: { id: cardId },
         data: { stageId: newStageId, order: ids.indexOf(cardId) },
       });
+      const recurringCopy = await syncTaskStatus(tx, cardId);
+      return { card: await tx.crmCard.findUniqueOrThrow({ where: { id: cardId } }), recurringCopy };
     });
     await stageHistory();
+    if (recurringCopy) after(() => onDealEnteredStage(recurringCopy.id, recurringCopy.stageId));
     await notifyStageChanged(newStageId);
 
     return NextResponse.json({ success: true, card: updatedCard });

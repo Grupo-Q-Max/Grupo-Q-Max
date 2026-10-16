@@ -4,11 +4,15 @@ import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
+import { notifyAssigned } from "@/lib/crm-card-notify";
+import { sessionMemberId } from "@/lib/auth";
+import { deleteCardWithFiles } from "@/lib/crm-attachments";
 import {
   DealValidationError,
   DuplicateDealError,
   cardListInclude,
   companyIdByName,
+  copyCard,
   findDuplicateDeals,
   getDealDetails,
   restoreChanges,
@@ -18,7 +22,12 @@ import {
 
 export async function GET(req: Request) {
   try {
-    const id = new URL(req.url).searchParams.get("id");
+    const params = new URL(req.url).searchParams;
+    const archivedOf = params.get("archivedOf");
+    if (archivedOf) return listArchived(archivedOf);
+    const templatesOf = params.get("templatesOf");
+    if (templatesOf) return listTemplates(templatesOf);
+    const id = params.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     const hidden = await denyUnlessPipeline({ cardId: id });
     if (hidden) return hidden;
@@ -36,7 +45,11 @@ export async function POST(req: Request) {
   try {
     const denied = await denyUnless("deal.create");
     if (denied) return denied;
-    const { title, company, value, stageId, customData, referredBy, responsibleId, closeDate, comment, force } = await req.json();
+    const body = await req.json();
+    if (typeof body.duplicateOf === "string") return duplicate(body.duplicateOf);
+    if (typeof body.saveAsTemplate === "string") return saveAsTemplate(body.saveAsTemplate);
+    if (typeof body.fromTemplate === "string") return createFromTemplate(body.fromTemplate, body);
+    const { title, company, value, stageId, customData, referredBy, responsibleId, closeDate, comment, force } = body;
     if (!title || !stageId) return NextResponse.json({ error: "Missing title or stageId" }, { status: 400 });
     const hidden = await denyUnlessPipeline({ stageId });
     if (hidden) return hidden;
@@ -85,6 +98,89 @@ export async function POST(req: Request) {
   }
 }
 
+/** Archived cards of a pipeline (list view "Arquivados"), most recently archived first. */
+async function listArchived(pipelineId: string) {
+  const hidden = await denyUnlessPipeline({ pipelineId });
+  if (hidden) return hidden;
+  const cards = await prisma.crmCard.findMany({
+    where: { archivedAt: { not: null }, isTemplate: false, stage: { pipelineId } },
+    orderBy: { archivedAt: "desc" },
+    take: 500,
+    include: cardListInclude,
+  });
+  return NextResponse.json(cards.map(serializeListCard));
+}
+
+/** Templates of a pipeline, for the "Nova tarefa" modal. */
+async function listTemplates(pipelineId: string) {
+  const hidden = await denyUnlessPipeline({ pipelineId });
+  if (hidden) return hidden;
+  const templates = await prisma.crmCard.findMany({
+    where: { isTemplate: true, stage: { pipelineId } },
+    orderBy: { title: "asc" },
+    select: { id: true, number: true, title: true },
+  });
+  return NextResponse.json(templates);
+}
+
+/** "Salvar como modelo": template copy of the card (dates dropped), kept out of the board. */
+async function saveAsTemplate(id: string) {
+  const hidden = await denyUnlessPipeline({ cardId: id });
+  if (hidden) return hidden;
+  const template = await prisma.$transaction((tx) => copyCard(tx, id, { isTemplate: true, startDate: null, closeDate: null, history: { templateFrom: id } }));
+  return NextResponse.json({ id: template.id, number: template.number });
+}
+
+/** "Nova tarefa" from a template: copy in the first column with the title, deadline and responsible typed in the modal. */
+async function createFromTemplate(id: string, body: { title?: unknown; closeDate?: unknown; responsibleId?: unknown }) {
+  const hidden = await denyUnlessPipeline({ cardId: id });
+  if (hidden) return hidden;
+  const template = await prisma.crmCard.findUnique({ where: { id }, select: { isTemplate: true } });
+  if (!template?.isTemplate) return NextResponse.json({ error: "Modelo não encontrado." }, { status: 404 });
+
+  const title = typeof body.title === "string" ? body.title.trim().slice(0, 191) : "";
+  const closeDate = typeof body.closeDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.closeDate) ? new Date(body.closeDate) : null;
+  const card = await prisma.$transaction((tx) =>
+    copyCard(tx, id, {
+      ...(title && { title }),
+      responsibleId: typeof body.responsibleId === "string" && body.responsibleId ? body.responsibleId : null,
+      startDate: null,
+      closeDate,
+      history: { templateId: id },
+    })
+  );
+
+  await notifyStageChanged(card.stageId);
+  after(async () => {
+    if (!(await fireTriggers(card.id, { type: "DEAL_CREATED" }))) await onDealEnteredStage(card.id, card.stageId);
+  });
+  return NextResponse.json({ id: card.id, number: card.number });
+}
+
+/** "Duplicar": copy of the card (relations, description, checklist) at the end of the same column. */
+async function duplicate(id: string) {
+  const hidden = await denyUnlessPipeline({ cardId: id });
+  if (hidden) return hidden;
+  const card = await prisma.$transaction(async (tx) => {
+    const source = await tx.crmCard.findUnique({ where: { id }, select: { title: true, stageId: true, startDate: true, closeDate: true } });
+    if (!source) return null;
+    return copyCard(tx, id, {
+      stageId: source.stageId,
+      title: `${source.title} (cópia)`.slice(0, 191),
+      startDate: source.startDate,
+      closeDate: source.closeDate,
+      history: { duplicatedFrom: id },
+    });
+  });
+  if (!card) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  await notifyStageChanged(card.stageId);
+  after(async () => {
+    if (!(await fireTriggers(card.id, { type: "DEAL_CREATED" }))) await onDealEnteredStage(card.id, card.stageId);
+  });
+  return NextResponse.json({ id: card.id, number: card.number });
+}
+
 /**
  * Partial update from the deal panel: any scalar/relation field from
  * lib/crm-deal plus `stageId` and `status`. Every real change is recorded
@@ -114,8 +210,10 @@ export async function PATCH(req: Request) {
     }
 
     if (result.changed) await notifyStageChanged(result.stageId);
+    const authorId = sessionMemberId(req);
     after(async () => {
       if (result.recurringCopy) await onDealEnteredStage(result.recurringCopy.id, result.recurringCopy.stageId);
+      if (result.changedFields.includes("responsibleId")) await notifyAssigned(id, authorId);
       // A manual stage change runs the new stage's rules; other changes may fire a "campo alterado" trigger
       if (result.movedTo) await onDealEnteredStage(id, result.movedTo);
       else if (result.changedFields.length) await fireTriggers(id, { type: "FIELD_CHANGED", fields: result.changedFields });
@@ -150,9 +248,7 @@ export async function DELETE(req: Request) {
     const hidden = await denyUnlessPipeline({ cardId: id });
     if (hidden) return hidden;
 
-    const card = await prisma.crmCard.delete({
-      where: { id }
-    });
+    const card = await deleteCardWithFiles(id);
     await notifyStageChanged(card.stageId);
 
     return NextResponse.json({ success: true });

@@ -1,6 +1,6 @@
-import { Calendar, ListTodo, Trash2 } from "lucide-react";
+import { Calendar, Clock, ListChecks, ListTodo, Lock, Trash2 } from "lucide-react";
 import { Avatar } from "./deal/ui";
-import type { TeamMember } from "./deal/types";
+import { formatMinutes, priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
 
 export type CrmDeal = {
   id: string;
@@ -17,10 +17,19 @@ export type CrmDeal = {
   /** Next pending activity (see cardListInclude) */
   activities?: { id: string; title: string; deadline: string | null }[];
   _count?: { activities: number };
+  /** Checklist (TODO activities) of task cards */
+  checklist?: { done: number; total: number };
   /** Date from the server render, ISO string after a client sync */
   createdAt?: string | Date;
   /** Planned end date; the deadline on task boards */
   closeDate?: string | Date | null;
+  priority?: Priority | null;
+  tags?: CrmTagDto[];
+  /** Waits for a card that is not done yet ("Bloqueada por") */
+  blocked?: boolean;
+  /** Task boards: estimated / spent time in minutes */
+  estimateMinutes?: number | null;
+  spentMinutes?: number | null;
 };
 
 /** End of the due day (closeDate is a date-only column stored as UTC midnight). */
@@ -41,14 +50,30 @@ export function DealCard({
   const nextActivity = deal.activities?.[0];
   const pendingCount = deal._count?.activities ?? 0;
   const overdue = nextActivity?.deadline && new Date(nextActivity.deadline).getTime() < Date.now();
-  const taskOverdue = isTask && deal.closeDate && dueEnd(deal.closeDate) < Date.now();
+  const taskDone = isTask && deal.status === "WON";
+  const taskOverdue = isTask && !taskDone && deal.closeDate && dueEnd(deal.closeDate) < Date.now();
 
   return (
     <div
-      className={`kanban-card ${deal.status && deal.status !== "OPEN" ? `kanban-card--${deal.status.toLowerCase()}` : ""}`}
+      className={`kanban-card ${deal.status && deal.status !== "OPEN" ? `kanban-card--${deal.status.toLowerCase()}` : ""} ${taskDone ? "kanban-card--done" : ""}`}
       onClick={onOpen}
     >
       <div className="kanban-card__glow" />
+      {(deal.priority || !!deal.tags?.length || (deal.blocked && !taskDone)) && (
+        <div className="kanban-card__tags">
+          {deal.blocked && !taskDone && (
+            <span className="crm-blocked" title="Aguarda outra tarefa ser concluída">
+              <Lock size={11} /> Bloqueada
+            </span>
+          )}
+          {deal.priority && <span className={`crm-priority crm-priority--${deal.priority.toLowerCase()}`}>{priorityLabel(deal.priority)}</span>}
+          {deal.tags?.map((tag) => (
+            <span key={tag.id} className="crm-tag" style={{ "--tag-color": tag.color } as React.CSSProperties}>
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
       <h3 className="kanban-card__title">{deal.title}</h3>
       {(deal.company || deal.contactName) && (
         <div className="kanban-card__company">{[deal.contactName, deal.company].filter(Boolean).join(" · ")}</div>
@@ -93,13 +118,31 @@ export function DealCard({
 
       <div className="kanban-card__footer">
         <Avatar member={deal.responsible} size={26} />
+        {isTask && !!deal.checklist?.total && (
+          <span
+            className={`kanban-card__checklist ${deal.checklist.done === deal.checklist.total ? "is-complete" : ""}`}
+            title="Atividades concluídas / total"
+          >
+            <ListChecks size={12} /> {deal.checklist.done}/{deal.checklist.total}
+          </span>
+        )}
+        {isTask && (deal.estimateMinutes != null || deal.spentMinutes != null) && (
+          <span
+            className={`kanban-card__checklist ${deal.estimateMinutes != null && (deal.spentMinutes ?? 0) > deal.estimateMinutes ? "is-over" : ""}`}
+            title="Tempo gasto / estimativa"
+          >
+            <Clock size={12} /> {formatMinutes(deal.spentMinutes ?? 0)}
+            {deal.estimateMinutes != null && `/${formatMinutes(deal.estimateMinutes)}`}
+          </span>
+        )}
         <span className="kanban-card__date">
           {[
             pendingCount > 0 &&
+              !(isTask && deal.checklist?.total) &&
               (isTask
                 ? `${pendingCount} ${pendingCount === 1 ? "item pendente" : "itens pendentes"}`
                 : `${pendingCount} ${pendingCount === 1 ? "atividade" : "atividades"}`),
-            deal.status === "WON" && "Ganho",
+            deal.status === "WON" && (isTask ? "Concluída" : "Ganho"),
             deal.status === "LOST" && "Perdido",
           ]
             .filter(Boolean)

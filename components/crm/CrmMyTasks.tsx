@@ -4,14 +4,17 @@ import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Kanban as KanbanIcon, List, Plus, X } from "lucide-react";
+import { CalendarDays, Kanban as KanbanIcon, List, Plus, X } from "lucide-react";
 import { Kanban, type KanbanColumnData } from "@/components/kanban";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Select } from "@/components/ui/Select";
-import type { DueState } from "@/lib/crm-due";
+import { todayKey, type DueState } from "@/lib/crm-due";
+import { matches } from "@/lib/text-search";
 import type { MyTaskItem } from "@/lib/crm-my-tasks";
 import { useCan } from "./CrmAccess";
 import { postDeal } from "./CrmButtons";
+import { CrmCalendar } from "./CrmCalendar";
+import { FilterField, FilterSearch, type FilterChip } from "./FilterSearch";
 
 /** Item with due state and label computed on the server (avoids hydration drift around midnight) */
 export type MyTaskRow = MyTaskItem & { id: string; state: DueState; dueText: string };
@@ -25,13 +28,40 @@ const COLUMNS: { id: DueState; title: string }[] = [
   { id: "none", title: "Sem prazo" },
 ];
 
-/** /crm/me body: list or due-date kanban of the member's open items, plus "Nova Tarefa" in a TASKS pipeline. */
-export function CrmMyTasks({ items, pipelines, memberId }: { items: MyTaskRow[]; pipelines: TaskPipeline[]; memberId: string | null }) {
-  const [view, setView] = useState<"list" | "kanban">("list");
+type MyFilters = { q: string; type: string; state: string; pipeline: string };
+const NO_FILTERS: MyFilters = { q: "", type: "", state: "", pipeline: "" };
+const TYPES: Record<string, string> = { task: "Tarefas", deal: "Negócios", activity: "Atividades de negócios" };
+const STATES: Record<string, string> = { overdue: "Atrasadas", today: "Vencem hoje", upcoming: "Próximas", none: "Sem prazo" };
+const typeOf = (item: MyTaskRow) => (item.kind === "activity" ? "activity" : item.label === "Tarefa" ? "task" : "deal");
+
+/** /crm/me body: list, due-date kanban or calendar of the member's open items, plus "Nova Tarefa" in a TASKS pipeline. */
+export function CrmMyTasks({ items: allItems, pipelines, memberId }: { items: MyTaskRow[]; pipelines: TaskPipeline[]; memberId: string | null }) {
+  const [view, setView] = useState<"list" | "kanban" | "calendar">("list");
+  const [filters, setFilters] = useState(NO_FILTERS);
+  const set = (changes: Partial<MyFilters>) => setFilters((f) => ({ ...f, ...changes }));
+  const items = useMemo(
+    () =>
+      allItems.filter(
+        (i) =>
+          matches(filters.q, i.title, i.context, `#${i.number}`) &&
+          (!filters.type || typeOf(i) === filters.type) &&
+          (!filters.state || i.state === filters.state) &&
+          (!filters.pipeline || i.pipeline === filters.pipeline)
+      ),
+    [allItems, filters]
+  );
+  const pipelineNames = [...new Set(allItems.map((i) => i.pipeline))].sort((a, b) => a.localeCompare(b));
+  // Stable while nothing changes: the kanban resets its columns whenever this array changes
   const columns = useMemo<KanbanColumnData<MyTaskRow>[]>(
     () => COLUMNS.map((c) => ({ ...c, items: items.filter((i) => i.state === c.id) })),
     [items]
   );
+  const chips: FilterChip[] = [
+    filters.type && { key: "type", label: TYPES[filters.type], onRemove: () => set({ type: "" }) },
+    filters.state && { key: "state", label: STATES[filters.state], onRemove: () => set({ state: "" }) },
+    filters.pipeline && { key: "pipeline", label: filters.pipeline, onRemove: () => set({ pipeline: "" }) },
+  ].filter((c): c is FilterChip => Boolean(c));
+  const filtering = filters.q.trim() !== "" || chips.length > 0;
 
   return (
     <>
@@ -40,6 +70,38 @@ export function CrmMyTasks({ items, pipelines, memberId }: { items: MyTaskRow[];
         <NewTaskButton pipelines={pipelines} memberId={memberId} />
       </header>
       <div className="crm-toolbar">
+        <FilterSearch value={filters.q} onChange={(q) => set({ q })} placeholder="Buscar por título ou #nº" chips={chips} onClear={() => setFilters(NO_FILTERS)}>
+          <FilterField label="Tipo">
+            <Select className="crm-access__select" value={filters.type} onChange={(e) => set({ type: e.target.value })} aria-label="Tipo">
+              <option value="">Todos</option>
+              {Object.entries(TYPES).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </FilterField>
+          <FilterField label="Prazo">
+            <Select className="crm-access__select" value={filters.state} onChange={(e) => set({ state: e.target.value })} aria-label="Prazo">
+              <option value="">Todos</option>
+              {Object.entries(STATES).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </FilterField>
+          <FilterField label="Pipeline">
+            <Select className="crm-access__select" value={filters.pipeline} onChange={(e) => set({ pipeline: e.target.value })} aria-label="Pipeline">
+              <option value="">Todos</option>
+              {pipelineNames.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </Select>
+          </FilterField>
+        </FilterSearch>
         <div className="crm-toolbar__views">
           <button className={`view-btn ${view === "list" ? "is-active" : ""}`} onClick={() => setView("list")}>
             <List size={16} /> Lista
@@ -47,10 +109,33 @@ export function CrmMyTasks({ items, pipelines, memberId }: { items: MyTaskRow[];
           <button className={`view-btn ${view === "kanban" ? "is-active" : ""}`} onClick={() => setView("kanban")}>
             <KanbanIcon size={16} /> Kanban
           </button>
+          <button className={`view-btn ${view === "calendar" ? "is-active" : ""}`} onClick={() => setView("calendar")}>
+            <CalendarDays size={16} /> Calendário
+          </button>
         </div>
       </div>
 
-      {view === "kanban" ? (
+      {view === "calendar" ? (
+        <div className="crm-content">
+          <CrmCalendar
+            undated={items.filter((i) => !i.due).length}
+            items={items.flatMap((item) =>
+              item.due
+                ? [
+                    {
+                      key: item.key,
+                      day: item.dateOnly ? item.due.slice(0, 10) : todayKey(new Date(item.due)),
+                      title: item.title,
+                      label: item.kind === "activity" ? item.label : undefined,
+                      tone: item.state === "overdue" ? ("overdue" as const) : undefined,
+                      href: `/crm/deal/details/${item.number}`,
+                    },
+                  ]
+                : []
+            )}
+          />
+        </div>
+      ) : view === "kanban" ? (
         <div className="crm-content">
           {/* Read-only: columns are due states, so there is nothing to drag into */}
           <Kanban<MyTaskRow>
@@ -68,7 +153,7 @@ export function CrmMyTasks({ items, pipelines, memberId }: { items: MyTaskRow[];
       ) : (
         <div className="crm-list-view">
           {items.length === 0 ? (
-            <p className="crm-my-tasks__empty">Nada pendente com você.</p>
+            <p className="crm-my-tasks__empty">{filtering ? "Nada corresponde aos filtros." : "Nada pendente com você."}</p>
           ) : (
             <table className="crm-table crm-my-tasks">
               <thead>

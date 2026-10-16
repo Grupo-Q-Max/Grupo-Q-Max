@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { visiblePipelineWhere } from "@/lib/crm-access";
+import { activeCard } from "@/lib/crm-deal";
 
 const LIMIT = 8;
 
@@ -7,6 +9,7 @@ const LIMIT = 8;
  * Autocomplete for the deal panel, so existing companies, contacts and catalog
  * products are linked instead of duplicated.
  * GET /api/crm/lookup?type=company|contact|product&q=...
+ * type=card&pipelineId=...: cards of a pipeline the user sees, by title or #number ("Bloqueada por").
  */
 export async function GET(req: Request) {
   try {
@@ -59,6 +62,22 @@ export async function GET(req: Request) {
         take: LIMIT,
       });
       return NextResponse.json(products.map((p) => ({ id: p.id, name: p.name, price: p.price.toNumber() })));
+    }
+
+    if (type === "card") {
+      const pipelineId = url.searchParams.get("pipelineId") ?? "";
+      const number = Number(q.replace(/^#/, ""));
+      const cards = await prisma.crmCard.findMany({
+        where: {
+          ...activeCard,
+          stage: { pipelineId, pipeline: await visiblePipelineWhere() },
+          OR: [{ title: { contains: q } }, ...(Number.isInteger(number) && number > 0 ? [{ number }] : [])],
+        },
+        orderBy: { number: "desc" },
+        take: LIMIT,
+        select: { id: true, number: true, title: true, status: true },
+      });
+      return NextResponse.json(cards.map((c) => ({ ...c, name: `#${c.number} ${c.title}` })));
     }
 
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });

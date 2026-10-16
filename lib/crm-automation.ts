@@ -9,7 +9,7 @@ import type {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notifyMember, notifyPipelineChanged } from "@/lib/crm-realtime";
-import { snapshotBeforeMove, updateDeal } from "@/lib/crm-deal";
+import { snapshotBeforeMove, syncTaskStatus, updateDeal } from "@/lib/crm-deal";
 import { notifyQxbackStage } from "@/lib/crm-qxback";
 import {
   DEAL_STATUSES,
@@ -745,10 +745,11 @@ export async function moveDealToStage(cardId: string, stageId: string, trigger?:
         },
       },
     });
-    return to;
+    return { to, copy: await syncTaskStatus(tx, cardId) };
   });
   if (!moved) return;
 
-  notifyPipelineChanged(moved.pipelineId);
-  await onDealEnteredStage(cardId, moved.id);
+  notifyPipelineChanged(moved.to.pipelineId);
+  await onDealEnteredStage(cardId, moved.to.id);
+  if (moved.copy) await onDealEnteredStage(moved.copy.id, moved.copy.stageId);
 }

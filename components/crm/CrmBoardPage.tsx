@@ -8,12 +8,12 @@ import { prisma } from "@/lib/prisma";
 import { currentPermissions, visiblePipelineWhere } from "@/lib/crm-access";
 import { isQxbackStage } from "@/lib/crm-qxback";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
-import { cardListInclude, serializeListCard } from "@/lib/crm-deal";
+import { activeCard, cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
 const pipelineInclude = {
   stages: {
     orderBy: { order: "asc" as const },
-    include: { cards: { orderBy: { order: "asc" as const }, include: cardListInclude } },
+    include: { cards: { where: activeCard, orderBy: { order: "asc" as const }, include: cardListInclude } },
   },
   groups: { select: { groupId: true } },
   members: { select: { memberId: true } },

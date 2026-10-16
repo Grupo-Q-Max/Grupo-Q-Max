@@ -102,13 +102,16 @@ export const formatDateOnly = (iso: string) => new Date(iso).toLocaleDateString(
  */
 export function LookupInput<T extends { id: string; name: string }>({
   type,
+  params = "",
   value,
   placeholder,
   onChange,
   onPick,
   describe,
 }: {
-  type: "company" | "contact" | "product";
+  type: "company" | "contact" | "product" | "card";
+  /** Extra query string for the lookup (e.g. "&pipelineId=...") */
+  params?: string;
   value: string;
   placeholder?: string;
   onChange: (value: string) => void;
@@ -125,7 +128,7 @@ export function LookupInput<T extends { id: string; name: string }>({
     }
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      fetch(`/api/crm/lookup?type=${type}&q=${encodeURIComponent(value.trim())}`, { signal: controller.signal })
+      fetch(`/api/crm/lookup?type=${type}&q=${encodeURIComponent(value.trim())}${params}`, { signal: controller.signal })
         .then((res) => (res.ok ? res.json() : []))
         .then(setItems)
         .catch(() => {});
@@ -134,7 +137,7 @@ export function LookupInput<T extends { id: string; name: string }>({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [type, value, focused]);
+  }, [type, params, value, focused]);
 
   return (
     <div className="deal-lookup">

@@ -522,6 +522,8 @@
 .deal-composer__options { display: flex; flex-wrap: wrap; gap: 12px; }
 .deal-composer__options label { display: inline-flex; align-items: center; gap: 6px; color: var(--deal-muted); }
 .deal-composer__actions { display: flex; gap: 8px; }
+.deal-mention-menu { position: static; box-shadow: none; }
+.deal-mention-menu button { display: flex; align-items: center; gap: 8px; }
 
 .deal-timeline__divider {
   position: relative;
@@ -683,6 +685,33 @@
 .kanban-card { cursor: pointer; }
 .kanban-card--won { border-left: 3px solid #4ceb95; }
 .kanban-card--lost { border-left: 3px solid #ff4d6d; opacity: 0.75; }
+.kanban-card--done .kanban-card__title { text-decoration: line-through; opacity: 0.7; }
+.kanban-card__checklist { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #a5a0aa; position: relative; }
+.kanban-card__checklist.is-complete { color: #4ceb95; }
+.kanban-card__tags {display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; position: relative; }
+
+/* TASK PRIORITY AND TAGS */
+.crm-priority, .crm-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.crm-tag { --tag-color: #8b5cf6; background: color-mix(in srgb, var(--tag-color) 22%, transparent); color: color-mix(in srgb, var(--tag-color) 60%, #fff); }
+.deal-chip.crm-tag { padding: 4px 10px; font-size: 12px; }
+.crm-priority--low { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; }
+.crm-priority--medium { background: rgba(59, 130, 246, 0.18); color: #93c5fd; }
+.crm-priority--high { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+.crm-priority--urgent { background: rgba(255, 77, 109, 0.2); color: var(--deal-red); }
+.crm-tag-new { align-items: center; margin-top: 8px; }
+.crm-tag-colors { display: inline-flex; gap: 4px; }
+.crm-tag-color { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+.crm-tag-color.is-active { border-color: #fff; }
 
 /* LOOKUP (link existing company / contact / product) */
 .deal-lookup { position: relative; }
@@ -773,3 +802,38 @@
   .deal-body { padding: 16px 16px 24px; }
   .deal-savebar { flex-wrap: wrap; gap: 8px; }
 }
+
+/* ATTACHMENTS TAB */
+.deal-attachments { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.deal-attachments__drop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  border: 1px dashed var(--deal-border);
+  border-radius: 10px;
+  color: var(--deal-muted);
+}
+.deal-attachments__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.deal-attachments__list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--deal-border);
+  border-radius: 8px;
+  color: var(--deal-muted);
+}
+.deal-attachments__name { color: #fff; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.deal-attachments__name:hover { text-decoration: underline; }
+
+/* "Bloqueada por" chips: link to the blocking card; done blockers are faded */
+.deal-chip a { color: inherit; text-decoration: none; padding-left: 6px; }
+.deal-chip a:hover { text-decoration: underline; }
+.deal-chip--done { opacity: 0.55; }
+.deal-chip--done a { text-decoration: line-through; }
+
+/* Estimate / time spent side by side; spent past the estimate in red on the card */
+.deal-row > .deal-field { flex: 1; min-width: 0; }
+.kanban-card__checklist.is-over { color: #ff4d6d; }

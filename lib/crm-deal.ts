@@ -1,4 +1,5 @@
-import { Prisma, type CrmDealStatus, type CrmRecurrence } from "@prisma/client";
+import { Prisma, type CrmDealStatus, type CrmPriority, type CrmRecurrence } from "@prisma/client";
+import { formatMinutes, priorityLabel } from "@/components/crm/deal/types";
 import { prisma } from "@/lib/prisma";
 
 type Tx = Prisma.TransactionClient;
@@ -7,30 +8,45 @@ type Tx = Prisma.TransactionClient;
 // Kanban list
 // ---------------------------------------------------------------------------
 
-/** What the kanban card needs: company, main contact, responsible and next pending activity. */
+/** Cards that show on boards, lists, reports and reminders (archived ones and templates stay out). */
+export const activeCard = { archivedAt: null, isTemplate: false } satisfies Prisma.CrmCardWhereInput;
+
+/**
+ * What the kanban card needs: company, main contact, responsible, tags and the card's activities
+ * (reduced by serializeListCard to the next pending one, the pending count and the checklist count).
+ */
 export const cardListInclude = {
   company: { select: { name: true } },
   contacts: { orderBy: { order: "asc" }, take: 1, select: { contact: { select: { name: true } } } },
   responsible: { select: { id: true, name: true, role: true, photo: true } },
+  // ponytail: loads every activity of the card; fine while cards hold a handful, aggregate in SQL if that grows
   activities: {
-    where: { completed: false, type: { not: "COMMENT" } },
+    where: { type: { not: "COMMENT" } },
     orderBy: [{ deadline: "asc" }, { createdAt: "asc" }],
-    take: 1,
-    select: { id: true, title: true, deadline: true, type: true },
+    select: { id: true, title: true, deadline: true, type: true, completed: true },
   },
-  _count: { select: { activities: { where: { completed: false, type: { not: "COMMENT" } } } } },
+  tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+  // Open blockers only: a card is "Bloqueada" while one of them is not done
+  blockedBy: { where: { blockedBy: { status: "OPEN" } }, select: { blockedById: true } },
 } satisfies Prisma.CrmCardInclude;
 
 type ListCard = Prisma.CrmCardGetPayload<{ include: typeof cardListInclude }>;
 
 /** Flattens relations and converts Decimal so the card can cross the server → client boundary. */
-export function serializeListCard({ company, contacts, responsible, ...card }: ListCard) {
+export function serializeListCard({ company, contacts, responsible, tags, activities, blockedBy, ...card }: ListCard) {
+  const pending = activities.filter((a) => !a.completed);
+  const checklist = activities.filter((a) => a.type === "TODO");
   return {
     ...card,
     value: card.value.toNumber(),
     company: company?.name ?? null,
     contactName: contacts[0]?.contact.name ?? null,
     responsible: responsible && { id: responsible.id, name: responsible.name, role: responsible.role, image: responsible.photo },
+    tags: tags.map((t) => t.tag),
+    activities: pending.slice(0, 1).map(({ completed: _, ...a }) => a),
+    _count: { activities: pending.length },
+    checklist: { done: checklist.filter((a) => a.completed).length, total: checklist.length },
+    blocked: blockedBy.length > 0,
   };
 }
 
@@ -42,6 +58,8 @@ const dealDetailsInclude = {
   company: true,
   contacts: { orderBy: { order: "asc" }, include: { contact: true } },
   observers: { select: { memberId: true } },
+  tags: { select: { tagId: true } },
+  blockedBy: { orderBy: { createdAt: "asc" }, select: { blockedBy: { select: { id: true, number: true, title: true, status: true } } } },
   products: { orderBy: { order: "asc" } },
   activities: { orderBy: { createdAt: "desc" } },
   history: { orderBy: { createdAt: "desc" } },
@@ -63,7 +81,7 @@ const dealDetailsInclude = {
 type DealRow = Prisma.CrmCardGetPayload<{ include: typeof dealDetailsInclude }>;
 
 const toDto = (row: DealRow) => {
-  const { stage, company, contacts, observers, products, ...deal } = row;
+  const { stage, company, contacts, observers, products, tags, blockedBy, ...deal } = row;
   return {
     ...deal,
     value: deal.value.toNumber(),
@@ -85,6 +103,8 @@ const toDto = (row: DealRow) => {
       info: contact.info ?? "",
     })),
     observers: observers.map((o) => o.memberId),
+    tags: tags.map((t) => t.tagId),
+    blockedBy: blockedBy.map((d) => d.blockedBy),
     products: products.map((p) => ({
       id: p.id,
       productId: p.productId,
@@ -124,6 +144,8 @@ function snapshotOf(dto: DealDto) {
     responsibleId: dto.responsibleId,
     comment: dto.comment,
     recurrence: dto.recurrence,
+    priority: dto.priority,
+    tags: dto.tags,
     customData: dto.customData,
     company: dto.company,
     contacts: dto.contacts,
@@ -227,6 +249,9 @@ export const SCALAR_FIELDS = {
   responsibleId: "Responsável",
   comment: "Comentário",
   recurrence: "Negócio recorrente",
+  priority: "Prioridade",
+  estimateMinutes: "Estimativa",
+  spentMinutes: "Tempo gasto",
   customData: "Campos adicionais",
 } as const;
 
@@ -235,6 +260,8 @@ export const RELATION_FIELDS = {
   contacts: "Contatos",
   observers: "Observadores",
   products: "Serviços",
+  tags: "Etiquetas",
+  blockedBy: "Bloqueada por",
 } as const;
 
 type ScalarField = keyof typeof SCALAR_FIELDS;
@@ -242,6 +269,7 @@ type RelationField = keyof typeof RELATION_FIELDS;
 
 const RECURRENCES = new Set<CrmRecurrence>(["NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"]);
 export const STATUSES = new Set<CrmDealStatus>(["OPEN", "WON", "LOST"]);
+const PRIORITY_VALUES = new Set<CrmPriority>(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 
 function parseScalar(field: ScalarField, value: unknown) {
   switch (field) {
@@ -258,10 +286,18 @@ function parseScalar(field: ScalarField, value: unknown) {
       return Boolean(value);
     case "recurrence":
       return RECURRENCES.has(value as CrmRecurrence) ? value : "NONE";
+    case "priority":
+      return PRIORITY_VALUES.has(value as CrmPriority) ? value : null;
     case "customData":
       return value && typeof value === "object" ? value : null;
     case "referredBy":
       return blankToNull(value)?.slice(0, 200) ?? null;
+    case "estimateMinutes":
+    case "spentMinutes": {
+      // Whole minutes, up to a year of work; anything else clears the field
+      const minutes = Math.round(Number(value));
+      return value !== null && value !== "" && Number.isFinite(minutes) && minutes >= 0 ? Math.min(minutes, 525_600) : null;
+    }
     default:
       return blankToNull(value);
   }
@@ -308,6 +344,12 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
 
     (data as Record<string, unknown>)[field] = field === "customData" && next === null ? Prisma.DbNull : next;
     history.push(await fieldHistory(tx, field, SCALAR_FIELDS[field], current[field], next));
+  }
+
+  if ("archived" in changes && Boolean(changes.archived) !== Boolean(current.archivedAt)) {
+    const archived = Boolean(changes.archived);
+    data.archivedAt = archived ? new Date() : null;
+    history.push({ type: "FIELD_CHANGED", data: { field: "archived", label: "Arquivado", from: archived ? "Não" : "Sim", to: archived ? "Sim" : "Não" } });
   }
 
   for (const key of Object.keys(changes)) {
@@ -357,8 +399,36 @@ export async function applyDealChanges(tx: Tx, dealId: string, changes: Record<s
       });
     }
 
+    if (field === "tags") {
+      const requested = [...new Set((changes.tags as string[] | null) ?? [])];
+      // Drops tags deleted meanwhile (e.g. restoring an old snapshot)
+      const found = await tx.crmTag.findMany({ where: { id: { in: [...currentDto.tags, ...requested] } }, select: { id: true, name: true } });
+      const ids = requested.filter((id) => found.some((t) => t.id === id));
+      if (comparable([...currentDto.tags].sort()) === comparable([...ids].sort())) continue;
+      await tx.crmCardTag.deleteMany({ where: { cardId: dealId } });
+      if (ids.length) await tx.crmCardTag.createMany({ data: ids.map((tagId) => ({ cardId: dealId, tagId })) });
+      const tagNames = (list: string[]) => list.map((id) => found.find((t) => t.id === id)?.name).filter(Boolean).join(", ") || null;
+      history.push({ type: "FIELD_CHANGED", data: { field, label, from: tagNames(currentDto.tags), to: tagNames(ids) } });
+    }
+
+    if (field === "blockedBy") {
+      // Ids or { id } items; never the card itself, nor a card that already waits for this one (direct cycle)
+      const requested = [...new Set(((changes.blockedBy as (string | { id: string })[] | null) ?? []).map((x) => (typeof x === "string" ? x : x?.id)))];
+      const found = await tx.crmCard.findMany({
+        where: { id: { in: requested.filter((id) => id && id !== dealId) }, blockedBy: { none: { blockedById: dealId } } },
+        select: { id: true, number: true, title: true },
+      });
+      const before = currentDto.blockedBy.map((c) => c.id);
+      const ids = requested.filter((id) => found.some((c) => c.id === id));
+      if (comparable([...before].sort()) === comparable([...ids].sort())) continue;
+      await tx.crmCardDependency.deleteMany({ where: { cardId: dealId } });
+      if (ids.length) await tx.crmCardDependency.createMany({ data: ids.map((blockedById) => ({ cardId: dealId, blockedById })) });
+      const label = (list: { number: number; title: string }[]) => list.map((c) => `#${c.number} ${c.title}`).join(", ") || null;
+      history.push({ type: "FIELD_CHANGED", data: { field, label: RELATION_FIELDS.blockedBy, from: label(currentDto.blockedBy), to: label(ids.map((id) => found.find((c) => c.id === id)!)) } });
+    }
+
     if (field === "products") {
-      const input = ((changes.products as ProductInput[] | null) ?? []).filter((p) => p.name?.trim());
+      const input =((changes.products as ProductInput[] | null) ?? []).filter((p) => p.name?.trim());
       const normalize = (list: ProductInput[]) =>
         list.map((p) => ({
           name: p.name.trim(),
@@ -404,6 +474,7 @@ export async function findDuplicateDeals(
     where: {
       title: d.title,
       status: "OPEN",
+      ...activeCard,
       stage: { pipelineId: d.pipelineId },
       companyId: d.companyId,
       responsibleId: d.responsibleId,
@@ -414,6 +485,36 @@ export async function findDuplicateDeals(
     select: { number: true, title: true, stage: { select: { name: true } } },
   });
   return rows.map((r) => ({ number: r.number, title: r.title, stage: r.stage.name }));
+}
+
+/**
+ * Task boards have no Ganho/Perdido: their last column means "done", so entering it closes the
+ * task (WON) and leaving it reopens it (OPEN). Null on deal boards, where the status is set by hand.
+ */
+export async function taskStatusForStage(tx: Tx, stageId: string): Promise<CrmDealStatus | null> {
+  const stage = await tx.crmStage.findUnique({ where: { id: stageId }, select: { pipelineId: true, pipeline: { select: { kind: true } } } });
+  if (stage?.pipeline.kind !== "TASKS") return null;
+  const last = await tx.crmStage.findFirst({ where: { pipelineId: stage.pipelineId }, orderBy: { order: "desc" }, select: { id: true } });
+  return last?.id === stageId ? "WON" : "OPEN";
+}
+
+/**
+ * taskStatusForStage for moves that bypass updateDeal (kanban drag, automation triggers), after the
+ * card moved. Returns the recurring copy created by closing the task, if any.
+ */
+export async function syncTaskStatus(tx: Tx, cardId: string) {
+  const card = await tx.crmCard.findUniqueOrThrow({ where: { id: cardId }, select: { stageId: true, status: true } });
+  const status = await taskStatusForStage(tx, card.stageId);
+  if (!status || status === card.status) return null;
+  await tx.crmCard.update({
+    where: { id: cardId },
+    data: {
+      status,
+      closedAt: status === "OPEN" ? null : new Date(),
+      history: { create: { type: "STATUS_CHANGED", data: { from: card.status, to: status } } },
+    },
+  });
+  return status === "WON" ? createRecurringCopy(tx, cardId) : null;
 }
 
 /**
@@ -445,6 +546,7 @@ export async function updateDeal(
       data.stageId = to.id;
       data.order = await tx.crmCard.count({ where: { stageId: to.id } });
       history.push({ type: "STAGE_CHANGED", data: { from: from.name, to: to.name } });
+      status = (await taskStatusForStage(tx, to.id)) ?? status;
     }
 
     if (status && status !== current.status) {
@@ -490,6 +592,10 @@ async function fieldHistory(tx: Tx, field: ScalarField, label: string, from: unk
     const members = await tx.teamMember.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } });
     const name = (id: unknown) => members.find((m) => m.id === id)?.name ?? null;
     return { type: "FIELD_CHANGED", data: { field, label, from: name(from), to: name(to) } };
+  }
+  if (field === "priority") return { type: "FIELD_CHANGED", data: { field, label, from: priorityLabel(from as string), to: priorityLabel(to as string) } };
+  if (field === "estimateMinutes" || field === "spentMinutes") {
+    return { type: "FIELD_CHANGED", data: { field, label, from: formatMinutes(from as number | null), to: formatMinutes(to as number | null) } };
   }
   return { type: "FIELD_CHANGED", data: { field, label, from: displayScalar(from), to: displayScalar(to) } };
 }
@@ -620,6 +726,77 @@ function shiftDate(date: Date, recurrence: string) {
   return next;
 }
 
+type CopyOptions = {
+  /** Default: the pipeline's first stage */
+  stageId?: string;
+  title?: string;
+  /** Default: the source's responsible */
+  responsibleId?: string | null;
+  isTemplate?: boolean;
+  startDate: Date | null;
+  closeDate: Date | null;
+  /** Extra data of the copy's CREATED history entry (where it came from) */
+  history: Prisma.InputJsonObject;
+};
+
+/**
+ * Copies a card with its relations, description and checklist (TODO activities, unchecked) to the end of a
+ * stage. Used by recurring cards and "Duplicar".
+ */
+export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
+  const deal = await tx.crmCard.findUniqueOrThrow({
+    where: { id },
+    include: {
+      contacts: true,
+      observers: true,
+      products: true,
+      tags: true,
+      activities: { where: { type: "TODO" }, orderBy: { createdAt: "asc" } },
+      stage: { select: { pipeline: { select: { stages: { orderBy: { order: "asc" }, take: 1 } } } } },
+    },
+  });
+
+  const stageId = options.stageId ?? deal.stage.pipeline.stages[0].id;
+  const title = options.title ?? deal.title;
+  return tx.crmCard.create({
+    data: {
+      title,
+      value: deal.value,
+      currency: deal.currency,
+      stageId,
+      order: await tx.crmCard.count({ where: { stageId } }),
+      companyId: deal.companyId,
+      responsibleId: options.responsibleId === undefined ? deal.responsibleId : options.responsibleId,
+      isTemplate: options.isTemplate ?? false,
+      dealType: deal.dealType,
+      source: deal.source,
+      sourceInfo: deal.sourceInfo,
+      referredBy: deal.referredBy,
+      isPublic: deal.isPublic,
+      comment: deal.comment,
+      recurrence: deal.recurrence,
+      priority: deal.priority,
+      customData: deal.customData ?? Prisma.DbNull,
+      startDate: options.startDate,
+      closeDate: options.closeDate,
+      contacts: { createMany: { data: deal.contacts.map(({ contactId, order }) => ({ contactId, order })) } },
+      observers: { createMany: { data: deal.observers.map(({ memberId }) => ({ memberId })) } },
+      tags: { createMany: { data: deal.tags.map(({ tagId }) => ({ tagId })) } },
+      products: {
+        createMany: {
+          data: deal.products.map(({ productId, name, price, quantity, order }) => ({ productId, name, price, quantity, order })),
+        },
+      },
+      activities: {
+        createMany: {
+          data: deal.activities.map(({ type, title, description, responsibleId }) => ({ type, title, description, responsibleId })),
+        },
+      },
+      history: { create: { type: "CREATED", data: { title, ...options.history } } },
+    },
+  });
+}
+
 /**
  * "Negócio recorrente": closing a recurring deal as won creates the next one in the first stage.
  * Returns the new deal (null when the deal isn't recurring).
@@ -627,43 +804,14 @@ function shiftDate(date: Date, recurrence: string) {
 export async function createRecurringCopy(tx: Tx, id: string) {
   const deal = await tx.crmCard.findUnique({
     where: { id },
-    include: {
-      contacts: true,
-      observers: true,
-      products: true,
-      stage: { select: { pipeline: { select: { stages: { orderBy: { order: "asc" }, take: 1 } } } } },
-    },
+    select: { id: true, recurrence: true, startDate: true, closeDate: true, createdAt: true },
   });
   if (!deal || !(deal.recurrence in RECURRENCE_STEP)) return null;
 
-  const firstStage = deal.stage.pipeline.stages[0];
-  const copy = await tx.crmCard.create({
-    data: {
-      title: deal.title,
-      value: deal.value,
-      currency: deal.currency,
-      stageId: firstStage.id,
-      order: await tx.crmCard.count({ where: { stageId: firstStage.id } }),
-      companyId: deal.companyId,
-      responsibleId: deal.responsibleId,
-      dealType: deal.dealType,
-      source: deal.source,
-      sourceInfo: deal.sourceInfo,
-      referredBy: deal.referredBy,
-      isPublic: deal.isPublic,
-      recurrence: deal.recurrence,
-      customData: deal.customData ?? Prisma.DbNull,
-      startDate: shiftDate(deal.startDate ?? deal.createdAt, deal.recurrence),
-      closeDate: shiftDate(deal.closeDate ?? new Date(), deal.recurrence),
-      contacts: { createMany: { data: deal.contacts.map(({ contactId, order }) => ({ contactId, order })) } },
-      observers: { createMany: { data: deal.observers.map(({ memberId }) => ({ memberId })) } },
-      products: {
-        createMany: {
-          data: deal.products.map(({ productId, name, price, quantity, order }) => ({ productId, name, price, quantity, order })),
-        },
-      },
-      history: { create: { type: "CREATED", data: { title: deal.title, recurringFrom: deal.id } } },
-    },
+  const copy = await copyCard(tx, id, {
+    startDate: shiftDate(deal.startDate ?? deal.createdAt, deal.recurrence),
+    closeDate: shiftDate(deal.closeDate ?? new Date(), deal.recurrence),
+    history: { recurringFrom: deal.id },
   });
 
   await tx.crmHistory.create({

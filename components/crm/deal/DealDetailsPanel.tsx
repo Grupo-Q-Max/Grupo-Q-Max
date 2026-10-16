@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, BookmarkPlus, Check, Copy, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
 import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
+import { DealAttachments } from "./DealAttachments";
 import { formatMoney, pickDraft, type DealDetails, type DealDraft, type TeamMember } from "./types";
 import { formatDateOnly } from "./ui";
 import { useCan } from "../CrmAccess";
 import { sendStageMove } from "../stageEntry";
-import { confirmDialog } from "@/components/ui/Dialogs";
+import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
 
-type Tab = "general" | "products" | "history";
+type Tab = "general" | "products" | "files" | "history";
 
 type Props = {
   dealId: string;
@@ -20,6 +21,8 @@ type Props = {
   onClose: () => void;
   /** Called after the deal is changed or deleted so the board can refresh. */
   onChanged: () => void;
+  /** Opens another card in the panel (e.g. the copy made by "Duplicar"). */
+  onOpenCard: (card: { id: string; number: number }) => void;
 };
 
 const jsonRequest = (method: string, body: unknown): RequestInit => ({
@@ -50,7 +53,7 @@ function changedFields(draft: DealDraft, deal: DealDetails) {
   return (Object.keys(current) as (keyof DealDraft)[]).filter((key) => !sameValue(current[key], original[key]));
 }
 
-export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) {
+export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCard }: Props) {
   const can = useCan();
   const [deal, setDeal] = useState<DealDetails | null>(null);
   const [draft, setDraft] = useState<DealDraft | null>(null);
@@ -129,6 +132,10 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
   /** Immediate change (stage, status) — keeps unsaved edits in the form. */
   const patch = async (changes: Record<string, unknown>) => {
     setError(null);
+    const lastStage = deal?.pipeline.stages.at(-1)?.id;
+    if (isTasks && changes.stageId === lastStage && deal?.blockedBy.some((c) => c.status === "OPEN")) {
+      if (!(await confirmDialog("Esta tarefa está bloqueada por outra que ainda não foi concluída. Concluir mesmo assim?", { confirmLabel: "Concluir" }))) return;
+    }
     const send = (extra: Record<string, unknown> = {}) => fetch("/api/crm/card", jsonRequest("PATCH", { id: dealId, ...changes, ...extra }));
     // Stage moves follow the QXBACK stage rules (required services / lost reason)
     const res = "stageId" in changes ? await sendStageMove(send) : await send();
@@ -216,6 +223,28 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
     onClose();
   };
 
+  const duplicate = async () => {
+    if (isDirty && !(await confirmDialog("A cópia é feita do card salvo; as alterações não salvas ficam de fora. Continuar?", { confirmLabel: "Duplicar" }))) return;
+    setError(null);
+    const res = await fetch("/api/crm/card", jsonRequest("POST", { duplicateOf: dealId }));
+    if (!res.ok) {
+      setError((await res.json().catch(() => null))?.error ?? "Não foi possível duplicar.");
+      return;
+    }
+    onChanged();
+    onOpenCard(await res.json());
+  };
+
+  const saveAsTemplate = async () => {
+    setError(null);
+    const res = await fetch("/api/crm/card", jsonRequest("POST", { saveAsTemplate: dealId }));
+    if (!res.ok) {
+      setError((await res.json().catch(() => null))?.error ?? "Não foi possível salvar o modelo.");
+      return;
+    }
+    alertDialog("Modelo salvo. Use-o em \"Nova Tarefa\".");
+  };
+
   const copyLink = async () => {
     if (!deal) return;
     const url = `${window.location.origin}/crm/deal/details/${deal.number}`;
@@ -267,15 +296,37 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
                   {copied ? <Check size={15} /> : <Link2 size={15} />}
                 </button>
                 <span className="deal-header__number">#{deal.number}</span>
+                {deal.archivedAt && <span className="deal-status">Arquivado</span>}
+                {deal.isTemplate && <span className="deal-status">Modelo</span>}
                 {deal.status !== "OPEN" && (
                   <span className={`deal-status deal-status--${deal.status.toLowerCase()}`}>
-                    {deal.status === "WON" ? "Ganho" : "Perdido"}
+                    {deal.status === "WON" ? (isTasks ? "Concluída" : "Ganho") : "Perdido"}
                   </span>
                 )}
               </div>
 
               <div className="deal-header__actions">
                 {!isTasks && <ContactActions deal={deal} />}
+                {isTasks && !deal.isTemplate && can("deal.create") && (
+                  <button type="button" className="deal-icon-btn deal-icon-btn--boxed" title="Salvar como modelo" onClick={saveAsTemplate}>
+                    <BookmarkPlus size={16} />
+                  </button>
+                )}
+                {!deal.isTemplate && can("deal.create") && (
+                  <button type="button" className="deal-icon-btn deal-icon-btn--boxed" title="Duplicar" onClick={duplicate}>
+                    <Copy size={16} />
+                  </button>
+                )}
+                {!deal.isTemplate && can("deal.edit") && (
+                  <button
+                    type="button"
+                    className="deal-icon-btn deal-icon-btn--boxed"
+                    title={deal.archivedAt ? "Restaurar do arquivo" : "Arquivar"}
+                    onClick={() => patch({ archived: !deal.archivedAt })}
+                  >
+                    {deal.archivedAt ? <ArchiveRestore size={16} /> : <Archive size={16} />}
+                  </button>
+                )}
                 {can("deal.delete") && (
                   <button type="button" className="deal-icon-btn deal-icon-btn--boxed deal-icon-btn--danger" title={isTasks ? "Excluir tarefa" : "Excluir negócio"} onClick={remove}>
                     <Trash2 size={16} />
@@ -306,6 +357,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
                 [
                   ["general", "Geral"],
                   ["products", `Serviços${deal.products.length ? ` (${deal.products.length})` : ""}`],
+                  ["files", "Anexos"],
                   ["history", "Histórico"],
                 ] as [Tab, string][]
               ).filter(([value]) => !isTasks || value !== "products").map(([value, label]) => (
@@ -330,6 +382,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged }: Props) 
                 </div>
               )}
               {tab === "products" && <DealProductsEditor draft={draft} onChange={updateDraft} />}
+              {tab === "files" && <DealAttachments dealId={deal.id} />}
               {tab === "history" && (
                 <>
                   <StageSnapshots deal={deal} onRestore={can("deal.edit") ? restore : undefined} />

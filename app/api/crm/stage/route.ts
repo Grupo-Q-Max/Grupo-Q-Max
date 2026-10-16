@@ -35,19 +35,23 @@ export async function PUT(req: Request) {
   try {
     const denied = await denyUnless("stage.edit");
     if (denied) return denied;
-    const { id, name, order } = await req.json();
+    const { id, name, order, wipLimit } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     const hidden = await denyUnlessPipeline({ stageId: id });
     if (hidden) return hidden;
     if (name !== undefined && (typeof name !== "string" || !name.trim())) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
+    if (wipLimit !== undefined && wipLimit !== null && !(Number.isInteger(wipLimit) && wipLimit > 0 && wipLimit <= 1000)) {
+      return NextResponse.json({ error: "Informe um número inteiro de 1 a 1000." }, { status: 400 });
+    }
 
     const stage = await prisma.crmStage.update({
       where: { id },
       data: {
         ...(name !== undefined && { name: name.trim() }),
-        ...(order !== undefined && { order })
+        ...(order !== undefined && { order }),
+        ...(wipLimit !== undefined && { wipLimit })
       }
     });
     notifyPipelineChanged(stage.pipelineId);
