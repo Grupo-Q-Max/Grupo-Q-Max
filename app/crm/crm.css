@@ -1887,6 +1887,9 @@ button.crm-bell {
   margin-top: 6px;
   color: #a5a0aa;
   font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 /* Task card waiting for another one ("Bloqueada por") */
