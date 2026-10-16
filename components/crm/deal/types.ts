@@ -12,6 +12,8 @@ export type DealActivity = {
   description: string | null;
   deadline: string | null;
   responsibleId: string | null;
+  /** Who wrote it; null = before authors were kept */
+  authorId: string | null;
   completed: boolean;
   completedAt: string | null;
   createdAt: string;
@@ -29,8 +31,15 @@ export type DealHistory = {
     | "TRIGGER_FIRED"
     | "STATE_RESTORED";
   data: Record<string, string | null> | null;
+  /** Who made the change; null = automation, trigger or older entry */
+  actorId: string | null;
   createdAt: string;
 };
+
+export type SubtaskCard = { id: string; number: number; title: string; status: "OPEN" | "WON" | "LOST"; responsibleId: string | null; closeDate: string | null };
+
+/** Time tracked on the card; endedAt null = timer running. */
+export type TimeEntry = { id: string; memberId: string | null; startedAt: string; endedAt: string | null; minutes: number };
 
 export type DealDetails = {
   id: string;
@@ -63,8 +72,17 @@ export type DealDetails = {
   /** "Bloqueia": cards that wait for this one (read-only, set on their side) */
   blocks: BlockerCard[];
   customData: Record<string, string> | null;
+  /** "HH:MM" the task is due on closeDate (Brazilian time) */
+  dueTime: string | null;
+  /** Minutes before closeDate + dueTime to remind the responsible */
+  reminderMinutes: number | null;
   estimateMinutes: number | null;
+  /** Sum of the finished time entries (read-only) */
   spentMinutes: number | null;
+  parentId: string | null;
+  parent: { id: string; number: number; title: string } | null;
+  subtasks: SubtaskCard[];
+  timeEntries: TimeEntry[];
   archivedAt: string | null;
   isTemplate: boolean;
   createdAt: string;
@@ -100,7 +118,8 @@ export type DealDraft = Pick<
   | "tags"
   | "blockedBy"
   | "estimateMinutes"
-  | "spentMinutes"
+  | "dueTime"
+  | "reminderMinutes"
   | "customData"
 >;
 
@@ -189,7 +208,8 @@ export function pickDraft(deal: DealDetails): DealDraft {
     tags: deal.tags,
     blockedBy: deal.blockedBy,
     estimateMinutes: deal.estimateMinutes,
-    spentMinutes: deal.spentMinutes,
+    dueTime: deal.dueTime,
+    reminderMinutes: deal.reminderMinutes,
     customData: deal.customData,
   };
 }

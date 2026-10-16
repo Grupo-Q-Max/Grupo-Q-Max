@@ -837,3 +837,23 @@
 /* Estimate / time spent side by side; spent past the estimate in red on the card */
 .deal-row > .deal-field { flex: 1; min-width: 0; }
 .kanban-card__checklist.is-over { color: #ff4d6d; }
+
+/* Task tools: timer, time entries and subtasks (DealTaskTools.tsx) */
+.deal-timer { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.deal-timer .deal-input { flex: 1; min-width: 90px; }
+.deal-timer button { display: inline-flex; align-items: center; gap: 5px; }
+.deal-timer__stop { color: var(--deal-red); }
+.deal-timer__entries { margin-top: 6px; font-size: 13px; color: var(--deal-muted); }
+.deal-timer__entries summary { cursor: pointer; }
+.deal-timer__entries ul,
+.deal-subtasks { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.deal-timer__entries li { display: grid; grid-template-columns: 1fr auto auto 24px; gap: 10px; align-items: center; }
+.deal-timer__entries b { color: var(--deal-text); font-weight: 600; }
+.deal-progress { height: 4px; border-radius: 4px; background: var(--deal-surface-2); overflow: hidden; }
+.deal-progress span { display: block; height: 100%; background: var(--deal-green); }
+.deal-subtasks li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--deal-muted); }
+.deal-subtasks a { flex: 1; min-width: 0; color: var(--deal-text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deal-subtasks a:hover { text-decoration: underline; }
+.deal-subtasks li.is-done { color: var(--deal-green); }
+.deal-subtasks li.is-done a { text-decoration: line-through; opacity: 0.6; }
+.deal-feed__by { margin-left: 6px; font-size: 12px; color: var(--deal-subtle); }

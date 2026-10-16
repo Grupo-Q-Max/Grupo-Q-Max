@@ -21,7 +21,9 @@ export default async function ReportsPage() {
 
   // ponytail: every deal goes to the client (scalar fields only) and is aggregated there;
   // move to groupBy in a /api/crm/reports route if the table grows past ~20k deals
-  const [deals, pipelines, members, goalMembers, goals, tasks] = await Promise.all([
+  // Time entries of the last year (the widest period of the task report)
+  const timeFrom = new Date(Date.now() - 366 * 86_400_000);
+  const [deals, pipelines, members, goalMembers, goals, tasks, timeEntries] = await Promise.all([
     prisma.crmCard.findMany({
       where: { ...activeCard, stage: { pipeline: pipelineWhere } },
       select: {
@@ -56,6 +58,10 @@ export default async function ReportsPage() {
       where: { ...activeCard, stage: { pipeline: { ...visible, kind: "TASKS" } } },
       select: { responsibleId: true, status: true, closedAt: true, closeDate: true, createdAt: true, estimateMinutes: true, spentMinutes: true, responsible: { select: { id: true, name: true } } },
     }),
+    prisma.crmTimeEntry.findMany({
+      where: { endedAt: { gte: timeFrom }, card: { ...activeCard, stage: { pipeline: { ...visible, kind: "TASKS" } } } },
+      select: { memberId: true, endedAt: true, minutes: true, member: { select: { id: true, name: true } } },
+    }),
   ]);
 
   return (
@@ -80,7 +86,12 @@ export default async function ReportsPage() {
           closeDate: closeDate?.toISOString().slice(0, 10) ?? null,
           createdAt: createdAt.toISOString(),
         }))}
-        members={[...new Map(tasks.flatMap((t) => (t.responsible ? [[t.responsible.id, t.responsible]] : []))).values()]}
+        members={[
+          ...new Map(
+            [...tasks.map((t) => t.responsible), ...timeEntries.map((e) => e.member)].flatMap((m) => (m ? [[m.id, m] as const] : []))
+          ).values(),
+        ]}
+        timeEntries={timeEntries.map((e) => ({ memberId: e.memberId, endedAt: e.endedAt!.toISOString(), minutes: e.minutes }))}
       />
     </CrmReports>
   );

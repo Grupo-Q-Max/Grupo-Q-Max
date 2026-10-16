@@ -64,7 +64,10 @@ model TeamMember {
 
   responsibleDeals      CrmCard[]                 @relation("DealResponsible")
   observedDeals         CrmDealObserver[]
-  activities            CrmActivity[]
+  activities            CrmActivity[]             @relation("ActivityResponsible")
+  authoredActivities    CrmActivity[]             @relation("ActivityAuthor")
+  historyActions        CrmHistory[]
+  timeEntries           CrmTimeEntry[]
   automationActivities  CrmAutomationActivity[]
   automationDealUpdates CrmAutomationDealUpdate[]
   notifications         CrmNotification[]
@@ -324,8 +327,15 @@ model CrmCard {
   archivedAt         DateTime?
   /// Template of its pipeline ("Salvar como modelo"): never on the board, copied by "Nova tarefa" → modelo
   isTemplate         Boolean       @default(false)
-  /// Task boards: estimated and spent time, in minutes (typed by hand)
+  /// Task boards: time of day the task is due on closeDate ("HH:MM", Brazilian time); null = any time that day
+  dueTime            String?       @db.VarChar(5)
+  /// Task boards: minutes before closeDate + dueTime to remind the responsible; null = no such reminder
+  reminderMinutes    Int?
+  /// Instant of the minutes-before reminder already sent; a new date, time or lead gets its own reminder
+  timeRemindedFor    DateTime?
+  /// Task boards: estimated time, in minutes (typed by hand)
   estimateMinutes    Int?
+  /// Cached sum of the card's finished CrmTimeEntry minutes, kept in sync by lib/crm-time.ts
   spentMinutes       Int?
 
   stageId       String
@@ -334,6 +344,10 @@ model CrmCard {
   company       CrmCompany? @relation(fields: [companyId], references: [id], onDelete: SetNull)
   responsibleId String?
   responsible   TeamMember? @relation("DealResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+  /// Subtask of this card (task boards, one level, same pipeline); deleting the parent keeps its subtasks
+  parentId      String?
+  parent        CrmCard?    @relation("CardSubtasks", fields: [parentId], references: [id], onDelete: SetNull)
+  subtasks      CrmCard[]   @relation("CardSubtasks")
 
   contacts       CrmDealContact[]
   observers      CrmDealObserver[]
@@ -341,11 +355,12 @@ model CrmCard {
   tags           CrmCardTag[]
   attachments    CrmAttachment[]
   /// Cards that must be done before this one ("Bloqueada por") / cards this one blocks
-  blockedBy      CrmCardDependency[] @relation("CardBlockedBy")
-  blocks         CrmCardDependency[] @relation("CardBlocks")
+  blockedBy      CrmCardDependency[]    @relation("CardBlockedBy")
+  blocks         CrmCardDependency[]    @relation("CardBlocks")
   activities     CrmActivity[]
   history        CrmHistory[]
   stageSnapshots CrmDealStageSnapshot[]
+  timeEntries    CrmTimeEntry[]
 
   automationRuns CrmAutomationRun[]
   notifications  CrmNotification[]
@@ -358,6 +373,25 @@ model CrmCard {
   @@index([responsibleId])
   @@index([status, closedAt])
   @@index([status, closeDate])
+  @@index([parentId])
+}
+
+/// Time worked on a card, by the timer (endedAt null while running) or typed by hand. `minutes` is set when
+/// the entry ends; CrmCard.spentMinutes caches the sum. One running entry per member, enforced by lib/crm-time.ts.
+model CrmTimeEntry {
+  id        String      @id @default(cuid())
+  cardId    String
+  card      CrmCard     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  /// Who worked; null = removed member or time typed before the timer existed (still counts on the card)
+  memberId  String?
+  member    TeamMember? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  startedAt DateTime
+  endedAt   DateTime?
+  minutes   Int         @default(0)
+  createdAt DateTime    @default(now())
+
+  @@index([cardId])
+  @@index([memberId, endedAt])
 }
 
 /// Monthly sales goal of a member: won deal value (CrmCard.value by closedAt) they should reach in `month`.
@@ -527,7 +561,10 @@ model CrmActivity {
   description   String?         @db.Text
   deadline      DateTime?
   responsibleId String?
-  responsible   TeamMember?     @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  responsible   TeamMember?     @relation("ActivityResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+  /// Who wrote it (comments: only they or an admin edit/delete it); null = created before authors were kept
+  authorId      String?
+  author        TeamMember?     @relation("ActivityAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   completed     Boolean         @default(false)
   completedAt   DateTime?
   /// deadline whose due reminder already went out; a new deadline gets its own reminder
@@ -539,20 +576,25 @@ model CrmActivity {
 
   @@index([cardId])
   @@index([responsibleId])
+  @@index([authorId])
   @@index([completed, deadline])
 }
 
 /// Append-only audit log of the deal timeline. `data` is a snapshot of the change
 /// (names, old/new values) so entries stay readable after related rows change.
 model CrmHistory {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   cardId    String
-  card      CrmCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  card      CrmCard     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   type      String // CREATED, STAGE_CHANGED, FIELD_CHANGED, STATUS_CHANGED, RECURRENCE_CREATED, AUTOMATION_RUN, TRIGGER_FIRED
   data      Json?
-  createdAt DateTime @default(now())
+  /// Who made the change; null = automation, trigger, QXBACK or entries older than this column
+  actorId   String?
+  actor     TeamMember? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt DateTime    @default(now())
 
   @@index([cardId])
+  @@index([actorId])
 }
 
 /// Full deal state (deal panel fields) when the deal left a stage: the restore

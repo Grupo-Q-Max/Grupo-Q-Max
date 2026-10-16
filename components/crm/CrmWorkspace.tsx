@@ -278,7 +278,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
             TASK_STATUSES[c.status ?? "OPEN"] ?? c.status,
             priorityLabel(c.priority ?? null),
             c.tags?.map((t) => t.name).join(", "),
-            day(c.closeDate),
+            [day(c.closeDate), c.closeDate && c.dueTime].filter(Boolean).join(" "),
             c.responsible?.name,
             formatMinutes(c.estimateMinutes ?? null),
             formatMinutes(c.spentMinutes ?? null),
@@ -499,7 +499,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                         </span>
                       </td>
                       <td className={card.status !== "WON" && matchesDue(card, "overdue") ? "crm-table__overdue" : undefined}>
-                        {card.closeDate ? new Date(card.closeDate).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "—"}
+                        {card.closeDate ? `${new Date(card.closeDate).toLocaleDateString("pt-BR", { timeZone: "UTC" })}${card.dueTime ? ` ${card.dueTime}` : ""}` : "—"}
                       </td>
                       <td>{card.responsible?.name ?? "—"}</td>
                     </tr>

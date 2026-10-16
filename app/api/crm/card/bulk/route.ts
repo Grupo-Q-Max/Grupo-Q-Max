@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     else if (action === "priority") changes = { priority: stageId };
     else if (action === "archive") changes = { archived: value !== "restore" };
     else if (action === "due") {
-      if (value !== "" && !(typeof value === "string" && /^d{4}-d{2}-d{2}$/.test(value))) return NextResponse.json({ error: "Data inválida." }, { status: 400 });
+      if (value !== "" && !(typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value))) return NextResponse.json({ error: "Data inválida." }, { status: 400 });
       changes = { closeDate: value };
     } else if (action === "tag") {
       if (!stageId || !(await prisma.crmTag.count({ where: { id: stageId } }))) return NextResponse.json({ error: "Etiqueta inválida." }, { status: 400 });
@@ -61,7 +61,8 @@ export async function POST(req: Request) {
           id,
           action === "tag"
             ? { tags: [...(await prisma.crmCardTag.findMany({ where: { cardId: id }, select: { tagId: true } })).map((t) => t.tagId), stageId] }
-            : changes
+            : changes,
+          { actorId: authorId }
         );
         done++;
         if (!result.changed) continue;

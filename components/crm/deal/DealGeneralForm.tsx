@@ -26,6 +26,7 @@ import {
   type TeamMember,
 } from "./types";
 import { Avatar, Field, LinkedBadge, LookupInput, Section } from "./ui";
+import { TimeTracker, Subtasks } from "./DealTaskTools";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 
@@ -36,7 +37,19 @@ type Props = {
   team: TeamMember[];
   onStageChange: (stageId: string) => void;
   onOpenProducts: () => void;
+  /** Reloads the deal keeping unsaved edits (after the timer or a subtask changed it) */
+  onReload: () => void;
+  onOpenCard: (card: { id: string; number: number }) => void;
 };
+
+/** "Lembrar antes" options for a due time, in minutes */
+const REMINDER_OPTIONS = [
+  [15, "15 min antes"],
+  [30, "30 min antes"],
+  [60, "1 hora antes"],
+  [120, "2 horas antes"],
+  [1440, "1 dia antes"],
+] as const;
 
 const UTM_LABELS: Record<string, string> = {
   source: "utm_source",
@@ -278,7 +291,7 @@ function BlockedByField({ deal, blockedBy, onChange }: { deal: DealDetails; bloc
 }
 
 /** Task boards (pipeline kind TASKS): same card, only what an internal to-do needs. Checklist = activities in the timeline. */
-function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) {
+function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload, onOpenCard }: Props) {
   const responsible = team.find((m) => m.id === draft.responsibleId);
   return (
     <div className="deal-form">
@@ -296,11 +309,37 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) 
           </Select>
         </Field>
         <Field label="Prazo">
-          <DatePicker
-            className="deal-input deal-input--date"
-            value={toDateInput(draft.closeDate)}
-            onChange={(e) => onChange({ closeDate: e.target.value || null })}
-          />
+          <div className="deal-row">
+            <DatePicker
+              className="deal-input deal-input--date"
+              value={toDateInput(draft.closeDate)}
+              onChange={(e) => onChange({ closeDate: e.target.value || null, ...(!e.target.value && { dueTime: null, reminderMinutes: null }) })}
+            />
+            <input
+              type="time"
+              className="deal-input"
+              aria-label="Hora do prazo"
+              title="Hora do prazo (opcional)"
+              disabled={!draft.closeDate}
+              value={draft.dueTime ?? ""}
+              onChange={(e) => onChange({ dueTime: e.target.value || null, ...(!e.target.value && { reminderMinutes: null }) })}
+            />
+          </div>
+          {draft.dueTime && (
+            <Select
+              className="deal-input"
+              aria-label="Lembrete antes do prazo"
+              value={String(draft.reminderMinutes ?? "")}
+              onChange={(e) => onChange({ reminderMinutes: e.target.value ? Number(e.target.value) : null })}
+            >
+              <option value="">Sem lembrete antes</option>
+              {REMINDER_OPTIONS.map(([minutes, label]) => (
+                <option key={minutes} value={minutes}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
         <Field label="Responsável">
           <div className="deal-person">
@@ -331,14 +370,11 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange }: Props) 
         </Field>
         <TagsField tags={draft.tags} onChange={onChange} />
         <BlockedByField deal={deal} blockedBy={draft.blockedBy} onChange={onChange} />
-        <div className="deal-row">
-          <Field label="Estimativa">
-            <DurationInput minutes={draft.estimateMinutes} onChange={(estimateMinutes) => onChange({ estimateMinutes })} />
-          </Field>
-          <Field label="Tempo gasto">
-            <DurationInput minutes={draft.spentMinutes} onChange={(spentMinutes) => onChange({ spentMinutes })} />
-          </Field>
-        </div>
+        <Subtasks deal={deal} team={team} onReload={onReload} onOpenCard={onOpenCard} />
+        <Field label="Estimativa">
+          <DurationInput minutes={draft.estimateMinutes} onChange={(estimateMinutes) => onChange({ estimateMinutes })} />
+        </Field>
+        {!deal.isTemplate && <TimeTracker deal={deal} team={team} onReload={onReload} />}
         <Field label="Descrição">
           <textarea className="deal-input" rows={6} value={draft.comment ?? ""} onChange={(e) => onChange({ comment: e.target.value })} />
         </Field>

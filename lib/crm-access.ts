@@ -53,6 +53,9 @@ async function memberGroup(memberId: string | null) {
   return member.crmGroup ?? (await prisma.crmGroup.findFirst({ where: { isDefault: true }, select: groupSelect }));
 }
 
+/** True when the member is in the admin group (e.g. may edit anyone's comment). */
+export const isCrmAdmin = async (memberId: string | null) => Boolean((await memberGroup(memberId))?.isAdmin);
+
 /** Permissions of a team member: those of their group, or of the default group when they have none. Blocked members have none. */
 export async function memberPermissions(memberId: string | null): Promise<Set<Permission>> {
   const group = await memberGroup(memberId);

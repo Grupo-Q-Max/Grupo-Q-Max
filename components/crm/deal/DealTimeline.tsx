@@ -32,7 +32,7 @@ import {
   type TeamMember,
 } from "./types";
 import { Avatar, formatDateOnly, formatDateTime, formatDay, formatTime } from "./ui";
-import { useCan } from "../CrmAccess";
+import { useCan, useViewer } from "../CrmAccess";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
@@ -471,7 +471,7 @@ function HistoryFeed({
       deal.history.forEach((item) => list.push({ kind: "history", at: item.createdAt, item }));
       // Deals created before the history existed have no CREATED event
       if (!deal.history.some((h) => h.type === "CREATED")) {
-        const item: DealHistory = { id: "created", type: "CREATED", data: { title: deal.title }, createdAt: deal.createdAt };
+        const item: DealHistory = { id: "created", type: "CREATED", data: { title: deal.title }, actorId: null, createdAt: deal.createdAt };
         list.push({ kind: "history", at: deal.createdAt, item });
       }
     }
@@ -574,6 +574,10 @@ function FeedItem({
 }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(entry.kind === "comment" ? entry.item.title : "");
+  const { memberId, isAdmin } = useViewer();
+  // Who wrote the comment / made the change, shown next to the time
+  const byId = entry.kind === "history" ? entry.item.actorId : entry.kind === "comment" ? entry.item.authorId : null;
+  const by = byId ? findMember(byId)?.name : null;
 
   const frame = (icon: ReactNode, title: string, body: ReactNode, side?: ReactNode, muted = true) => (
     <div className={`deal-feed__item ${muted ? "is-muted" : ""}`}>
@@ -583,6 +587,7 @@ function FeedItem({
           <span>
             <strong>{title}</strong>
             <time>{formatTime(entry.at)}</time>
+            {by && <span className="deal-feed__by">por {by}</span>}
           </span>
           {side}
         </div>
@@ -593,6 +598,8 @@ function FeedItem({
 
   if (entry.kind === "comment") {
     const comment = entry.item;
+    // Comments belong to their author (and admins); older ones without author stay open
+    const canModify = !comment.authorId || comment.authorId === memberId || isAdmin;
     return frame(
       <MessageSquare size={14} />,
       "Comentário",
@@ -618,14 +625,16 @@ function FeedItem({
       ) : (
         <p className="deal-feed__text">{comment.title}</p>
       ),
-      <span className="deal-feed__actions">
-        <button type="button" className="deal-icon-btn" title="Editar" onClick={() => setEditing(true)}>
-          <Pencil size={13} />
-        </button>
-        <button type="button" className="deal-icon-btn deal-icon-btn--danger" title="Excluir" onClick={() => onDelete(comment)}>
-          <Trash2 size={13} />
-        </button>
-      </span>,
+      canModify && (
+        <span className="deal-feed__actions">
+          <button type="button" className="deal-icon-btn" title="Editar" onClick={() => setEditing(true)}>
+            <Pencil size={13} />
+          </button>
+          <button type="button" className="deal-icon-btn deal-icon-btn--danger" title="Excluir" onClick={() => onDelete(comment)}>
+            <Trash2 size={13} />
+          </button>
+        </span>
+      ),
       false
     );
   }

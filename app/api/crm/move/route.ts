@@ -26,16 +26,16 @@ export async function POST(req: Request) {
     });
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (current.stageId !== newStageId) await checkStageEntry(cardId, newStageId, lostReason);
+    const actorId = sessionMemberId(req);
 
     // Record the stage change in the deal timeline and run the new stage's automation rules
     const stageHistory = async () => {
       if (current.stageId === newStageId) return;
-      const authorId = sessionMemberId(req);
-      after(() => notifyMoved(cardId, newStageId, authorId));
+      after(() => notifyMoved(cardId, newStageId, actorId));
       after(() => onDealEnteredStage(cardId, newStageId));
       const stage = await prisma.crmStage.findUnique({ where: { id: newStageId }, select: { name: true } });
       await prisma.crmHistory.create({
-        data: { cardId, type: "STAGE_CHANGED", data: { from: current.stage.name, to: stage?.name ?? "" } },
+        data: { cardId, type: "STAGE_CHANGED", data: { from: current.stage.name, to: stage?.name ?? "" }, actorId },
       });
     };
 
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       // Without an index, just move the card to the stage (appended by its current order)
       if (typeof index !== "number") {
         await tx.crmCard.update({ where: { id: cardId }, data: { stageId: newStageId } });
-        const recurringCopy = await syncTaskStatus(tx, cardId);
+        const recurringCopy = await syncTaskStatus(tx, cardId, actorId);
         return { card: await tx.crmCard.findUniqueOrThrow({ where: { id: cardId } }), recurringCopy };
       }
 
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
         where: { id: cardId },
         data: { stageId: newStageId, order: ids.indexOf(cardId) },
       });
-      const recurringCopy = await syncTaskStatus(tx, cardId);
+      const recurringCopy = await syncTaskStatus(tx, cardId, actorId);
       return { card: await tx.crmCard.findUniqueOrThrow({ where: { id: cardId } }), recurringCopy };
     });
     await stageHistory();
