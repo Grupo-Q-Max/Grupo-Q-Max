@@ -2063,3 +2063,8 @@ button.crm-bell {
 }
 .crm-recurrence__day.is-active { background: #ff2b91; border-color: #ff2b91; color: #fff; }
 .crm-calendar__title--week { text-transform: none; }
+
+/* Kanban swimlanes (CrmWorkspace lanes): one row of columns per responsible, priority or tag */
+.crm-lane + .crm-lane { margin-top: 20px; }
+.crm-lane__title { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #e8e6ea; }
+.crm-lane__title span { font-size: 12px; font-weight: 500; color: #a5a0aa; }

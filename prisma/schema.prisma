@@ -281,6 +281,8 @@ model CrmStage {
   order           Int                       @default(0)
   /// WIP limit: the column header turns red with more cards than this (only a warning, drops are allowed)
   wipLimit        Int?
+  /// Column accent on the kanban ("#rrggbb"); null = the default accent
+  color           String?                   @db.VarChar(7)
   pipelineId      String
   pipeline        CrmPipeline               @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
   cards           CrmCard[]

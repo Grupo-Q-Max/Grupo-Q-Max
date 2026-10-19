@@ -13,7 +13,7 @@ import { PRIORITIES, formatMinutes } from "./deal/types";
 import { dueAt } from "@/lib/crm-due";
 import { AlertCircle, Clock } from "lucide-react";
 
-type CrmStage = { id: string; name: string; wipLimit?: number | null; cards: CrmDeal[] };
+type CrmStage = { id: string; name: string; wipLimit?: number | null; color?: string | null; cards: CrmDeal[] };
 type CrmPipeline = { id: string; kind?: "DEALS" | "TASKS"; stages: CrmStage[] };
 
 export type CardSort = "due" | "priority" | null;
@@ -31,7 +31,7 @@ export function sortCards<T extends CrmDeal>(cards: T[], sort: CardSort): T[] {
 }
 
 const toColumns = (stages: CrmStage[], sort: CardSort): KanbanColumnData<CrmDeal>[] =>
-  stages.map((stage) => ({ id: stage.id, title: stage.name, items: sortCards(stage.cards, sort), limit: stage.wipLimit }));
+  stages.map((stage) => ({ id: stage.id, title: stage.name, items: sortCards(stage.cards, sort), limit: stage.wipLimit, color: stage.color }));
 
 /** Column totals under the header: time and late tasks on task boards, summed value on deal boards. */
 function columnSummary(cards: CrmDeal[], isTasks: boolean) {
@@ -80,7 +80,10 @@ export function CrmKanban({
   sort = null,
   selected,
   onToggleSelect,
+  lane,
 }: {
+  /** Swimlane mode: no sync of its own (CrmWorkspace refreshes every lane); "rest" also hides the column editing */
+  lane?: "first" | "rest";
   pipeline: CrmPipeline;
   /** Shows each column sorted (view only: drops then keep the card's manual position) */
   sort?: CardSort;
@@ -96,6 +99,7 @@ export function CrmKanban({
   const can = useCan();
   const columns = useMemo(() => toColumns(pipeline.stages, sort), [pipeline.stages, sort]);
   const isTasks = pipeline.kind === "TASKS";
+  const editColumns = lane !== "rest";
   // Last card archived from its card button, offered back for a few seconds
   const [undo, setUndo] = useState<{ id: string; title: string } | null>(null);
   useEffect(() => {
@@ -147,7 +151,7 @@ export function CrmKanban({
         isItemVisible={isDealVisible}
         summarize={(cards) => columnSummary(cards, isTasks)}
         // Polling is only a fallback in case the SSE connection is blocked by a proxy
-        sync={{ fetchColumns, subscribe, pollingIntervalMs: 30_000 }}
+        sync={lane ? undefined : { fetchColumns, subscribe, pollingIntervalMs: 30_000 }}
         labels={{
           addItem: isTasks ? "Nova Tarefa" : "Novo Negócio",
           addItemPlaceholder: isTasks ? "Nome da tarefa..." : "Nome do negócio...",
@@ -156,7 +160,7 @@ export function CrmKanban({
           deleteColumn: "Excluir Coluna",
           setColumnLimit: "Limite de cards",
         }}
-        onMoveColumn={can("stage.edit") ? async (stageIds) => {
+        onMoveColumn={editColumns && can("stage.edit") ? async (stageIds) => {
           // Task boards: the last column means "done"; changing it reopens or closes tasks
           const last = pipeline.stages.at(-1);
           if (isTasks && last && stageIds.at(-1) !== last.id) {
@@ -208,12 +212,12 @@ export function CrmKanban({
           setUndo({ id: cardId, title: pipeline.stages.flatMap((s) => s.cards).find((c) => c.id === cardId)?.title ?? "" });
           router.refresh();
         } : undefined}
-        onRenameColumn={can("stage.edit") ? async (stageId, name) => {
+        onRenameColumn={editColumns && can("stage.edit") ? async (stageId, name) => {
           const res = await fetch("/api/crm/stage", jsonRequest("PUT", { id: stageId, name }));
           if (!res.ok) return false;
           router.refresh();
         } : undefined}
-        onSetColumnLimit={can("stage.edit") ? async (stageId, limit) => {
+        onSetColumnLimit={editColumns && can("stage.edit") ? async (stageId, limit) => {
           const text = await promptDialog("Máximo de cards nesta coluna (vazio = sem limite):", { confirmLabel: "Salvar", defaultValue: limit == null ? "" : String(limit) });
           if (text === null) return;
           const wipLimit = text.trim() === "" ? null : Number(text.trim());
@@ -222,7 +226,12 @@ export function CrmKanban({
           if (!res.ok) return alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível salvar o limite.");
           router.refresh();
         } : undefined}
-        onDeleteColumn={can("stage.delete") ? async (stageId) => {
+        onSetColumnColor={editColumns && can("stage.edit") ? async (stageId, color) => {
+          const res = await fetch("/api/crm/stage", jsonRequest("PUT", { id: stageId, color }));
+          if (!res.ok) return alertDialog("Não foi possível salvar a cor.");
+          router.refresh();
+        } : undefined}
+        onDeleteColumn={editColumns && can("stage.delete") ? async (stageId) => {
           if (!(await confirmDialog("Certeza que deseja excluir esta coluna?", { danger: true, confirmLabel: "Excluir" }))) return false;
           const res = await fetch(`/api/crm/stage?id=${stageId}`, { method: "DELETE" });
           if (!res.ok) {
@@ -232,7 +241,7 @@ export function CrmKanban({
           }
           router.refresh();
         } : undefined}
-        onAddColumn={can("stage.create") ? async () => {
+        onAddColumn={editColumns && can("stage.create") ? async () => {
           const name = (await promptDialog("Nome da nova coluna:", { confirmLabel: "Criar" }))?.trim();
           if (!name) return;
           const res = await fetch("/api/crm/stage", jsonRequest("POST", { name, pipelineId: pipeline.id }));

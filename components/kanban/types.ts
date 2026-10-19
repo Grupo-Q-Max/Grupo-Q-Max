@@ -8,6 +8,8 @@ export type KanbanColumnData<T extends KanbanItemBase> = {
   items: T[];
   /** WIP limit: the count turns red above it (a warning only) */
   limit?: number | null;
+  /** Accent color ("#rrggbb") of the column and its cards; null = the board accent */
+  color?: string | null;
 };
 
 /**
@@ -66,6 +68,8 @@ export type KanbanProps<T extends KanbanItemBase> = {
   onRenameColumn?: (columnId: string, title: string) => MaybeCancel | Promise<MaybeCancel>;
   /** Enables the column menu item that sets the WIP limit. */
   onSetColumnLimit?: (columnId: string, limit: number | null) => void;
+  /** Enables the color swatches in the column menu; null = back to the board accent */
+  onSetColumnColor?: (columnId: string, color: string | null) => void;
   /** Enables "move left/right" in the column menu; receives every column id in the new order. */
   onMoveColumn?: (columnIds: string[]) => MaybeCancel | Promise<MaybeCancel>;
   /** Enables the column menu with "delete column". */

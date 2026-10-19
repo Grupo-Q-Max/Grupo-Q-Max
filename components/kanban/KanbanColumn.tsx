@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { ArrowLeft, ArrowRight, Gauge, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
@@ -17,9 +17,13 @@ type KanbanColumnProps<T extends KanbanItemBase> = {
   onRename?: (title: string) => void;
   onDelete?: () => void;
   onSetLimit?: () => void;
+  onSetColor?: (color: string | null) => void;
   onMoveLeft?: () => void;
   onMoveRight?: () => void;
 };
+
+/** Column color choices; null = the board accent */
+const COLUMN_COLORS = [null, "#3b82f6", "#14d0c1", "#22c55e", "#eab308", "#f97316", "#ef4444", "#a855f7", "#64748b"];
 
 export function KanbanColumn<T extends KanbanItemBase>({
   column,
@@ -31,6 +35,7 @@ export function KanbanColumn<T extends KanbanItemBase>({
   onRename,
   onDelete,
   onSetLimit,
+  onSetColor,
   onMoveLeft,
   onMoveRight,
 }: KanbanColumnProps<T>) {
@@ -57,7 +62,7 @@ export function KanbanColumn<T extends KanbanItemBase>({
   };
 
   return (
-    <div className="kanban-column">
+    <div className="kanban-column" style={column.color ? ({ "--kanban-accent": column.color } as CSSProperties) : undefined}>
       <div className="kanban-column__header">
         <div
           className="kanban-column__title"
@@ -98,7 +103,7 @@ export function KanbanColumn<T extends KanbanItemBase>({
           </span>
         </div>
 
-        {(onRename || onDelete || onSetLimit || onMoveLeft || onMoveRight) && (
+        {(onRename || onDelete || onSetLimit || onSetColor || onMoveLeft || onMoveRight) && (
           <div className="kanban-column__menu">
             <button className="kanban-column__menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
               <MoreHorizontal size={18} />
@@ -148,6 +153,24 @@ export function KanbanColumn<T extends KanbanItemBase>({
                   >
                     <ArrowRight size={14} /> {labels.moveColumnRight}
                   </button>
+                )}
+                {onSetColor && (
+                  <div className="kanban-column__swatches" role="group" aria-label="Cor da coluna">
+                    {COLUMN_COLORS.map((color) => (
+                      <button
+                        key={color ?? "default"}
+                        type="button"
+                        className={`kanban-column__swatch ${(column.color ?? null) === color ? "is-active" : ""}`}
+                        style={color ? { background: color } : undefined}
+                        title={color ?? "Cor padrão"}
+                        aria-label={color ?? "Cor padrão"}
+                        onClick={() => {
+                          setMenuOpen(false);
+                          if ((column.color ?? null) !== color) onSetColor(color);
+                        }}
+                      />
+                    ))}
+                  </div>
                 )}
                 {onDelete && (
                   <button

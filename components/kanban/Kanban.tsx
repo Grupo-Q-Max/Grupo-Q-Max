@@ -52,6 +52,7 @@ export function Kanban<T extends KanbanItemBase>({
   onRenameColumn,
   onDeleteColumn,
   onSetColumnLimit,
+  onSetColumnColor,
   onMoveColumn,
   onAddColumn,
   sync,
@@ -293,6 +294,7 @@ export function Kanban<T extends KanbanItemBase>({
             onRename={onRenameColumn && ((title) => renameColumn(column.id, title))}
             onDelete={onDeleteColumn && (() => deleteColumn(column.id))}
             onSetLimit={onSetColumnLimit && (() => onSetColumnLimit(column.id, column.limit ?? null))}
+            onSetColor={onSetColumnColor && ((color) => onSetColumnColor(column.id, color))}
             onMoveLeft={onMoveColumn && index > 0 ? () => moveColumn(index, index - 1) : undefined}
             onMoveRight={onMoveColumn && index < columns.length - 1 ? () => moveColumn(index, index + 1) : undefined}
           />

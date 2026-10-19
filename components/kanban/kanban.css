@@ -297,3 +297,26 @@
 .kanban-card__delete:hover {
   color: var(--kanban-danger);
 }
+
+/* Column color swatches in the column menu; the default one shows the board accent striped */
+.kanban-column__swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 22px);
+  gap: 6px;
+  padding: 8px 12px;
+}
+
+.kanban-column__swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: repeating-linear-gradient(45deg, var(--kanban-text-subtle) 0 3px, transparent 3px 6px);
+  cursor: pointer;
+  padding: 0;
+}
+
+.kanban-column__swatch.is-active,
+.kanban-column__swatch:hover {
+  border-color: var(--kanban-text);
+}

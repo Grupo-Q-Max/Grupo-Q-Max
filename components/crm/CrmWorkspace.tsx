@@ -45,19 +45,23 @@ const DUE: Record<string, string> = { overdue: "Atrasada", today: "Vence hoje", 
 const VIEWS = ["kanban", "list", "calendar", "timeline", "activities"] as const;
 type View = (typeof VIEWS)[number];
 type Sort = "due" | "priority" | null;
+/** Kanban swimlanes: one row of columns per responsible, priority or tag */
+const LANES = { responsible: "Responsável", priority: "Prioridade", tag: "Etiqueta" } as const;
+type Lanes = keyof typeof LANES | null;
 
-/** Board URL with the filters, view and sort, so a filtered board can be shared and survives a reload. */
-function boardUrl(pipelineId: string, filters: DealFilters, view: View, sort: Sort) {
-  const query = boardQuery(filters, view, sort);
+/** Board URL with the filters, view, sort and lanes, so a filtered board can be shared and survives a reload. */
+function boardUrl(pipelineId: string, filters: DealFilters, view: View, sort: Sort, lanes: Lanes) {
+  const query = boardQuery(filters, view, sort, lanes);
   return `/crm?pipelineId=${encodeURIComponent(pipelineId)}${query && `&${query}`}`;
 }
 
-/** The filters, view and sort as a query string ("" = the default board); also what a saved view stores. */
-function boardQuery(filters: DealFilters, view: View, sort: Sort) {
+/** The filters, view, sort and lanes as a query string ("" = the default board); also what a saved view stores. */
+function boardQuery(filters: DealFilters, view: View, sort: Sort, lanes: Lanes) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);
   if (view !== "kanban") params.set("view", view);
   if (sort) params.set("sort", sort);
+  if (lanes) params.set("lanes", lanes);
   return params.toString();
 }
 
@@ -67,7 +71,13 @@ function readBoardUrl(search = window.location.search) {
   const filters = Object.fromEntries(Object.keys(NO_FILTERS).map((key) => [key, params.get(key) ?? ""])) as DealFilters;
   const view = VIEWS.find((v) => v === params.get("view")) ?? "kanban";
   const sort = params.get("sort");
-  return { filters, view, sort: (sort === "due" || sort === "priority" ? sort : null) as Sort };
+  const lanes = params.get("lanes");
+  return {
+    filters,
+    view,
+    sort: (sort === "due" || sort === "priority" ? sort : null) as Sort,
+    lanes: (lanes && Object.hasOwn(LANES, lanes) ? lanes : null) as Lanes,
+  };
 }
 
 /** Shortcuts outside text fields: "/" focuses the search, "n" opens "Nova tarefa / Novo negócio". */
@@ -202,6 +212,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   const router = useRouter();
   const [filters, setFilters] = useState(NO_FILTERS);
   const [sort, setSort] = useState<Sort>(null);
+  const [lanes, setLanes] = useState<Lanes>(null);
   useBoardShortcuts();
 
   // Filters, view and sort live in the URL (read once on mount, written back while the panel is closed)
@@ -214,6 +225,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     setFilters(fromUrl.filters);
     setView(fromUrl.view);
     setSort(fromUrl.sort);
+    setLanes(fromUrl.lanes);
   }, []);
   useEffect(() => {
     applyQuery();
@@ -221,9 +233,17 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   }, [applyQuery]);
   useEffect(() => {
     if (!urlRead) return;
-    closeUrl.current = boardUrl(pipeline.id, filters, view, sort);
+    closeUrl.current = boardUrl(pipeline.id, filters, view, sort, lanes);
     if (window.location.pathname === "/crm") window.history.replaceState(null, "", closeUrl.current);
-  }, [urlRead, pipeline.id, filters, view, sort]);
+  }, [urlRead, pipeline.id, filters, view, sort, lanes]);
+  // Swimlanes have no sync of their own: one realtime connection refreshes the board for every lane
+  const lanesOn = !!lanes && view === "kanban" && isTasks;
+  useEffect(() => {
+    if (!lanesOn) return;
+    const source = new EventSource(`/api/crm/events?pipelineId=${encodeURIComponent(pipeline.id)}`);
+    source.onmessage = () => router.refresh();
+    return () => source.close();
+  }, [lanesOn, pipeline.id, router]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [selecting, setSelecting] = useState(false);
   // List view "Arquivados": archived cards, loaded on demand (null = showing the board's cards)
@@ -259,6 +279,32 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   const tags = [...new Map(everyCard.flatMap((c) => (c.tags ?? []).map((t) => [t.id, t] as const))).values()].sort((a, b) =>
     a.name.localeCompare(b.name)
   );
+
+  // Swimlanes: only lanes that hold a card. A card with several tags shows in each tag lane.
+  // ponytail: dragging between lanes does not change the field (each lane is its own board); edit it in the panel
+  type Lane = { key: string; label: string; has: (deal: CrmDeal) => boolean };
+  const laneList: Lane[] | null = (() => {
+    if (!lanes || view !== "kanban" || !isTasks) return null;
+    let list: Lane[];
+    if (lanes === "responsible")
+      list = [...responsibles, [NO_RESPONSIBLE, "Sem responsável"] as const].map(([id, name]) => ({
+        key: id,
+        label: name,
+        has: (deal) => (deal.responsible?.id ?? NO_RESPONSIBLE) === id,
+      }));
+    else if (lanes === "priority")
+      list = [...[...PRIORITIES].reverse(), { value: NO_PRIORITY, label: "Sem prioridade" }].map((p) => ({
+        key: p.value,
+        label: p.label,
+        has: (deal) => (deal.priority ?? NO_PRIORITY) === p.value,
+      }));
+    else
+      list = [
+        ...tags.map((t) => ({ key: t.id, label: t.name, has: (deal: CrmDeal) => !!deal.tags?.some((x) => x.id === t.id) })),
+        { key: "none", label: "Sem etiqueta", has: (deal: CrmDeal) => !deal.tags?.length },
+      ];
+    return list.filter((lane) => everyCard.some(lane.has));
+  })();
 
   const chips: FilterChip[] = [
     filters.responsibleId && { key: "responsible", label: responsibleName(filters.responsibleId), onRemove: () => set({ responsibleId: "" }) },
@@ -454,7 +500,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
             </div>
           </FilterField>
         </FilterSearch>
-        <CrmSavedViews pipelineId={pipeline.id} query={boardQuery(filters, view, sort)} onApply={applyQuery} />
+        <CrmSavedViews pipelineId={pipeline.id} query={boardQuery(filters, view, sort, lanes)} onApply={applyQuery} />
         {view === "kanban" && (
           <button
             type="button"
@@ -474,6 +520,16 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
             <option value="">Ordem manual</option>
             <option value="due">Por prazo</option>
             <option value="priority">Por prioridade</option>
+          </Select>
+        )}
+        {view === "kanban" && isTasks && (
+          <Select className="crm-access__select crm-toolbar__sort" value={lanes ?? ""} onChange={(e) => setLanes((e.target.value || null) as Lanes)} aria-label="Raias">
+            <option value="">Sem raias</option>
+            {Object.entries(LANES).map(([value, label]) => (
+              <option key={value} value={value}>
+                Raias: {label.toLowerCase()}
+              </option>
+            ))}
           </Select>
         )}
         <div className="crm-toolbar__views">
@@ -523,15 +579,35 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                 }}
               />
             )}
-            <CrmKanban
-              pipeline={pipeline}
-              onOpenDeal={openDeal}
-              syncBoardRef={syncBoardRef}
-              isDealVisible={filtering ? isDealVisible : undefined}
-              sort={sort}
-              selected={selecting ? selected : undefined}
-              onToggleSelect={selecting ? toggle : undefined}
-            />
+            {laneList ? (
+              laneList.map((lane, i) => (
+                <section key={lane.key} className="crm-lane">
+                  <h3 className="crm-lane__title">
+                    {lane.label} <span>{allCards.filter(lane.has).length}</span>
+                  </h3>
+                  <CrmKanban
+                    pipeline={pipeline}
+                    onOpenDeal={openDeal}
+                    syncBoardRef={syncBoardRef}
+                    isDealVisible={(deal) => lane.has(deal) && (!filtering || isDealVisible(deal))}
+                    sort={sort}
+                    selected={selecting ? selected : undefined}
+                    onToggleSelect={selecting ? toggle : undefined}
+                    lane={i === 0 ? "first" : "rest"}
+                  />
+                </section>
+              ))
+            ) : (
+              <CrmKanban
+                pipeline={pipeline}
+                onOpenDeal={openDeal}
+                syncBoardRef={syncBoardRef}
+                isDealVisible={filtering ? isDealVisible : undefined}
+                sort={sort}
+                selected={selecting ? selected : undefined}
+                onToggleSelect={selecting ? toggle : undefined}
+              />
+            )}
           </>
         )}
 
