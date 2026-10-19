@@ -283,6 +283,9 @@ model CrmStage {
   wipLimit        Int?
   /// Column accent on the kanban ("#rrggbb"); null = the default accent
   color           String?                   @db.VarChar(7)
+  /// Card fields that must be filled before a manual move into this column (keys of REQUIRED_FIELDS in
+  /// components/crm/deal/types.ts); null = none. Automations and triggers skip the check.
+  requiredFields  Json?
   pipelineId      String
   pipeline        CrmPipeline               @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
   cards           CrmCard[]

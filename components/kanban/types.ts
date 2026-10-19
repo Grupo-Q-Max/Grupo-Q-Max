@@ -10,6 +10,8 @@ export type KanbanColumnData<T extends KanbanItemBase> = {
   limit?: number | null;
   /** Accent color ("#rrggbb") of the column and its cards; null = the board accent */
   color?: string | null;
+  /** Short text shown as a lock icon tooltip in the header (e.g. the column's required fields) */
+  note?: string | null;
 };
 
 /**
@@ -30,6 +32,7 @@ export type KanbanLabels = {
   renameColumn: string;
   deleteColumn: string;
   setColumnLimit: string;
+  columnRules: string;
   moveColumnLeft: string;
   moveColumnRight: string;
   syncing: string;
@@ -70,6 +73,8 @@ export type KanbanProps<T extends KanbanItemBase> = {
   onSetColumnLimit?: (columnId: string, limit: number | null) => void;
   /** Enables the color swatches in the column menu; null = back to the board accent */
   onSetColumnColor?: (columnId: string, color: string | null) => void;
+  /** Enables the column menu item that edits the column rules (labels.columnRules) */
+  onEditColumnRules?: (columnId: string) => void;
   /** Enables "move left/right" in the column menu; receives every column id in the new order. */
   onMoveColumn?: (columnIds: string[]) => MaybeCancel | Promise<MaybeCancel>;
   /** Enables the column menu with "delete column". */

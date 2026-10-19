@@ -15,12 +15,14 @@ type DialogOptions = {
   danger?: boolean;
 };
 
-type Kind = "alert" | "confirm" | "prompt";
-type Result = boolean | string | null | undefined;
+type Kind = "alert" | "confirm" | "prompt" | "checklist";
+type Result = boolean | string | string[] | null | undefined;
+/** checklistDialog options: value, label and whether it starts checked */
+type CheckItem = { value: string; label: string; checked: boolean };
 
-const CANCEL: Record<Kind, Result> = { alert: undefined, confirm: false, prompt: null };
+const CANCEL: Record<Kind, Result> = { alert: undefined, confirm: false, prompt: null, checklist: null };
 
-function open(kind: Kind, message: string, options: DialogOptions & { defaultValue?: string }) {
+function open(kind: Kind, message: string, options: DialogOptions & { defaultValue?: string; items?: CheckItem[] }) {
   return new Promise<Result>((resolve) => {
     const host = document.createElement("div");
     document.body.appendChild(host);
@@ -46,6 +48,10 @@ export const confirmDialog = (message: string, options: DialogOptions = {}) =>
 export const promptDialog = (message: string, options: DialogOptions & { defaultValue?: string } = {}) =>
   open("prompt", message, options) as Promise<string | null>;
 
+/** Checkboxes; resolves with the checked values, or null when cancelled. */
+export const checklistDialog = (message: string, items: CheckItem[], options: DialogOptions = {}) =>
+  open("checklist", message, { ...options, items }) as Promise<string[] | null>;
+
 function QDialog({
   kind,
   message,
@@ -54,11 +60,12 @@ function QDialog({
 }: {
   kind: Kind;
   message: string;
-  options: DialogOptions & { defaultValue?: string };
+  options: DialogOptions & { defaultValue?: string; items?: CheckItem[] };
   onDone: (result: Result) => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [value, setValue] = useState(options.defaultValue ?? "");
+  const [checked, setChecked] = useState(() => new Set(options.items?.filter((i) => i.checked).map((i) => i.value)));
   const closed = useRef(false);
 
   useEffect(() => {
@@ -90,13 +97,33 @@ function QDialog({
         className="qdialog__body"
         onSubmit={(e) => {
           e.preventDefault();
-          finish(kind === "confirm" ? true : kind === "prompt" ? value : undefined);
+          finish(kind === "confirm" ? true : kind === "prompt" ? value : kind === "checklist" ? [...checked] : undefined);
         }}
       >
         {options.title && <h2 className="qdialog__title">{options.title}</h2>}
         <p className="qdialog__message">{message}</p>
         {kind === "prompt" && (
           <input className="qdialog__input" autoFocus value={value} onChange={(e) => setValue(e.target.value)} />
+        )}
+        {kind === "checklist" && (
+          <div className="qdialog__checks">
+            {options.items?.map((item) => (
+              <label key={item.value} className="qdialog__check">
+                <input
+                  type="checkbox"
+                  checked={checked.has(item.value)}
+                  onChange={() =>
+                    setChecked((s) => {
+                      const next = new Set(s);
+                      if (!next.delete(item.value)) next.add(item.value);
+                      return next;
+                    })
+                  }
+                />
+                {item.label}
+              </label>
+            ))}
+          </div>
         )}
         <div className="qdialog__actions">
           {kind !== "alert" && (

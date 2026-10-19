@@ -320,3 +320,9 @@
 .kanban-column__swatch:hover {
   border-color: var(--kanban-text);
 }
+
+.kanban-column__note {
+  display: inline-flex;
+  color: var(--kanban-text-subtle);
+  cursor: help;
+}

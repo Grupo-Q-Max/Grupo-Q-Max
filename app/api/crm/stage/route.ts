@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { requiredFieldsOf } from "@/components/crm/deal/types";
 import { prisma } from "@/lib/prisma";
 import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
 import { notifyPipelineChanged } from "@/lib/crm-realtime";
@@ -46,7 +48,7 @@ export async function PUT(req: Request) {
   try {
     const denied = await denyUnless("stage.edit");
     if (denied) return denied;
-    const { id, name, wipLimit, color, pipelineId, stageIds } = await req.json();
+    const { id, name, wipLimit, color, requiredFields, pipelineId, stageIds } = await req.json();
 
     // Column reorder: the pipeline's stage ids in their new order
     if (pipelineId !== undefined) {
@@ -77,12 +79,15 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Cor inválida." }, { status: 400 });
     }
 
+    const required = requiredFieldsOf(requiredFields);
     const stage = await prisma.crmStage.update({
       where: { id },
       data: {
         ...(name !== undefined && { name: name.trim() }),
         ...(wipLimit !== undefined && { wipLimit }),
-        ...(color !== undefined && { color })
+        ...(color !== undefined && { color }),
+        // Unknown keys are dropped; an empty list is stored as null (no requirement)
+        ...(requiredFields !== undefined && { requiredFields: required.length ? required : Prisma.DbNull })
       }
     });
     notifyPipelineChanged(stage.pipelineId);

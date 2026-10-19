@@ -541,3 +541,23 @@ input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px #1a1a1c inset;
   caret-color: #fff;
 }
+
+/* checklistDialog */
+.qdialog__checks {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.qdialog__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #e8e6ea;
+  cursor: pointer;
+}
+
+.qdialog__check input {
+  accent-color: var(--qmax-magenta, #d90f81);
+}

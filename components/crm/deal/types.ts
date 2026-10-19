@@ -241,6 +241,20 @@ export const priorityLabel = (value: string | null | undefined) => PRIORITIES.fi
 export type CrmTagDto = { id: string; name: string; color: string };
 
 /** 90 → "1h30", 45 → "45min", 120 → "2h"; null for no value. */
+/** Card fields a column can require before a manual move into it (CrmStage.requiredFields); keys are CrmCard columns */
+export const REQUIRED_FIELDS = {
+  responsibleId: "Responsável",
+  closeDate: "Prazo",
+  startDate: "Data de início",
+  estimateMinutes: "Estimativa",
+  priority: "Prioridade",
+} as const;
+export type RequiredField = keyof typeof REQUIRED_FIELDS;
+
+/** Valid keys of a stored requiredFields value (unknown or malformed entries dropped) */
+export const requiredFieldsOf = (value: unknown): RequiredField[] =>
+  Array.isArray(value) ? value.filter((f): f is RequiredField => typeof f === "string" && Object.hasOwn(REQUIRED_FIELDS, f)) : [];
+
 export function formatMinutes(minutes: number | null | undefined) {
   if (minutes === null || minutes === undefined) return null;
   const h = Math.floor(minutes / 60);

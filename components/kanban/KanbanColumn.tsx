@@ -3,7 +3,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { ArrowLeft, ArrowRight, Gauge, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Gauge, Lock, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { KanbanItem } from "./KanbanItem";
 import type { KanbanColumnData, KanbanItemBase, KanbanLabels } from "./types";
 
@@ -18,6 +18,7 @@ type KanbanColumnProps<T extends KanbanItemBase> = {
   onDelete?: () => void;
   onSetLimit?: () => void;
   onSetColor?: (color: string | null) => void;
+  onEditRules?: () => void;
   onMoveLeft?: () => void;
   onMoveRight?: () => void;
 };
@@ -36,6 +37,7 @@ export function KanbanColumn<T extends KanbanItemBase>({
   onDelete,
   onSetLimit,
   onSetColor,
+  onEditRules,
   onMoveLeft,
   onMoveRight,
 }: KanbanColumnProps<T>) {
@@ -101,9 +103,14 @@ export function KanbanColumn<T extends KanbanItemBase>({
               : `${visibleItems.length}/${column.items.length}`}
             {column.limit != null && ` · máx ${column.limit}`}
           </span>
+          {column.note && (
+            <span className="kanban-column__note" title={column.note} aria-label={column.note}>
+              <Lock size={12} />
+            </span>
+          )}
         </div>
 
-        {(onRename || onDelete || onSetLimit || onSetColor || onMoveLeft || onMoveRight) && (
+        {(onRename || onDelete || onSetLimit || onSetColor || onEditRules || onMoveLeft || onMoveRight) && (
           <div className="kanban-column__menu">
             <button className="kanban-column__menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
               <MoreHorizontal size={18} />
@@ -152,6 +159,17 @@ export function KanbanColumn<T extends KanbanItemBase>({
                     }}
                   >
                     <ArrowRight size={14} /> {labels.moveColumnRight}
+                  </button>
+                )}
+                {onEditRules && (
+                  <button
+                    className="kanban-column__menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onEditRules();
+                    }}
+                  >
+                    <Lock size={14} /> {labels.columnRules}
                   </button>
                 )}
                 {onSetColor && (

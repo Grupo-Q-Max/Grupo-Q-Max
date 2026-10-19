@@ -8,12 +8,12 @@ import { useCan } from "./CrmAccess";
 import { postDeal } from "./CrmButtons";
 import { sendStageMove } from "./stageEntry";
 import { offerParentDone } from "./deal/DealTaskTools";
-import { alertDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
-import { PRIORITIES, formatMinutes } from "./deal/types";
+import { alertDialog, checklistDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
+import { PRIORITIES, REQUIRED_FIELDS, formatMinutes, requiredFieldsOf, type RequiredField } from "./deal/types";
 import { dueAt } from "@/lib/crm-due";
 import { AlertCircle, Clock } from "lucide-react";
 
-type CrmStage = { id: string; name: string; wipLimit?: number | null; color?: string | null; cards: CrmDeal[] };
+type CrmStage = { id: string; name: string; wipLimit?: number | null; color?: string | null; requiredFields?: unknown; cards: CrmDeal[] };
 type CrmPipeline = { id: string; kind?: "DEALS" | "TASKS"; stages: CrmStage[] };
 
 export type CardSort = "due" | "priority" | null;
@@ -30,8 +30,14 @@ export function sortCards<T extends CrmDeal>(cards: T[], sort: CardSort): T[] {
   return cards;
 }
 
-const toColumns = (stages: CrmStage[], sort: CardSort): KanbanColumnData<CrmDeal>[] =>
-  stages.map((stage) => ({ id: stage.id, title: stage.name, items: sortCards(stage.cards, sort), limit: stage.wipLimit, color: stage.color }));
+/** Header tooltip listing the column's required fields; null when it has none */
+const requiredNote = (stage: CrmStage) => {
+  const fields = requiredFieldsOf(stage.requiredFields);
+  return fields.length ? `Obrigatório para entrar: ${fields.map((f) => REQUIRED_FIELDS[f]).join(", ")}` : null;
+};
+
+const toColumns =(stages: CrmStage[], sort: CardSort): KanbanColumnData<CrmDeal>[] =>
+  stages.map((stage) => ({ id: stage.id, title: stage.name, items: sortCards(stage.cards, sort), limit: stage.wipLimit, color: stage.color, note: requiredNote(stage) }));
 
 /** Column totals under the header: time and late tasks on task boards, summed value on deal boards. */
 function columnSummary(cards: CrmDeal[], isTasks: boolean) {
@@ -159,6 +165,7 @@ export function CrmKanban({
           renameColumn: "Renomear Coluna",
           deleteColumn: "Excluir Coluna",
           setColumnLimit: "Limite de cards",
+          columnRules: "Campos obrigatórios",
         }}
         onMoveColumn={editColumns && can("stage.edit") ? async (stageIds) => {
           // Task boards: the last column means "done"; changing it reopens or closes tasks
@@ -229,6 +236,19 @@ export function CrmKanban({
         onSetColumnColor={editColumns && can("stage.edit") ? async (stageId, color) => {
           const res = await fetch("/api/crm/stage", jsonRequest("PUT", { id: stageId, color }));
           if (!res.ok) return alertDialog("Não foi possível salvar a cor.");
+          router.refresh();
+        } : undefined}
+        onEditColumnRules={editColumns && can("stage.edit") ? async (stageId) => {
+          const stage = pipeline.stages.find((s) => s.id === stageId);
+          const current = requiredFieldsOf(stage?.requiredFields);
+          const picked = await checklistDialog(
+            `Campos que ${isTasks ? "a tarefa" : "o negócio"} precisa ter para entrar em "${stage?.name}" (automações não são bloqueadas):`,
+            Object.entries(REQUIRED_FIELDS).map(([value, label]) => ({ value, label, checked: current.includes(value as RequiredField) })),
+            { title: "Campos obrigatórios", confirmLabel: "Salvar" }
+          );
+          if (picked === null) return;
+          const res = await fetch("/api/crm/stage", jsonRequest("PUT", { id: stageId, requiredFields: picked }));
+          if (!res.ok) return alertDialog("Não foi possível salvar as regras da coluna.");
           router.refresh();
         } : undefined}
         onDeleteColumn={editColumns && can("stage.delete") ? async (stageId) => {

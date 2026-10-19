@@ -22,6 +22,7 @@ const DEFAULT_LABELS: KanbanLabels = {
   renameColumn: "Renomear coluna",
   deleteColumn: "Excluir coluna",
   setColumnLimit: "Limite de itens",
+  columnRules: "Regras da coluna",
   moveColumnLeft: "Mover para a esquerda",
   moveColumnRight: "Mover para a direita",
   syncing: "Sincronizando...",
@@ -53,6 +54,7 @@ export function Kanban<T extends KanbanItemBase>({
   onDeleteColumn,
   onSetColumnLimit,
   onSetColumnColor,
+  onEditColumnRules,
   onMoveColumn,
   onAddColumn,
   sync,
@@ -295,6 +297,7 @@ export function Kanban<T extends KanbanItemBase>({
             onDelete={onDeleteColumn && (() => deleteColumn(column.id))}
             onSetLimit={onSetColumnLimit && (() => onSetColumnLimit(column.id, column.limit ?? null))}
             onSetColor={onSetColumnColor && ((color) => onSetColumnColor(column.id, color))}
+            onEditRules={onEditColumnRules && (() => onEditColumnRules(column.id))}
             onMoveLeft={onMoveColumn && index > 0 ? () => moveColumn(index, index - 1) : undefined}
             onMoveRight={onMoveColumn && index < columns.length - 1 ? () => moveColumn(index, index + 1) : undefined}
           />

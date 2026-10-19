@@ -13,6 +13,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { updateDeal } from "@/lib/crm-deal";
+import { REQUIRED_FIELDS, requiredFieldsOf } from "@/components/crm/deal/types";
 
 export type Params = Record<string, unknown>;
 
@@ -172,12 +173,25 @@ export class StageEntryError extends Error {
 }
 
 /**
- * Checks a manual move (board drag or deal panel) into a QXBACK stage:
+ * Checks a manual move (board drag, deal panel or bulk move): first the column's required fields
+ * (CrmStage.requiredFields), then the QXBACK stage rules:
  * - Proposta em Análise: every service needs a price, so QXBACK can tell the referrer what they can earn.
  * - Negócio Perdido: the reason is required; it is saved in the deal's mapped custom field.
  * Automations skip this check (they cannot fill these in).
  */
 export async function checkStageEntry(dealId: string, stageId: string, lostReason: unknown) {
+  // Column's required fields (any board), only when the card actually changes column
+  const stage = await prisma.crmStage.findUnique({ where: { id: stageId }, select: { requiredFields: true } });
+  const required = requiredFieldsOf(stage?.requiredFields);
+  if (required.length) {
+    const card = await prisma.crmCard.findUniqueOrThrow({
+      where: { id: dealId },
+      select: { stageId: true, responsibleId: true, closeDate: true, startDate: true, estimateMinutes: true, priority: true },
+    });
+    const missing = card.stageId === stageId ? [] : required.filter((field) => card[field] == null);
+    if (missing.length) throw new StageEntryError(`Preencha antes de mover para esta coluna: ${missing.map((f) => REQUIRED_FIELDS[f]).join(", ")}.`);
+  }
+
   const requirement = stageRequirement(stageId);
   if (requirement === "services") {
     const products = await prisma.crmDealProduct.findMany({ where: { dealId }, select: { price: true } });
