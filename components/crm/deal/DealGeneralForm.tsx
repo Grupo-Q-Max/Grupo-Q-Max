@@ -26,7 +26,7 @@ import {
   type TeamMember,
 } from "./types";
 import { Avatar, Field, LinkedBadge, LookupInput, Section } from "./ui";
-import { TimeTracker, Subtasks } from "./DealTaskTools";
+import { TimeTracker, Subtasks, StageTimes } from "./DealTaskTools";
 import { DealLinks } from "./DealLinks";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -410,6 +410,7 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload,
           <DurationInput minutes={draft.estimateMinutes} onChange={(estimateMinutes) => onChange({ estimateMinutes })} />
         </Field>
         {!deal.isTemplate && <TimeTracker deal={deal} team={team} onReload={onReload} />}
+        {!deal.isTemplate && <StageTimes deal={deal} />}
         <Field label="Descrição">
           <textarea className="deal-input" rows={6} value={draft.comment ?? ""} onChange={(e) => onChange({ comment: e.target.value })} />
         </Field>

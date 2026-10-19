@@ -874,3 +874,9 @@
 .kanban-card__footer { gap: 6px; flex-wrap: wrap; }
 .kanban-card__footer .kanban-card__date:empty { display: none; }
 .kanban-card__footer .kanban-card__delete { margin-left: auto; }
+
+/* Task panel: time spent in each column (DealTaskTools StageTimes) */
+.deal-stage-times { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; color: var(--deal-muted); }
+.deal-stage-times li { display: flex; justify-content: space-between; gap: 8px; }
+.deal-stage-times li.is-current { color: inherit; }
+.deal-stage-times b { font-weight: 600; }

@@ -31,8 +31,11 @@ type DealFilters = {
   due: string;
   dueFrom: string;
   dueTo: string;
+  startFrom: string;
+  startTo: string;
+  overEstimate: string;
 };
-const NO_FILTERS: DealFilters = { q: "", responsibleId: "", status: "", activity: "", from: "", to: "", priority: "", tagId: "", due: "", dueFrom: "", dueTo: "" };
+const NO_FILTERS: DealFilters = { q: "", responsibleId: "", status: "", activity: "", from: "", to: "", priority: "", tagId: "", due: "", dueFrom: "", dueTo: "", startFrom: "", startTo: "", overEstimate: "" };
 const NO_RESPONSIBLE = "none";
 const NO_PRIORITY = "none";
 const DEAL_STATUSES: Record<string, string> = { OPEN: "Aberto", WON: "Ganho", LOST: "Perdido" };
@@ -99,6 +102,13 @@ function matchesDue(deal: CrmDeal, due: string) {
   return state === due;
 }
 
+/** Date-only column (UTC midnight, so its ISO day is the day) inside [from, to]; no bounds = always true. */
+function inDayRange(date: string | Date | null | undefined, from: string, to: string) {
+  if (!from && !to) return true;
+  const day = date ? new Date(date).toISOString().slice(0, 10) : null;
+  return !!day && !(from && day < from) && !(to && day > to);
+}
+
 function matchesDeal(deal: CrmDeal, f: DealFilters) {
   const next = deal.activities?.[0];
   if (!matches(f.q, deal.title, deal.company, deal.contactName, `#${deal.number}`)) return false;
@@ -114,11 +124,9 @@ function matchesDeal(deal: CrmDeal, f: DealFilters) {
   if (f.priority && (deal.priority ?? NO_PRIORITY) !== f.priority) return false;
   if (f.tagId && !deal.tags?.some((t) => t.id === f.tagId)) return false;
   if (f.due && !matchesDue(deal, f.due)) return false;
-  if (f.dueFrom || f.dueTo) {
-    // closeDate is a date-only column (UTC midnight): its ISO day is the deadline day
-    const due = deal.closeDate ? new Date(deal.closeDate).toISOString().slice(0, 10) : null;
-    if (!due || (f.dueFrom && due < f.dueFrom) || (f.dueTo && due > f.dueTo)) return false;
-  }
+  if (!inDayRange(deal.closeDate, f.dueFrom, f.dueTo)) return false;
+  if (!inDayRange(deal.startDate, f.startFrom, f.startTo)) return false;
+  if (f.overEstimate && !(deal.estimateMinutes != null && (deal.spentMinutes ?? 0) > deal.estimateMinutes)) return false;
   return true;
 }
 
@@ -265,6 +273,9 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     filters.due && { key: "due", label: DUE[filters.due], onRemove: () => set({ due: "" }) },
     filters.dueFrom && { key: "dueFrom", label: `Prazo de ${showDay(filters.dueFrom)}`, onRemove: () => set({ dueFrom: "" }) },
     filters.dueTo && { key: "dueTo", label: `Prazo até ${showDay(filters.dueTo)}`, onRemove: () => set({ dueTo: "" }) },
+    filters.startFrom && { key: "startFrom", label: `Início de ${showDay(filters.startFrom)}`, onRemove: () => set({ startFrom: "" }) },
+    filters.startTo && { key: "startTo", label: `Início até ${showDay(filters.startTo)}`, onRemove: () => set({ startTo: "" }) },
+    filters.overEstimate && { key: "overEstimate", label: "Acima da estimativa", onRemove: () => set({ overEstimate: "" }) },
     filters.from && { key: "from", label: `Criado de ${showDay(filters.from)}`, onRemove: () => set({ from: "" }) },
     filters.to && { key: "to", label: `Criado até ${showDay(filters.to)}`, onRemove: () => set({ to: "" }) },
   ].filter((c): c is FilterChip => Boolean(c));
@@ -385,6 +396,19 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                   <span>até</span>
                   <DatePicker className="crm-access__select" aria-label="Prazo até" value={filters.dueTo} min={filters.dueFrom || undefined} onChange={(e) => set({ dueTo: e.target.value })} />
                 </div>
+              </FilterField>
+              <FilterField label="Início entre">
+                <div className="crm-filter-panel__range">
+                  <DatePicker className="crm-access__select" aria-label="Início de" value={filters.startFrom} max={filters.startTo || undefined} onChange={(e) => set({ startFrom: e.target.value })} />
+                  <span>até</span>
+                  <DatePicker className="crm-access__select" aria-label="Início até" value={filters.startTo} min={filters.startFrom || undefined} onChange={(e) => set({ startTo: e.target.value })} />
+                </div>
+              </FilterField>
+              <FilterField label="Tempo">
+                <Select className="crm-access__select" value={filters.overEstimate} onChange={(e) => set({ overEstimate: e.target.value })} aria-label="Tempo">
+                  <option value="">Todos</option>
+                  <option value="1">Acima da estimativa</option>
+                </Select>
               </FilterField>
               <FilterField label="Prioridade">
                 <Select className="crm-access__select" value={filters.priority} onChange={(e) => set({ priority: e.target.value })} aria-label="Prioridade">
