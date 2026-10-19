@@ -49,6 +49,9 @@ const STALE_RUN_MS = 10 * 60_000;
 /** "Modificar negócio" runs allowed per deal within LOOP_WINDOW_MS, so rules that move a deal back and forth stop */
 const LOOP_MAX_RUNS = 10;
 const LOOP_WINDOW_MS = 5 * 60_000;
+/** Finished runs (and their flow steps) are deleted after this; the deal timeline keeps its own entries */
+const RUN_RETENTION_DAYS = 90;
+const PRUNE_EVERY_MS = 60 * 60_000;
 
 const toText = (value: unknown) => {
   if (value === null || value === undefined) return "";
@@ -154,7 +157,26 @@ export async function onDealEnteredStage(cardId: string, stageId: string) {
   }
 }
 
-const globalForAutomation = globalThis as unknown as { qmaxAutomationBusy?: boolean; qmaxAutomationAgain?: boolean };
+const globalForAutomation = globalThis as unknown as {
+  qmaxAutomationBusy?: boolean;
+  qmaxAutomationAgain?: boolean;
+  qmaxAutomationPrunedAt?: number;
+};
+
+/** Deletes old finished runs, at most once per PRUNE_EVERY_MS per process. Steps go with them (FK cascade). */
+async function pruneOldRuns() {
+  const now = Date.now();
+  if (now - (globalForAutomation.qmaxAutomationPrunedAt ?? 0) < PRUNE_EVERY_MS) return;
+  globalForAutomation.qmaxAutomationPrunedAt = now;
+  try {
+    // ponytail: one DELETE for everything expired; delete in batches if the first prune in production is slow
+    await prisma.crmAutomationRun.deleteMany({
+      where: { status: { in: [...FINISHED] }, updatedAt: { lt: new Date(now - RUN_RETENTION_DAYS * 86_400_000) } },
+    });
+  } catch (error) {
+    console.error("[crm-automation] pruneOldRuns failed", error);
+  }
+}
 
 /** Claims and executes due runs one by one (in order). Safe to call concurrently. */
 export async function processDueRuns(limit = 50) {
@@ -167,6 +189,7 @@ export async function processDueRuns(limit = 50) {
   let processed = 0;
 
   try {
+    await pruneOldRuns();
     do {
       globalForAutomation.qmaxAutomationAgain = false;
 
@@ -494,11 +517,21 @@ async function sendWebhook(rule: WebhookRule, ctx: DealContext): Promise<ActionO
       cache: "no-store",
     });
     const responseBody = (await res.text()).slice(0, 2000);
-    return { request, httpStatus: res.status, responseBody, error: res.ok ? null : `HTTP ${res.status}` };
+    return { request: redactRequest(request), httpStatus: res.status, responseBody, error: res.ok ? null : `HTTP ${res.status}` };
   } catch (e) {
     const error = e instanceof Error ? (e.name === "TimeoutError" ? "Tempo limite excedido" : e.message) : String(e);
-    return { request, error };
+    return { request: redactRequest(request), error };
   }
+}
+
+const SECRET_HEADER = /authorization|cookie|token|secret|key|password|signature/i;
+
+/** Copy of a webhook request for the run log, without the values of credential headers. */
+function redactRequest<T extends { headers: Record<string, string> }>(request: T): T {
+  const headers = Object.fromEntries(
+    Object.entries(request.headers).map(([key, value]) => [key, SECRET_HEADER.test(key) ? "••••" : value]),
+  );
+  return { ...request, headers };
 }
 
 type ActivityConfig = CrmAutomationActivity & { responsible: { name: string } | null };
