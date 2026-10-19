@@ -27,7 +27,7 @@ export class BitrixError extends Error {
 /** After a change the route refreshes the board and runs the CRM automations. */
 export type Effect = { stageId: string } & (
   | { type: "created"; dealId: string }
-  | { type: "updated"; dealId: string; changedFields: string[] }
+  | { type: "updated"; dealId: string; changedFields: string[]; /** stage the deal was moved into by this call */ movedTo?: string }
   | { type: "value" }
 );
 
@@ -280,14 +280,38 @@ export async function callMethod(method: string, params: Params): Promise<{ body
 
     case "crm.deal.update": {
       const deal = await findDeal(s, params.id);
-      // QXBACK only appends processing notes to the comment
-      if (!("COMMENTS" in fields)) return { body: { result: true } };
+      const wantsComment = "COMMENTS" in fields;
+      const wantsStage = "STAGE_ID" in fields;
+      // QXBACK appends processing notes to the comment and moves the deal when its admin moves/closes the card there
+      if (!wantsComment && !wantsStage) return { body: { result: true } };
+
       // The comment carries "ID da Indicação: N", the only link QXBACK's scripts have: never overwrite it with junk
-      if (typeof fields.COMMENTS !== "string") throw new BitrixError("INVALID_PARAMS", "COMMENTS deve ser texto");
-      const result = await updateDeal(deal.id, { comment: fields.COMMENTS });
+      if (wantsComment && typeof fields.COMMENTS !== "string") throw new BitrixError("INVALID_PARAMS", "COMMENTS deve ser texto");
+
+      let stageId: string | undefined;
+      if (wantsStage) {
+        const code = text(fields.STAGE_ID);
+        stageId = s.stages[code];
+        if (!stageId) throw new BitrixError("STAGE_NOT_MAPPED", `Etapa ${code || "(vazia)"} sem correspondente em QXBACK_STAGES`);
+        // Same entry rules as a manual move (Proposta em Análise needs priced services, Negócio Perdido needs the reason);
+        // a refusal is answered as a Bitrix error so QXBACK can show it
+        if (stageId !== deal.stageId) {
+          try {
+            await checkStageEntry(deal.id, stageId, fields[LOST_REASON_FIELD]);
+          } catch (error) {
+            if (error instanceof StageEntryError) throw new BitrixError("STAGE_ENTRY_REFUSED", error.message);
+            throw error;
+          }
+        }
+      }
+
+      const moved = stageId && stageId !== deal.stageId ? stageId : undefined;
+      const result = await updateDeal(deal.id, { ...(wantsComment ? { comment: fields.COMMENTS } : {}), ...(moved ? { stageId: moved } : {}) });
       return {
         body: { result: true },
-        effect: result.changed ? { type: "updated", dealId: deal.id, stageId: result.stageId, changedFields: result.changedFields } : undefined,
+        effect: result.changed
+          ? { type: "updated", dealId: deal.id, stageId: result.stageId, changedFields: result.changedFields, movedTo: result.movedTo ?? undefined }
+          : undefined,
       };
     }
 
