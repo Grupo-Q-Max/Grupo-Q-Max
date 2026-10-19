@@ -11,7 +11,7 @@ import { formatMoney, pickDraft, type DealDetails, type DealDraft, type TeamMemb
 import { formatDateOnly } from "./ui";
 import { useCan } from "../CrmAccess";
 import { sendStageMove } from "../stageEntry";
-import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
+import { alertDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 
 type Tab = "general" | "products" | "files" | "history";
 
@@ -325,7 +325,7 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
                 {deal.archivedAt && <span className="deal-status">Arquivado</span>}
                 {deal.isTemplate && <span className="deal-status">Modelo</span>}
                 {deal.status !== "OPEN" && (
-                  <span className={`deal-status deal-status--${deal.status.toLowerCase()}`}>
+                  <span className={`deal-status deal-status--${deal.status.toLowerCase()}`} title={deal.lostReason ? `Motivo: ${deal.lostReason}` : undefined}>
                     {deal.status === "WON" ? (isTasks ? "Concluída" : "Ganho") : "Perdido"}
                   </span>
                 )}
@@ -372,9 +372,11 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
               menuOpen={closeMenuOpen}
               onToggleMenu={() => setCloseMenuOpen(!closeMenuOpen)}
               onStage={(stageId) => patch({ stageId, status: "OPEN" })}
-              onStatus={(status) => {
+              onStatus={async (status) => {
                 setCloseMenuOpen(false);
-                patch({ status });
+                if (status !== "LOST") return patch({ status });
+                const lostReason = (await promptDialog("Motivo da perda:", { confirmLabel: "Marcar como perdido" }))?.trim();
+                if (lostReason) patch({ status, lostReason });
               }}
             />
 

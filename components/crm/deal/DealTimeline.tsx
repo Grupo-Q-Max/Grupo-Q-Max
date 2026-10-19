@@ -688,6 +688,7 @@ function FeedItem({
           <span className="deal-pill">{STATUS_LABELS[data.from ?? ""] ?? data.from}</span>
           <ArrowRight size={14} />
           <span className="deal-pill">{STATUS_LABELS[data.to ?? ""] ?? data.to}</span>
+          {data.reason && <span className="deal-feed__meta">Motivo: <b>{data.reason}</b></span>}
         </div>
       );
     case "RECURRENCE_CREATED":

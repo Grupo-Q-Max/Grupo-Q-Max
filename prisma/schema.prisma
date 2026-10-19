@@ -333,6 +333,8 @@ model CrmCard {
   status             CrmDealStatus @default(OPEN)
   /// When the status became WON/LOST (null while OPEN); used by the reports. closeDate is the planned end date
   closedAt           DateTime?
+  /// Why the deal was lost, asked when the status becomes LOST; cleared when it leaves LOST. Free text
+  lostReason         String?       @db.VarChar(500)
   order              Int           @default(0)
   startDate          DateTime?     @db.Date
   closeDate          DateTime?     @db.Date
