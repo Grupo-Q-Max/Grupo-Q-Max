@@ -29,8 +29,10 @@ type DealFilters = {
   priority: string;
   tagId: string;
   due: string;
+  dueFrom: string;
+  dueTo: string;
 };
-const NO_FILTERS: DealFilters = { q: "", responsibleId: "", status: "", activity: "", from: "", to: "", priority: "", tagId: "", due: "" };
+const NO_FILTERS: DealFilters = { q: "", responsibleId: "", status: "", activity: "", from: "", to: "", priority: "", tagId: "", due: "", dueFrom: "", dueTo: "" };
 const NO_RESPONSIBLE = "none";
 const NO_PRIORITY = "none";
 const DEAL_STATUSES: Record<string, string> = { OPEN: "Aberto", WON: "Ganho", LOST: "Perdido" };
@@ -112,6 +114,11 @@ function matchesDeal(deal: CrmDeal, f: DealFilters) {
   if (f.priority && (deal.priority ?? NO_PRIORITY) !== f.priority) return false;
   if (f.tagId && !deal.tags?.some((t) => t.id === f.tagId)) return false;
   if (f.due && !matchesDue(deal, f.due)) return false;
+  if (f.dueFrom || f.dueTo) {
+    // closeDate is a date-only column (UTC midnight): its ISO day is the deadline day
+    const due = deal.closeDate ? new Date(deal.closeDate).toISOString().slice(0, 10) : null;
+    if (!due || (f.dueFrom && due < f.dueFrom) || (f.dueTo && due > f.dueTo)) return false;
+  }
   return true;
 }
 
@@ -256,6 +263,8 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     },
     filters.tagId && { key: "tag", label: tags.find((t) => t.id === filters.tagId)?.name ?? "Etiqueta", onRemove: () => set({ tagId: "" }) },
     filters.due && { key: "due", label: DUE[filters.due], onRemove: () => set({ due: "" }) },
+    filters.dueFrom && { key: "dueFrom", label: `Prazo de ${showDay(filters.dueFrom)}`, onRemove: () => set({ dueFrom: "" }) },
+    filters.dueTo && { key: "dueTo", label: `Prazo até ${showDay(filters.dueTo)}`, onRemove: () => set({ dueTo: "" }) },
     filters.from && { key: "from", label: `Criado de ${showDay(filters.from)}`, onRemove: () => set({ from: "" }) },
     filters.to && { key: "to", label: `Criado até ${showDay(filters.to)}`, onRemove: () => set({ to: "" }) },
   ].filter((c): c is FilterChip => Boolean(c));
@@ -369,6 +378,13 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                     </option>
                   ))}
                 </Select>
+              </FilterField>
+              <FilterField label="Prazo entre">
+                <div className="crm-filter-panel__range">
+                  <DatePicker className="crm-access__select" aria-label="Prazo de" value={filters.dueFrom} max={filters.dueTo || undefined} onChange={(e) => set({ dueFrom: e.target.value })} />
+                  <span>até</span>
+                  <DatePicker className="crm-access__select" aria-label="Prazo até" value={filters.dueTo} min={filters.dueFrom || undefined} onChange={(e) => set({ dueTo: e.target.value })} />
+                </div>
               </FilterField>
               <FilterField label="Prioridade">
                 <Select className="crm-access__select" value={filters.priority} onChange={(e) => set({ priority: e.target.value })} aria-label="Prioridade">

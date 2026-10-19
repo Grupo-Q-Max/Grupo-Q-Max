@@ -31,12 +31,15 @@ export const cardListInclude = {
   // Open blockers only: a card is "Bloqueada" while one of them is not done
   blockedBy: { where: { blockedBy: { status: "OPEN" } }, select: { blockedById: true } },
   subtasks: { where: activeCard, select: { status: true } },
+  parent: { select: { number: true, title: true } },
+  // Running timers: the card shows play/stop for the viewer
+  timeEntries: { where: { endedAt: null }, select: { memberId: true, startedAt: true } },
 } satisfies Prisma.CrmCardInclude;
 
 type ListCard = Prisma.CrmCardGetPayload<{ include: typeof cardListInclude }>;
 
 /** Flattens relations and converts Decimal so the card can cross the server → client boundary. */
-export function serializeListCard({ company, contacts, responsible, assignees, tags, activities, blockedBy, subtasks, ...card }: ListCard) {
+export function serializeListCard({ company, contacts, responsible, assignees, tags, activities, blockedBy, subtasks, timeEntries, ...card }: ListCard) {
   const pending = activities.filter((a) => !a.completed);
   const checklist = activities.filter((a) => a.type === "TODO");
   return {
@@ -52,6 +55,7 @@ export function serializeListCard({ company, contacts, responsible, assignees, t
     checklist: { done: checklist.filter((a) => a.completed).length, total: checklist.length },
     blocked: blockedBy.length > 0,
     subtasks: { done: subtasks.filter((s) => s.status === "WON").length, total: subtasks.length },
+    runningTimers: timeEntries,
   };
 }
 

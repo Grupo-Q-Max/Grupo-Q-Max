@@ -45,6 +45,7 @@ export function Kanban<T extends KanbanItemBase>({
   columns: initialColumns,
   renderItem,
   isItemVisible,
+  summarize,
   onMoveItem,
   onAddItem,
   onDeleteItem,
@@ -286,6 +287,7 @@ export function Kanban<T extends KanbanItemBase>({
             column={column}
             labels={labels}
             isItemVisible={isItemVisible}
+            summarize={summarize}
             renderItem={(item) => renderItem(item, { remove: () => removeItem(item.id) })}
             onAddItem={onAddItem && ((title) => addItem(column.id, title))}
             onRename={onRenameColumn && ((title) => renameColumn(column.id, title))}

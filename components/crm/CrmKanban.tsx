@@ -9,7 +9,9 @@ import { postDeal } from "./CrmButtons";
 import { sendStageMove } from "./stageEntry";
 import { offerParentDone } from "./deal/DealTaskTools";
 import { alertDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
-import { PRIORITIES } from "./deal/types";
+import { PRIORITIES, formatMinutes } from "./deal/types";
+import { dueAt } from "@/lib/crm-due";
+import { AlertCircle, Clock } from "lucide-react";
 
 type CrmStage = { id: string; name: string; wipLimit?: number | null; cards: CrmDeal[] };
 type CrmPipeline = { id: string; kind?: "DEALS" | "TASKS"; stages: CrmStage[] };
@@ -31,7 +33,40 @@ export function sortCards<T extends CrmDeal>(cards: T[], sort: CardSort): T[] {
 const toColumns = (stages: CrmStage[], sort: CardSort): KanbanColumnData<CrmDeal>[] =>
   stages.map((stage) => ({ id: stage.id, title: stage.name, items: sortCards(stage.cards, sort), limit: stage.wipLimit }));
 
-const jsonRequest = (method: string, body: unknown): RequestInit => ({
+/** Column totals under the header: time and late tasks on task boards, summed value on deal boards. */
+function columnSummary(cards: CrmDeal[], isTasks: boolean) {
+  if (!cards.length) return null;
+  if (!isTasks) {
+    // ponytail: sums every currency as BRL; split per currency if deals in other currencies show up
+    const total = cards.reduce((sum, c) => sum + Number(c.value), 0);
+    return (
+      <div className="kanban-column__summary">
+        <span title="Soma dos valores">{total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+      </div>
+    );
+  }
+  const estimate = cards.reduce((sum, c) => sum + (c.estimateMinutes ?? 0), 0);
+  const spent = cards.reduce((sum, c) => sum + (c.spentMinutes ?? 0), 0);
+  const late = cards.filter((c) => c.status !== "WON" && c.closeDate && dueAt(c.closeDate, c.dueTime).getTime() < Date.now()).length;
+  if (!estimate && !spent && !late) return null;
+  return (
+    <div className="kanban-column__summary">
+      {(estimate > 0 || spent > 0) && (
+        <span className={estimate && spent > estimate ? "is-over" : ""} title="Tempo gasto / estimativa somados">
+          <Clock size={12} /> {formatMinutes(spent)}
+          {estimate > 0 && `/${formatMinutes(estimate)}`}
+        </span>
+      )}
+      {late > 0 && (
+        <span className="is-over" title="Tarefas com prazo vencido">
+          <AlertCircle size={12} /> {late} atrasada{late > 1 ? "s" : ""}
+        </span>
+      )}
+    </div>
+  );
+}
+
+const jsonRequest =(method: string, body: unknown): RequestInit => ({
   method,
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(body),
@@ -110,6 +145,7 @@ export function CrmKanban({
       <Kanban<CrmDeal>
         columns={columns}
         isItemVisible={isDealVisible}
+        summarize={(cards) => columnSummary(cards, isTasks)}
         // Polling is only a fallback in case the SSE connection is blocked by a proxy
         sync={{ fetchColumns, subscribe, pollingIntervalMs: 30_000 }}
         labels={{

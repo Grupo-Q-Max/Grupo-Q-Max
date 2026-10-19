@@ -1,6 +1,7 @@
-import { Archive, Calendar, Check, Clock, ListChecks, ListTodo, ListTree, Lock } from "lucide-react";
+import { Archive, Calendar, Check, Clock, CornerDownRight, ListChecks, ListTodo, ListTree, Lock } from "lucide-react";
 import { dueAt } from "@/lib/crm-due";
 import { Avatar } from "./deal/ui";
+import { CardTimer } from "./deal/DealTaskTools";
 import { formatMinutes, priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
 
 export type CrmDeal = {
@@ -34,6 +35,10 @@ export type CrmDeal = {
   subtasks?: { done: number; total: number };
   /** Parent task when this card is a subtask */
   parentId?: string | null;
+  /** Number and title of the parent task, shown above the title */
+  parent?: { number: number; title: string } | null;
+  /** Timers running on the card (endedAt null), one per member */
+  runningTimers?: { memberId: string | null; startedAt: string | Date }[];
   priority?: Priority | null;
   tags?: CrmTagDto[];
   /** Waits for a card that is not done yet ("Bloqueada por") */
@@ -88,6 +93,11 @@ export function DealCard({
               {tag.name}
             </span>
           ))}
+        </div>
+      )}
+      {deal.parent && (
+        <div className="kanban-card__parent" title={`Subtarefa de #${deal.parent.number} ${deal.parent.title}`}>
+          <CornerDownRight size={11} /> #{deal.parent.number} · {deal.parent.title}
         </div>
       )}
       <h3 className="kanban-card__title">{deal.title}</h3>
@@ -165,6 +175,7 @@ export function DealCard({
             {deal.estimateMinutes != null && `/${formatMinutes(deal.estimateMinutes)}`}
           </span>
         )}
+        {isTask && !taskDone && selected === undefined && <CardTimer cardId={deal.id} running={deal.runningTimers ?? []} />}
         <span className="kanban-card__date">
           {[
             pendingCount > 0 &&

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle, Play, Plus, Square, Trash2, X } from "lucide-react";
 import { formatMinutes, parseMinutes, type DealDetails, type TeamMember } from "./types";
 import { Avatar, Field, formatDateOnly } from "./ui";
@@ -35,7 +36,45 @@ export async function offerParentDone(parentId: string | null | undefined) {
   return send("/api/crm/card", jsonRequest("PATCH", { id: parent.id, stageId: last }));
 }
 
-const elapsed = (startedAt: string, now: number) => Math.max(0, Math.round((now - new Date(startedAt).getTime()) / 60_000));
+const elapsed = (startedAt: string | Date, now: number) => Math.max(0, Math.round((now - new Date(startedAt).getTime()) / 60_000));
+
+/** Kanban card play/stop for the viewer's own timer; starting it stops the one running on another card. */
+export function CardTimer({ cardId, running }: { cardId: string; running: { memberId: string | null; startedAt: string | Date }[] }) {
+  const router = useRouter();
+  const can = useCan();
+  const { memberId } = useViewer();
+  const [now, setNow] = useState(() => Date.now());
+  const [busy, setBusy] = useState(false);
+  const mine = running.find((e) => e.memberId === memberId);
+
+  useEffect(() => {
+    if (!mine) return;
+    const timer = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(timer);
+  }, [!!mine]);
+
+  if (!can("deal.edit")) return null;
+  const toggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setBusy(true);
+    const ok = await send("/api/crm/time", jsonRequest("POST", mine ? { action: "stop" } : { action: "start", cardId }));
+    setBusy(false);
+    if (ok) router.refresh();
+  };
+  return (
+    <button
+      type="button"
+      className={`kanban-card__timer ${mine ? "is-running" : ""}`}
+      disabled={busy}
+      onClick={toggle}
+      title={mine ? "Parar cronômetro" : "Iniciar cronômetro (para o que estiver rodando em outra tarefa)"}
+      aria-label={mine ? "Parar cronômetro" : "Iniciar cronômetro"}
+    >
+      {mine ? <Square size={11} /> : <Play size={11} />}
+      {mine && formatMinutes(elapsed(mine.startedAt, now))}
+    </button>
+  );
+}
 
 /** "Tempo gasto": timer (one running per person), time typed by hand and the entries, per member. */
 export function TimeTracker({ deal, team, onReload }: { deal: DealDetails; team: TeamMember[]; onReload: () => void }) {

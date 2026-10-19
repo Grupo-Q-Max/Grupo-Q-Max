@@ -857,3 +857,20 @@
 .deal-subtasks li.is-done { color: var(--deal-green); }
 .deal-subtasks li.is-done a { text-decoration: line-through; opacity: 0.6; }
 .deal-feed__by { margin-left: 6px; font-size: 12px; color: var(--deal-subtle); }
+
+/* Kanban card: parent task path and the viewer's timer */
+.kanban-card__parent { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #a5a0aa; margin-bottom: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; position: relative; }
+.kanban-card__parent svg { flex-shrink: 0; }
+.kanban-card__timer { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 999px; border: 1px solid transparent; background: none; color: #a5a0aa; font: inherit; font-size: 12px; cursor: pointer; position: relative; }
+.kanban-card__timer:hover { color: #4ceb95; border-color: rgba(76, 235, 149, 0.4); }
+.kanban-card__timer.is-running { color: #4ceb95; border-color: rgba(76, 235, 149, 0.4); background: rgba(76, 235, 149, 0.1); }
+.kanban-card__timer.is-running:hover { color: #ff4d6d; border-color: rgba(255, 77, 109, 0.4); background: rgba(255, 77, 109, 0.1); }
+.kanban-card__timer:disabled { opacity: 0.6; cursor: wait; }
+
+/* Kanban column totals (CrmKanban columnSummary) */
+.kanban-column__summary { display: flex; flex-wrap: wrap; gap: 10px; padding: 6px 20px; font-size: 12px; color: #a5a0aa; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+.kanban-column__summary span { display: inline-flex; align-items: center; gap: 4px; }
+.kanban-column__summary .is-over { color: #ff4d6d; }
+.kanban-card__footer { gap: 6px; flex-wrap: wrap; }
+.kanban-card__footer .kanban-card__date:empty { display: none; }
+.kanban-card__footer .kanban-card__delete { margin-left: auto; }

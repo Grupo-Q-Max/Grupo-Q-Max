@@ -12,6 +12,7 @@ type KanbanColumnProps<T extends KanbanItemBase> = {
   labels: KanbanLabels;
   renderItem: (item: T) => ReactNode;
   isItemVisible?: (item: T) => boolean;
+  summarize?: (items: T[]) => ReactNode;
   onAddItem?: (title: string) => void;
   onRename?: (title: string) => void;
   onDelete?: () => void;
@@ -25,6 +26,7 @@ export function KanbanColumn<T extends KanbanItemBase>({
   labels,
   renderItem,
   isItemVisible,
+  summarize,
   onAddItem,
   onRename,
   onDelete,
@@ -163,6 +165,8 @@ export function KanbanColumn<T extends KanbanItemBase>({
           </div>
         )}
       </div>
+
+      {summarize?.(visibleItems)}
 
       <div ref={setNodeRef} className="kanban-column__body">
         <SortableContext items={visibleItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>

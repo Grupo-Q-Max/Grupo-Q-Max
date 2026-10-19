@@ -53,6 +53,8 @@ export type KanbanProps<T extends KanbanItemBase> = {
    * state, so drop indexes still count them and the saved order stays correct.
    */
   isItemVisible?: (item: T) => boolean;
+  /** Line under the column header from its visible items (totals, counts); null hides it */
+  summarize?: (items: T[]) => ReactNode;
 
   /** Fired after a drop that changed the item's column or position. */
   onMoveItem?: (itemId: string, toColumnId: string, toIndex: number) => MaybeCancel | Promise<MaybeCancel>;
