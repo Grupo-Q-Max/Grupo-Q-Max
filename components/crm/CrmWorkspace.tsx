@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CrmKanban } from "./CrmKanban";
+import { CrmKanban, sortCards } from "./CrmKanban";
 import type { CrmDeal } from "./DealCard";
 import { DealDetailsPanel } from "./deal/DealDetailsPanel";
 import { PRIORITIES, formatMinutes, priorityLabel } from "./deal/types";
@@ -11,7 +11,7 @@ import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
-import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download } from "lucide-react";
+import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download, CheckSquare } from "lucide-react";
 import { CrmCalendar } from "./CrmCalendar";
 import { CrmTimeline } from "./CrmTimeline";
 import { CrmSavedViews } from "./CrmSavedViews";
@@ -88,8 +88,6 @@ const dayOf = (date: string | Date) => new Date(date).toLocaleDateString("sv-SE"
 /** YYYY-MM-DD → DD/MM/YYYY */
 const showDay = (day: string) => day.split("-").reverse().join("/");
 const inAWeek = () => todayKey(new Date(Date.now() + 7 * 86_400_000));
-/** Priority weight for sorting: urgent first, no priority last */
-const priorityRank = (deal: CrmDeal) => (deal.priority ? PRIORITIES.findIndex((p) => p.value === deal.priority) : -1);
 
 function matchesDue(deal: CrmDeal, due: string) {
   const date = deal.closeDate ? new Date(deal.closeDate) : null;
@@ -212,6 +210,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     if (window.location.pathname === "/crm") window.history.replaceState(null, "", closeUrl.current);
   }, [urlRead, pipeline.id, filters, view, sort]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [selecting, setSelecting] = useState(false);
   // List view "Arquivados": archived cards, loaded on demand (null = showing the board's cards)
   const [archived, setArchived] = useState<CrmDeal[] | null>(null);
   const loadArchived = useCallback(async () => {
@@ -233,8 +232,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   const stageName = (id: string) => pipeline.stages.find((s: any) => s.id === id)?.name ?? "";
   const listed = view === "list" && archived ? archived.map((card) => ({ ...card, stageName: stageName(card.stageId) } as (typeof everyCard)[number])) : everyCard;
   const allCards = listed.filter(isDealVisible);
-  if (sort === "due") allCards.sort((a, b) => (a.closeDate ? new Date(a.closeDate).getTime() : Infinity) - (b.closeDate ? new Date(b.closeDate).getTime() : Infinity));
-  if (sort === "priority") allCards.sort((a, b) => priorityRank(b) - priorityRank(a));
+  allCards.splice(0, allCards.length, ...sortCards(allCards, sort));
   orderRef.current = allCards;
   const emptyMessage = filtering ? `Nenhum ${isTasks ? "item" : "negócio"} corresponde aos filtros.` : null;
 
@@ -417,6 +415,27 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
           </FilterField>
         </FilterSearch>
         <CrmSavedViews pipelineId={pipeline.id} query={boardQuery(filters, view, sort)} onApply={applyQuery} />
+        {view === "kanban" && (
+          <button
+            type="button"
+            className={`view-btn ${selecting ? "is-active" : ""}`}
+            title="Selecionar cards para ações em massa"
+            aria-label="Selecionar cards"
+            onClick={() => {
+              setSelected(new Set());
+              setSelecting((s) => !s);
+            }}
+          >
+            <CheckSquare size={16} />
+          </button>
+        )}
+        {view === "kanban" && isTasks && (
+          <Select className="crm-access__select crm-toolbar__sort" value={sort ?? ""} onChange={(e) => setSort((e.target.value || null) as Sort)} aria-label="Ordem dos cards">
+            <option value="">Ordem manual</option>
+            <option value="due">Por prazo</option>
+            <option value="priority">Por prioridade</option>
+          </Select>
+        )}
         <div className="crm-toolbar__views">
           <button
             className={`view-btn ${view === "kanban" ? "is-active" : ""}`}
@@ -451,7 +470,29 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
 
       <div className="crm-content">
         {view === "kanban" && (
-          <CrmKanban pipeline={pipeline} onOpenDeal={openDeal} syncBoardRef={syncBoardRef} isDealVisible={filtering ? isDealVisible : undefined} />
+          <>
+            {selecting && (
+              <CrmBulkBar
+                ids={selectedIds}
+                stages={pipeline.stages}
+                isTasks={isTasks}
+                archived={false}
+                onDone={() => {
+                  setSelected(new Set());
+                  setSelecting(false);
+                }}
+              />
+            )}
+            <CrmKanban
+              pipeline={pipeline}
+              onOpenDeal={openDeal}
+              syncBoardRef={syncBoardRef}
+              isDealVisible={filtering ? isDealVisible : undefined}
+              sort={sort}
+              selected={selecting ? selected : undefined}
+              onToggleSelect={selecting ? toggle : undefined}
+            />
+          </>
         )}
 
         {view === "list" && (
@@ -567,6 +608,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                     {
                       key: card.id,
                       day: new Date(card.closeDate).toISOString().slice(0, 10),
+                      time: card.dueTime ?? null,
                       title: card.title,
                       tone: card.status === "WON" ? ("done" as const) : matchesDue(card, "overdue") ? ("overdue" as const) : undefined,
                       onOpen: () => openDeal(card),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Kanban, type KanbanColumnData } from "@/components/kanban";
 import { DealCard, type CrmDeal } from "./DealCard";
@@ -9,12 +9,27 @@ import { postDeal } from "./CrmButtons";
 import { sendStageMove } from "./stageEntry";
 import { offerParentDone } from "./deal/DealTaskTools";
 import { alertDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
+import { PRIORITIES } from "./deal/types";
 
 type CrmStage = { id: string; name: string; wipLimit?: number | null; cards: CrmDeal[] };
 type CrmPipeline = { id: string; kind?: "DEALS" | "TASKS"; stages: CrmStage[] };
 
-const toColumns = (stages: CrmStage[]): KanbanColumnData<CrmDeal>[] =>
-  stages.map((stage) => ({ id: stage.id, title: stage.name, items: stage.cards, limit: stage.wipLimit }));
+export type CardSort = "due" | "priority" | null;
+
+/** Priority weight: urgent first, no priority last */
+const priorityRank = (deal: CrmDeal) => (deal.priority ? PRIORITIES.findIndex((p) => p.value === deal.priority) : -1);
+/** Deadline + due time as a sortable string; cards without a deadline go last */
+const dueKey = (deal: CrmDeal) => (deal.closeDate ? `${new Date(deal.closeDate).toISOString().slice(0, 10)} ${deal.dueTime ?? "99"}` : "9999");
+
+/** Copy of `cards` sorted by deadline or priority (stable: ties keep the manual order); null keeps the manual order. */
+export function sortCards<T extends CrmDeal>(cards: T[], sort: CardSort): T[] {
+  if (sort === "due") return [...cards].sort((a, b) => (dueKey(a) < dueKey(b) ? -1 : dueKey(a) > dueKey(b) ? 1 : 0));
+  if (sort === "priority") return [...cards].sort((a, b) => priorityRank(b) - priorityRank(a));
+  return cards;
+}
+
+const toColumns = (stages: CrmStage[], sort: CardSort): KanbanColumnData<CrmDeal>[] =>
+  stages.map((stage) => ({ id: stage.id, title: stage.name, items: sortCards(stage.cards, sort), limit: stage.wipLimit }));
 
 const jsonRequest = (method: string, body: unknown): RequestInit => ({
   method,
@@ -27,8 +42,16 @@ export function CrmKanban({
   onOpenDeal,
   syncBoardRef,
   isDealVisible,
+  sort = null,
+  selected,
+  onToggleSelect,
 }: {
   pipeline: CrmPipeline;
+  /** Shows each column sorted (view only: drops then keep the card's manual position) */
+  sort?: CardSort;
+  /** Selection mode (bulk actions): clicking a card toggles it instead of opening it */
+  selected?: Set<string>;
+  onToggleSelect?: (cardId: string) => void;
   onOpenDeal: (deal: CrmDeal) => void;
   /** Set while the board listens for changes; calling it resyncs the columns */
   syncBoardRef: React.RefObject<(() => void) | null>;
@@ -36,15 +59,29 @@ export function CrmKanban({
 }) {
   const router = useRouter();
   const can = useCan();
-  const columns = useMemo(() => toColumns(pipeline.stages), [pipeline.stages]);
+  const columns = useMemo(() => toColumns(pipeline.stages, sort), [pipeline.stages, sort]);
   const isTasks = pipeline.kind === "TASKS";
+  // Last card archived from its card button, offered back for a few seconds
+  const [undo, setUndo] = useState<{ id: string; title: string } | null>(null);
+  useEffect(() => {
+    if (!undo) return;
+    const timer = setTimeout(() => setUndo(null), 8_000);
+    return () => clearTimeout(timer);
+  }, [undo]);
+  const restore = async () => {
+    if (!undo) return;
+    setUndo(null);
+    const res = await fetch("/api/crm/card", jsonRequest("PATCH", { id: undo.id, archived: false }));
+    if (!res.ok) return alertDialog("Não foi possível desfazer.");
+    router.refresh();
+  };
 
   const fetchColumns = useCallback(async () => {
     const res = await fetch(`/api/crm/pipeline?id=${pipeline.id}`);
     if (!res.ok) throw new Error(`Pipeline sync failed: ${res.status}`);
     const data: CrmPipeline = await res.json();
-    return toColumns(data.stages);
-  }, [pipeline.id]);
+    return toColumns(data.stages, sort);
+  }, [pipeline.id, sort]);
 
   // Realtime updates from other tabs/users via Server-Sent Events
   const subscribe = useCallback(
@@ -95,7 +132,15 @@ export function CrmKanban({
           if (!res.ok) return false;
           router.refresh();
         } : undefined}
-        renderItem={(deal, { remove }) => <DealCard deal={deal} isTask={isTasks} onOpen={() => onOpenDeal(deal)} onDelete={can("deal.delete") ? remove : undefined} />}
+        renderItem={(deal, { remove }) => (
+          <DealCard
+            deal={deal}
+            isTask={isTasks}
+            onOpen={onToggleSelect ? () => onToggleSelect(deal.id) : () => onOpenDeal(deal)}
+            onArchive={can("deal.edit") ? remove : undefined}
+            selected={onToggleSelect ? !!selected?.has(deal.id) : undefined}
+          />
+        )}
         onMoveItem={can("deal.edit") ? async (cardId, newStageId, index) => {
           // Task boards: the last column means done; warn when the task still waits for another one
           const card = pipeline.stages.flatMap((s) => s.cards).find((c) => c.id === cardId);
@@ -109,7 +154,7 @@ export function CrmKanban({
           if (entering && target.wipLimit != null && target.cards.length >= target.wipLimit) {
             if (!(await confirmDialog(`A coluna "${target.name}" já está no limite de ${target.wipLimit} cards. Mover mesmo assim?`, { confirmLabel: "Mover" }))) return false;
           }
-          const res = await sendStageMove((extra) => fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index, ...extra })));
+          const res = await sendStageMove((extra) => fetch("/api/crm/move", jsonRequest("POST", { cardId, newStageId, index: sort ? undefined : index, ...extra })));
           if (!res) return false;
           router.refresh();
           if (closing && (await offerParentDone(card?.parentId))) router.refresh();
@@ -120,10 +165,11 @@ export function CrmKanban({
           router.refresh();
           return (await res.json()) as CrmDeal;
         } : undefined}
-        onDeleteItem={can("deal.delete") ? async (cardId) => {
-          if (!(await confirmDialog(`Certeza que deseja excluir ${isTasks ? "esta tarefa" : "este negócio"}?`, { danger: true, confirmLabel: "Excluir" }))) return false;
-          const res = await fetch(`/api/crm/card?id=${cardId}`, { method: "DELETE" });
+        // The card button archives (with "Desfazer"); deleting for good is in the panel or the "Arquivados" list
+        onDeleteItem={can("deal.edit") ? async (cardId) => {
+          const res = await fetch("/api/crm/card", jsonRequest("PATCH", { id: cardId, archived: true }));
           if (!res.ok) return false;
+          setUndo({ id: cardId, title: pipeline.stages.flatMap((s) => s.cards).find((c) => c.id === cardId)?.title ?? "" });
           router.refresh();
         } : undefined}
         onRenameColumn={can("stage.edit") ? async (stageId, name) => {
@@ -162,6 +208,14 @@ export function CrmKanban({
           return { id: stage.id, title: stage.name, items: stage.cards };
         } : undefined}
       />
+      {undo && (
+        <div className="crm-undo" role="status">
+          <span>"{undo.title}" arquivad{isTasks ? "a" : "o"}</span>
+          <button type="button" onClick={restore}>
+            Desfazer
+          </button>
+        </div>
+      )}
     </>
   );
 }

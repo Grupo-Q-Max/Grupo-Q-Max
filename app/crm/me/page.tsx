@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
 import { visiblePipelineWhere } from "@/lib/crm-access";
-import { listMyTasks } from "@/lib/crm-my-tasks";
+import { listMyTasks, runningTimer } from "@/lib/crm-my-tasks";
 import { dueState } from "@/lib/crm-due";
 import { prisma } from "@/lib/prisma";
 import { CrmMyTasks } from "@/components/crm/CrmMyTasks";
@@ -19,8 +19,9 @@ function formatDue(due: string, dateOnly: boolean) {
 export default async function MyTasksPage() {
   const memberId = readSession((await cookies()).get(SESSION_COOKIE)?.value);
   const visible = await visiblePipelineWhere();
-  const [items, pipelines] = await Promise.all([
+  const [items, timer, pipelines] = await Promise.all([
     memberId ? listMyTasks(memberId, visible) : [],
+    memberId ? runningTimer(memberId) : null,
     prisma.crmPipeline.findMany({
       where: { AND: [visible, { kind: "TASKS" }] },
       orderBy: { name: "asc" },
@@ -31,6 +32,7 @@ export default async function MyTasksPage() {
   return (
     <CrmMyTasks
       memberId={memberId}
+      timer={timer}
       items={items.map((item) => ({
         ...item,
         id: item.key,

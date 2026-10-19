@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
+import { denyUnless, denyUnlessPipeline, visibleCardWhere } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
@@ -109,7 +109,7 @@ async function listArchived(pipelineId: string) {
   const hidden = await denyUnlessPipeline({ pipelineId });
   if (hidden) return hidden;
   const cards = await prisma.crmCard.findMany({
-    where: { archivedAt: { not: null }, isTemplate: false, stage: { pipelineId } },
+    where: { archivedAt: { not: null }, isTemplate: false, stage: { pipelineId }, ...(await visibleCardWhere()) },
     orderBy: { archivedAt: "desc" },
     take: 500,
     include: cardListInclude,
@@ -122,7 +122,7 @@ async function listTemplates(pipelineId: string) {
   const hidden = await denyUnlessPipeline({ pipelineId });
   if (hidden) return hidden;
   const templates = await prisma.crmCard.findMany({
-    where: { isTemplate: true, stage: { pipelineId } },
+    where: { isTemplate: true, stage: { pipelineId }, ...(await visibleCardWhere()) },
     orderBy: { title: "asc" },
     select: { id: true, number: true, title: true },
   });

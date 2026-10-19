@@ -1,7 +1,7 @@
 import { Prisma, type CrmDealStatus, type CrmPriority, type CrmRecurrence } from "@prisma/client";
-import { formatMinutes, priorityLabel } from "@/components/crm/deal/types";
+import { RECURRENCES as RECURRENCE_OPTIONS, formatMinutes, priorityLabel } from "@/components/crm/deal/types";
 import { prisma } from "@/lib/prisma";
-import { isDueTime } from "@/lib/crm-due";
+import { isDueTime, nextOccurrence, weekdayNames } from "@/lib/crm-due";
 
 type Tx = Prisma.TransactionClient;
 
@@ -161,6 +161,8 @@ function snapshotOf(dto: DealDto) {
     responsibleId: dto.responsibleId,
     comment: dto.comment,
     recurrence: dto.recurrence,
+    recurrenceInterval: dto.recurrenceInterval,
+    recurrenceWeekdays: dto.recurrenceWeekdays,
     priority: dto.priority,
     dueTime: dto.dueTime,
     reminderMinutes: dto.reminderMinutes,
@@ -272,10 +274,12 @@ export const SCALAR_FIELDS = {
   isPublic: "Disponível para todos",
   responsibleId: "Responsável",
   comment: "Comentário",
-  recurrence: "Negócio recorrente",
+  recurrence: "Recorrência",
   priority: "Prioridade",
   dueTime: "Hora do prazo",
   reminderMinutes: "Lembrete antes do prazo",
+  recurrenceInterval: "Repetir a cada",
+  recurrenceWeekdays: "Dias da semana",
   estimateMinutes: "Estimativa",
   customData: "Campos adicionais",
 } as const;
@@ -326,6 +330,14 @@ function parseScalar(field: ScalarField, value: unknown) {
     }
     case "dueTime":
       return isDueTime(value) ? value : null;
+    case "recurrenceInterval": {
+      const n = Math.round(Number(value));
+      return value !== null && value !== "" && Number.isFinite(n) && n > 1 ? Math.min(n, 365) : null;
+    }
+    case "recurrenceWeekdays": {
+      const mask = Math.round(Number(value));
+      return Number.isInteger(mask) && mask > 0 && mask < 128 ? mask : null;
+    }
     default:
       return blankToNull(value);
   }
@@ -695,6 +707,13 @@ async function fieldHistory(tx: Tx, field: ScalarField, label: string, from: unk
     return { type: "FIELD_CHANGED", data: { field, label, from: name(from), to: name(to) } };
   }
   if (field === "priority") return { type: "FIELD_CHANGED", data: { field, label, from: priorityLabel(from as string), to: priorityLabel(to as string) } };
+  if (field === "recurrence") {
+    const recurrenceLabel = (v: unknown) => RECURRENCE_OPTIONS.find((r) => r.value === v)?.label ?? displayScalar(v);
+    return { type: "FIELD_CHANGED", data: { field, label, from: recurrenceLabel(from), to: recurrenceLabel(to) } };
+  }
+  if (field === "recurrenceWeekdays") {
+    return { type: "FIELD_CHANGED", data: { field, label, from: weekdayNames(from as number | null), to: weekdayNames(to as number | null) } };
+  }
   if (field === "estimateMinutes" || field === "reminderMinutes") {
     return { type: "FIELD_CHANGED", data: { field, label, from: formatMinutes(from as number | null), to: formatMinutes(to as number | null) } };
   }
@@ -812,20 +831,6 @@ export async function companyIdByName(tx: Tx, name: unknown) {
 // Recurring deals
 // ---------------------------------------------------------------------------
 
-const RECURRENCE_STEP: Record<string, { days?: number; months?: number }> = {
-  DAILY: { days: 1 },
-  WEEKLY: { days: 7 },
-  MONTHLY: { months: 1 },
-  YEARLY: { months: 12 },
-};
-
-function shiftDate(date: Date, recurrence: string) {
-  const step = RECURRENCE_STEP[recurrence];
-  const next = new Date(date);
-  if (step?.days) next.setUTCDate(next.getUTCDate() + step.days);
-  if (step?.months) next.setUTCMonth(next.getUTCMonth() + step.months);
-  return next;
-}
 
 type CopyOptions = {
   /** Default: the pipeline's first stage */
@@ -883,6 +888,8 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
       estimateMinutes: deal.estimateMinutes,
       dueTime: deal.dueTime,
       reminderMinutes: deal.reminderMinutes,
+      recurrenceInterval: deal.recurrenceInterval,
+      recurrenceWeekdays: deal.recurrenceWeekdays,
       // A copied subtask stays under the same parent; templates stand alone
       parentId: options.isTemplate ? null : deal.parentId,
       customData: deal.customData ?? Prisma.DbNull,
@@ -914,14 +921,31 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
 export async function createRecurringCopy(tx: Tx, id: string) {
   const deal = await tx.crmCard.findUnique({
     where: { id },
-    select: { id: true, recurrence: true, startDate: true, closeDate: true, createdAt: true, isTemplate: true, archivedAt: true },
+    select: {
+      id: true,
+      recurrence: true,
+      recurrenceInterval: true,
+      recurrenceWeekdays: true,
+      startDate: true,
+      closeDate: true,
+      createdAt: true,
+      isTemplate: true,
+      archivedAt: true,
+    },
   });
   // A template or archived card closed by hand is not a real occurrence
-  if (!deal || deal.isTemplate || deal.archivedAt || !(deal.recurrence in RECURRENCE_STEP)) return null;
+  if (!deal || deal.isTemplate || deal.archivedAt) return null;
+  const rule = { recurrence: deal.recurrence, interval: deal.recurrenceInterval, weekdays: deal.recurrenceWeekdays };
+  const close = deal.closeDate ?? new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
+  const nextClose = nextOccurrence(close, rule);
+  if (!nextClose) return null;
+  // The start keeps its distance to the deadline, so a weekday rule moves both together
+  const start = deal.startDate ?? deal.createdAt;
+  const nextStart = new Date(start.getTime() + (nextClose.getTime() - close.getTime()));
 
   const copy = await copyCard(tx, id, {
-    startDate: shiftDate(deal.startDate ?? deal.createdAt, deal.recurrence),
-    closeDate: shiftDate(deal.closeDate ?? new Date(), deal.recurrence),
+    startDate: nextStart,
+    closeDate: nextClose,
     history: { recurringFrom: deal.id },
   });
 

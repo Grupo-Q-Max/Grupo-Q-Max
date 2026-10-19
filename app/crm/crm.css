@@ -1867,7 +1867,7 @@ button.crm-bell {
   color: #fff;
 }
 .crm-bulk-bar .crm-access__select { width: auto; min-width: 150px; }
-.crm-bulk-bar__date { width: auto; }
+.crm-bulk-bar .crm-bulk-bar__date { width: auto; flex: 0 0 auto; }
 
 /* List view: "Arquivados" toggle above the table */
 .crm-list-view__bar {
@@ -1985,3 +1985,81 @@ button.crm-bell {
 .kanban-card__people .deal-avatar + .deal-avatar { margin-left: -8px; box-shadow: 0 0 0 2px #1a1a1c; }
 .crm-timeline-view .crm-calendar__title { text-transform: none; min-width: 220px; }
 .crm-toolbar__views .view-btn { white-space: nowrap; }
+
+/* Calendar: month / week toggle; the week view has room for every item */
+.crm-calendar__modes { margin-left: auto; }
+.crm-calendar__grid--week .crm-calendar__day { min-height: 340px; }
+.crm-toolbar__sort { width: auto; min-width: 150px; flex-shrink: 0; }
+
+/* Kanban selection mode (bulk actions) */
+.kanban-card--selected { outline: 2px solid #ff2b91; outline-offset: -2px; }
+.kanban-card__select {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+.kanban-card__select.is-checked { background: #ff2b91; border-color: #ff2b91; }
+
+/* "Desfazer" notice after archiving a card from the board */
+.crm-undo {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 50;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #1b1720;
+  border: 1px solid rgba(255, 43, 145, 0.35);
+  color: #fff;
+  font-size: 14px;
+}
+.crm-undo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-undo button { background: none; border: 0; color: #ff2b91; font-weight: 700; cursor: pointer; }
+
+/* Minhas tarefas: running timer banner and subtask count */
+.crm-my-tasks__timer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 43, 145, 0.08);
+  border: 1px solid rgba(255, 43, 145, 0.35);
+  color: #fff;
+}
+.crm-my-tasks__timer a { color: #ff2b91; }
+.crm-my-tasks__timer .btn-secondary { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+.crm-my-tasks__subtasks { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: #a5a0aa; font-size: 12px; }
+
+/* Task recurrence: "a cada N" and weekdays */
+.crm-recurrence { margin-top: 8px; align-items: center; flex-wrap: wrap; gap: 10px; }
+.crm-recurrence__every { display: inline-flex; align-items: center; gap: 6px; color: #a5a0aa; font-size: 13px; }
+.crm-recurrence__every .deal-input { width: 64px; }
+.crm-recurrence__days { display: inline-flex; gap: 4px; }
+.crm-recurrence__day {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: #a5a0aa;
+  font-size: 12px;
+  cursor: pointer;
+}
+.crm-recurrence__day.is-active { background: #ff2b91; border-color: #ff2b91; color: #fff; }
+.crm-calendar__title--week { text-transform: none; }

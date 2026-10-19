@@ -78,6 +78,10 @@ export type DealDetails = {
   dueTime: string | null;
   /** Minutes before closeDate + dueTime to remind the responsible */
   reminderMinutes: number | null;
+  /** Repeat every N (null = 1) */
+  recurrenceInterval: number | null;
+  /** WEEKLY: weekdays bitmask, 1 = Sunday … 64 = Saturday */
+  recurrenceWeekdays: number | null;
   estimateMinutes: number | null;
   /** Sum of the finished time entries (read-only) */
   spentMinutes: number | null;
@@ -123,6 +127,8 @@ export type DealDraft = Pick<
   | "estimateMinutes"
   | "dueTime"
   | "reminderMinutes"
+  | "recurrenceInterval"
+  | "recurrenceWeekdays"
   | "customData"
 >;
 
@@ -214,6 +220,8 @@ export function pickDraft(deal: DealDetails): DealDraft {
     estimateMinutes: deal.estimateMinutes,
     dueTime: deal.dueTime,
     reminderMinutes: deal.reminderMinutes,
+    recurrenceInterval: deal.recurrenceInterval,
+    recurrenceWeekdays: deal.recurrenceWeekdays,
     customData: deal.customData,
   };
 }

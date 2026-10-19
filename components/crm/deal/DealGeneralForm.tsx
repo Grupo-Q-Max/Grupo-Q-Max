@@ -43,14 +43,26 @@ type Props = {
   onOpenCard: (card: { id: string; number: number }) => void;
 };
 
-/** "Lembrar antes" options for a due time, in minutes */
+/** "Lembrar antes" options in minutes: with a due time, and without one (counted from 09:00 of the day) */
 const REMINDER_OPTIONS = [
   [15, "15 min antes"],
   [30, "30 min antes"],
   [60, "1 hora antes"],
   [120, "2 horas antes"],
   [1440, "1 dia antes"],
+  [2880, "2 dias antes"],
+  [10080, "1 semana antes"],
 ] as const;
+const DAY_REMINDER_OPTIONS = [
+  [0, "No dia, às 9h"],
+  [1440, "1 dia antes, às 9h"],
+  [2880, "2 dias antes, às 9h"],
+  [10080, "1 semana antes, às 9h"],
+] as const;
+
+const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
+const WEEKDAY_NAMES = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+const RECURRENCE_UNITS: Record<string, string> = { DAILY: "dia(s)", WEEKLY: "semana(s)", MONTHLY: "mês(es)", YEARLY: "ano(s)" };
 
 const UTM_LABELS: Record<string, string> = {
   source: "utm_source",
@@ -346,15 +358,15 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload,
               onChange={(e) => onChange({ dueTime: e.target.value || null, ...(!e.target.value && { reminderMinutes: null }) })}
             />
           </div>
-          {draft.dueTime && (
+          {draft.closeDate && (
             <Select
               className="deal-input"
               aria-label="Lembrete antes do prazo"
               value={String(draft.reminderMinutes ?? "")}
               onChange={(e) => onChange({ reminderMinutes: e.target.value ? Number(e.target.value) : null })}
             >
-              <option value="">Sem lembrete antes</option>
-              {REMINDER_OPTIONS.map(([minutes, label]) => (
+              <option value="">Sem lembrete extra</option>
+              {(draft.dueTime ? REMINDER_OPTIONS : DAY_REMINDER_OPTIONS).map(([minutes, label]) => (
                 <option key={minutes} value={minutes}>
                   {label}
                 </option>
@@ -402,6 +414,10 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload,
           <textarea className="deal-input" rows={6} value={draft.comment ?? ""} onChange={(e) => onChange({ comment: e.target.value })} />
         </Field>
         <ObserversField observers={draft.observers} team={team} onChange={onChange} />
+        <label className="deal-checkbox" title="Desmarcado: só o responsável, corresponsáveis, observadores e administradores veem a tarefa">
+          <input type="checkbox" checked={draft.isPublic} onChange={(e) => onChange({ isPublic: e.target.checked })} />
+          Visível para todos do quadro
+        </label>
         <Field
           label="Repetir"
           aside={draft.recurrence !== "NONE" && <span className="deal-field__hint">cria a próxima ao concluir</span>}
@@ -413,9 +429,48 @@ function TaskGeneralForm({ deal, draft, onChange, team, onStageChange, onReload,
               </option>
             ))}
           </Select>
+          {draft.recurrence !== "NONE" && <RecurrenceDetails draft={draft} onChange={onChange} />}
         </Field>
       </Section>
       <CustomFieldsSection deal={deal} draft={draft} onChange={onChange} />
+    </div>
+  );
+}
+
+/** "a cada N" and, for weekly tasks, the weekdays it repeats on */
+function RecurrenceDetails({ draft, onChange }: { draft: DealDraft; onChange: Props["onChange"] }) {
+  const mask = draft.recurrenceWeekdays ?? 0;
+  return (
+    <div className="deal-row crm-recurrence">
+      <label className="crm-recurrence__every">
+        a cada
+        <input
+          type="number"
+          min={1}
+          max={365}
+          className="deal-input"
+          aria-label="Repetir a cada"
+          value={draft.recurrenceInterval ?? 1}
+          onChange={(e) => onChange({ recurrenceInterval: Number(e.target.value) > 1 ? Number(e.target.value) : null })}
+        />
+        {RECURRENCE_UNITS[draft.recurrence]}
+      </label>
+      {draft.recurrence === "WEEKLY" && (
+        <span className="crm-recurrence__days" role="group" aria-label="Dias da semana">
+          {WEEKDAYS.map((letter, day) => (
+            <button
+              key={day}
+              type="button"
+              title={WEEKDAY_NAMES[day]}
+              aria-pressed={!!(mask & (1 << day))}
+              className={`crm-recurrence__day ${mask & (1 << day) ? "is-active" : ""}`}
+              onClick={() => onChange({ recurrenceWeekdays: mask ^ (1 << day) || null })}
+            >
+              {letter}
+            </button>
+          ))}
+        </span>
+      )}
     </div>
   );
 }
@@ -675,7 +730,7 @@ export function DealGeneralForm(props: Props) {
           </datalist>
         </Field>
 
-        <label className="deal-checkbox">
+        <label className="deal-checkbox" title="Desmarcado: só o responsável, observadores e administradores veem o negócio">
           <input type="checkbox" checked={draft.isPublic} onChange={(e) => onChange({ isPublic: e.target.checked })} />
           Disponível para todos
         </label>

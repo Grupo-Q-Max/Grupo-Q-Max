@@ -1,4 +1,4 @@
-import { Calendar, Clock, ListChecks, ListTodo, ListTree, Lock, Trash2 } from "lucide-react";
+import { Archive, Calendar, Check, Clock, ListChecks, ListTodo, ListTree, Lock } from "lucide-react";
 import { dueAt } from "@/lib/crm-due";
 import { Avatar } from "./deal/ui";
 import { formatMinutes, priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
@@ -47,13 +47,16 @@ export function DealCard({
   deal,
   isTask,
   onOpen,
-  onDelete,
+  onArchive,
+  selected,
 }: {
   deal: CrmDeal;
   /** Task board card: deadline instead of value, no won/lost */
   isTask?: boolean;
   onOpen?: () => void;
-  onDelete?: () => void;
+  onArchive?: () => void;
+  /** Selection mode: true/false shows the checkbox (and clicks select instead of opening) */
+  selected?: boolean;
 }) {
   const nextActivity = deal.activities?.[0];
   const pendingCount = deal._count?.activities ?? 0;
@@ -63,10 +66,15 @@ export function DealCard({
 
   return (
     <div
-      className={`kanban-card ${deal.status && deal.status !== "OPEN" ? `kanban-card--${deal.status.toLowerCase()}` : ""} ${taskDone ? "kanban-card--done" : ""}`}
+      className={`kanban-card ${deal.status && deal.status !== "OPEN" ? `kanban-card--${deal.status.toLowerCase()}` : ""} ${taskDone ? "kanban-card--done" : ""} ${selected ? "kanban-card--selected" : ""}`}
       onClick={onOpen}
     >
       <div className="kanban-card__glow" />
+      {selected !== undefined && (
+        <span className={`kanban-card__select ${selected ? "is-checked" : ""}`} role="checkbox" aria-checked={selected} aria-label="Selecionar">
+          {selected && <Check size={12} />}
+        </span>
+      )}
       {(deal.priority || !!deal.tags?.length || (deal.blocked && !taskDone)) && (
         <div className="kanban-card__tags">
           {deal.blocked && !taskDone && (
@@ -170,15 +178,17 @@ export function DealCard({
             .filter(Boolean)
             .join(" · ")}
         </span>
-        {onDelete && (
+        {onArchive && selected === undefined && (
           <button
             className="kanban-card__delete"
+            title="Arquivar"
+            aria-label="Arquivar"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              onArchive();
             }}
           >
-            <Trash2 size={14} />
+            <Archive size={14} />
           </button>
         )}
       </div>

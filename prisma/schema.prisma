@@ -344,6 +344,10 @@ model CrmCard {
   isPublic           Boolean       @default(true)
   comment            String?       @db.Text
   recurrence         CrmRecurrence @default(NONE)
+  /// "Repetir a cada N" days, weeks, months or years (per `recurrence`); null = every 1
+  recurrenceInterval Int?
+  /// WEEKLY only: weekdays it repeats on as a bitmask (1 = Sunday … 64 = Saturday); null = same weekday as the deadline
+  recurrenceWeekdays Int?
   utm                Json? // { source, medium, campaign, content, term } captured from forms
   customData         Json? // values of the pipeline's user-defined fields (fieldsConfig)
   /// Set = archived: hidden from boards, lists, reports and reminders, still reachable by its URL
@@ -352,7 +356,7 @@ model CrmCard {
   isTemplate         Boolean       @default(false)
   /// Task boards: time of day the task is due on closeDate ("HH:MM", Brazilian time); null = any time that day
   dueTime            String?       @db.VarChar(5)
-  /// Task boards: minutes before closeDate + dueTime to remind the responsible; null = no such reminder
+  /// Task boards: minutes before closeDate + dueTime (09:00 without a time) to remind the responsible; null = no such reminder
   reminderMinutes    Int?
   /// Instant of the minutes-before reminder already sent; a new date, time or lead gets its own reminder
   timeRemindedFor    DateTime?
