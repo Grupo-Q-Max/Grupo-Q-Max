@@ -11,9 +11,10 @@ import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
-import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download, CheckSquare } from "lucide-react";
+import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download, CheckSquare, Users } from "lucide-react";
 import { CrmCalendar } from "./CrmCalendar";
 import { CrmTimeline } from "./CrmTimeline";
+import { CrmWorkload } from "./CrmWorkload";
 import { CrmSavedViews } from "./CrmSavedViews";
 import { CrmBulkBar } from "./CrmBulkBar";
 import { alertDialog } from "@/components/ui/Dialogs";
@@ -42,7 +43,7 @@ const DEAL_STATUSES: Record<string, string> = { OPEN: "Aberto", WON: "Ganho", LO
 const TASK_STATUSES: Record<string, string> = { OPEN: "Aberta", WON: "Concluída" };
 const ACTIVITIES: Record<string, string> = { overdue: "Atividade atrasada", none: "Sem atividade pendente" };
 const DUE: Record<string, string> = { overdue: "Atrasada", today: "Vence hoje", week: "Próximos 7 dias", none: "Sem prazo" };
-const VIEWS = ["kanban", "list", "calendar", "timeline", "activities"] as const;
+const VIEWS = ["kanban", "list", "calendar", "timeline", "workload", "activities"] as const;
 type View = (typeof VIEWS)[number];
 type Sort = "due" | "priority" | null;
 /** Kanban swimlanes: one row of columns per responsible, priority or tag */
@@ -555,6 +556,11 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
               <ChartGantt size={16} /> Linha do tempo
             </button>
           )}
+          {isTasks && (
+            <button className={`view-btn ${view === "workload" ? "is-active" : ""}`} onClick={() => setView("workload")}>
+              <Users size={16} /> Carga
+            </button>
+          )}
           <button
             className={`view-btn ${view === "activities" ? "is-active" : ""}`}
             onClick={() => setView("activities")}
@@ -714,6 +720,8 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
             </table>
           </div>
         )}
+
+        {view === "workload" && <CrmWorkload cards={allCards} onOpen={openDeal} />}
 
         {view === "calendar" && (
           <CrmCalendar
