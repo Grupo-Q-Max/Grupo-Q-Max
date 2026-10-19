@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Braces, Plus, X } from "lucide-react";
 import {
   ACTIVITY_TYPES,
   DEAL_FIELDS,
   DEAL_STATUSES,
   DELAY_UNITS,
+  TASK_PRIORITIES,
   customFieldKey,
   hasDealUpdate,
   type ActionType,
@@ -17,6 +18,7 @@ import {
   type DelayUnit,
   type HttpMethod,
   type NotifyAction,
+  type TaskPriority,
   type WebhookHeader,
 } from "@/lib/crm-automation-shared";
 import { ModalRow } from "./AutomationModal";
@@ -44,7 +46,7 @@ const DEFAULT_ACTIVITY: ActivityAction = {
   deadlineUnit: null,
 };
 
-const DEFAULT_DEAL_UPDATE: DealUpdateAction = { stageId: null, status: null, responsibleId: null, customData: null };
+const DEFAULT_DEAL_UPDATE: DealUpdateAction = { stageId: null, status: null, responsibleId: null, priority: null, addTagId: null, customData: null };
 
 type SavedAction = {
   webhookUrl: string | null;
@@ -67,6 +69,7 @@ export function actionDraft(saved: SavedAction | null | undefined): ActionDraft 
     notify: {
       message: saved?.notify?.message ?? "",
       notifyResponsible: saved?.notify?.notifyResponsible ?? true,
+      notifyAssignees: saved?.notify?.notifyAssignees ?? false,
       memberIds: saved?.notify?.memberIds ?? [],
     },
   };
@@ -88,7 +91,7 @@ export function actionValidationError(action: ActionType, draft: ActionDraft, st
   }
   if (action === "NOTIFY") {
     if (!notify.message.trim()) return "Informe a mensagem";
-    if (!notify.notifyResponsible && notify.memberIds.length === 0) return "Escolha quem será avisado";
+    if (!notify.notifyResponsible && !notify.notifyAssignees && notify.memberIds.length === 0) return "Escolha quem será avisado";
   }
   return "";
 }
@@ -154,6 +157,17 @@ export function ActionFields({
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  // Tags for "Adicionar etiqueta", loaded when the action is "Modificar negócio"
+  const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (action !== "UPDATE_DEAL") return;
+    const controller = new AbortController();
+    fetch("/api/crm/tag", { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setTags)
+      .catch(() => {});
+    return () => controller.abort();
+  }, [action]);
 
   const set = onChange;
   const { activity, dealUpdate, notify } = draft;
@@ -402,6 +416,31 @@ export function ActionFields({
             </Select>
           </ModalRow>
 
+          <ModalRow label="Prioridade">
+            <Select
+              value={dealUpdate.priority ?? ""}
+              onChange={(e) => setDealUpdate({ priority: (e.target.value || null) as TaskPriority | null })}
+            >
+              <option value="">Não alterar</option>
+              {Object.entries(TASK_PRIORITIES).map(([key, priorityLabel]) => (
+                <option key={key} value={key}>
+                  {priorityLabel}
+                </option>
+              ))}
+            </Select>
+          </ModalRow>
+
+          <ModalRow label="Adicionar etiqueta">
+            <Select value={dealUpdate.addTagId ?? ""} onChange={(e) => setDealUpdate({ addTagId: e.target.value || null })}>
+              <option value="">Nenhuma</option>
+              {tags.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          </ModalRow>
+
           <ModalRow label="Campos">
             <div className="auto-conditions">
               {customRows.map(([fieldId, value], index) => {
@@ -487,6 +526,14 @@ export function ActionFields({
                   onChange={(e) => setNotify({ notifyResponsible: e.target.checked })}
                 />
                 <span>Responsável do negócio</span>
+              </label>
+              <label className="auto-switch">
+                <input
+                  type="checkbox"
+                  checked={notify.notifyAssignees}
+                  onChange={(e) => setNotify({ notifyAssignees: e.target.checked })}
+                />
+                <span>Corresponsáveis e observadores</span>
               </label>
               {members.map((m) => (
                 <label key={m.id} className="auto-switch">

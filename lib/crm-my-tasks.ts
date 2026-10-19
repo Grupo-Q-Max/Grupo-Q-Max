@@ -5,6 +5,7 @@ import { ACTIVITY_LABELS } from "@/components/crm/deal/types";
 import { dueAt, dueState, reminderBase, todayKey } from "@/lib/crm-due";
 import { escapeHtml, sendMail } from "@/lib/mail";
 import { activeCard } from "@/lib/crm-deal";
+import { fireTriggers } from "@/lib/crm-automation";
 
 /** End of a Brazilian day, so date-only closeDates sort among activity deadlines of that day. */
 const endOfDay = (day: string) => new Date(`${day}T23:59:59.999-03:00`);
@@ -196,7 +197,15 @@ export async function remindDueTasks(limit = 100) {
     return remindAt.getTime() <= now && now < due.getTime() && c.timeRemindedFor?.getTime() !== remindAt.getTime() ? [{ ...c, due, remindAt }] : [];
   });
 
-  const reminders = [
+  const reminders: {
+    to: { memberId: string; email: string | null | undefined }[];
+    number: number;
+    cardId: string;
+    message: string;
+    claim: (tx: Prisma.TransactionClient) => Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /** Runs once the reminder was claimed and sent */
+    onSent?: () => Promise<unknown>;
+  }[] = [
     ...cards.map((c) => ({
       to: cardRecipients(c),
       number: c.number,
@@ -204,6 +213,9 @@ export async function remindDueTasks(limit = 100) {
       message: `Tarefa #${c.number} "${c.title}" ${dueState(c.closeDate, true) === "overdue" ? "está atrasada" : "vence hoje"}`,
       claim: (tx: Prisma.TransactionClient) =>
         tx.crmCard.updateMany({ where: { id: c.id, closeDate: c.closeDate, ...cardPending }, data: { remindedFor: c.closeDate } }),
+      // Same once-per-deadline claim drives the "Prazo chegou" trigger
+      // ponytail: tasks without an active responsible get no reminder, so no trigger either; give the trigger its own claim column if that matters
+      onSent: () => fireTriggers(c.id, { type: "DUE_REACHED" }),
     })),
     ...activities.map((a) => ({
       to: [{ memberId: a.responsibleId!, email: a.responsible?.email }],
@@ -242,7 +254,7 @@ export async function remindDueTasks(limit = 100) {
   ];
 
   let sent = 0;
-  for (const { claim, to, number, ...notification } of reminders) {
+  for (const { claim, to, number, onSent, ...notification } of reminders) {
     // One claim per card/activity; every recipient gets the bell in the same transaction
     const created = await prisma.$transaction(async (tx) => {
       if (!(await claim(tx)).count) return false;
@@ -251,6 +263,7 @@ export async function remindDueTasks(limit = 100) {
     });
     if (!created) continue;
     sent++;
+    await onSent?.();
     for (const { memberId, email } of to) {
       notifyMember(memberId);
       if (!email) continue;
