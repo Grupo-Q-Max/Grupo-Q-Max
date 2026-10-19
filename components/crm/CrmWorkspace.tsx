@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { CrmKanban, sortCards } from "./CrmKanban";
 import type { CrmDeal } from "./DealCard";
 import { DealDetailsPanel } from "./deal/DealDetailsPanel";
-import { PRIORITIES, formatMinutes, priorityLabel } from "./deal/types";
+import { PRIORITIES, formatMinutes, priorityLabel, type Priority } from "./deal/types";
 import { FilterField, FilterSearch, type FilterChip } from "./FilterSearch";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
 import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download, CheckSquare, Users } from "lucide-react";
@@ -22,7 +23,9 @@ import { downloadCsv } from "@/lib/csv";
 
 type DealFilters = {
   q: string;
+  /** Multi-value filters (responsibleId, stageId, status, priority, tagId) hold comma-separated values */
   responsibleId: string;
+  stageId: string;
   status: string;
   activity: string;
   from: string;
@@ -36,7 +39,7 @@ type DealFilters = {
   startTo: string;
   overEstimate: string;
 };
-const NO_FILTERS: DealFilters = { q: "", responsibleId: "", status: "", activity: "", from: "", to: "", priority: "", tagId: "", due: "", dueFrom: "", dueTo: "", startFrom: "", startTo: "", overEstimate: "" };
+const NO_FILTERS: DealFilters = { q: "", responsibleId: "", stageId: "", status: "", activity: "", from: "", to: "", priority: "", tagId: "", due: "", dueFrom: "", dueTo: "", startFrom: "", startTo: "", overEstimate: "" };
 const NO_RESPONSIBLE = "none";
 const NO_PRIORITY = "none";
 const DEAL_STATUSES: Record<string, string> = { OPEN: "Aberto", WON: "Ganho", LOST: "Perdido" };
@@ -45,6 +48,7 @@ const ACTIVITIES: Record<string, string> = { overdue: "Atividade atrasada", none
 const DUE: Record<string, string> = { overdue: "Atrasada", today: "Vence hoje", week: "Próximos 7 dias", none: "Sem prazo" };
 const VIEWS = ["kanban", "list", "calendar", "timeline", "workload", "activities"] as const;
 type View = (typeof VIEWS)[number];
+type ListFilter = "responsibleId" | "stageId" | "status" | "priority" | "tagId";
 type Sort = "due" | "priority" | null;
 /** Kanban swimlanes: one row of columns per responsible, priority or tag */
 const LANES = { responsible: "Responsável", priority: "Prioridade", tag: "Etiqueta" } as const;
@@ -120,20 +124,27 @@ function inDayRange(date: string | Date | null | undefined, from: string, to: st
   return !!day && !(from && day < from) && !(to && day > to);
 }
 
+/** Values of a multi-value filter ("" = none, so the filter is off) */
+const listOf = (value: string) => (value ? value.split(",") : []);
+const toList = (values: string[]) => values.join(",");
+
 function matchesDeal(deal: CrmDeal, f: DealFilters) {
   const next = deal.activities?.[0];
   if (!matches(f.q, deal.title, deal.company, deal.contactName, `#${deal.number}`)) return false;
   // A co-assignee counts as responsible for the filter
-  if (f.responsibleId && (deal.responsible?.id ?? NO_RESPONSIBLE) !== f.responsibleId && !deal.assignees?.some((m) => m.id === f.responsibleId)) return false;
-  if (f.status && (deal.status ?? "OPEN") !== f.status) return false;
+  // Several values of one filter = any of them; a co-assignee counts as responsible
+  const responsibles = listOf(f.responsibleId);
+  if (responsibles.length && !responsibles.includes(deal.responsible?.id ?? NO_RESPONSIBLE) && !deal.assignees?.some((m) => responsibles.includes(m.id))) return false;
+  if (f.status && !listOf(f.status).includes(deal.status ?? "OPEN")) return false;
+  if (f.stageId && !listOf(f.stageId).includes(deal.stageId)) return false;
   // Same overdue rule as DealCard
   if (f.activity === "overdue" && !(next?.deadline && new Date(next.deadline).getTime() < Date.now())) return false;
   if (f.activity === "none" && (deal._count?.activities ?? 0) > 0) return false;
   if ((f.from || f.to) && !deal.createdAt) return false;
   if (f.from && dayOf(deal.createdAt!) < f.from) return false;
   if (f.to && dayOf(deal.createdAt!) > f.to) return false;
-  if (f.priority && (deal.priority ?? NO_PRIORITY) !== f.priority) return false;
-  if (f.tagId && !deal.tags?.some((t) => t.id === f.tagId)) return false;
+  if (f.priority && !listOf(f.priority).includes(deal.priority ?? NO_PRIORITY)) return false;
+  if (f.tagId && !deal.tags?.some((t) => listOf(f.tagId).includes(t.id))) return false;
   if (f.due && !matchesDue(deal, f.due)) return false;
   if (!inDayRange(deal.closeDate, f.dueFrom, f.dueTo)) return false;
   if (!inDayRange(deal.startDate, f.startFrom, f.startTo)) return false;
@@ -307,16 +318,24 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     return list.filter((lane) => everyCard.some(lane.has));
   })();
 
+  /** One chip per multi-value filter: "Responsável: Ana, Bia +1" */
+  const listChip = (key: ListFilter, title: string, name: (value: string) => string) => {
+    const values = listOf(filters[key]);
+    if (!values.length) return null;
+    const names = values.slice(0, 2).map(name).join(", ");
+    return { key, label: `${title}: ${names}${values.length > 2 ? ` +${values.length - 2}` : ""}`, onRemove: () => set({ [key]: "" }) };
+  };
+  const multi = (key: ListFilter, label: string, options: { value: string; label: string }[]) => (
+    <MultiSelect className="crm-access__select" aria-label={label} options={options} value={listOf(filters[key])} onChange={(values) => set({ [key]: toList(values) })} />
+  );
+
   const chips: FilterChip[] = [
-    filters.responsibleId && { key: "responsible", label: responsibleName(filters.responsibleId), onRemove: () => set({ responsibleId: "" }) },
-    filters.status && { key: "status", label: statuses[filters.status], onRemove: () => set({ status: "" }) },
+    listChip("responsibleId", "Responsável", responsibleName),
+    listChip("stageId", isTasks ? "Coluna" : "Etapa", stageName),
+    listChip("status", "Status", (v) => statuses[v] ?? v),
     filters.activity && { key: "activity", label: ACTIVITIES[filters.activity], onRemove: () => set({ activity: "" }) },
-    filters.priority && {
-      key: "priority",
-      label: filters.priority === NO_PRIORITY ? "Sem prioridade" : `Prioridade ${priorityLabel(filters.priority)?.toLowerCase()}`,
-      onRemove: () => set({ priority: "" }),
-    },
-    filters.tagId && { key: "tag", label: tags.find((t) => t.id === filters.tagId)?.name ?? "Etiqueta", onRemove: () => set({ tagId: "" }) },
+    listChip("priority", "Prioridade", (v) => (v === NO_PRIORITY ? "Sem prioridade" : priorityLabel(v as Priority) ?? v)),
+    listChip("tagId", "Etiqueta", (v) => tags.find((t) => t.id === v)?.name ?? "Etiqueta"),
     filters.due && { key: "due", label: DUE[filters.due], onRemove: () => set({ due: "" }) },
     filters.dueFrom && { key: "dueFrom", label: `Prazo de ${showDay(filters.dueFrom)}`, onRemove: () => set({ dueFrom: "" }) },
     filters.dueTo && { key: "dueTo", label: `Prazo até ${showDay(filters.dueTo)}`, onRemove: () => set({ dueTo: "" }) },
@@ -405,26 +424,15 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
           onClear={() => setFilters(NO_FILTERS)}
         >
           <FilterField label="Responsável">
-            <Select className="crm-access__select" value={filters.responsibleId} onChange={(e) => set({ responsibleId: e.target.value })} aria-label="Responsável">
-              <option value="">Todos</option>
-              <option value={NO_RESPONSIBLE}>Sem responsável</option>
-              {responsibles.map(([id, name]) => (
-                <option key={id} value={id}>
-                  {name}
-                </option>
-              ))}
-            </Select>
+            {multi("responsibleId", "Responsável", [
+              { value: NO_RESPONSIBLE, label: "Sem responsável" },
+              ...responsibles.map(([value, label]) => ({ value, label })),
+            ])}
           </FilterField>
-          <FilterField label="Status">
-            <Select className="crm-access__select" value={filters.status} onChange={(e) => set({ status: e.target.value })} aria-label="Status">
-              <option value="">Todos</option>
-              {Object.entries(statuses).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
+          <FilterField label={isTasks ? "Coluna" : "Etapa"}>
+            {multi("stageId", isTasks ? "Coluna" : "Etapa", pipeline.stages.map((s: { id: string; name: string }) => ({ value: s.id, label: s.name })))}
           </FilterField>
+          <FilterField label="Status">{multi("status", "Status", Object.entries(statuses).map(([value, label]) => ({ value, label })))}</FilterField>
           {isTasks ? (
             <>
               <FilterField label="Prazo">
@@ -458,28 +466,12 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                 </Select>
               </FilterField>
               <FilterField label="Prioridade">
-                <Select className="crm-access__select" value={filters.priority} onChange={(e) => set({ priority: e.target.value })} aria-label="Prioridade">
-                  <option value="">Todas</option>
-                  {[...PRIORITIES].reverse().map((p) => (
-                    <option key={p.value} value={p.value}>
-                      {p.label}
-                    </option>
-                  ))}
-                  <option value={NO_PRIORITY}>Sem prioridade</option>
-                </Select>
+                {multi("priority", "Prioridade", [
+                  ...[...PRIORITIES].reverse().map((p) => ({ value: p.value, label: p.label })),
+                  { value: NO_PRIORITY, label: "Sem prioridade" },
+                ])}
               </FilterField>
-              {tags.length > 0 && (
-                <FilterField label="Etiqueta">
-                  <Select className="crm-access__select" value={filters.tagId} onChange={(e) => set({ tagId: e.target.value })} aria-label="Etiqueta">
-                    <option value="">Todas</option>
-                    {tags.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </Select>
-                </FilterField>
-              )}
+              {tags.length > 0 && <FilterField label="Etiqueta">{multi("tagId", "Etiqueta", tags.map((t) => ({ value: t.id, label: t.name })))}</FilterField>}
             </>
           ) : (
             <FilterField label="Atividade">
