@@ -33,10 +33,15 @@ model TeamMember {
   name            String
   role            String
   sector          String    @default("")
+  /// Avatar in the CRM and photo on the site "Nossos Sócios" section (when the member is a partner)
   photo           String? // public path or /api/files/<upload>
+  /// Legacy: moved to TeamPartner (2026-10-19); drop with a manual db push once every database ran the backfill
   accentColor     String    @default("#14d0c1")
+  /// Legacy: moved to TeamPartner (2026-10-19); drop with a manual db push once every database ran the backfill
   linkedin        String?
+  /// Legacy: moved to TeamPartner (2026-10-19); drop with a manual db push once every database ran the backfill
   bio             String?   @db.Text
+  /// Display order in the admin, the CRM member lists and the site partners section
   order           Int       @default(0)
   /// Legacy, created by hand in production and unused by the code: group companies, comma-separated
   /// (e.g. "grupo,technology"). Kept so db push doesn't drop its data; breaks 1NF, so move it to a
@@ -54,8 +59,11 @@ model TeamMember {
   passwordHash    String?
   /// Unused since the CRM signs in only with Microsoft (2026-10-05); drop with a manual db push
   emailVerifiedAt DateTime?
-  /// Listed on the public "Nossos Sócios" section; self-registered CRM users start hidden
-  showOnSite      Boolean   @default(true)
+  /// Legacy: true = not yet copied to TeamPartner. scripts/seed-prod-team.cjs creates the partner and
+  /// clears it on every deploy; drop with a manual db push once every database ran the backfill
+  showOnSite      Boolean   @default(false)
+  /// Set only for partners (sócios): their profile on the public site. Employees have none
+  partner         TeamPartner?
   /// CRM access group; null = the default group (CrmGroup.isDefault)
   crmGroupId      String?
   crmGroup        CrmGroup? @relation(fields: [crmGroupId], references: [id], onDelete: SetNull)
@@ -85,6 +93,18 @@ model TeamMember {
   @@unique([microsoftTid, microsoftOid])
   @@index([crmGroupId])
   @@index([area])
+}
+
+/// Partner (sócio) profile on the public "Nossos Sócios" section. Only members with a row here can appear
+/// on the site; name, role, sector, photo and order come from the TeamMember.
+model TeamPartner {
+  memberId    String     @id
+  member      TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  accentColor String     @default("#14d0c1")
+  linkedin    String?
+  bio         String?    @db.Text
+  /// false = partner hidden from the site for now
+  visible     Boolean    @default(true)
 }
 
 /// Company area a request is addressed to; OTHER notifies the `request.manage` users.

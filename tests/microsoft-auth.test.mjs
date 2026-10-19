@@ -162,7 +162,7 @@ describe("findOrCreateMember (local database)", { skip: !localDb && "DATABASE_UR
     assert.equal(member.microsoftOid, who.oid);
     assert.equal(member.microsoftTid, TENANT);
     assert.equal(member.crmGroupId, null);
-    assert.equal(member.showOnSite, false);
+    assert.equal(await db.teamPartner.count({ where: { memberId: member.id } }), 0);
     assert.equal(member.passwordHash, null);
   });
 

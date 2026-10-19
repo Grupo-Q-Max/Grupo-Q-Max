@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { prisma } from "@/lib/prisma";
 import { getUploadsDir } from "@/lib/storage";
-import { emailTakenResponse, parseTeamInput, teamInclude, toTeamDto } from "@/lib/team";
+import { emailTakenResponse, parsePartnerInput, parseTeamInput, teamInclude, toTeamDto } from "@/lib/team";
 import { adminGroupChange } from "@/lib/crm-access";
 
 export async function DELETE(
@@ -35,13 +35,22 @@ export async function PUT(
 ) {
   const { id } = await params;
   const body = await req.json();
-  const exists = await prisma.teamMember.findUnique({ where: { id }, select: { crmGroupId: true } });
+  const exists = await prisma.teamMember.findUnique({
+    where: { id },
+    select: { crmGroupId: true, partner: { select: { memberId: true } } },
+  });
   if (!exists) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+  // Only partners have a site profile: `partner` in the body updates it and never turns an employee into a partner
+  const partner = parsePartnerInput(body);
   const member = await prisma.teamMember
     .update({
       where: { id },
-      data: { ...parseTeamInput(body), ...(await adminGroupChange(body.crmAdmin, exists.crmGroupId)) },
+      data: {
+        ...parseTeamInput(body),
+        ...(await adminGroupChange(body.crmAdmin, exists.crmGroupId)),
+        ...(partner && exists.partner && { partner: { update: partner } }),
+      },
       include: teamInclude,
     })
     .catch(emailTakenResponse);
