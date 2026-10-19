@@ -14,6 +14,7 @@ import { activeCard, snapshotBeforeMove, syncTaskStatus, updateDeal } from "@/li
 /** Templates and archived cards are off the board: no rules, triggers or QXBACK pushes for them. */
 const isHiddenCard = async (cardId: string) => (await prisma.crmCard.count({ where: { id: cardId, NOT: activeCard } })) > 0;
 import { notifyQxbackStage } from "@/lib/crm-qxback";
+import { notifyRuleFailed } from "@/lib/crm-card-notify";
 import {
   DEAL_STATUSES,
   FLOW_LIMITS,
@@ -342,9 +343,14 @@ async function processRun(id: string) {
   if (status !== "PENDING" && (automation.actionType === "WEBHOOK" || status === "FAILED")) {
     await logInTimeline(run.cardId, automation.name, status, httpStatus, error);
   }
+  if (status === "FAILED") await alertRuleFailed(run.cardId, automation.name, error);
   if (status !== "PENDING") notifyPipelineChanged(deal.stage.pipelineId);
   if (status === "SUCCESS") await outcome.followUp?.();
 }
+
+/** Bell alert for a run that failed for good; a failure here must not stop the queue. */
+const alertRuleFailed = (cardId: string, name: string, error: string | null) =>
+  notifyRuleFailed(cardId, name, error).catch((e) => console.error("[crm-automation] notifyRuleFailed failed", e));
 
 /** Adds a rule execution to the deal timeline. */
 const logInTimeline = (cardId: string, name: string, status: string, httpStatus: number | null, error: string | null) =>
@@ -396,7 +402,10 @@ async function processFlowRun(run: FlowRunRow, flowName: string, startDeal: Deal
   let deal = startDeal;
   const finish = async (status: "SUCCESS" | "FAILED" | "SKIPPED", error: string | null) => {
     await prisma.crmAutomationRun.update({ where: { id: run.id }, data: { status, error } });
-    if (status === "FAILED") await logInTimeline(run.cardId, flowName, status, null, error);
+    if (status === "FAILED") {
+      await logInTimeline(run.cardId, flowName, status, null, error);
+      await alertRuleFailed(run.cardId, flowName, error);
+    }
     notifyPipelineChanged(deal.stage.pipelineId);
   };
 

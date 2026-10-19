@@ -53,6 +53,30 @@ export async function notifyWatchers(cardId: string, authorId: string | null, me
   await notifyAboutCard(cardId, ids, message(await authorName(authorId), `#${card.number} "${card.title}"`), authorId);
 }
 
+/**
+ * Tells whoever may fix automation rules (admins and the "automation.edit" permission) that a rule
+ * failed for good on a card. A member who still has an unread failure of the same rule is not
+ * notified again, so a broken rule on many cards doesn't flood the bell.
+ */
+export async function notifyRuleFailed(cardId: string, ruleName: string, error: string | null) {
+  const editors = { OR: [{ isAdmin: true }, { permissions: { some: { permission: "automation.edit" } } }] };
+  const defaultEdits = await prisma.crmGroup.count({ where: { isDefault: true, ...editors } });
+  const prefix = `A automação "${ruleName}" falhou`;
+  const members = await prisma.teamMember.findMany({
+    where: {
+      crmActive: true,
+      OR: [{ crmGroup: editors }, ...(defaultEdits ? [{ crmGroupId: null }] : [])],
+      notifications: { none: { readAt: null, message: { startsWith: prefix } } },
+    },
+    select: { id: true },
+  });
+  if (!members.length) return;
+  const card = await prisma.crmCard.findUnique({ where: { id: cardId }, select: { number: true, title: true } });
+  if (!card) return;
+  const reason = error ? `: ${error.slice(0, 160)}` : "";
+  await notifyAboutCard(cardId, members.map((m) => m.id), `${prefix} em #${card.number} "${card.title}"${reason}`, null);
+}
+
 /** Tells the new responsible that the card was assigned to them (not when they assigned themselves). */
 export async function notifyAssigned(cardId: string, authorId: string | null) {
   const card = await prisma.crmCard.findUnique({
