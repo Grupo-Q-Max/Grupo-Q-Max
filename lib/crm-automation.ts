@@ -525,7 +525,8 @@ async function sendWebhook(rule: WebhookRule, ctx: DealContext): Promise<ActionO
       signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
       cache: "no-store",
     });
-    const responseBody = (await res.text()).slice(0, 2000);
+    // Masked before the cut, so a secret split by slice() can't leak half of it
+    const responseBody = redactSecrets(await res.text(), request.headers).slice(0, 2000);
     return { request: redactRequest(request), httpStatus: res.status, responseBody, error: res.ok ? null : `HTTP ${res.status}` };
   } catch (e) {
     const error = e instanceof Error ? (e.name === "TimeoutError" ? "Tempo limite excedido" : e.message) : String(e);
@@ -541,6 +542,21 @@ function redactRequest<T extends { headers: Record<string, string> }>(request: T
     Object.entries(request.headers).map(([key, value]) => [key, SECRET_HEADER.test(key) ? "••••" : value]),
   );
   return { ...request, headers };
+}
+
+/**
+ * Masks in `text` (e.g. a response that echoes the request) the values of the credential
+ * headers, whole and without their scheme ("Bearer abc" → also "abc"). Short values are kept
+ * so common words aren't masked.
+ */
+function redactSecrets(text: string, headers: Record<string, string>) {
+  const secrets = Object.entries(headers)
+    .filter(([key]) => SECRET_HEADER.test(key))
+    .flatMap(([, value]) => [value.trim(), value.trim().split(/\s+/).pop() ?? ""])
+    .filter((value) => value.length >= 6)
+    // Longest first, so "Bearer abc" is masked whole before "abc"
+    .sort((a, b) => b.length - a.length);
+  return secrets.reduce((masked, secret) => masked.replaceAll(secret, "••••"), text);
 }
 
 type ActivityConfig = CrmAutomationActivity & { responsible: { name: string } | null };
