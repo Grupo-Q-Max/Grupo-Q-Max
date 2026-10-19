@@ -52,10 +52,13 @@ export function AutomationRuleModal({
   stages,
   customFields,
   members,
+  preset,
   onClose,
   onSave,
 }: {
   rule: AutomationRule | null;
+  /** New rule from a template ("Modelos"): fields filled in advance */
+  preset?: Partial<RuleDraft>;
   /** Action of a new rule (an existing rule keeps its own) */
   actionType: ActionType;
   stageId: string;
@@ -65,7 +68,7 @@ export function AutomationRuleModal({
   onClose: () => void;
   onSave: (draft: RuleDraft) => Promise<boolean>;
 }) {
-  const [draft, setDraft] = useState(() => ruleDraft(rule, stageId, actionType));
+  const [draft, setDraft] = useState(() => ({ ...ruleDraft(rule, stageId, actionType), ...preset }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 

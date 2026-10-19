@@ -40,9 +40,10 @@ async function dealUpdateData(value: unknown, ruleStageId: string) {
     where: { id: ruleStageId },
     select: { pipelineId: true, pipeline: { select: { fieldsConfig: true } } },
   });
-  const [target, member] = await Promise.all([
+  const [target, member, tag] = await Promise.all([
     update.stageId ? prisma.crmStage.findUnique({ where: { id: update.stageId }, select: { pipelineId: true } }) : null,
     update.responsibleId ? prisma.teamMember.findUnique({ where: { id: update.responsibleId }, select: { id: true } }) : null,
+    update.addTagId ? prisma.crmTag.findUnique({ where: { id: update.addTagId }, select: { id: true } }) : null,
   ]);
   const fieldIds = new Set(
     (Array.isArray(ruleStage.pipeline.fieldsConfig) ? ruleStage.pipeline.fieldsConfig : []).map((f) => (f as { id?: string })?.id)
@@ -52,6 +53,8 @@ async function dealUpdateData(value: unknown, ruleStageId: string) {
     stageId: target && target.pipelineId === ruleStage.pipelineId && update.stageId !== ruleStageId ? update.stageId : null,
     status: update.status,
     responsibleId: member ? update.responsibleId : null,
+    priority: update.priority,
+    addTagId: tag ? update.addTagId : null,
     customData: Object.keys(customData).length ? customData : Prisma.DbNull,
   };
 }
@@ -64,6 +67,7 @@ async function notifyData(value: unknown) {
   return {
     message: notify.message || "{{deal.title}}",
     notifyResponsible: notify.notifyResponsible,
+    notifyAssignees: notify.notifyAssignees,
     memberIds: memberIds.length ? memberIds : Prisma.DbNull,
   };
 }

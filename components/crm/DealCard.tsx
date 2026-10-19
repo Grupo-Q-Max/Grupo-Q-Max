@@ -1,6 +1,7 @@
-import { Calendar, Clock, ListChecks, ListTodo, ListTree, Lock, Trash2 } from "lucide-react";
+import { Archive, Calendar, Check, Clock, CornerDownRight, ListChecks, ListTodo, ListTree, Lock } from "lucide-react";
 import { dueAt } from "@/lib/crm-due";
 import { Avatar } from "./deal/ui";
+import { CardTimer } from "./deal/DealTaskTools";
 import { formatMinutes, priorityLabel, type CrmTagDto, type Priority, type TeamMember } from "./deal/types";
 
 export type CrmDeal = {
@@ -34,6 +35,10 @@ export type CrmDeal = {
   subtasks?: { done: number; total: number };
   /** Parent task when this card is a subtask */
   parentId?: string | null;
+  /** Number and title of the parent task, shown above the title */
+  parent?: { number: number; title: string } | null;
+  /** Timers running on the card (endedAt null), one per member */
+  runningTimers?: { memberId: string | null; startedAt: string | Date }[];
   priority?: Priority | null;
   tags?: CrmTagDto[];
   /** Waits for a card that is not done yet ("Bloqueada por") */
@@ -47,13 +52,16 @@ export function DealCard({
   deal,
   isTask,
   onOpen,
-  onDelete,
+  onArchive,
+  selected,
 }: {
   deal: CrmDeal;
   /** Task board card: deadline instead of value, no won/lost */
   isTask?: boolean;
   onOpen?: () => void;
-  onDelete?: () => void;
+  onArchive?: () => void;
+  /** Selection mode: true/false shows the checkbox (and clicks select instead of opening) */
+  selected?: boolean;
 }) {
   const nextActivity = deal.activities?.[0];
   const pendingCount = deal._count?.activities ?? 0;
@@ -63,10 +71,15 @@ export function DealCard({
 
   return (
     <div
-      className={`kanban-card ${deal.status && deal.status !== "OPEN" ? `kanban-card--${deal.status.toLowerCase()}` : ""} ${taskDone ? "kanban-card--done" : ""}`}
+      className={`kanban-card ${deal.status && deal.status !== "OPEN" ? `kanban-card--${deal.status.toLowerCase()}` : ""} ${taskDone ? "kanban-card--done" : ""} ${selected ? "kanban-card--selected" : ""}`}
       onClick={onOpen}
     >
       <div className="kanban-card__glow" />
+      {selected !== undefined && (
+        <span className={`kanban-card__select ${selected ? "is-checked" : ""}`} role="checkbox" aria-checked={selected} aria-label="Selecionar">
+          {selected && <Check size={12} />}
+        </span>
+      )}
       {(deal.priority || !!deal.tags?.length || (deal.blocked && !taskDone)) && (
         <div className="kanban-card__tags">
           {deal.blocked && !taskDone && (
@@ -80,6 +93,11 @@ export function DealCard({
               {tag.name}
             </span>
           ))}
+        </div>
+      )}
+      {deal.parent && (
+        <div className="kanban-card__parent" title={`Subtarefa de #${deal.parent.number} ${deal.parent.title}`}>
+          <CornerDownRight size={11} /> #{deal.parent.number} · {deal.parent.title}
         </div>
       )}
       <h3 className="kanban-card__title">{deal.title}</h3>
@@ -157,6 +175,7 @@ export function DealCard({
             {deal.estimateMinutes != null && `/${formatMinutes(deal.estimateMinutes)}`}
           </span>
         )}
+        {isTask && !taskDone && selected === undefined && <CardTimer cardId={deal.id} running={deal.runningTimers ?? []} />}
         <span className="kanban-card__date">
           {[
             pendingCount > 0 &&
@@ -170,15 +189,17 @@ export function DealCard({
             .filter(Boolean)
             .join(" · ")}
         </span>
-        {onDelete && (
+        {onArchive && selected === undefined && (
           <button
             className="kanban-card__delete"
+            title="Arquivar"
+            aria-label="Arquivar"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              onArchive();
             }}
           >
-            <Trash2 size={14} />
+            <Archive size={14} />
           </button>
         )}
       </div>

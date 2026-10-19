@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle, Play, Plus, Square, Trash2, X } from "lucide-react";
 import { formatMinutes, parseMinutes, type DealDetails, type TeamMember } from "./types";
 import { Avatar, Field, formatDateOnly } from "./ui";
@@ -35,7 +36,82 @@ export async function offerParentDone(parentId: string | null | undefined) {
   return send("/api/crm/card", jsonRequest("PATCH", { id: parent.id, stageId: last }));
 }
 
-const elapsed = (startedAt: string, now: number) => Math.max(0, Math.round((now - new Date(startedAt).getTime()) / 60_000));
+const elapsed = (startedAt: string | Date, now: number) => Math.max(0, Math.round((now - new Date(startedAt).getTime()) / 60_000));
+
+/** "3d 4h", "5h20", "12min" */
+const formatSpan = (minutes: number) => (minutes >= 1440 ? `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h` : formatMinutes(minutes));
+
+/**
+ * "Tempo em cada coluna": total time the task spent in each column, from its STAGE_CHANGED history
+ * (stored by column name). The current column counts until now while the task is open.
+ */
+export function StageTimes({ deal }: { deal: DealDetails }) {
+  const [now] = useState(() => Date.now());
+  const moves = deal.history.filter((h) => h.type === "STAGE_CHANGED").sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const current = deal.pipeline.stages.find((s) => s.id === deal.stageId)?.name ?? "";
+  const totals = new Map<string, number>();
+  const add = (stage: string, ms: number) => stage && totals.set(stage, (totals.get(stage) ?? 0) + Math.max(0, ms));
+  let stage = moves[0]?.data?.from ?? current;
+  let since = new Date(deal.createdAt).getTime();
+  for (const move of moves) {
+    const at = new Date(move.createdAt).getTime();
+    add(stage, at - since);
+    stage = move.data?.to ?? "";
+    since = at;
+  }
+  if (deal.status === "OPEN") add(stage, now - since);
+  if (!totals.size) return null;
+  return (
+    <Field label="Tempo em cada coluna">
+      <ul className="deal-stage-times">
+        {[...totals].map(([name, ms]) => (
+          <li key={name} className={name === current && deal.status === "OPEN" ? "is-current" : ""}>
+            <span>{name}</span>
+            <b>{formatSpan(Math.round(ms / 60_000))}</b>
+          </li>
+        ))}
+      </ul>
+    </Field>
+  );
+}
+
+/** Kanban card play/stop for the viewer's own timer; starting it stops the one running on another card. */
+export function CardTimer({ cardId, running }: { cardId: string; running: { memberId: string | null; startedAt: string | Date }[] }) {
+  const router = useRouter();
+  const can = useCan();
+  const { memberId } = useViewer();
+  const [now, setNow] = useState(() => Date.now());
+  const [busy, setBusy] = useState(false);
+  const mine = running.find((e) => e.memberId === memberId);
+
+  useEffect(() => {
+    if (!mine) return;
+    const timer = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(timer);
+  }, [!!mine]);
+
+  if (!can("deal.edit")) return null;
+  const toggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setBusy(true);
+    const ok = await send("/api/crm/time", jsonRequest("POST", mine ? { action: "stop" } : { action: "start", cardId }));
+    setBusy(false);
+    if (ok) router.refresh();
+  };
+  return (
+    <button
+      type="button"
+      className={`kanban-card__timer ${mine ? "is-running" : ""}`}
+      disabled={busy}
+      onClick={toggle}
+      title={mine ? "Parar cronômetro" : "Iniciar cronômetro (para o que estiver rodando em outra tarefa)"}
+      aria-label={mine ? "Parar cronômetro" : "Iniciar cronômetro"}
+    >
+      {mine ? <Square size={11} /> : <Play size={11} />}
+      {mine && formatMinutes(elapsed(mine.startedAt, now))}
+    </button>
+  );
+}
 
 /** "Tempo gasto": timer (one running per person), time typed by hand and the entries, per member. */
 export function TimeTracker({ deal, team, onReload }: { deal: DealDetails; team: TeamMember[]; onReload: () => void }) {

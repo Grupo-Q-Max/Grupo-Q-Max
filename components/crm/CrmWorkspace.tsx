@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CrmKanban } from "./CrmKanban";
+import { CrmKanban, sortCards } from "./CrmKanban";
 import type { CrmDeal } from "./DealCard";
 import { DealDetailsPanel } from "./deal/DealDetailsPanel";
-import { PRIORITIES, formatMinutes, priorityLabel } from "./deal/types";
+import { PRIORITIES, formatMinutes, priorityLabel, type Priority } from "./deal/types";
 import { FilterField, FilterSearch, type FilterChip } from "./FilterSearch";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { matches } from "@/lib/text-search";
 import { dueState, todayKey } from "@/lib/crm-due";
-import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download } from "lucide-react";
+import { Kanban, List, Calendar, CalendarDays, ChartGantt, TrendingUp, ArrowDown, Archive, Download, CheckSquare, Users } from "lucide-react";
 import { CrmCalendar } from "./CrmCalendar";
 import { CrmTimeline } from "./CrmTimeline";
+import { CrmWorkload } from "./CrmWorkload";
 import { CrmSavedViews } from "./CrmSavedViews";
 import { CrmBulkBar } from "./CrmBulkBar";
 import { alertDialog } from "@/components/ui/Dialogs";
@@ -21,7 +23,9 @@ import { downloadCsv } from "@/lib/csv";
 
 type DealFilters = {
   q: string;
+  /** Multi-value filters (responsibleId, stageId, status, priority, tagId) hold comma-separated values */
   responsibleId: string;
+  stageId: string;
   status: string;
   activity: string;
   from: string;
@@ -29,30 +33,40 @@ type DealFilters = {
   priority: string;
   tagId: string;
   due: string;
+  dueFrom: string;
+  dueTo: string;
+  startFrom: string;
+  startTo: string;
+  overEstimate: string;
 };
-const NO_FILTERS: DealFilters = { q: "", responsibleId: "", status: "", activity: "", from: "", to: "", priority: "", tagId: "", due: "" };
+const NO_FILTERS: DealFilters = { q: "", responsibleId: "", stageId: "", status: "", activity: "", from: "", to: "", priority: "", tagId: "", due: "", dueFrom: "", dueTo: "", startFrom: "", startTo: "", overEstimate: "" };
 const NO_RESPONSIBLE = "none";
 const NO_PRIORITY = "none";
 const DEAL_STATUSES: Record<string, string> = { OPEN: "Aberto", WON: "Ganho", LOST: "Perdido" };
 const TASK_STATUSES: Record<string, string> = { OPEN: "Aberta", WON: "Concluída" };
 const ACTIVITIES: Record<string, string> = { overdue: "Atividade atrasada", none: "Sem atividade pendente" };
 const DUE: Record<string, string> = { overdue: "Atrasada", today: "Vence hoje", week: "Próximos 7 dias", none: "Sem prazo" };
-const VIEWS = ["kanban", "list", "calendar", "timeline", "activities"] as const;
+const VIEWS = ["kanban", "list", "calendar", "timeline", "workload", "activities"] as const;
 type View = (typeof VIEWS)[number];
+type ListFilter = "responsibleId" | "stageId" | "status" | "priority" | "tagId";
 type Sort = "due" | "priority" | null;
+/** Kanban swimlanes: one row of columns per responsible, priority or tag */
+const LANES = { responsible: "Responsável", priority: "Prioridade", tag: "Etiqueta" } as const;
+type Lanes = keyof typeof LANES | null;
 
-/** Board URL with the filters, view and sort, so a filtered board can be shared and survives a reload. */
-function boardUrl(pipelineId: string, filters: DealFilters, view: View, sort: Sort) {
-  const query = boardQuery(filters, view, sort);
+/** Board URL with the filters, view, sort and lanes, so a filtered board can be shared and survives a reload. */
+function boardUrl(pipelineId: string, filters: DealFilters, view: View, sort: Sort, lanes: Lanes) {
+  const query = boardQuery(filters, view, sort, lanes);
   return `/crm?pipelineId=${encodeURIComponent(pipelineId)}${query && `&${query}`}`;
 }
 
-/** The filters, view and sort as a query string ("" = the default board); also what a saved view stores. */
-function boardQuery(filters: DealFilters, view: View, sort: Sort) {
+/** The filters, view, sort and lanes as a query string ("" = the default board); also what a saved view stores. */
+function boardQuery(filters: DealFilters, view: View, sort: Sort, lanes: Lanes) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);
   if (view !== "kanban") params.set("view", view);
   if (sort) params.set("sort", sort);
+  if (lanes) params.set("lanes", lanes);
   return params.toString();
 }
 
@@ -62,7 +76,13 @@ function readBoardUrl(search = window.location.search) {
   const filters = Object.fromEntries(Object.keys(NO_FILTERS).map((key) => [key, params.get(key) ?? ""])) as DealFilters;
   const view = VIEWS.find((v) => v === params.get("view")) ?? "kanban";
   const sort = params.get("sort");
-  return { filters, view, sort: (sort === "due" || sort === "priority" ? sort : null) as Sort };
+  const lanes = params.get("lanes");
+  return {
+    filters,
+    view,
+    sort: (sort === "due" || sort === "priority" ? sort : null) as Sort,
+    lanes: (lanes && Object.hasOwn(LANES, lanes) ? lanes : null) as Lanes,
+  };
 }
 
 /** Shortcuts outside text fields: "/" focuses the search, "n" opens "Nova tarefa / Novo negócio". */
@@ -88,8 +108,6 @@ const dayOf = (date: string | Date) => new Date(date).toLocaleDateString("sv-SE"
 /** YYYY-MM-DD → DD/MM/YYYY */
 const showDay = (day: string) => day.split("-").reverse().join("/");
 const inAWeek = () => todayKey(new Date(Date.now() + 7 * 86_400_000));
-/** Priority weight for sorting: urgent first, no priority last */
-const priorityRank = (deal: CrmDeal) => (deal.priority ? PRIORITIES.findIndex((p) => p.value === deal.priority) : -1);
 
 function matchesDue(deal: CrmDeal, due: string) {
   const date = deal.closeDate ? new Date(deal.closeDate) : null;
@@ -99,21 +117,38 @@ function matchesDue(deal: CrmDeal, due: string) {
   return state === due;
 }
 
+/** Date-only column (UTC midnight, so its ISO day is the day) inside [from, to]; no bounds = always true. */
+function inDayRange(date: string | Date | null | undefined, from: string, to: string) {
+  if (!from && !to) return true;
+  const day = date ? new Date(date).toISOString().slice(0, 10) : null;
+  return !!day && !(from && day < from) && !(to && day > to);
+}
+
+/** Values of a multi-value filter ("" = none, so the filter is off) */
+const listOf = (value: string) => (value ? value.split(",") : []);
+const toList = (values: string[]) => values.join(",");
+
 function matchesDeal(deal: CrmDeal, f: DealFilters) {
   const next = deal.activities?.[0];
   if (!matches(f.q, deal.title, deal.company, deal.contactName, `#${deal.number}`)) return false;
   // A co-assignee counts as responsible for the filter
-  if (f.responsibleId && (deal.responsible?.id ?? NO_RESPONSIBLE) !== f.responsibleId && !deal.assignees?.some((m) => m.id === f.responsibleId)) return false;
-  if (f.status && (deal.status ?? "OPEN") !== f.status) return false;
+  // Several values of one filter = any of them; a co-assignee counts as responsible
+  const responsibles = listOf(f.responsibleId);
+  if (responsibles.length && !responsibles.includes(deal.responsible?.id ?? NO_RESPONSIBLE) && !deal.assignees?.some((m) => responsibles.includes(m.id))) return false;
+  if (f.status && !listOf(f.status).includes(deal.status ?? "OPEN")) return false;
+  if (f.stageId && !listOf(f.stageId).includes(deal.stageId)) return false;
   // Same overdue rule as DealCard
   if (f.activity === "overdue" && !(next?.deadline && new Date(next.deadline).getTime() < Date.now())) return false;
   if (f.activity === "none" && (deal._count?.activities ?? 0) > 0) return false;
   if ((f.from || f.to) && !deal.createdAt) return false;
   if (f.from && dayOf(deal.createdAt!) < f.from) return false;
   if (f.to && dayOf(deal.createdAt!) > f.to) return false;
-  if (f.priority && (deal.priority ?? NO_PRIORITY) !== f.priority) return false;
-  if (f.tagId && !deal.tags?.some((t) => t.id === f.tagId)) return false;
+  if (f.priority && !listOf(f.priority).includes(deal.priority ?? NO_PRIORITY)) return false;
+  if (f.tagId && !deal.tags?.some((t) => listOf(f.tagId).includes(t.id))) return false;
   if (f.due && !matchesDue(deal, f.due)) return false;
+  if (!inDayRange(deal.closeDate, f.dueFrom, f.dueTo)) return false;
+  if (!inDayRange(deal.startDate, f.startFrom, f.startTo)) return false;
+  if (f.overEstimate && !(deal.estimateMinutes != null && (deal.spentMinutes ?? 0) > deal.estimateMinutes)) return false;
   return true;
 }
 
@@ -189,6 +224,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   const router = useRouter();
   const [filters, setFilters] = useState(NO_FILTERS);
   const [sort, setSort] = useState<Sort>(null);
+  const [lanes, setLanes] = useState<Lanes>(null);
   useBoardShortcuts();
 
   // Filters, view and sort live in the URL (read once on mount, written back while the panel is closed)
@@ -201,6 +237,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     setFilters(fromUrl.filters);
     setView(fromUrl.view);
     setSort(fromUrl.sort);
+    setLanes(fromUrl.lanes);
   }, []);
   useEffect(() => {
     applyQuery();
@@ -208,10 +245,19 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   }, [applyQuery]);
   useEffect(() => {
     if (!urlRead) return;
-    closeUrl.current = boardUrl(pipeline.id, filters, view, sort);
+    closeUrl.current = boardUrl(pipeline.id, filters, view, sort, lanes);
     if (window.location.pathname === "/crm") window.history.replaceState(null, "", closeUrl.current);
-  }, [urlRead, pipeline.id, filters, view, sort]);
+  }, [urlRead, pipeline.id, filters, view, sort, lanes]);
+  // Swimlanes have no sync of their own: one realtime connection refreshes the board for every lane
+  const lanesOn = !!lanes && view === "kanban" && isTasks;
+  useEffect(() => {
+    if (!lanesOn) return;
+    const source = new EventSource(`/api/crm/events?pipelineId=${encodeURIComponent(pipeline.id)}`);
+    source.onmessage = () => router.refresh();
+    return () => source.close();
+  }, [lanesOn, pipeline.id, router]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [selecting, setSelecting] = useState(false);
   // List view "Arquivados": archived cards, loaded on demand (null = showing the board's cards)
   const [archived, setArchived] = useState<CrmDeal[] | null>(null);
   const loadArchived = useCallback(async () => {
@@ -233,8 +279,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
   const stageName = (id: string) => pipeline.stages.find((s: any) => s.id === id)?.name ?? "";
   const listed = view === "list" && archived ? archived.map((card) => ({ ...card, stageName: stageName(card.stageId) } as (typeof everyCard)[number])) : everyCard;
   const allCards = listed.filter(isDealVisible);
-  if (sort === "due") allCards.sort((a, b) => (a.closeDate ? new Date(a.closeDate).getTime() : Infinity) - (b.closeDate ? new Date(b.closeDate).getTime() : Infinity));
-  if (sort === "priority") allCards.sort((a, b) => priorityRank(b) - priorityRank(a));
+  allCards.splice(0, allCards.length, ...sortCards(allCards, sort));
   orderRef.current = allCards;
   const emptyMessage = filtering ? `Nenhum ${isTasks ? "item" : "negócio"} corresponde aos filtros.` : null;
 
@@ -247,17 +292,56 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
     a.name.localeCompare(b.name)
   );
 
+  // Swimlanes: only lanes that hold a card. A card with several tags shows in each tag lane.
+  // ponytail: dragging between lanes does not change the field (each lane is its own board); edit it in the panel
+  type Lane = { key: string; label: string; has: (deal: CrmDeal) => boolean };
+  const laneList: Lane[] | null = (() => {
+    if (!lanes || view !== "kanban" || !isTasks) return null;
+    let list: Lane[];
+    if (lanes === "responsible")
+      list = [...responsibles, [NO_RESPONSIBLE, "Sem responsável"] as const].map(([id, name]) => ({
+        key: id,
+        label: name,
+        has: (deal) => (deal.responsible?.id ?? NO_RESPONSIBLE) === id,
+      }));
+    else if (lanes === "priority")
+      list = [...[...PRIORITIES].reverse(), { value: NO_PRIORITY, label: "Sem prioridade" }].map((p) => ({
+        key: p.value,
+        label: p.label,
+        has: (deal) => (deal.priority ?? NO_PRIORITY) === p.value,
+      }));
+    else
+      list = [
+        ...tags.map((t) => ({ key: t.id, label: t.name, has: (deal: CrmDeal) => !!deal.tags?.some((x) => x.id === t.id) })),
+        { key: "none", label: "Sem etiqueta", has: (deal: CrmDeal) => !deal.tags?.length },
+      ];
+    return list.filter((lane) => everyCard.some(lane.has));
+  })();
+
+  /** One chip per multi-value filter: "Responsável: Ana, Bia +1" */
+  const listChip = (key: ListFilter, title: string, name: (value: string) => string) => {
+    const values = listOf(filters[key]);
+    if (!values.length) return null;
+    const names = values.slice(0, 2).map(name).join(", ");
+    return { key, label: `${title}: ${names}${values.length > 2 ? ` +${values.length - 2}` : ""}`, onRemove: () => set({ [key]: "" }) };
+  };
+  const multi = (key: ListFilter, label: string, options: { value: string; label: string }[]) => (
+    <MultiSelect className="crm-access__select" aria-label={label} options={options} value={listOf(filters[key])} onChange={(values) => set({ [key]: toList(values) })} />
+  );
+
   const chips: FilterChip[] = [
-    filters.responsibleId && { key: "responsible", label: responsibleName(filters.responsibleId), onRemove: () => set({ responsibleId: "" }) },
-    filters.status && { key: "status", label: statuses[filters.status], onRemove: () => set({ status: "" }) },
+    listChip("responsibleId", "Responsável", responsibleName),
+    listChip("stageId", isTasks ? "Coluna" : "Etapa", stageName),
+    listChip("status", "Status", (v) => statuses[v] ?? v),
     filters.activity && { key: "activity", label: ACTIVITIES[filters.activity], onRemove: () => set({ activity: "" }) },
-    filters.priority && {
-      key: "priority",
-      label: filters.priority === NO_PRIORITY ? "Sem prioridade" : `Prioridade ${priorityLabel(filters.priority)?.toLowerCase()}`,
-      onRemove: () => set({ priority: "" }),
-    },
-    filters.tagId && { key: "tag", label: tags.find((t) => t.id === filters.tagId)?.name ?? "Etiqueta", onRemove: () => set({ tagId: "" }) },
+    listChip("priority", "Prioridade", (v) => (v === NO_PRIORITY ? "Sem prioridade" : priorityLabel(v as Priority) ?? v)),
+    listChip("tagId", "Etiqueta", (v) => tags.find((t) => t.id === v)?.name ?? "Etiqueta"),
     filters.due && { key: "due", label: DUE[filters.due], onRemove: () => set({ due: "" }) },
+    filters.dueFrom && { key: "dueFrom", label: `Prazo de ${showDay(filters.dueFrom)}`, onRemove: () => set({ dueFrom: "" }) },
+    filters.dueTo && { key: "dueTo", label: `Prazo até ${showDay(filters.dueTo)}`, onRemove: () => set({ dueTo: "" }) },
+    filters.startFrom && { key: "startFrom", label: `Início de ${showDay(filters.startFrom)}`, onRemove: () => set({ startFrom: "" }) },
+    filters.startTo && { key: "startTo", label: `Início até ${showDay(filters.startTo)}`, onRemove: () => set({ startTo: "" }) },
+    filters.overEstimate && { key: "overEstimate", label: "Acima da estimativa", onRemove: () => set({ overEstimate: "" }) },
     filters.from && { key: "from", label: `Criado de ${showDay(filters.from)}`, onRemove: () => set({ from: "" }) },
     filters.to && { key: "to", label: `Criado até ${showDay(filters.to)}`, onRemove: () => set({ to: "" }) },
   ].filter((c): c is FilterChip => Boolean(c));
@@ -340,26 +424,15 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
           onClear={() => setFilters(NO_FILTERS)}
         >
           <FilterField label="Responsável">
-            <Select className="crm-access__select" value={filters.responsibleId} onChange={(e) => set({ responsibleId: e.target.value })} aria-label="Responsável">
-              <option value="">Todos</option>
-              <option value={NO_RESPONSIBLE}>Sem responsável</option>
-              {responsibles.map(([id, name]) => (
-                <option key={id} value={id}>
-                  {name}
-                </option>
-              ))}
-            </Select>
+            {multi("responsibleId", "Responsável", [
+              { value: NO_RESPONSIBLE, label: "Sem responsável" },
+              ...responsibles.map(([value, label]) => ({ value, label })),
+            ])}
           </FilterField>
-          <FilterField label="Status">
-            <Select className="crm-access__select" value={filters.status} onChange={(e) => set({ status: e.target.value })} aria-label="Status">
-              <option value="">Todos</option>
-              {Object.entries(statuses).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
+          <FilterField label={isTasks ? "Coluna" : "Etapa"}>
+            {multi("stageId", isTasks ? "Coluna" : "Etapa", pipeline.stages.map((s: { id: string; name: string }) => ({ value: s.id, label: s.name })))}
           </FilterField>
+          <FilterField label="Status">{multi("status", "Status", Object.entries(statuses).map(([value, label]) => ({ value, label })))}</FilterField>
           {isTasks ? (
             <>
               <FilterField label="Prazo">
@@ -372,29 +445,33 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                   ))}
                 </Select>
               </FilterField>
-              <FilterField label="Prioridade">
-                <Select className="crm-access__select" value={filters.priority} onChange={(e) => set({ priority: e.target.value })} aria-label="Prioridade">
-                  <option value="">Todas</option>
-                  {[...PRIORITIES].reverse().map((p) => (
-                    <option key={p.value} value={p.value}>
-                      {p.label}
-                    </option>
-                  ))}
-                  <option value={NO_PRIORITY}>Sem prioridade</option>
+              <FilterField label="Prazo entre">
+                <div className="crm-filter-panel__range">
+                  <DatePicker className="crm-access__select" aria-label="Prazo de" value={filters.dueFrom} max={filters.dueTo || undefined} onChange={(e) => set({ dueFrom: e.target.value })} />
+                  <span>até</span>
+                  <DatePicker className="crm-access__select" aria-label="Prazo até" value={filters.dueTo} min={filters.dueFrom || undefined} onChange={(e) => set({ dueTo: e.target.value })} />
+                </div>
+              </FilterField>
+              <FilterField label="Início entre">
+                <div className="crm-filter-panel__range">
+                  <DatePicker className="crm-access__select" aria-label="Início de" value={filters.startFrom} max={filters.startTo || undefined} onChange={(e) => set({ startFrom: e.target.value })} />
+                  <span>até</span>
+                  <DatePicker className="crm-access__select" aria-label="Início até" value={filters.startTo} min={filters.startFrom || undefined} onChange={(e) => set({ startTo: e.target.value })} />
+                </div>
+              </FilterField>
+              <FilterField label="Tempo">
+                <Select className="crm-access__select" value={filters.overEstimate} onChange={(e) => set({ overEstimate: e.target.value })} aria-label="Tempo">
+                  <option value="">Todos</option>
+                  <option value="1">Acima da estimativa</option>
                 </Select>
               </FilterField>
-              {tags.length > 0 && (
-                <FilterField label="Etiqueta">
-                  <Select className="crm-access__select" value={filters.tagId} onChange={(e) => set({ tagId: e.target.value })} aria-label="Etiqueta">
-                    <option value="">Todas</option>
-                    {tags.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </Select>
-                </FilterField>
-              )}
+              <FilterField label="Prioridade">
+                {multi("priority", "Prioridade", [
+                  ...[...PRIORITIES].reverse().map((p) => ({ value: p.value, label: p.label })),
+                  { value: NO_PRIORITY, label: "Sem prioridade" },
+                ])}
+              </FilterField>
+              {tags.length > 0 && <FilterField label="Etiqueta">{multi("tagId", "Etiqueta", tags.map((t) => ({ value: t.id, label: t.name })))}</FilterField>}
             </>
           ) : (
             <FilterField label="Atividade">
@@ -416,7 +493,38 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
             </div>
           </FilterField>
         </FilterSearch>
-        <CrmSavedViews pipelineId={pipeline.id} query={boardQuery(filters, view, sort)} onApply={applyQuery} />
+        <CrmSavedViews pipelineId={pipeline.id} query={boardQuery(filters, view, sort, lanes)} onApply={applyQuery} />
+        {view === "kanban" && (
+          <button
+            type="button"
+            className={`view-btn ${selecting ? "is-active" : ""}`}
+            title="Selecionar cards para ações em massa"
+            aria-label="Selecionar cards"
+            onClick={() => {
+              setSelected(new Set());
+              setSelecting((s) => !s);
+            }}
+          >
+            <CheckSquare size={16} />
+          </button>
+        )}
+        {view === "kanban" && isTasks && (
+          <Select className="crm-access__select crm-toolbar__sort" value={sort ?? ""} onChange={(e) => setSort((e.target.value || null) as Sort)} aria-label="Ordem dos cards">
+            <option value="">Ordem manual</option>
+            <option value="due">Por prazo</option>
+            <option value="priority">Por prioridade</option>
+          </Select>
+        )}
+        {view === "kanban" && isTasks && (
+          <Select className="crm-access__select crm-toolbar__sort" value={lanes ?? ""} onChange={(e) => setLanes((e.target.value || null) as Lanes)} aria-label="Raias">
+            <option value="">Sem raias</option>
+            {Object.entries(LANES).map(([value, label]) => (
+              <option key={value} value={value}>
+                Raias: {label.toLowerCase()}
+              </option>
+            ))}
+          </Select>
+        )}
         <div className="crm-toolbar__views">
           <button
             className={`view-btn ${view === "kanban" ? "is-active" : ""}`}
@@ -440,6 +548,11 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
               <ChartGantt size={16} /> Linha do tempo
             </button>
           )}
+          {isTasks && (
+            <button className={`view-btn ${view === "workload" ? "is-active" : ""}`} onClick={() => setView("workload")}>
+              <Users size={16} /> Carga
+            </button>
+          )}
           <button
             className={`view-btn ${view === "activities" ? "is-active" : ""}`}
             onClick={() => setView("activities")}
@@ -451,7 +564,49 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
 
       <div className="crm-content">
         {view === "kanban" && (
-          <CrmKanban pipeline={pipeline} onOpenDeal={openDeal} syncBoardRef={syncBoardRef} isDealVisible={filtering ? isDealVisible : undefined} />
+          <>
+            {selecting && (
+              <CrmBulkBar
+                ids={selectedIds}
+                stages={pipeline.stages}
+                isTasks={isTasks}
+                archived={false}
+                onDone={() => {
+                  setSelected(new Set());
+                  setSelecting(false);
+                }}
+              />
+            )}
+            {laneList ? (
+              laneList.map((lane, i) => (
+                <section key={lane.key} className="crm-lane">
+                  <h3 className="crm-lane__title">
+                    {lane.label} <span>{allCards.filter(lane.has).length}</span>
+                  </h3>
+                  <CrmKanban
+                    pipeline={pipeline}
+                    onOpenDeal={openDeal}
+                    syncBoardRef={syncBoardRef}
+                    isDealVisible={(deal) => lane.has(deal) && (!filtering || isDealVisible(deal))}
+                    sort={sort}
+                    selected={selecting ? selected : undefined}
+                    onToggleSelect={selecting ? toggle : undefined}
+                    lane={i === 0 ? "first" : "rest"}
+                  />
+                </section>
+              ))
+            ) : (
+              <CrmKanban
+                pipeline={pipeline}
+                onOpenDeal={openDeal}
+                syncBoardRef={syncBoardRef}
+                isDealVisible={filtering ? isDealVisible : undefined}
+                sort={sort}
+                selected={selecting ? selected : undefined}
+                onToggleSelect={selecting ? toggle : undefined}
+              />
+            )}
+          </>
         )}
 
         {view === "list" && (
@@ -558,6 +713,8 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
           </div>
         )}
 
+        {view === "workload" && <CrmWorkload cards={allCards} onOpen={openDeal} />}
+
         {view === "calendar" && (
           <CrmCalendar
             undated={allCards.filter((c) => !c.closeDate).length}
@@ -567,6 +724,7 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
                     {
                       key: card.id,
                       day: new Date(card.closeDate).toISOString().slice(0, 10),
+                      time: card.dueTime ?? null,
                       title: card.title,
                       tone: card.status === "WON" ? ("done" as const) : matchesDue(card, "overdue") ? ("overdue" as const) : undefined,
                       onOpen: () => openDeal(card),

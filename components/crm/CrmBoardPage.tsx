@@ -1,23 +1,25 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 import { Zap } from "lucide-react";
 import { CrmButtons } from "@/components/crm/CrmButtons";
 import { CrmWorkspace } from "@/components/crm/CrmWorkspace";
 import { CrmPipelineRename, CrmPipelineSettings } from "@/components/crm/CrmPipelineSettings";
 import { prisma } from "@/lib/prisma";
-import { currentPermissions, visiblePipelineWhere } from "@/lib/crm-access";
+import { currentPermissions, visibleCardWhere, visiblePipelineWhere } from "@/lib/crm-access";
 import { isQxbackStage } from "@/lib/crm-qxback";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
 import { activeCard, cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
-const pipelineInclude = {
+/** `cardWhere`: the private cards the user may see (visibleCardWhere) */
+const pipelineInclude = (cardWhere: Prisma.CrmCardWhereInput) => ({
   stages: {
     orderBy: { order: "asc" as const },
-    include: { cards: { where: activeCard, orderBy: { order: "asc" as const }, include: cardListInclude } },
+    include: { cards: { where: { ...activeCard, ...cardWhere }, orderBy: { order: "asc" as const }, include: cardListInclude } },
   },
   groups: { select: { groupId: true } },
   members: { select: { memberId: true } },
-};
+});
 
 async function createDefaultPipeline() {
   return prisma.crmPipeline.create({
@@ -43,14 +45,15 @@ export async function CrmBoardPage({ pipelineId, openDealId }: { pipelineId?: st
   const can = await currentPermissions();
   if ((await prisma.crmPipeline.count()) === 0) await createDefaultPipeline();
   const visible = await visiblePipelineWhere();
+  const include = pipelineInclude(await visibleCardWhere());
 
   // Selected pipeline when visible, else the first visible one (same order as the sidebar)
   const pipeline =
-    (pipelineId && (await prisma.crmPipeline.findFirst({ where: { id: pipelineId, ...visible }, include: pipelineInclude }))) ||
+    (pipelineId && (await prisma.crmPipeline.findFirst({ where: { id: pipelineId, ...visible }, include }))) ||
     (await prisma.crmPipeline.findFirst({
       where: visible,
       orderBy: [{ space: { order: "asc" } }, { order: "asc" }, { createdAt: "asc" }],
-      include: pipelineInclude,
+      include,
     }));
   if (!pipeline) {
     return (

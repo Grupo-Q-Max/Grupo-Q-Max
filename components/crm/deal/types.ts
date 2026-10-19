@@ -78,6 +78,10 @@ export type DealDetails = {
   dueTime: string | null;
   /** Minutes before closeDate + dueTime to remind the responsible */
   reminderMinutes: number | null;
+  /** Repeat every N (null = 1) */
+  recurrenceInterval: number | null;
+  /** WEEKLY: weekdays bitmask, 1 = Sunday … 64 = Saturday */
+  recurrenceWeekdays: number | null;
   estimateMinutes: number | null;
   /** Sum of the finished time entries (read-only) */
   spentMinutes: number | null;
@@ -123,6 +127,8 @@ export type DealDraft = Pick<
   | "estimateMinutes"
   | "dueTime"
   | "reminderMinutes"
+  | "recurrenceInterval"
+  | "recurrenceWeekdays"
   | "customData"
 >;
 
@@ -214,6 +220,8 @@ export function pickDraft(deal: DealDetails): DealDraft {
     estimateMinutes: deal.estimateMinutes,
     dueTime: deal.dueTime,
     reminderMinutes: deal.reminderMinutes,
+    recurrenceInterval: deal.recurrenceInterval,
+    recurrenceWeekdays: deal.recurrenceWeekdays,
     customData: deal.customData,
   };
 }
@@ -233,6 +241,20 @@ export const priorityLabel = (value: string | null | undefined) => PRIORITIES.fi
 export type CrmTagDto = { id: string; name: string; color: string };
 
 /** 90 → "1h30", 45 → "45min", 120 → "2h"; null for no value. */
+/** Card fields a column can require before a manual move into it (CrmStage.requiredFields); keys are CrmCard columns */
+export const REQUIRED_FIELDS = {
+  responsibleId: "Responsável",
+  closeDate: "Prazo",
+  startDate: "Data de início",
+  estimateMinutes: "Estimativa",
+  priority: "Prioridade",
+} as const;
+export type RequiredField = keyof typeof REQUIRED_FIELDS;
+
+/** Valid keys of a stored requiredFields value (unknown or malformed entries dropped) */
+export const requiredFieldsOf = (value: unknown): RequiredField[] =>
+  Array.isArray(value) ? value.filter((f): f is RequiredField => typeof f === "string" && Object.hasOwn(REQUIRED_FIELDS, f)) : [];
+
 export function formatMinutes(minutes: number | null | undefined) {
   if (minutes === null || minutes === undefined) return null;
   const h = Math.floor(minutes / 60);

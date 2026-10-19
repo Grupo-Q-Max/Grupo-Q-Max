@@ -31,10 +31,13 @@ export function TriggerModal({
   stageId,
   stages,
   customFields,
+  preset,
   onClose,
   onSave,
 }: {
   trigger: AutomationTrigger | null;
+  /** New trigger from a template ("Modelos"): fields filled in advance */
+  preset?: Partial<TriggerDraft>;
   stageId: string;
   stages: AutomationStage[];
   customFields: CustomField[];
@@ -50,6 +53,7 @@ export function TriggerModal({
     allowBackwards: trigger?.allowBackwards ?? false,
     conditions: trigger?.conditions.map(({ field, operator, value }) => ({ field, operator, value })) ?? [],
     active: trigger?.active ?? true,
+    ...preset,
   }));
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);

@@ -541,3 +541,98 @@ input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px #1a1a1c inset;
   caret-color: #fff;
 }
+
+/* checklistDialog */
+.qdialog__checks {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.qdialog__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #e8e6ea;
+  cursor: pointer;
+}
+
+.qdialog__check input {
+  accent-color: var(--qmax-magenta, #d90f81);
+}
+
+/* MultiSelect (components/ui/MultiSelect.tsx): trigger and popover reuse .qselect / .qselect__list */
+.qmulti ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qmulti .qselect__option {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.qmulti__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qmulti__box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.qmulti__box.is-checked {
+  background: var(--qmax-magenta, #d90f81);
+  border-color: var(--qmax-magenta, #d90f81);
+  color: #fff;
+}
+
+.qmulti__search {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 7px 10px;
+  background: #1f1f22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.qmulti__search:focus {
+  border-color: var(--qmax-magenta, #d90f81);
+}
+
+.qmulti__empty {
+  padding: 8px 10px;
+  color: #a5a0aa;
+  font-size: 13px;
+}
+
+.qmulti__clear {
+  width: 100%;
+  margin-top: 4px;
+  padding: 7px 10px;
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a5a0aa;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.qmulti__clear:hover {
+  color: #fff;
+}

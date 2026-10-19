@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
+import { denyUnless, denyUnlessPipeline, visibleCardWhere } from "@/lib/crm-access";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { onDealEnteredStage } from "@/lib/crm-automation";
 import { checkStageEntry, StageEntryError } from "@/lib/crm-qxback";
@@ -27,6 +27,7 @@ export async function POST(req: Request) {
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (current.stageId !== newStageId) await checkStageEntry(cardId, newStageId, lostReason);
     const actorId = sessionMemberId(req);
+    const cardWhere = await visibleCardWhere();
 
     // Record the stage change in the deal timeline and run the new stage's automation rules
     const stageHistory = async () => {
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
       // With an index, insert the card at that position and renumber the stage's cards
       const siblings = await tx.crmCard.findMany({
         // Same cards the board shows, so `index` (counted on the board) lands where it was dropped
-        where: { stageId: newStageId, NOT: { id: cardId }, ...activeCard },
+        where: { stageId: newStageId, NOT: { id: cardId }, ...activeCard, ...cardWhere },
         orderBy: { order: "asc" },
         select: { id: true },
       });

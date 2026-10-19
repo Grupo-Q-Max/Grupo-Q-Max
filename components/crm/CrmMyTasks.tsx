@@ -1,16 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Kanban as KanbanIcon, List, Plus, X } from "lucide-react";
+import { CalendarDays, Clock, Kanban as KanbanIcon, List, ListTree, Plus, Square, X } from "lucide-react";
 import { Kanban, type KanbanColumnData } from "@/components/kanban";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Select } from "@/components/ui/Select";
 import { todayKey, type DueState } from "@/lib/crm-due";
 import { matches } from "@/lib/text-search";
-import type { MyTaskItem } from "@/lib/crm-my-tasks";
+import type { MyTaskItem, RunningTimer } from "@/lib/crm-my-tasks";
+import { formatMinutes } from "./deal/types";
 import { useCan } from "./CrmAccess";
 import { postDeal } from "./CrmButtons";
 import { CrmCalendar } from "./CrmCalendar";
@@ -35,7 +36,17 @@ const STATES: Record<string, string> = { overdue: "Atrasadas", today: "Vencem ho
 const typeOf = (item: MyTaskRow) => (item.kind === "activity" ? "activity" : item.label === "Tarefa" ? "task" : "deal");
 
 /** /crm/me body: list, due-date kanban or calendar of the member's open items, plus "Nova Tarefa" in a TASKS pipeline. */
-export function CrmMyTasks({ items: allItems, pipelines, memberId }: { items: MyTaskRow[]; pipelines: TaskPipeline[]; memberId: string | null }) {
+export function CrmMyTasks({
+  items: allItems,
+  pipelines,
+  memberId,
+  timer,
+}: {
+  items: MyTaskRow[];
+  pipelines: TaskPipeline[];
+  memberId: string | null;
+  timer: RunningTimer | null;
+}) {
   const [view, setView] = useState<"list" | "kanban" | "calendar">("list");
   const [filters, setFilters] = useState(NO_FILTERS);
   const set = (changes: Partial<MyFilters>) => setFilters((f) => ({ ...f, ...changes }));
@@ -69,6 +80,7 @@ export function CrmMyTasks({ items: allItems, pipelines, memberId }: { items: My
         <h1 className="crm-header__title">Minhas tarefas</h1>
         <NewTaskButton pipelines={pipelines} memberId={memberId} />
       </header>
+      {timer && <TimerBanner timer={timer} />}
       <div className="crm-toolbar">
         <FilterSearch value={filters.q} onChange={(q) => set({ q })} placeholder="Buscar por título ou #nº" chips={chips} onClear={() => setFilters(NO_FILTERS)}>
           <FilterField label="Tipo">
@@ -125,6 +137,7 @@ export function CrmMyTasks({ items: allItems, pipelines, memberId }: { items: My
                     {
                       key: item.key,
                       day: item.dateOnly ? item.due.slice(0, 10) : todayKey(new Date(item.due)),
+                      time: item.dateOnly ? null : new Date(item.due).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }),
                       title: item.title,
                       label: item.kind === "activity" ? item.label : undefined,
                       tone: item.state === "overdue" ? ("overdue" as const) : undefined,
@@ -145,6 +158,7 @@ export function CrmMyTasks({ items: allItems, pipelines, memberId }: { items: My
                 <span className="crm-badge">{item.label}</span>
                 <h3 className="kanban-card__title">{item.title}</h3>
                 <div className="kanban-card__company">{item.context}</div>
+                <SubtaskCount item={item} />
                 {item.due && <div className="crm-my-tasks__due">{item.dueText}</div>}
               </Link>
             )}
@@ -176,6 +190,7 @@ export function CrmMyTasks({ items: allItems, pipelines, memberId }: { items: My
                     </td>
                     <td>
                       <Link href={`/crm/deal/details/${item.number}`}>{item.title}</Link>
+                      <SubtaskCount item={item} />
                     </td>
                     <td className="crm-my-tasks__context">{item.context}</td>
                   </tr>
@@ -186,6 +201,45 @@ export function CrmMyTasks({ items: allItems, pipelines, memberId }: { items: My
         </div>
       )}
     </>
+  );
+}
+
+/** "2/5" subtasks done, for task cards that have subtasks */
+function SubtaskCount({ item }: { item: MyTaskRow }) {
+  if (!item.subtasks) return null;
+  return (
+    <span className="crm-my-tasks__subtasks" title="Subtarefas concluídas">
+      <ListTree size={12} /> {item.subtasks.done}/{item.subtasks.total}
+    </span>
+  );
+}
+
+/** The member's running timer, with a stop button (same API as the task panel). */
+function TimerBanner({ timer }: { timer: RunningTimer }) {
+  const router = useRouter();
+  const [now, setNow] = useState(() => Date.now());
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const minutes = Math.max(0, Math.floor((now - new Date(timer.startedAt).getTime()) / 60_000));
+  const stop = async () => {
+    setBusy(true);
+    const res = await fetch("/api/crm/time", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "stop" }) });
+    setBusy(false);
+    if (res.ok) router.refresh();
+  };
+  return (
+    <div className="crm-my-tasks__timer" role="status">
+      <Clock size={16} />
+      <span>
+        Cronômetro em <Link href={`/crm/deal/details/${timer.number}`}>#{timer.number} {timer.title}</Link> · {formatMinutes(minutes) ?? "0min"}
+      </span>
+      <button type="button" className="btn-secondary" disabled={busy} onClick={stop}>
+        <Square size={14} /> Parar
+      </button>
+    </div>
   );
 }
 

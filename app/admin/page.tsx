@@ -56,15 +56,26 @@ interface TeamMember {
   area?: keyof typeof AREAS | null;
   image: string | null;
   order: number;
-  accentColor?: string;
   email?: string | null;
   crmLinked?: boolean;
-  showOnSite?: boolean;
   /** In the CRM admin group: every permission and every pipeline */
   crmAdmin?: boolean;
+  /** Site profile; only partners (sócios) have one, employees never appear on the site */
+  partner: PartnerProfile | null;
 }
 
-type MemberInput = Partial<TeamMember>;
+interface PartnerProfile {
+  accentColor: string;
+  linkedin?: string | null;
+  bio?: string | null;
+  /** false = hidden from the "Nossos Sócios" section for now */
+  visible: boolean;
+}
+
+type MemberInput = Partial<Omit<TeamMember, "partner">> & { partner?: Partial<PartnerProfile> };
+
+/** "partners" = sócios (site profile), "employees" = funcionários (CRM only) */
+type TeamKind = "partners" | "employees";
 
 interface BrandLogo {
   id: string;
@@ -84,7 +95,7 @@ interface SiteSettings {
   adminPassword: string;
 }
 
-type Tab = "dashboard" | "team" | "logos" | "settings" | "leads" | "analytics";
+type Tab = "dashboard" | TeamKind | "logos" | "settings" | "leads" | "analytics";
 
 const BRAND_LOGOS: BrandLogo[] = [
   {
@@ -188,21 +199,25 @@ const COLOR_PRESETS = [
 
 /* ─── Member Modal ───────────────────────────────────────────────────────── */
 function MemberModal({
+  kind,
   initialData,
   onSave,
   onClose,
 }: {
+  kind: TeamKind;
   initialData?: TeamMember | null;
   onSave: (data: MemberInput) => void;
   onClose: () => void;
 }) {
+  const isPartner = kind === "partners";
+  const noun = isPartner ? "Sócio" : "Funcionário";
   const [name, setName] = useState(initialData?.name || "");
   const [role, setRole] = useState(initialData?.role || "");
   const [sector, setSector] = useState(initialData?.sector || "");
-  const [accentColor, setAccentColor] = useState(initialData?.accentColor || "#14d0c1");
+  const [accentColor, setAccentColor] = useState(initialData?.partner?.accentColor || "#14d0c1");
   const [email, setEmail] = useState(initialData?.email || "");
   const [area, setArea] = useState<keyof typeof AREAS | "">(initialData?.area ?? "");
-  const [showOnSite, setShowOnSite] = useState(initialData?.showOnSite ?? true);
+  const [visible, setVisible] = useState(initialData?.partner?.visible ?? true);
   const [crmAdmin, setCrmAdmin] = useState(initialData?.crmAdmin ?? false);
 
   // Extract valid 6-char hex for native <input type="color">
@@ -215,7 +230,7 @@ function MemberModal({
     <div className="qadmin-modal-overlay" onClick={onClose}>
       <div className="qadmin-modal qadmin-modal--wide" onClick={(e) => e.stopPropagation()}>
         <div className="qadmin-modal__header">
-          <h3>{initialData ? "Editar Sócio" : "Adicionar Sócio"}</h3>
+          <h3>{initialData ? `Editar ${noun}` : `Adicionar ${noun}`}</h3>
           <button className="qadmin-modal__close" onClick={onClose}>
             <X size={20} />
           </button>
@@ -273,17 +288,19 @@ function MemberModal({
               ))}
             </Select>
           </label>
-          <label className="qadmin-modal__check">
-            <input type="checkbox" checked={showOnSite} onChange={(e) => setShowOnSite(e.target.checked)} />
-            <span>Mostrar na seção "Nossos Sócios" do site</span>
-          </label>
+          {isPartner && (
+            <label className="qadmin-modal__check">
+              <input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)} />
+              <span>Mostrar na seção "Nossos Sócios" do site</span>
+            </label>
+          )}
           <label className="qadmin-modal__check">
             <input type="checkbox" checked={crmAdmin} onChange={(e) => setCrmAdmin(e.target.checked)} />
             <span>Administrador do CRM (todas as permissões, vê todos os pipelines e telas de administração)</span>
           </label>
 
           {/* Color selector for details/glow/tags */}
-          <div className="qadmin-color-picker">
+          {isPartner && <div className="qadmin-color-picker">
             <span className="qadmin-color-picker__title">
               Cor dos detalhes (Hex ou RGBA)
             </span>
@@ -344,7 +361,7 @@ function MemberModal({
               </div>
               <span className="qadmin-color-preview-badge">Prévia ao vivo</span>
             </div>
-          </div>
+          </div>}
         </div>
 
         <div className="qadmin-modal__footer">
@@ -353,7 +370,17 @@ function MemberModal({
           </button>
           <button
             className="qadmin-btn qadmin-btn--primary"
-            onClick={() => onSave({ name, role, sector, area: area || null, accentColor, email, showOnSite, crmAdmin })}
+            onClick={() =>
+              onSave({
+                name,
+                role,
+                sector,
+                area: area || null,
+                email,
+                crmAdmin,
+                ...(isPartner && { partner: { accentColor, visible } }),
+              })
+            }
             disabled={!name.trim()}
           >
             <CheckCircle2 size={16} />
@@ -649,7 +676,7 @@ function DashboardTab({
       icon: Users,
       label: "Sócios",
       value: teamCount,
-      tab: "team" as Tab,
+      tab: "partners" as Tab,
       accent: "#14d0c1",
       hint: "Gerenciar sócios",
     },
@@ -728,11 +755,29 @@ function DashboardTab({
 }
 
 /* ─── Team Tab ───────────────────────────────────────────────────────────── */
+const TEAM_TEXT = {
+  partners: {
+    noun: "Sócio",
+    title: "Sócios",
+    hint: "Aparecem na seção \"Nossos Sócios\" do site · Arraste para reordenar · Clique na foto para enquadrar/upload",
+    empty: "Nenhum sócio ainda",
+  },
+  employees: {
+    noun: "Funcionário",
+    title: "Funcionários",
+    hint: "Usuários do CRM, nunca aparecem no site · Arraste para reordenar · Clique na foto para trocar",
+    empty: "Nenhum funcionário ainda",
+  },
+} as const;
+
 function TeamTab({
+  kind,
   showToast,
 }: {
+  kind: TeamKind;
   showToast: (msg: string, type?: "success" | "error") => void;
 }) {
+  const text = TEAM_TEXT[kind];
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalMember, setModalMember] = useState<TeamMember | null | "new">(null);
@@ -743,14 +788,14 @@ function TeamTab({
     setLoading(true);
     try {
       const res = await fetch("/api/team", { cache: "no-store" });
-      const data = await res.json();
-      setTeam(data.sort((a: TeamMember, b: TeamMember) => a.order - b.order));
+      const data: TeamMember[] = await res.json();
+      setTeam(data.filter((m) => Boolean(m.partner) === (kind === "partners")).sort((a, b) => a.order - b.order));
     } catch {
       showToast("Erro ao carregar o time", "error");
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [kind, showToast]);
 
   useEffect(() => {
     fetchTeam();
@@ -768,7 +813,7 @@ function TeamTab({
         const updated = await res.json();
         if (!res.ok) return showToast(updated.error ?? "Erro ao salvar membro", "error");
         setTeam((p) => p.map((m) => (m.id === modalMember.id ? { ...m, ...updated } : m)));
-        showToast("Sócio atualizado!");
+        showToast(`${text.noun} atualizado!`);
       } else {
         // Add new
         const res = await fetch("/api/team", {
@@ -778,7 +823,7 @@ function TeamTab({
         });
         if (!res.ok) return showToast((await res.json()).error ?? "Erro ao salvar membro", "error");
         await fetchTeam();
-        showToast("Sócio adicionado!");
+        showToast(`${text.noun} adicionado!`);
       }
       setModalMember(null);
     } catch {
@@ -787,11 +832,11 @@ function TeamTab({
   }
 
   async function handleDelete(id: string) {
-    if (!(await confirmDialog("Remover este sócio?", { danger: true, confirmLabel: "Remover" }))) return;
+    if (!(await confirmDialog(`Remover este ${text.noun.toLowerCase()}?`, { danger: true, confirmLabel: "Remover" }))) return;
     try {
       await fetch(`/api/team/${id}`, { method: "DELETE" });
       setTeam((p) => p.filter((m) => m.id !== id));
-      showToast("Sócio removido.");
+      showToast(`${text.noun} removido.`);
     } catch {
       showToast("Erro ao remover", "error");
     }
@@ -851,6 +896,7 @@ function TeamTab({
     <div>
       {modalMember && (
         <MemberModal
+          kind={kind}
           initialData={typeof modalMember === "object" ? modalMember : null}
           onSave={handleSaveMember}
           onClose={() => setModalMember(null)}
@@ -868,15 +914,15 @@ function TeamTab({
 
       <div className="qadmin__toolbar">
         <div>
-          <h2>Membros da equipe</h2>
-          <p>Arraste para reordenar · Clique na foto para enquadrar/upload · Edite dados e cores</p>
+          <h2>{text.title}</h2>
+          <p>{text.hint}</p>
         </div>
         <button
           className="qadmin-btn qadmin-btn--primary"
           onClick={() => setModalMember("new")}
         >
           <Plus size={18} />
-          Adicionar membro
+          Adicionar {text.noun.toLowerCase()}
         </button>
       </div>
 
@@ -888,8 +934,8 @@ function TeamTab({
       ) : team.length === 0 ? (
         <div className="qadmin__empty">
           <Users size={48} />
-          <h3>Nenhum sócio ainda</h3>
-          <p>Clique em "Adicionar membro" para começar.</p>
+          <h3>{text.empty}</h3>
+          <p>Clique em "Adicionar {text.noun.toLowerCase()}" para começar.</p>
         </div>
       ) : (
         <div className="qadmin__grid">
@@ -948,22 +994,25 @@ function TeamTab({
                   <span
                     className="qadmin__cardSector"
                     style={{
-                      borderColor: member.accentColor ? `${member.accentColor}55` : undefined,
-                      color: member.accentColor || undefined,
+                      borderColor: member.partner ? `${member.partner.accentColor}55` : undefined,
+                      color: member.partner?.accentColor,
                     }}
                   >
                     {member.sector}
                   </span>
-                  <span
-                    className="qadmin__colorIndicator"
-                    style={{ background: member.accentColor || "#14d0c1" }}
-                    title={`Cor de destaque: ${member.accentColor || "#14d0c1"}`}
-                  />
+                  {member.partner && (
+                    <span
+                      className="qadmin__colorIndicator"
+                      style={{ background: member.partner.accentColor }}
+                      title={`Cor de destaque: ${member.partner.accentColor}`}
+                    />
+                  )}
                 </div>
                 <strong className="qadmin__cardName">{member.name}</strong>
                 <span className="qadmin__cardRole">
                   {member.role}
                   {member.crmAdmin && " · Admin CRM"}
+                  {member.partner && !member.partner.visible && " · Oculto no site"}
                 </span>
               </div>
 
@@ -972,7 +1021,7 @@ function TeamTab({
                   className="qadmin__editBtn"
                   onClick={() => setModalMember(member)}
                   aria-label={`Editar ${member.name}`}
-                  title="Editar detalhes e cor"
+                  title={member.partner ? "Editar detalhes e cor" : "Editar detalhes"}
                 >
                   <Pencil size={15} />
                 </button>
@@ -1452,7 +1501,8 @@ const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "leads", label: "Leads", icon: MessageSquare },
   { id: "analytics", label: "Auditoria de Acessos", icon: Activity },
-  { id: "team", label: "Nossos Sócios", icon: Users },
+  { id: "partners", label: "Sócios", icon: Users },
+  { id: "employees", label: "Funcionários", icon: Building2 },
   { id: "logos", label: "Logos", icon: Palette },
   { id: "settings", label: "Configurações", icon: Settings },
 ];
@@ -1475,7 +1525,7 @@ export default function AdminPage() {
     if (auth) {
       fetch("/api/team", { cache: "no-store" })
         .then((r) => r.json())
-        .then((d) => setTeamCount(d.length))
+        .then((d: TeamMember[]) => setTeamCount(d.filter((m) => m.partner).length))
         .catch(() => {});
     }
   }, [auth, tab]);
@@ -1584,7 +1634,7 @@ export default function AdminPage() {
           )}
           {tab === "leads" && <LeadsTab />}
           {tab === "analytics" && <AnalyticsTab />}
-          {tab === "team" && <TeamTab showToast={showToast} />}
+          {(tab === "partners" || tab === "employees") && <TeamTab key={tab} kind={tab} showToast={showToast} />}
           {tab === "logos" && <LogosTab showToast={showToast} />}
           {tab === "settings" && <SettingsTab showToast={showToast} />}
         </div>

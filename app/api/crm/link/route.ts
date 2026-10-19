@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { denyUnless, denyUnlessPipeline, visiblePipelineWhere } from "@/lib/crm-access";
+import { denyUnless, denyUnlessPipeline, visibleCardWhere, visiblePipelineWhere } from "@/lib/crm-access";
 import { activeCard } from "@/lib/crm-deal";
 import { notifyStageChanged } from "@/lib/crm-realtime";
 
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     if (!cardId) return NextResponse.json({ error: "Missing cardId" }, { status: 400 });
     const hidden = await denyUnlessPipeline({ cardId });
     if (hidden) return hidden;
-    const visible = { ...activeCard, stage: { pipeline: await visiblePipelineWhere() } };
+    const visible = { ...activeCard, stage: { pipeline: await visiblePipelineWhere() }, ...(await visibleCardWhere()) };
     const rows = await prisma.crmCardLink.findMany({
       where: { OR: [{ cardId, linked: visible }, { linkedId: cardId, card: visible }] },
       orderBy: { createdAt: "asc" },

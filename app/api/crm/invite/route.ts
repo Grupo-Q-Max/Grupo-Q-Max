@@ -46,7 +46,6 @@ export async function POST(req: Request) {
             email,
             crmGroupId,
             role: "",
-            showOnSite: false,
             order: await prisma.teamMember.count(),
           },
         })
@@ -81,10 +80,10 @@ export async function DELETE(req: Request) {
     const denied = await denyUnless("access.manage");
     if (denied) return denied;
     const id = new URL(req.url).searchParams.get("memberId") ?? "";
-    const member = await prisma.teamMember.findUnique({ where: { id }, select: { microsoftOid: true, showOnSite: true } });
+    const member = await prisma.teamMember.findUnique({ where: { id }, select: { microsoftOid: true, partner: { select: { memberId: true } } } });
     if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    // Members shown on the public site are managed in /admin, even before they confirm a login
-    if (member.microsoftOid || member.showOnSite) {
+    // Partners (sócios) are managed in /admin, even before they confirm a login
+    if (member.microsoftOid || member.partner) {
       return NextResponse.json({ error: "Só convites pendentes podem ser cancelados." }, { status: 400 });
     }
 

@@ -122,7 +122,6 @@ export async function findOrCreateMember(db: PrismaClient, identity: MicrosoftId
               name: name || email.split("@")[0],
               email,
               role: "",
-              showOnSite: false,
               order: await db.teamMember.count(),
               microsoftOid: oid,
               microsoftTid: tid,

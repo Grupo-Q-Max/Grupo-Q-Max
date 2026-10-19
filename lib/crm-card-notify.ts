@@ -1,17 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { pipelineWhereFor } from "@/lib/crm-access";
+import { cardWhereFor, pipelineWhereFor } from "@/lib/crm-access";
 import { notifyMember } from "@/lib/crm-realtime";
 import { findMentions } from "@/lib/crm-mentions";
 
 /**
  * Bell notification about a card for each member, except the author and members who are
- * blocked or can't see the card's pipeline. Call after the change is committed.
+ * blocked or can't see the card (its pipeline, or the card itself when private). Call after the change is committed.
  */
 async function notifyAboutCard(cardId: string, memberIds: string[], message: string, authorId: string | null) {
   for (const memberId of new Set(memberIds)) {
     if (memberId === authorId) continue;
     const sees = await prisma.crmCard.count({
-      where: { id: cardId, stage: { pipeline: await pipelineWhereFor(memberId) } },
+      where: { id: cardId, stage: { pipeline: await pipelineWhereFor(memberId) }, ...(await cardWhereFor(memberId)) },
     });
     if (!sees) continue;
     await prisma.crmNotification.create({ data: { memberId, cardId, message } });

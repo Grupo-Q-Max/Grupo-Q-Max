@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { ArrowLeft, ArrowRight, Gauge, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Gauge, Lock, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { KanbanItem } from "./KanbanItem";
 import type { KanbanColumnData, KanbanItemBase, KanbanLabels } from "./types";
 
@@ -12,23 +12,32 @@ type KanbanColumnProps<T extends KanbanItemBase> = {
   labels: KanbanLabels;
   renderItem: (item: T) => ReactNode;
   isItemVisible?: (item: T) => boolean;
+  summarize?: (items: T[]) => ReactNode;
   onAddItem?: (title: string) => void;
   onRename?: (title: string) => void;
   onDelete?: () => void;
   onSetLimit?: () => void;
+  onSetColor?: (color: string | null) => void;
+  onEditRules?: () => void;
   onMoveLeft?: () => void;
   onMoveRight?: () => void;
 };
+
+/** Column color choices; null = the board accent */
+const COLUMN_COLORS = [null, "#3b82f6", "#14d0c1", "#22c55e", "#eab308", "#f97316", "#ef4444", "#a855f7", "#64748b"];
 
 export function KanbanColumn<T extends KanbanItemBase>({
   column,
   labels,
   renderItem,
   isItemVisible,
+  summarize,
   onAddItem,
   onRename,
   onDelete,
   onSetLimit,
+  onSetColor,
+  onEditRules,
   onMoveLeft,
   onMoveRight,
 }: KanbanColumnProps<T>) {
@@ -55,7 +64,7 @@ export function KanbanColumn<T extends KanbanItemBase>({
   };
 
   return (
-    <div className="kanban-column">
+    <div className="kanban-column" style={column.color ? ({ "--kanban-accent": column.color } as CSSProperties) : undefined}>
       <div className="kanban-column__header">
         <div
           className="kanban-column__title"
@@ -94,9 +103,14 @@ export function KanbanColumn<T extends KanbanItemBase>({
               : `${visibleItems.length}/${column.items.length}`}
             {column.limit != null && ` · máx ${column.limit}`}
           </span>
+          {column.note && (
+            <span className="kanban-column__note" title={column.note} aria-label={column.note}>
+              <Lock size={12} />
+            </span>
+          )}
         </div>
 
-        {(onRename || onDelete || onSetLimit || onMoveLeft || onMoveRight) && (
+        {(onRename || onDelete || onSetLimit || onSetColor || onEditRules || onMoveLeft || onMoveRight) && (
           <div className="kanban-column__menu">
             <button className="kanban-column__menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
               <MoreHorizontal size={18} />
@@ -147,6 +161,35 @@ export function KanbanColumn<T extends KanbanItemBase>({
                     <ArrowRight size={14} /> {labels.moveColumnRight}
                   </button>
                 )}
+                {onEditRules && (
+                  <button
+                    className="kanban-column__menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onEditRules();
+                    }}
+                  >
+                    <Lock size={14} /> {labels.columnRules}
+                  </button>
+                )}
+                {onSetColor && (
+                  <div className="kanban-column__swatches" role="group" aria-label="Cor da coluna">
+                    {COLUMN_COLORS.map((color) => (
+                      <button
+                        key={color ?? "default"}
+                        type="button"
+                        className={`kanban-column__swatch ${(column.color ?? null) === color ? "is-active" : ""}`}
+                        style={color ? { background: color } : undefined}
+                        title={color ?? "Cor padrão"}
+                        aria-label={color ?? "Cor padrão"}
+                        onClick={() => {
+                          setMenuOpen(false);
+                          if ((column.color ?? null) !== color) onSetColor(color);
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
                 {onDelete && (
                   <button
                     className="kanban-column__menu-item kanban-column__menu-item--danger"
@@ -163,6 +206,8 @@ export function KanbanColumn<T extends KanbanItemBase>({
           </div>
         )}
       </div>
+
+      {summarize?.(visibleItems)}
 
       <div ref={setNodeRef} className="kanban-column__body">
         <SortableContext items={visibleItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>

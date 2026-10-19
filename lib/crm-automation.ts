@@ -78,6 +78,7 @@ export async function dealContext(cardId: string) {
     value: toText(deal.value),
     currency: deal.currency,
     status: deal.status,
+    priority: deal.priority ?? "",
     stage: deal.stage.name,
     pipeline: deal.stage.pipeline.name,
     responsible: deal.responsible?.name ?? "",
@@ -582,6 +583,12 @@ async function updateDealAction(config: CrmAutomationDealUpdate, cardId: string,
     changes.customData = merged;
   }
   if (config.responsibleId) changes.responsibleId = config.responsibleId;
+  if (config.priority) changes.priority = config.priority;
+  if (config.addTagId) {
+    // updateDeal replaces the tag list: keep the card's tags and add the rule's
+    const tags = await prisma.crmCardTag.findMany({ where: { cardId }, select: { tagId: true } });
+    changes.tags = [...new Set([...tags.map((t) => t.tagId), config.addTagId])];
+  }
   if (config.status) changes.status = config.status;
   if (config.stageId) changes.stageId = config.stageId;
 
@@ -621,6 +628,13 @@ async function notifyAction(config: CrmAutomationNotify, cardId: string, deal: D
 
   const ids = new Set(Array.isArray(config.memberIds) ? (config.memberIds as string[]) : []);
   if (config.notifyResponsible && deal.responsibleId) ids.add(deal.responsibleId);
+  if (config.notifyAssignees) {
+    const [assignees, observers] = await Promise.all([
+      prisma.crmCardAssignee.findMany({ where: { cardId }, select: { memberId: true } }),
+      prisma.crmDealObserver.findMany({ where: { dealId: cardId }, select: { memberId: true } }),
+    ]);
+    for (const { memberId } of [...assignees, ...observers]) ids.add(memberId);
+  }
 
   try {
     const { comment, members } = await prisma.$transaction(async (tx) => {
@@ -678,7 +692,9 @@ type TriggerEvent =
   | { type: "WEBHOOK_IN"; token: string }
   | { type: "FIELD_CHANGED"; fields: string[] }
   | { type: "ACTIVITY_COMPLETED"; activityType: CrmActivityType }
-  | { type: "DEAL_CREATED" };
+  | { type: "DEAL_CREATED" }
+  | { type: "DUE_REACHED" }
+  | { type: "ESTIMATE_EXCEEDED" };
 
 function triggerMatchesEvent(trigger: CrmTrigger, event: TriggerEvent) {
   switch (event.type) {
@@ -689,6 +705,8 @@ function triggerMatchesEvent(trigger: CrmTrigger, event: TriggerEvent) {
     case "ACTIVITY_COMPLETED":
       return !trigger.activityType || trigger.activityType === event.activityType;
     case "DEAL_CREATED":
+    case "DUE_REACHED":
+    case "ESTIMATE_EXCEEDED":
       return true;
   }
 }

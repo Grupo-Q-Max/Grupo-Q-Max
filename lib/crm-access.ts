@@ -103,15 +103,33 @@ export async function pipelineWhereFor(memberId: string | null): Promise<Prisma.
   };
 }
 
+/**
+ * Cards a member sees inside a pipeline they see: public ones, plus private ones ("Disponível para todos"
+ * off) they are responsible for, co-assigned to or observe. Admins see every card. Use as `where` on CrmCard.
+ */
+export async function cardWhereFor(memberId: string | null): Promise<Prisma.CrmCardWhereInput> {
+  const group = await memberGroup(memberId);
+  if (group?.isAdmin) return {};
+  if (!memberId) return { isPublic: true };
+  return {
+    OR: [{ isPublic: true }, { responsibleId: memberId }, { assignees: { some: { memberId } } }, { observers: { some: { memberId } } }],
+  };
+}
+
+/** cardWhereFor the current user. */
+export async function visibleCardWhere() {
+  return cardWhereFor(readSession((await cookies()).get(SESSION_COOKIE)?.value));
+}
+
 type PipelineRef = { pipelineId?: string | null; stageId?: string | null; cardId?: string | null };
 
-/** True when every given pipeline/stage/card exists and belongs to a pipeline the current user sees. */
+/** True when every given pipeline/stage/card exists and belongs to a pipeline the current user sees (cards: and is visible to them). */
 export async function canSeePipeline(ref: PipelineRef) {
   const visible = await visiblePipelineWhere();
   const checks: Promise<number>[] = [];
   if (ref.pipelineId) checks.push(prisma.crmPipeline.count({ where: { id: ref.pipelineId, ...visible } }));
   if (ref.stageId) checks.push(prisma.crmStage.count({ where: { id: ref.stageId, pipeline: visible } }));
-  if (ref.cardId) checks.push(prisma.crmCard.count({ where: { id: ref.cardId, stage: { pipeline: visible } } }));
+  if (ref.cardId) checks.push(prisma.crmCard.count({ where: { id: ref.cardId, stage: { pipeline: visible }, ...(await visibleCardWhere()) } }));
   return checks.length > 0 && (await Promise.all(checks)).every((n) => n > 0);
 }
 

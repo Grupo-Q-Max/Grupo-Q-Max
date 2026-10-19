@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { visiblePipelineWhere } from "@/lib/crm-access";
+import { visibleCardWhere, visiblePipelineWhere } from "@/lib/crm-access";
 import { activeCard } from "@/lib/crm-deal";
 
 const LIMIT = 8;
@@ -72,7 +72,7 @@ export async function GET(req: Request) {
         where: {
           ...activeCard,
           stage: { ...(pipelineId && { pipelineId }), pipeline: await visiblePipelineWhere() },
-          OR: [{ title: { contains: q } }, ...(Number.isInteger(number) && number > 0 ? [{ number }] : [])],
+          AND: [await visibleCardWhere(), { OR: [{ title: { contains: q } }, ...(Number.isInteger(number) && number > 0 ? [{ number }] : [])] }],
         },
         orderBy: { number: "desc" },
         take: LIMIT,

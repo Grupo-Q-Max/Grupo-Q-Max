@@ -30,3 +30,24 @@ test("dueAt: closeDate at dueTime in Brazilian time, else the end of that day", 
   assert.ok(isDueTime("00:00") && isDueTime("23:59"));
   assert.ok(!isDueTime("24:00") && !isDueTime("9:00") && !isDueTime(null));
 });
+
+test("nextOccurrence repeats every N units and on chosen weekdays", async () => {
+  const { nextOccurrence, weekdayNames, reminderBase } = await import("../lib/crm-due.ts");
+  const d = (day) => new Date(`${day}T00:00:00Z`);
+  const key = (date) => date.toISOString().slice(0, 10);
+  assert.equal(key(nextOccurrence(d("2026-10-16"), { recurrence: "DAILY", interval: 3 })), "2026-10-19");
+  assert.equal(key(nextOccurrence(d("2026-10-16"), { recurrence: "WEEKLY" })), "2026-10-23");
+  assert.equal(key(nextOccurrence(d("2026-10-16"), { recurrence: "WEEKLY", interval: 2 })), "2026-10-30");
+  assert.equal(key(nextOccurrence(d("2026-01-31"), { recurrence: "MONTHLY", interval: 2 })), "2026-03-31");
+  assert.equal(key(nextOccurrence(d("2026-10-16"), { recurrence: "YEARLY" })), "2027-10-16");
+  // Mon (2) + Wed (8) + Fri (32); 2026-10-16 is a Friday
+  const monWedFri = { recurrence: "WEEKLY", weekdays: 2 | 8 | 32 };
+  assert.equal(key(nextOccurrence(d("2026-10-12"), monWedFri)), "2026-10-14");
+  assert.equal(key(nextOccurrence(d("2026-10-16"), monWedFri)), "2026-10-19");
+  assert.equal(key(nextOccurrence(d("2026-10-16"), { ...monWedFri, interval: 2 })), "2026-10-26");
+  assert.equal(key(nextOccurrence(d("2026-10-12"), { ...monWedFri, interval: 2 })), "2026-10-14");
+  assert.equal(nextOccurrence(d("2026-10-16"), { recurrence: "NONE" }), null);
+  assert.equal(weekdayNames(2 | 32), "seg, sex");
+  assert.equal(weekdayNames(0), null);
+  assert.equal(reminderBase(d("2026-10-20"), null).toISOString(), "2026-10-20T12:00:00.000Z");
+});

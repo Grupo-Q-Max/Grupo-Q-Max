@@ -13,7 +13,7 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities";
 import { useBoardSensors, vibrateOnTouchDrag } from "@/components/kanban/sensors";
 import { useCan } from "@/components/crm/CrmAccess";
-import { ArrowLeft, Bell, ChevronDown, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, Workflow, X, Zap } from "lucide-react";
+import { ArrowLeft, Bell, ChevronDown, LayoutTemplate, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, Workflow, X, Zap } from "lucide-react";
 import {
   ACTION_TYPES,
   ACTIVITY_TYPES,
@@ -26,6 +26,7 @@ import {
 import { AutomationRuleModal, type RuleDraft } from "./AutomationRuleModal";
 import { TriggerModal, type TriggerDraft } from "./TriggerModal";
 import { AutomationRunsTab } from "./AutomationRunsTab";
+import { AUTOMATION_TEMPLATES } from "./templates";
 import {
   stageColor,
   textOn,
@@ -40,8 +41,8 @@ import { confirmDialog } from "@/components/ui/Dialogs";
 
 type Kind = "rule" | "trigger";
 type Editing =
-  | { kind: "rule"; stageId: string; item: AutomationRule | null; actionType: ActionType }
-  | { kind: "trigger"; stageId: string; item: AutomationTrigger | null }
+  | { kind: "rule"; stageId: string; item: AutomationRule | null; actionType: ActionType; preset?: Partial<RuleDraft> }
+  | { kind: "trigger"; stageId: string; item: AutomationTrigger | null; preset?: Partial<TriggerDraft> }
   | null;
 
 const listKey = (kind: Kind) => (kind === "rule" ? "automations" : "triggers");
@@ -129,6 +130,8 @@ function triggerDetail(trigger: AutomationTrigger) {
   if (trigger.type === "FIELD_CHANGED") return watchedField ? `campo: ${WATCHABLE_FIELDS[watchedField] ?? watchedField}` : "qualquer campo";
   if (trigger.type === "ACTIVITY_COMPLETED") return activityType ? ACTIVITY_TYPES[activityType] : "qualquer atividade";
   if (trigger.type === "WEBHOOK_IN") return "chamada externa";
+  if (trigger.type === "DUE_REACHED") return "no dia do prazo";
+  if (trigger.type === "ESTIMATE_EXCEEDED") return "tempo acima da estimativa";
   return "ao criar";
 }
 
@@ -152,6 +155,7 @@ export function CrmAutomationBoard({
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Editing>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   const sensors = useBoardSensors();
   const can = useCan();
@@ -318,6 +322,37 @@ export function CrmAutomationBoard({
               )}
             </div>
           )}
+          {(canCreateRule || canCreateTrigger) && (
+            <div className="auto-create">
+              <button type="button" className="btn-secondary" onClick={() => setTemplatesOpen(!templatesOpen)}>
+                <LayoutTemplate size={16} /> Modelos <ChevronDown size={14} />
+              </button>
+              {templatesOpen && (
+                <div className="auto-menu auto-menu--templates" onMouseLeave={() => setTemplatesOpen(false)}>
+                  {AUTOMATION_TEMPLATES.filter((t) => (t.kind === "rule" ? canCreateRule : canCreateTrigger)).map((t) => (
+                    <button
+                      key={t.name}
+                      type="button"
+                      onClick={() => {
+                        setTemplatesOpen(false);
+                        const stageId = stages[0]?.id;
+                        setEditing(
+                          t.kind === "rule"
+                            ? { kind: "rule", stageId, item: null, actionType: t.actionType, preset: t.preset(stages) }
+                            : { kind: "trigger", stageId, item: null, preset: t.preset(stages) }
+                        );
+                      }}
+                    >
+                      <span className="auto-menu__template">
+                        <b>{t.name}</b>
+                        <span>{t.description}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <Select
             className="auto-pipeline"
             value={pipeline.id}
@@ -451,6 +486,7 @@ export function CrmAutomationBoard({
           stages={stages}
           customFields={customFields}
           members={members}
+          preset={editing.preset}
           onClose={() => setEditing(null)}
           onSave={(draft) => saveRule(draft, editing.item)}
         />
@@ -461,6 +497,7 @@ export function CrmAutomationBoard({
           stageId={editing.stageId}
           stages={stages}
           customFields={customFields}
+          preset={editing.preset}
           onClose={() => setEditing(null)}
           onSave={(draft) => saveTrigger(draft, editing.item)}
         />

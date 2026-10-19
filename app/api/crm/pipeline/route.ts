@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
+import { denyUnless, denyUnlessPipeline, visibleCardWhere } from "@/lib/crm-access";
 import { activeCard, cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
 /** Starting columns of a new pipeline, by kind. */
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
           orderBy: { order: "asc" },
           include: {
             cards: {
-              where: activeCard,
+              where: { ...activeCard, ...(await visibleCardWhere()) },
               orderBy: { order: "asc" },
               include: cardListInclude
             }

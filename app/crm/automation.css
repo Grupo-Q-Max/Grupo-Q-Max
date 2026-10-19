@@ -881,3 +881,8 @@
 .auto-run-path .auto-status {
   margin: 0 6px;
 }
+
+/* "Modelos" menu: ready-made automations (components/crm/automation/templates.ts) */
+.auto-menu--templates { min-width: 320px; }
+.auto-menu__template { display: grid; gap: 2px; text-align: left; }
+.auto-menu__template span { font-size: 12px; color: #a5a0aa; white-space: normal; }

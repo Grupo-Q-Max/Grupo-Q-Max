@@ -8,6 +8,10 @@ export type KanbanColumnData<T extends KanbanItemBase> = {
   items: T[];
   /** WIP limit: the count turns red above it (a warning only) */
   limit?: number | null;
+  /** Accent color ("#rrggbb") of the column and its cards; null = the board accent */
+  color?: string | null;
+  /** Short text shown as a lock icon tooltip in the header (e.g. the column's required fields) */
+  note?: string | null;
 };
 
 /**
@@ -28,6 +32,7 @@ export type KanbanLabels = {
   renameColumn: string;
   deleteColumn: string;
   setColumnLimit: string;
+  columnRules: string;
   moveColumnLeft: string;
   moveColumnRight: string;
   syncing: string;
@@ -53,6 +58,8 @@ export type KanbanProps<T extends KanbanItemBase> = {
    * state, so drop indexes still count them and the saved order stays correct.
    */
   isItemVisible?: (item: T) => boolean;
+  /** Line under the column header from its visible items (totals, counts); null hides it */
+  summarize?: (items: T[]) => ReactNode;
 
   /** Fired after a drop that changed the item's column or position. */
   onMoveItem?: (itemId: string, toColumnId: string, toIndex: number) => MaybeCancel | Promise<MaybeCancel>;
@@ -64,6 +71,10 @@ export type KanbanProps<T extends KanbanItemBase> = {
   onRenameColumn?: (columnId: string, title: string) => MaybeCancel | Promise<MaybeCancel>;
   /** Enables the column menu item that sets the WIP limit. */
   onSetColumnLimit?: (columnId: string, limit: number | null) => void;
+  /** Enables the color swatches in the column menu; null = back to the board accent */
+  onSetColumnColor?: (columnId: string, color: string | null) => void;
+  /** Enables the column menu item that edits the column rules (labels.columnRules) */
+  onEditColumnRules?: (columnId: string) => void;
   /** Enables "move left/right" in the column menu; receives every column id in the new order. */
   onMoveColumn?: (columnIds: string[]) => MaybeCancel | Promise<MaybeCancel>;
   /** Enables the column menu with "delete column". */

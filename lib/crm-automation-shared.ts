@@ -6,7 +6,8 @@
 export type DelayUnit = "MINUTES" | "HOURS" | "DAYS";
 export type HttpMethod = "GET" | "POST";
 export type ConditionOperator = "eq" | "neq" | "contains" | "empty" | "notEmpty" | "gt" | "lt";
-export type TriggerType = "WEBHOOK_IN" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DEAL_CREATED";
+export type TriggerType = "WEBHOOK_IN" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DEAL_CREATED" | "DUE_REACHED" | "ESTIMATE_EXCEEDED";
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type ActivityType = "TODO" | "TASK" | "CALL" | "MEETING" | "COMMENT";
 export type ActionType = "WEBHOOK" | "CREATE_ACTIVITY" | "UPDATE_DEAL" | "NOTIFY" | "FLOW";
 /** Actions a flow step can run (a flow inside a flow is not allowed) */
@@ -35,6 +36,10 @@ export type DealUpdateAction = {
   stageId: string | null;
   status: DealStatus | null;
   responsibleId: string | null;
+  /** Task boards: priority to set */
+  priority: TaskPriority | null;
+  /** Tag added to the card (its other tags stay) */
+  addTagId: string | null;
   /** { [customFieldId]: value with placeholders }; "" clears the field */
   customData: Record<string, string> | null;
 };
@@ -44,6 +49,8 @@ export type NotifyAction = {
   /** Comment text, with placeholders */
   message: string;
   notifyResponsible: boolean;
+  /** Also the card's co-assignees and observers */
+  notifyAssignees: boolean;
   memberIds: string[];
 };
 
@@ -116,6 +123,7 @@ export const DEAL_FIELDS: { key: string; label: string }[] = [
   { key: "value", label: "Valor" },
   { key: "currency", label: "Moeda" },
   { key: "status", label: "Status (OPEN/WON/LOST)" },
+  { key: "priority", label: "Prioridade (LOW/MEDIUM/HIGH/URGENT)" },
   { key: "stage", label: "Etapa" },
   { key: "pipeline", label: "Funil" },
   { key: "responsible", label: "Responsável" },
@@ -174,7 +182,11 @@ export const TRIGGER_TYPES: Record<TriggerType, { label: string; description: st
   FIELD_CHANGED: { label: "Campo alterado", description: "Quando um campo do negócio é alterado" },
   ACTIVITY_COMPLETED: { label: "Atividade concluída", description: "Quando uma atividade do negócio é concluída" },
   DEAL_CREATED: { label: "Negócio criado", description: "Quando um negócio é criado no funil" },
+  DUE_REACHED: { label: "Prazo chegou", description: "Quadros de tarefas: no dia do prazo (ou atrasada), junto com o lembrete do responsável" },
+  ESTIMATE_EXCEEDED: { label: "Estimativa estourada", description: "Quadros de tarefas: quando o tempo gasto passa da estimativa" },
 };
+
+export const TASK_PRIORITIES: Record<TaskPriority, string> = { URGENT: "Urgente", HIGH: "Alta", MEDIUM: "Média", LOW: "Baixa" };
 
 export const isTriggerType = (value: unknown): value is TriggerType => typeof value === "string" && value in TRIGGER_TYPES;
 
@@ -223,13 +235,15 @@ export function parseDealUpdateAction(value: unknown): DealUpdateAction {
     stageId: id(input.stageId),
     status: typeof input.status === "string" && input.status in DEAL_STATUSES ? (input.status as DealStatus) : null,
     responsibleId: id(input.responsibleId),
+    priority: typeof input.priority === "string" && Object.hasOwn(TASK_PRIORITIES, input.priority) ? (input.priority as TaskPriority) : null,
+    addTagId: id(input.addTagId),
     customData: Object.keys(customData).length ? customData : null,
   };
 }
 
 /** Whether an UPDATE_DEAL configuration changes anything. */
 export const hasDealUpdate = (a: DealUpdateAction) =>
-  Boolean(a.stageId || a.status || a.responsibleId || (a.customData && Object.keys(a.customData).length));
+  Boolean(a.stageId || a.status || a.responsibleId || a.priority || a.addTagId || (a.customData && Object.keys(a.customData).length));
 
 /** Validates the NOTIFY configuration coming from the client. */
 export function parseNotifyAction(value: unknown): NotifyAction {
@@ -240,6 +254,7 @@ export function parseNotifyAction(value: unknown): NotifyAction {
   return {
     message: String(input.message ?? "").trim(),
     notifyResponsible: input.notifyResponsible !== false,
+    notifyAssignees: input.notifyAssignees === true,
     memberIds,
   };
 }
