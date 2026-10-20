@@ -4,7 +4,7 @@ import { adminPassword } from "@/lib/settings";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
-  const wait = rateLimit(`admin:ip:${clientIp(req)}`, 10, 15 * 60_000);
+  const wait = await rateLimit(`admin:ip:${clientIp(req)}`, 10, 15 * 60_000);
   if (wait) return tooManyRequests(wait);
 
   const { password } = await req.json().catch(() => ({}));
