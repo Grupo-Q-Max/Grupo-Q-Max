@@ -3,6 +3,8 @@ import type {
   ActivityAction,
   ActivityType,
   AutomationCondition,
+  CopyAction,
+  EmailAction,
   Branch,
   DealUpdateAction,
   DelayUnit,
@@ -12,6 +14,7 @@ import type {
   StartOn,
   StepActionType,
   StepType,
+  SubtaskAction,
   TriggerType,
   WebhookHeader,
 } from "@/lib/crm-automation-shared";
@@ -19,7 +22,19 @@ import type {
 /** Action of a flow step (a child rule holding only the action fields). */
 export type StepActionRule = Pick<
   AutomationRule,
-  "id" | "name" | "webhookUrl" | "webhookMethod" | "webhookBody" | "headers" | "activity" | "dealUpdate" | "notify"
+  | "id"
+  | "name"
+  | "webhookUrl"
+  | "webhookMethod"
+  | "webhookBody"
+  | "headers"
+  | "activity"
+  | "dealUpdate"
+  | "notify"
+  | "subtask"
+  | "checklist"
+  | "email"
+  | "copy"
 > & { actionType: StepActionType };
 
 /** Saved step of a FLOW rule, as a flat row (the editor builds the tree). */
@@ -55,8 +70,16 @@ export type AutomationRule = {
   activity: ActivityAction | null;
   /** Only for UPDATE_DEAL rules */
   dealUpdate: DealUpdateAction | null;
-  /** Only for NOTIFY rules */
-  notify: NotifyAction | null;
+  /** Only for NOTIFY rules; members come from CrmAutomationNotifyMember (memberIds = legacy JSON, see notifyMemberIds) */
+  notify: (Omit<NotifyAction, "memberIds"> & { memberIds: unknown; members: { memberId: string }[] }) | null;
+  /** Only for CREATE_SUBTASK rules */
+  subtask: SubtaskAction | null;
+  /** Only for ADD_CHECKLIST rules */
+  checklist: { title: string }[];
+  /** Only for SEND_EMAIL rules */
+  email: EmailAction | null;
+  /** Only for COPY_CARD rules */
+  copy: CopyAction | null;
   conditions: AutomationCondition[];
   active: boolean;
   order: number;

@@ -35,7 +35,16 @@ export type FlowStepDraft = {
   else: FlowStepDraft[];
 };
 
-const STEP_ACTIONS: StepActionType[] = ["CREATE_ACTIVITY", "UPDATE_DEAL", "NOTIFY", "WEBHOOK"];
+const STEP_ACTIONS: StepActionType[] = [
+  "CREATE_ACTIVITY",
+  "UPDATE_DEAL",
+  "NOTIFY",
+  "WEBHOOK",
+  "CREATE_SUBTASK",
+  "ADD_CHECKLIST",
+  "SEND_EMAIL",
+  "COPY_CARD",
+];
 
 let lastKey = 0;
 /** Keys of steps added in the dialog start with "new-" (saved steps use their id) */

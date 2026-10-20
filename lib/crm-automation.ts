@@ -2,14 +2,14 @@ import type {
   CrmActivityType,
   CrmAutomationActivity,
   CrmAutomationDealUpdate,
-  CrmAutomationNotify,
   CrmTrigger,
   CrmTriggerType,
   Prisma,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { notifyMember, notifyPipelineChanged } from "@/lib/crm-realtime";
-import { activeCard, snapshotBeforeMove, syncTaskStatus, updateDeal } from "@/lib/crm-deal";
+import { notifyMember, notifyPipelineChanged, notifyStageChanged } from "@/lib/crm-realtime";
+import { DealValidationError, activeCard, copyCard, snapshotBeforeMove, syncTaskStatus, updateDeal, validParent } from "@/lib/crm-deal";
+import { escapeHtml, sendMail } from "@/lib/mail";
 
 /** Templates and archived cards are off the board: no rules, triggers or QXBACK pushes for them. */
 const isHiddenCard = async (cardId: string) => (await prisma.crmCard.count({ where: { id: cardId, NOT: activeCard } })) > 0;
@@ -25,11 +25,13 @@ import {
   methodHasBody,
   customFieldKey,
   delayMs,
+  emailRecipients,
   fillPlaceholders,
   firstStep,
   isStartOn,
   matchesConditions,
   nextAfter,
+  notifyMemberIds,
   stepLabel,
 } from "@/lib/crm-automation-shared";
 
@@ -308,6 +310,27 @@ export async function testRule(automationId: string, cardId: string) {
       }
       break;
     }
+    case "CREATE_SUBTASK": {
+      const s = rule.subtask;
+      if (!s) break;
+      lines.push(`Subtarefa: ${fill(s.title)}`, `Para: ${(s.assignee === "MEMBER" ? s.responsible?.name : deal.ctx.responsible) || "ninguém"}`);
+      if (s.deadlineDays !== null) lines.push(`Prazo: ${s.deadlineDays} dia(s) após a execução`);
+      break;
+    }
+    case "ADD_CHECKLIST":
+      lines.push(...rule.checklist.map((i) => `☐ ${fill(i.title)}`));
+      break;
+    case "SEND_EMAIL": {
+      const e = rule.email;
+      if (!e) break;
+      const to = emailRecipients(fill(e.to));
+      lines.push(`Para: ${to.join(", ") || "(nenhum e-mail válido: a regra vai falhar)"}`, `Assunto: ${fill(e.subject)}`, "", fill(e.body));
+      break;
+    }
+    case "COPY_CARD":
+      lines.push(rule.copy?.stage ? `Copiar para: ${rule.copy.stage.pipeline.name} → ${rule.copy.stage.name}` : "A etapa de destino foi excluída");
+      if (rule.copy?.link) lines.push("Vincula a cópia ao original");
+      break;
     case "FLOW":
       lines.push(`Fluxo com ${rule._count.steps} passo(s). Os passos só são avaliados na execução real.`);
       break;
@@ -368,26 +391,39 @@ const actionInclude = {
   headers: { orderBy: { order: "asc" } },
   activity: { include: { responsible: { select: { name: true } } } },
   dealUpdate: true,
-  notify: true,
+  notify: { include: { members: { select: { memberId: true } } } },
+  subtask: { include: { responsible: { select: { name: true } } } },
+  checklist: { orderBy: { order: "asc" } },
+  email: true,
+  copy: { include: { stage: { select: { name: true, pipeline: { select: { name: true } } } } } },
 } satisfies Prisma.CrmAutomationInclude;
 
 type ActionRule = Prisma.CrmAutomationGetPayload<{ include: typeof actionInclude }>;
+
+/** Action tables of a rule as the board's dialogs edit them. */
+const boardActionInclude = {
+  headers: { orderBy: { order: "asc" } },
+  activity: true,
+  dealUpdate: true,
+  notify: { include: { members: { select: { memberId: true } } } },
+  subtask: true,
+  checklist: { orderBy: { order: "asc" } },
+  email: true,
+  copy: true,
+} satisfies Prisma.CrmAutomationInclude;
 
 /** Rules of a stage as the automation board shows them; flows bring their steps as a flat list. */
 export const boardAutomations = {
   where: { flowStepId: null },
   orderBy: { order: "asc" },
   include: {
-    headers: { orderBy: { order: "asc" } },
+    ...boardActionInclude,
     conditions: { orderBy: { order: "asc" } },
-    activity: true,
-    dealUpdate: true,
-    notify: true,
     steps: {
       orderBy: { order: "asc" },
       include: {
         conditions: { orderBy: { order: "asc" } },
-        actions: { take: 1, include: { headers: { orderBy: { order: "asc" } }, activity: true, dealUpdate: true, notify: true } },
+        actions: { take: 1, include: boardActionInclude },
       },
     },
   },
@@ -404,6 +440,14 @@ async function runAction(rule: ActionRule, cardId: string, deal: Deal): Promise<
       return rule.notify ? notifyAction(rule.notify, cardId, deal) : "Notificação da regra não configurada";
     case "WEBHOOK":
       return sendWebhook(rule, deal.ctx);
+    case "CREATE_SUBTASK":
+      return rule.subtask ? createSubtask(rule.subtask, cardId, deal) : "Subtarefa da regra não configurada";
+    case "ADD_CHECKLIST":
+      return rule.checklist.length ? addChecklist(rule.checklist, cardId, deal) : "Checklist da regra sem itens";
+    case "SEND_EMAIL":
+      return rule.email ? sendEmailAction(rule.email, deal) : "E-mail da regra não configurado";
+    case "COPY_CARD":
+      return rule.copy ? copyCardAction(rule.copy, rule.name, cardId) : "Cópia da regra não configurada";
     case "FLOW":
       return "Um fluxo não pode ser a ação de outro fluxo";
   }
@@ -810,11 +854,11 @@ async function updateDealAction(config: CrmAutomationDealUpdate, cardId: string,
  * comment in the deal timeline and notifies the deal's responsible and/or the
  * configured members in the CRM bell.
  */
-async function notifyAction(config: CrmAutomationNotify, cardId: string, deal: Deal): Promise<ActionOutcome> {
+async function notifyAction(config: ActionRule["notify"] & {}, cardId: string, deal: Deal): Promise<ActionOutcome> {
   const message = fillPlaceholders(config.message, deal.ctx).trim();
   if (!message) return { request: { message, notified: [] }, error: "Mensagem vazia", final: true };
 
-  const ids = new Set(Array.isArray(config.memberIds) ? (config.memberIds as string[]) : []);
+  const ids = new Set(notifyMemberIds(config));
   if (config.notifyResponsible && deal.responsibleId) ids.add(deal.responsibleId);
   if (config.notifyAssignees) {
     const [assignees, observers] = await Promise.all([
@@ -836,6 +880,125 @@ async function notifyAction(config: CrmAutomationNotify, cardId: string, deal: D
     return { request: { commentId: comment.id, message, notified: members.map((m) => m.name) }, error: null };
   } catch (e) {
     return { request: { message, notified: [] }, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * CREATE_SUBTASK action: a subtask of the deal in the deal's stage (same rules as "Adicionar
+ * subtarefa": one level). A deal that is itself a subtask is skipped, so the rule doesn't fail
+ * again when the new subtask enters the same stage.
+ */
+async function createSubtask(config: ActionRule["subtask"] & {}, cardId: string, deal: Deal): Promise<ActionOutcome | string> {
+  const card = await prisma.crmCard.findUnique({ where: { id: cardId }, select: { parentId: true, stageId: true } });
+  if (!card) return "Negócio não encontrado";
+  if (card.parentId) return "O negócio já é uma subtarefa";
+
+  const title = fillPlaceholders(config.title, deal.ctx).trim() || "Subtarefa";
+  const responsibleId = config.assignee === "MEMBER" ? config.responsibleId : deal.responsibleId;
+  const closeDate =
+    config.deadlineDays === null ? null : new Date(`${new Date(Date.now() + config.deadlineDays * 86_400_000).toISOString().slice(0, 10)}T00:00:00Z`);
+  try {
+    const subtask = await prisma.$transaction(async (tx) => {
+      await validParent(tx, null, cardId, deal.stage.pipelineId);
+      return tx.crmCard.create({
+        data: {
+          title,
+          stageId: card.stageId,
+          order: await tx.crmCard.count({ where: { stageId: card.stageId } }),
+          parentId: cardId,
+          responsibleId,
+          closeDate,
+          history: { create: { type: "CREATED", data: { title, automation: true } } },
+        },
+        select: { id: true, number: true, stageId: true, responsible: { select: { name: true } } },
+      });
+    });
+    return {
+      request: { subtaskNumber: subtask.number, title, responsible: subtask.responsible?.name ?? null, deadline: closeDate?.toISOString() ?? null },
+      error: null,
+      // Like a subtask added by hand: the board refreshes and the stage's rules/triggers see it
+      followUp: async () => {
+        await notifyStageChanged(subtask.stageId);
+        if (!(await fireTriggers(subtask.id, { type: "DEAL_CREATED" }))) await onDealEnteredStage(subtask.id, subtask.stageId);
+      },
+    };
+  } catch (e) {
+    const final = e instanceof DealValidationError;
+    return { request: { title }, error: e instanceof Error ? e.message : String(e), final };
+  }
+}
+
+/** ADD_CHECKLIST action: the items become TODO activities of the deal; an item it already has open is not added again. */
+async function addChecklist(items: ActionRule["checklist"], cardId: string, deal: Deal): Promise<ActionOutcome> {
+  const titles = [...new Set(items.map((i) => fillPlaceholders(i.title, deal.ctx).trim()).filter(Boolean))];
+  try {
+    const open = await prisma.crmActivity.findMany({
+      where: { cardId, type: "TODO", completed: false, title: { in: titles } },
+      select: { title: true },
+    });
+    const added = titles.filter((t) => !open.some((o) => o.title === t));
+    if (added.length) await prisma.crmActivity.createMany({ data: added.map((title) => ({ cardId, type: "TODO" as const, title })) });
+    return { request: { checklist: added, skipped: titles.length - added.length }, error: null };
+  } catch (e) {
+    return { request: { checklist: [], skipped: 0 }, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** SEND_EMAIL action: one message per recipient (they don't see each other); the body is plain text. */
+async function sendEmailAction(config: ActionRule["email"] & {}, deal: Deal): Promise<ActionOutcome> {
+  const to = emailRecipients(fillPlaceholders(config.to, deal.ctx));
+  const subject = fillPlaceholders(config.subject, deal.ctx).trim() || deal.ctx.title;
+  if (!to.length) return { request: { to, subject }, error: "Nenhum e-mail válido em \"Para\"", final: true };
+  const html = escapeHtml(fillPlaceholders(config.body, deal.ctx)).replace(/\r?\n/g, "<br>");
+  const sent: string[] = [];
+  try {
+    for (const address of to) {
+      await sendMail(address, subject, html);
+      sent.push(address);
+    }
+    return { request: { to, subject }, error: null };
+  } catch (e) {
+    // A retry sends again to everyone: better a repeated e-mail than a missing one
+    return { request: { to, subject, sent }, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * COPY_CARD action: copies the deal like "Duplicar" to the target stage (any pipeline), linking
+ * both when configured, then runs the target stage's rules for the copy. A deal that was itself
+ * copied by a rule is not copied again, so two boards copying to each other can't loop.
+ */
+async function copyCardAction(config: ActionRule["copy"] & {}, ruleName: string, cardId: string): Promise<ActionOutcome | string> {
+  if (!config.stageId || !config.stage) return "A etapa de destino foi excluída";
+  const created = await prisma.crmHistory.findFirst({ where: { cardId, type: "CREATED" }, select: { data: true } });
+  if ((created?.data as { copiedByRule?: string } | null)?.copiedByRule) return "O negócio já é uma cópia feita por automação";
+
+  const stageId = config.stageId;
+  try {
+    const copy = await prisma.$transaction(async (tx) => {
+      const card = await tx.crmCard.findUniqueOrThrow({ where: { id: cardId }, select: { startDate: true, closeDate: true } });
+      const copy = await copyCard(tx, cardId, {
+        stageId,
+        startDate: card.startDate,
+        closeDate: card.closeDate,
+        history: { copiedFrom: cardId, copiedByRule: ruleName },
+      });
+      if (config.link) {
+        const pair = cardId < copy.id ? { cardId, linkedId: copy.id } : { cardId: copy.id, linkedId: cardId };
+        await tx.crmCardLink.create({ data: pair });
+      }
+      return copy;
+    });
+    return {
+      request: { copyNumber: copy.number, stage: config.stage.name, pipeline: config.stage.pipeline.name },
+      error: null,
+      followUp: async () => {
+        await notifyStageChanged(stageId);
+        await onDealEnteredStage(copy.id, stageId);
+      },
+    };
+  } catch (e) {
+    return { request: { stage: config.stage.name }, error: e instanceof Error ? e.message : String(e) };
   }
 }
 

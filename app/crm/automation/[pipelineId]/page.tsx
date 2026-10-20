@@ -27,7 +27,12 @@ export default async function AutomationPage({ params }: { params: Promise<{ pip
         },
       },
     }),
-    prisma.crmPipeline.findMany({ where: visible, orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
+    prisma.crmPipeline.findMany({
+      where: visible,
+      orderBy: { createdAt: "asc" },
+      // Stages: targets of "Copiar negócio"
+      select: { id: true, name: true, stages: { orderBy: { order: "asc" }, select: { id: true, name: true } } },
+    }),
     prisma.teamMember.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
   ]);
   if (!pipeline) notFound();

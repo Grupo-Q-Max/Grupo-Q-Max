@@ -31,6 +31,15 @@ type ActionLog = {
   message?: string;
   notified?: string[];
   until?: string;
+  subtaskNumber?: number;
+  checklist?: string[];
+  skipped?: number;
+  to?: string[];
+  subject?: string;
+  sent?: string[];
+  copyNumber?: number;
+  stage?: string;
+  pipeline?: string;
 } | null;
 
 /** A step run by a FLOW rule */
@@ -69,6 +78,38 @@ const formatDateTime = (value: string) =>
 
 /** What an action did, from its log. */
 function ActionDetail({ request, status, responseBody }: { request: ActionLog; status: string; responseBody: string | null }) {
+  if (request?.subtaskNumber) {
+    return (
+      <>
+        <b>Subtarefa criada:</b> <Link href={`/crm/deal/details/${request.subtaskNumber}`}>#{request.subtaskNumber}</Link> {request.title} · para{" "}
+        {request.responsible ?? "ninguém"}
+      </>
+    );
+  }
+  if (request?.checklist) {
+    return (
+      <>
+        <b>Itens adicionados:</b> {request.checklist.join(" · ") || "nenhum"}
+        {!!request.skipped && ` (${request.skipped} já existiam)`}
+      </>
+    );
+  }
+  if (request?.to) {
+    return (
+      <>
+        <b>{status === "SUCCESS" ? "E-mail enviado" : "E-mail não enviado"}:</b> {request.subject} · para {request.to.join(", ") || "ninguém"}
+        {request.sent?.length ? ` (enviado antes do erro: ${request.sent.join(", ")})` : ""}
+      </>
+    );
+  }
+  if (request?.copyNumber) {
+    return (
+      <>
+        <b>Cópia criada:</b> <Link href={`/crm/deal/details/${request.copyNumber}`}>#{request.copyNumber}</Link> em {request.pipeline} →{" "}
+        {request.stage}
+      </>
+    );
+  }
   if (request?.url) {
     return (
       <>

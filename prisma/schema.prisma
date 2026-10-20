@@ -70,15 +70,17 @@ model TeamMember {
   /// Area notified of new improvement requests addressed to it; null = no area
   area            CrmArea?
 
-  responsibleDeals      CrmCard[]                 @relation("DealResponsible")
+  responsibleDeals      CrmCard[]                   @relation("DealResponsible")
   observedDeals         CrmDealObserver[]
   assignedCards         CrmCardAssignee[]
-  activities            CrmActivity[]             @relation("ActivityResponsible")
-  authoredActivities    CrmActivity[]             @relation("ActivityAuthor")
+  activities            CrmActivity[]               @relation("ActivityResponsible")
+  authoredActivities    CrmActivity[]               @relation("ActivityAuthor")
   historyActions        CrmHistory[]
   timeEntries           CrmTimeEntry[]
   automationActivities  CrmAutomationActivity[]
   automationDealUpdates CrmAutomationDealUpdate[]
+  automationNotifies    CrmAutomationNotifyMember[]
+  automationSubtasks    CrmAutomationSubtask[]
   notifications         CrmNotification[]
   pipelineAccess        CrmPipelineMember[]
   savedViews            CrmSavedView[]
@@ -276,27 +278,28 @@ model CrmPipelineMember {
 }
 
 model CrmStage {
-  id              String                    @id @default(cuid())
-  name            String
-  order           Int                       @default(0)
+  id               String                    @id @default(cuid())
+  name             String
+  order            Int                       @default(0)
   /// WIP limit: the column header turns red with more cards than this (only a warning, drops are allowed)
-  wipLimit        Int?
+  wipLimit         Int?
   /// Column accent on the kanban ("#rrggbb"); null = the default accent
-  color           String?                   @db.VarChar(7)
+  color            String?                   @db.VarChar(7)
   /// Card fields that must be filled before a manual move into this column (keys of REQUIRED_FIELDS in
   /// components/crm/deal/types.ts); null = none. Automations and triggers skip the check.
-  requiredFields  Json?
-  pipelineId      String
-  pipeline        CrmPipeline               @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
-  cards           CrmCard[]
-  automations     CrmAutomation[]
-  triggers        CrmTrigger[]
-  automationRuns  CrmAutomationRun[]
+  requiredFields   Json?
+  pipelineId       String
+  pipeline         CrmPipeline               @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  cards            CrmCard[]
+  automations      CrmAutomation[]
+  triggers         CrmTrigger[]
+  automationRuns   CrmAutomationRun[]
   /// UPDATE_DEAL rules that move deals into this stage
-  automationMoves CrmAutomationDealUpdate[] @relation("AutomationTargetStage")
-  dealSnapshots   CrmDealStageSnapshot[]
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
+  automationMoves  CrmAutomationDealUpdate[] @relation("AutomationTargetStage")
+  automationCopies CrmAutomationCopy[]       @relation("AutomationCopyTarget")
+  dealSnapshots    CrmDealStageSnapshot[]
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
 }
 
 enum CrmDealStatus {
@@ -655,6 +658,10 @@ enum CrmAutomationAction {
   CREATE_ACTIVITY
   UPDATE_DEAL
   NOTIFY
+  CREATE_SUBTASK
+  ADD_CHECKLIST
+  SEND_EMAIL
+  COPY_CARD
   /// Several steps (actions, waits, if/else) run in order ("ações de grupo")
   FLOW
 }
@@ -723,24 +730,24 @@ enum CrmConditionOperator {
 
 /// Automation rule ("regra de automação"): runs when a deal enters `stage`.
 model CrmAutomation {
-  id            String                 @id @default(cuid())
-  name          String
-  actionType    CrmAutomationAction    @default(WEBHOOK)
-  execution     CrmAutomationExecution @default(PARALLEL)
+  id                String                 @id @default(cuid())
+  name              String
+  actionType        CrmAutomationAction    @default(WEBHOOK)
+  execution         CrmAutomationExecution @default(PARALLEL)
   /// Wait before running; 0 = immediately
-  delayAmount   Int                    @default(0)
-  delayUnit     CrmDelayUnit           @default(MINUTES)
+  delayAmount       Int                    @default(0)
+  delayUnit         CrmDelayUnit           @default(MINUTES)
   /// WEBHOOK action. URL and body accept {{deal.<field>}} placeholders
-  webhookUrl    String?                @db.Text
-  webhookMethod CrmHttpMethod          @default(POST)
+  webhookUrl        String?                @db.Text
+  webhookMethod     CrmHttpMethod          @default(POST)
   /// Empty: the deal snapshot is sent as JSON
-  webhookBody   String?                @db.Text
-  order         Int                    @default(0)
-  active        Boolean                @default(true)
-  stageId       String
-  stage         CrmStage               @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  webhookBody       String?                @db.Text
+  order             Int                    @default(0)
+  active            Boolean                @default(true)
+  stageId           String
+  stage             CrmStage               @relation(fields: [stageId], references: [id], onDelete: Cascade)
   /// What starts the rule: the deal entering `stage`, or an event while the deal is in it
-  startOn           CrmAutomationStart @default(STAGE_ENTERED)
+  startOn           CrmAutomationStart     @default(STAGE_ENTERED)
   /// startOn FIELD_CHANGED: watched deal field (null = any field)
   startField        String?
   /// startOn ACTIVITY_COMPLETED: activity type (null = any type)
@@ -752,6 +759,14 @@ model CrmAutomation {
   dealUpdate CrmAutomationDealUpdate?
   /// NOTIFY action
   notify     CrmAutomationNotify?
+  /// CREATE_SUBTASK action
+  subtask    CrmAutomationSubtask?
+  /// ADD_CHECKLIST action: its items
+  checklist  CrmAutomationChecklistItem[]
+  /// SEND_EMAIL action
+  email      CrmAutomationEmail?
+  /// COPY_CARD action
+  copy       CrmAutomationCopy?
   headers    CrmAutomationHeader[]
   conditions CrmAutomationCondition[]
   runs       CrmAutomationRun[]
@@ -857,16 +872,83 @@ model CrmAutomationDealUpdate {
 
 /// NOTIFY action of a rule: a comment added to the deal timeline and a notification to team members.
 model CrmAutomationNotify {
-  automationId      String        @id
-  automation        CrmAutomation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  automationId      String                      @id
+  automation        CrmAutomation               @relation(fields: [automationId], references: [id], onDelete: Cascade)
   /// Accepts {{deal.<field>}} placeholders
-  message           String        @db.Text
+  message           String                      @db.Text
   /// Also notify whoever is the deal's responsible when the rule runs
-  notifyResponsible Boolean       @default(true)
+  notifyResponsible Boolean                     @default(true)
   /// Also notify the co-assignees and observers of the card
-  notifyAssignees   Boolean       @default(false)
-  /// TeamMember ids notified on every run
+  notifyAssignees   Boolean                     @default(false)
+  /// Members notified on every run
+  members           CrmAutomationNotifyMember[]
+  /// DEPRECATED: legacy JSON array of TeamMember ids, replaced by `members`. Still read (merged with
+  /// `members`) until scripts/migrate-notify-members.sql has run in production; saving a rule clears it.
+  /// Drop the column by hand afterwards (db push in the deploy refuses data-loss changes).
   memberIds         Json?
+}
+
+/// CREATE_SUBTASK action of a rule: a subtask (CrmCard with parentId) created under the deal, in its stage.
+model CrmAutomationSubtask {
+  automationId  String              @id
+  automation    CrmAutomation       @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  /// Accepts {{deal.<field>}} placeholders
+  title         String              @db.Text
+  assignee      CrmActivityAssignee @default(DEAL_RESPONSIBLE)
+  /// Used when assignee = MEMBER
+  responsibleId String?
+  responsible   TeamMember?         @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  /// Deadline (closeDate) in days from the run; null = no deadline
+  deadlineDays  Int?
+
+  @@index([responsibleId])
+}
+
+/// Item of an ADD_CHECKLIST rule: added to the deal as a TODO activity (its checklist).
+model CrmAutomationChecklistItem {
+  id           String        @id @default(cuid())
+  automationId String
+  automation   CrmAutomation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  /// Accepts {{deal.<field>}} placeholders
+  title        String        @db.Text
+  order        Int           @default(0)
+
+  @@index([automationId, order])
+}
+
+/// SEND_EMAIL action of a rule. Every text accepts {{deal.<field>}} placeholders.
+model CrmAutomationEmail {
+  automationId String        @id
+  automation   CrmAutomation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  /// Recipients separated by commas, e.g. "{{deal.contactEmail}}, financeiro@empresa.com"
+  to           String        @db.Text
+  subject      String        @db.Text
+  /// Plain text; line breaks are kept
+  body         String        @db.Text
+}
+
+/// COPY_CARD action of a rule: copies the deal (like "Duplicar") to a stage of any pipeline.
+model CrmAutomationCopy {
+  automationId String        @id
+  automation   CrmAutomation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  /// Stage the copy goes to; null = the target stage was deleted (the rule skips)
+  stageId      String?
+  stage        CrmStage?     @relation("AutomationCopyTarget", fields: [stageId], references: [id], onDelete: SetNull)
+  /// Links the copy to the original deal (CrmCardLink)
+  link         Boolean       @default(true)
+
+  @@index([stageId])
+}
+
+/// Member notified by a NOTIFY rule. A deleted member leaves the rule (cascade).
+model CrmAutomationNotifyMember {
+  automationId String
+  notify       CrmAutomationNotify @relation(fields: [automationId], references: [automationId], onDelete: Cascade)
+  memberId     String
+  member       TeamMember          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([automationId, memberId])
+  @@index([memberId])
 }
 
 /// In-app notification shown in the CRM bell of a team member, about a deal or an improvement request.
