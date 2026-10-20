@@ -4,6 +4,7 @@ import { denyUnless, denyUnlessPipeline, visibleCardWhere } from "@/lib/crm-acce
 import { notifyStageChanged } from "@/lib/crm-realtime";
 import { fireTriggers, onDealEnteredStage } from "@/lib/crm-automation";
 import { StageEntryError, checkStageEntry, isQxbackStage, notifyQxback } from "@/lib/crm-qxback";
+import { isQxsignStage, notifyQxsign } from "@/lib/crm-qxsign";
 import { notifyAssigned, notifyMoved, notifyNewAssignees, notifyUnblocked } from "@/lib/crm-card-notify";
 import { sessionMemberId } from "@/lib/auth";
 import { deleteCardWithFiles } from "@/lib/crm-attachments";
