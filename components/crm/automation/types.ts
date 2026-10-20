@@ -9,6 +9,7 @@ import type {
   Execution,
   HttpMethod,
   NotifyAction,
+  StartOn,
   StepActionType,
   StepType,
   TriggerType,
@@ -43,6 +44,9 @@ export type AutomationRule = {
   execution: Execution;
   delayAmount: number;
   delayUnit: DelayUnit;
+  startOn: StartOn;
+  startField: string | null;
+  startActivityType: ActivityType | null;
   webhookUrl: string | null;
   webhookMethod: HttpMethod;
   webhookBody: string | null;

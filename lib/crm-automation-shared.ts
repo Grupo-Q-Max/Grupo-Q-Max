@@ -4,7 +4,11 @@
  */
 
 export type DelayUnit = "MINUTES" | "HOURS" | "DAYS";
-export type HttpMethod = "GET" | "POST";
+export const HTTP_METHODS = ["POST", "GET", "PUT", "PATCH", "DELETE"] as const;
+export type HttpMethod = (typeof HTTP_METHODS)[number];
+export const isHttpMethod = (value: unknown): value is HttpMethod => HTTP_METHODS.includes(value as HttpMethod);
+/** GET and DELETE webhooks are sent without a body */
+export const methodHasBody = (method: HttpMethod) => method !== "GET" && method !== "DELETE";
 export type ConditionOperator = "eq" | "neq" | "contains" | "empty" | "notEmpty" | "gt" | "lt";
 export type TriggerType = "WEBHOOK_IN" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DEAL_CREATED" | "DUE_REACHED" | "ESTIMATE_EXCEEDED";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -171,11 +175,15 @@ export function matchesConditions(conditions: AutomationCondition[], ctx: DealCo
   });
 }
 
-/** Replaces {{deal.title}}-style placeholders with the deal's values (URL-encoded when `encode`). */
+/**
+ * Replaces {{deal.title}}-style placeholders with the deal's values (URL-encoded when `encode`).
+ * In flows, {{response.<path>}} reads the JSON response of the last webhook step (ctx keys "response.<path>").
+ */
 export const fillPlaceholders = (template: string, ctx: DealContext, encode = false) =>
-  template.replace(/\{\{\s*deal\.([\w.-]+)\s*\}\}/g, (_, key: string) =>
-    encode ? encodeURIComponent(ctx[key] ?? "") : ctx[key] ?? ""
-  );
+  template.replace(/\{\{\s*(deal|response)\.([\w.-]+)\s*\}\}/g, (_, scope: string, key: string) => {
+    const value = ctx[scope === "deal" ? key : `response.${key}`] ?? "";
+    return encode ? encodeURIComponent(value) : value;
+  });
 
 export const TRIGGER_TYPES: Record<TriggerType, { label: string; description: string }> = {
   WEBHOOK_IN: { label: "Webhook de entrada", description: "Uma chamada externa à URL do gatilho move o negócio" },
@@ -185,6 +193,19 @@ export const TRIGGER_TYPES: Record<TriggerType, { label: string; description: st
   DUE_REACHED: { label: "Prazo chegou", description: "Quadros de tarefas: no dia do prazo (ou atrasada), junto com o lembrete do responsável" },
   ESTIMATE_EXCEEDED: { label: "Estimativa estourada", description: "Quadros de tarefas: quando o tempo gasto passa da estimativa" },
 };
+
+/** What starts a rule: entering its stage, or one of the trigger events while the deal is in the stage */
+export type StartOn = "STAGE_ENTERED" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DUE_REACHED" | "ESTIMATE_EXCEEDED";
+
+export const START_ON: Record<StartOn, string> = {
+  STAGE_ENTERED: "Ao entrar na etapa",
+  FIELD_CHANGED: `${TRIGGER_TYPES.FIELD_CHANGED.label} (na etapa)`,
+  ACTIVITY_COMPLETED: `${TRIGGER_TYPES.ACTIVITY_COMPLETED.label} (na etapa)`,
+  DUE_REACHED: `${TRIGGER_TYPES.DUE_REACHED.label} (na etapa)`,
+  ESTIMATE_EXCEEDED: `${TRIGGER_TYPES.ESTIMATE_EXCEEDED.label} (na etapa)`,
+};
+
+export const isStartOn = (value: unknown): value is StartOn => typeof value === "string" && value in START_ON;
 
 export const TASK_PRIORITIES: Record<TaskPriority, string> = { URGENT: "Urgente", HIGH: "Alta", MEDIUM: "Média", LOW: "Baixa" };
 

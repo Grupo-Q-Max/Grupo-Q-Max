@@ -659,6 +659,15 @@ enum CrmAutomationAction {
   FLOW
 }
 
+/// What starts a rule. The events are the trigger events that can happen to a deal already in the stage
+enum CrmAutomationStart {
+  STAGE_ENTERED
+  FIELD_CHANGED
+  ACTIVITY_COMPLETED
+  DUE_REACHED
+  ESTIMATE_EXCEEDED
+}
+
 enum CrmAutomationStepType {
   ACTION
   WAIT
@@ -697,6 +706,9 @@ enum CrmDelayUnit {
 enum CrmHttpMethod {
   GET
   POST
+  PUT
+  PATCH
+  DELETE
 }
 
 enum CrmConditionOperator {
@@ -727,6 +739,12 @@ model CrmAutomation {
   active        Boolean                @default(true)
   stageId       String
   stage         CrmStage               @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  /// What starts the rule: the deal entering `stage`, or an event while the deal is in it
+  startOn           CrmAutomationStart @default(STAGE_ENTERED)
+  /// startOn FIELD_CHANGED: watched deal field (null = any field)
+  startField        String?
+  /// startOn ACTIVITY_COMPLETED: activity type (null = any type)
+  startActivityType CrmActivityType?
 
   /// CREATE_ACTIVITY action
   activity   CrmAutomationActivity?

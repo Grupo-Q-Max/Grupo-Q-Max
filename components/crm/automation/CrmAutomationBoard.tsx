@@ -18,6 +18,7 @@ import {
   ACTION_TYPES,
   ACTIVITY_TYPES,
   DEAL_STATUSES,
+  START_ON,
   TRIGGER_TYPES,
   WATCHABLE_FIELDS,
   describeTiming,
@@ -457,7 +458,9 @@ export function CrmAutomationBoard({
                                 disabled={!canEditRule}
                                 onClick={() => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType })}
                               >
-                                {describeTiming(rule.execution, rule.delayAmount, rule.delayUnit)}
+                                {rule.startOn === "STAGE_ENTERED"
+                                  ? describeTiming(rule.execution, rule.delayAmount, rule.delayUnit)
+                                  : `${START_ON[rule.startOn]} · ${describeTiming("PARALLEL", rule.delayAmount, rule.delayUnit)}`}
                               </button>
                             }
                             name={rule.name}

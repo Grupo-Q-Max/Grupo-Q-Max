@@ -10,6 +10,8 @@ import {
   TASK_PRIORITIES,
   customFieldKey,
   hasDealUpdate,
+  HTTP_METHODS,
+  methodHasBody,
   type ActionType,
   type ActivityAction,
   type ActivityType,
@@ -194,8 +196,11 @@ export function ActionFields({
                 value={draft.webhookMethod}
                 onChange={(e) => set({ webhookMethod: e.target.value as HttpMethod })}
               >
-                <option value="POST">POST</option>
-                <option value="GET">GET</option>
+                {HTTP_METHODS.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
               </Select>
               <input
                 ref={urlRef}
@@ -236,7 +241,7 @@ export function ActionFields({
             </div>
           </ModalRow>
 
-          {draft.webhookMethod === "POST" && (
+          {methodHasBody(draft.webhookMethod) && (
             <ModalRow label="Corpo">
               <div className="auto-body">
                 <textarea

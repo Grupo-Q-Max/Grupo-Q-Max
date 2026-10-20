@@ -277,6 +277,18 @@ function StepCard({
             customFields={context.customFields}
             members={context.members}
           />
+          <div className="auto-hint">
+            {action.actionType === "WEBHOOK" ? (
+              <>
+                Os passos seguintes podem usar a resposta JSON deste webhook: <code>{"{{response.id}}"}</code>,{" "}
+                <code>{"{{response.dados.0.nome}}"}</code>.
+              </>
+            ) : (
+              <>
+                Depois de um webhook, use <code>{"{{response.campo}}"}</code> para ler a resposta dele.
+              </>
+            )}
+          </div>
         </div>
       )}
 

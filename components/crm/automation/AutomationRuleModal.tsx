@@ -3,10 +3,15 @@
 import { useState } from "react";
 import {
   ACTION_TYPES,
+  ACTIVITY_TYPES,
   DELAY_UNITS,
   EXECUTIONS,
   OPERATORS,
+  START_ON,
+  WATCHABLE_FIELDS,
   type ActionType,
+  type ActivityType,
+  type StartOn,
   type AutomationCondition,
   type DelayUnit,
   type Execution,
@@ -25,6 +30,9 @@ export type RuleDraft = ActionDraft & {
   execution: Execution;
   delayAmount: number;
   delayUnit: DelayUnit;
+  startOn: StartOn;
+  startField: string | null;
+  startActivityType: ActivityType | null;
   conditions: AutomationCondition[];
   active: boolean;
   /** Only for FLOW rules */
@@ -40,6 +48,9 @@ function ruleDraft(rule: AutomationRule | null, stageId: string, actionType: Act
     execution: rule?.execution ?? "PARALLEL",
     delayAmount: rule?.delayAmount ?? 0,
     delayUnit: rule?.delayUnit ?? "MINUTES",
+    startOn: rule?.startOn ?? "STAGE_ENTERED",
+    startField: rule?.startField ?? null,
+    startActivityType: rule?.startActivityType ?? null,
     conditions: rule?.conditions.map(({ field, operator, value }) => ({ field, operator, value })) ?? [],
     active: rule?.active ?? true,
     steps: flowDraft(rule?.steps ?? []),
@@ -126,16 +137,56 @@ export function AutomationRuleModal({
         </Select>
       </ModalRow>
 
+      <ModalRow label="Iniciar quando">
+        <Select value={draft.startOn} onChange={(e) => set({ startOn: e.target.value as StartOn })}>
+          {Object.entries(START_ON).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </Select>
+        {draft.startOn === "FIELD_CHANGED" && (
+          <Select value={draft.startField ?? ""} onChange={(e) => set({ startField: e.target.value || null })}>
+            <option value="">Qualquer campo</option>
+            {Object.entries(WATCHABLE_FIELDS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        )}
+        {draft.startOn === "ACTIVITY_COMPLETED" && (
+          <Select
+            value={draft.startActivityType ?? ""}
+            onChange={(e) => set({ startActivityType: (e.target.value || null) as ActivityType | null })}
+          >
+            <option value="">Qualquer tipo</option>
+            {Object.entries(ACTIVITY_TYPES).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        )}
+        {draft.startOn !== "STAGE_ENTERED" && (
+          <div className="auto-hint">Roda sem mover o negócio, sempre que o evento acontece enquanto ele está nesta etapa.</div>
+        )}
+      </ModalRow>
+
       <ModalRow label="Execução">
-        <Select value={draft.execution} onChange={(e) => set({ execution: e.target.value as Execution })}>
+        <Select
+          value={draft.execution}
+          disabled={draft.startOn !== "STAGE_ENTERED"}
+          onChange={(e) => set({ execution: e.target.value as Execution })}
+        >
           {Object.entries(EXECUTIONS).map(([key, label]) => (
             <option key={key} value={key}>
               {label}
             </option>
           ))}
         </Select>
-        {draft.execution === "SEQUENTIAL" && (
-          <p className="auto-hint">Começa quando a regra anterior desta etapa terminar para o negócio; o horário conta a partir daí.</p>
+        {draft.execution === "SEQUENTIAL" && draft.startOn === "STAGE_ENTERED" && (
+          <div className="auto-hint">Começa quando a regra anterior desta etapa terminar para o negócio; o horário conta a partir daí.</div>
         )}
       </ModalRow>
 
@@ -208,7 +259,7 @@ export function AutomationRuleModal({
 
       {rule && <RuleTest ruleId={rule.id} customFields={customFields} />}
 
-      {error && <p className="auto-error">{error}</p>}
+      {error && <div className="auto-error">{error}</div>}
     </AutomationModal>
   );
 }

@@ -21,10 +21,13 @@ import {
   TASK_PRIORITIES,
   type DealContext,
   type DealStatus,
+  type HttpMethod,
+  methodHasBody,
   customFieldKey,
   delayMs,
   fillPlaceholders,
   firstStep,
+  isStartOn,
   matchesConditions,
   nextAfter,
   stepLabel,
@@ -54,6 +57,9 @@ const LOOP_WINDOW_MS = 5 * 60_000;
 /** Finished runs (and their flow steps) are deleted after this; the deal timeline keeps its own entries */
 const RUN_RETENTION_DAYS = 90;
 const PRUNE_EVERY_MS = 60 * 60_000;
+/** Webhook response kept in the log; in flows it is also what {{response.*}} reads, so a longer JSON can't be read */
+const RESPONSE_LOG_CHARS = 16_000;
+const RESPONSE_MAX_KEYS = 500;
 
 const toText = (value: unknown) => {
   if (value === null || value === undefined) return "";
@@ -119,7 +125,7 @@ export async function onDealEnteredStage(cardId: string, stageId: string) {
   try {
     const automations = await prisma.crmAutomation.findMany({
       // Rows with flowStepId are the actions of flow steps, run by their flow
-      where: { stageId, active: true, flowStepId: null },
+      where: { stageId, active: true, flowStepId: null, startOn: "STAGE_ENTERED" },
       orderBy: { order: "asc" },
       select: { id: true, delayAmount: true, delayUnit: true, execution: true },
     });
@@ -523,6 +529,13 @@ async function processFlowRun(run: FlowRunRow, flowName: string, startDeal: Deal
       deal = fresh;
       if (deal.stage.id !== run.stageId) return finish("SKIPPED", "O negócio saiu da etapa antes da execução");
     }
+    // Read from the log (not memory): a flow resumed after a wait still sees the response
+    const lastWebhook = await prisma.crmAutomationRunStep.findFirst({
+      where: { runId: run.id, actionType: "WEBHOOK", status: "SUCCESS" },
+      orderBy: { seq: "desc" },
+      select: { responseBody: true },
+    });
+    if (lastWebhook) deal = { ...deal, ctx: { ...deal.ctx, ...responseContext(lastWebhook.responseBody) } };
 
     const current = step;
     const action = current.actions[0] ?? null;
@@ -594,6 +607,27 @@ async function processFlowRun(run: FlowRunRow, flowName: string, startDeal: Deal
   return finish("SUCCESS", null);
 }
 
+/** A webhook's JSON response as "response.<path>" keys (arrays by index: response.items.0.id); not JSON = none. */
+function responseContext(body: string | null): DealContext {
+  const ctx: DealContext = {};
+  let data: unknown;
+  try {
+    data = JSON.parse(body ?? "");
+  } catch {
+    return ctx;
+  }
+  const walk = (value: unknown, path: string) => {
+    if (Object.keys(ctx).length >= RESPONSE_MAX_KEYS) return;
+    if (value !== null && typeof value === "object") {
+      for (const [key, child] of Object.entries(value)) walk(child, `${path}.${key}`);
+    } else {
+      ctx[path] = toText(value);
+    }
+  };
+  walk(data, "response");
+  return ctx;
+}
+
 /** Result of an action: what was done (kept in the run log) and the error, if any. */
 type ActionOutcome = {
   request: Prisma.InputJsonValue;
@@ -622,7 +656,7 @@ async function sendWebhook(rule: WebhookRule, ctx: DealContext): Promise<ActionO
       cache: "no-store",
     });
     // Masked before the cut, so a secret split by slice() can't leak half of it
-    const responseBody = redactSecrets(await res.text(), request.headers).slice(0, 2000);
+    const responseBody = redactSecrets(await res.text(), request.headers).slice(0, RESPONSE_LOG_CHARS);
     return { request: redactRequest(request), httpStatus: res.status, responseBody, error: res.ok ? null : `HTTP ${res.status}` };
   } catch (e) {
     const error = e instanceof Error ? (e.name === "TimeoutError" ? "Tempo limite excedido" : e.message) : String(e);
@@ -809,7 +843,7 @@ type WebhookRule = {
   id: string;
   name: string;
   webhookUrl: string | null;
-  webhookMethod: "GET" | "POST";
+  webhookMethod: HttpMethod;
   webhookBody: string | null;
   headers: { key: string; value: string }[];
 };
@@ -825,7 +859,7 @@ function buildWebhookRequest(rule: WebhookRule, ctx: DealContext) {
   }
 
   let body: string | undefined;
-  if (method === "POST") {
+  if (methodHasBody(method)) {
     // Without a custom body, send the deal snapshot as JSON
     body = rule.webhookBody?.trim()
       ? fillPlaceholders(rule.webhookBody, ctx)
@@ -866,6 +900,40 @@ function triggerMatchesEvent(trigger: CrmTrigger, event: TriggerEvent) {
 }
 
 /**
+ * Queues and runs the active rules of `stageId` started by the event (startOn), like a stage
+ * entry does for the other rules. They always start in parallel: SEQUENTIAL only orders the
+ * rules started by the stage entry. Their conditions are checked when they run.
+ */
+async function runEventRules(cardId: string, stageId: string, event: TriggerEvent) {
+  if (!isStartOn(event.type)) return;
+  const rules = await prisma.crmAutomation.findMany({
+    where: { stageId, active: true, flowStepId: null, startOn: event.type },
+    orderBy: { order: "asc" },
+    select: { id: true, delayAmount: true, delayUnit: true, startField: true, startActivityType: true },
+  });
+  const matching = rules.filter((r) =>
+    event.type === "FIELD_CHANGED"
+      ? !r.startField || event.fields.includes(r.startField)
+      : event.type === "ACTIVITY_COMPLETED"
+        ? !r.startActivityType || r.startActivityType === event.activityType
+        : true,
+  );
+  if (!matching.length) return;
+
+  const now = Date.now();
+  await prisma.crmAutomationRun.createMany({
+    data: matching.map((r, index) => ({
+      automationId: r.id,
+      cardId,
+      stageId,
+      runAt: new Date(now + delayMs(r.delayAmount, r.delayUnit) + index),
+    })),
+  });
+  // ponytail: if the queue is already busy in this process, these run on its next pass and a trigger may move the deal first (then they are skipped)
+  await processDueRuns();
+}
+
+/**
  * Finds the first trigger of the deal's pipeline that matches the event and
  * moves the deal to its stage. Returns the new stage id, or null if nothing moved.
  */
@@ -874,6 +942,9 @@ export async function fireTriggers(cardId: string, event: TriggerEvent) {
     if (await isHiddenCard(cardId)) return null;
     const deal = await dealContext(cardId);
     if (!deal) return null;
+
+    // Rules of the current stage started by this event run first: a trigger below may move the deal away
+    await runEventRules(cardId, deal.stage.id, event);
 
     const triggers = await prisma.crmTrigger.findMany({
       where: { type: event.type satisfies CrmTriggerType, active: true, stage: { pipelineId: deal.stage.pipelineId } },

@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, type CrmActivityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
 import { boardAutomations } from "@/lib/crm-automation";
 import {
   ACTION_TYPES,
+  ACTIVITY_TYPES,
+  WATCHABLE_FIELDS,
   isActionType,
   isDelayUnit,
+  isHttpMethod,
+  isStartOn,
   parseActivityAction,
   parseConditions,
   parseDealUpdateAction,
@@ -85,10 +89,24 @@ function ruleFields(body: Record<string, unknown>, actionType: ActionType) {
     ...(body.delayAmount !== undefined && { delayAmount: Math.max(0, Math.round(Number(body.delayAmount) || 0)) }),
     ...(isDelayUnit(body.delayUnit) && { delayUnit: body.delayUnit }),
     ...(webhook && body.webhookUrl !== undefined && { webhookUrl: String(body.webhookUrl).trim() }),
-    ...(webhook && body.webhookMethod !== undefined && { webhookMethod: body.webhookMethod === "GET" ? ("GET" as const) : ("POST" as const) }),
+    ...(webhook && body.webhookMethod !== undefined && { webhookMethod: isHttpMethod(body.webhookMethod) ? body.webhookMethod : ("POST" as const) }),
     ...(webhook && body.webhookBody !== undefined && { webhookBody: String(body.webhookBody ?? "").trim() ? String(body.webhookBody) : null }),
     ...(body.active !== undefined && { active: Boolean(body.active) }),
     ...(body.execution !== undefined && { execution: body.execution === "SEQUENTIAL" ? ("SEQUENTIAL" as const) : ("PARALLEL" as const) }),
+    ...(body.startOn !== undefined && startFields(body)),
+  };
+}
+
+/** What starts the rule; the event's option only for its event, cleared otherwise. */
+function startFields(body: Record<string, unknown>) {
+  const startOn = isStartOn(body.startOn) ? body.startOn : "STAGE_ENTERED";
+  const field = String(body.startField ?? "");
+  const activityType = String(body.startActivityType ?? "");
+  return {
+    startOn,
+    startField: startOn === "FIELD_CHANGED" && field in WATCHABLE_FIELDS ? field : null,
+    startActivityType:
+      startOn === "ACTIVITY_COMPLETED" && activityType in ACTIVITY_TYPES ? (activityType as CrmActivityType) : null,
   };
 }
 
