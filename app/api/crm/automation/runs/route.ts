@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { denyUnless } from "@/lib/crm-access";
+import { denyUnless, denyUnlessPipeline } from "@/lib/crm-access";
+import { cancelRun, retryRun } from "@/lib/crm-automation";
+import { sessionMemberId } from "@/lib/auth";
 
 const PAGE_SIZE = 50;
 
@@ -39,6 +41,39 @@ export async function GET(req: Request) {
     ]);
 
     return NextResponse.json({ runs, total, pageSize: PAGE_SIZE });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+/** { id, action: "retry" | "cancel" }: runs a failed run again, or skips one that has not started. */
+export async function PATCH(req: Request) {
+  try {
+    const denied = await denyUnless("automation.edit");
+    if (denied) return denied;
+    const body = await req.json().catch(() => null);
+    const id = typeof body?.id === "string" ? body.id : "";
+    if (!id || (body.action !== "retry" && body.action !== "cancel")) {
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+
+    const run = await prisma.crmAutomationRun.findUnique({ where: { id }, select: { cardId: true } });
+    if (!run) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const hidden = await denyUnlessPipeline({ cardId: run.cardId });
+    if (hidden) return hidden;
+
+    let ok: boolean;
+    if (body.action === "retry") {
+      ok = await retryRun(id);
+    } else {
+      const memberId = sessionMemberId(req);
+      const member = memberId ? await prisma.teamMember.findUnique({ where: { id: memberId }, select: { name: true } }) : null;
+      ok = await cancelRun(id, member?.name ?? "um usuário");
+    }
+    // The run changed state meanwhile (e.g. it already ran)
+    if (!ok) return NextResponse.json({ error: "Conflict" }, { status: 409 });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

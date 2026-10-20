@@ -543,6 +543,47 @@
   font-size: 12px;
 }
 
+.auto-test {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #d6d2da;
+}
+
+.auto-test__verdict {
+  margin-bottom: 6px;
+}
+
+.auto-test ul {
+  margin: 0 0 6px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.auto-test__ok {
+  color: #4ade80;
+}
+
+.auto-test__fail {
+  color: #ff4d4d;
+}
+
+.auto-test pre {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  background: #0b0b0c;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 12px;
+}
+
+.auto-runs__action {
+  display: block;
+  margin-top: 6px;
+}
+
 .auto-runs__details td {
   background: #141416;
   font-size: 12px;

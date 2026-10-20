@@ -15,6 +15,8 @@ import {
   type StepType,
 } from "@/lib/crm-automation-shared";
 import { Select } from "@/components/ui/Select";
+import { useCan } from "@/components/crm/CrmAccess";
+import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
 
 /** Webhook: the request sent. Create activity: the activity created. Update deal: the changes made. Notify: the comment and who was notified. Wait: until when */
 type ActionLog = {
@@ -145,6 +147,8 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [acting, setActing] = useState<string | null>(null);
+  const can = useCan();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -162,6 +166,29 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const act = async (run: Run, action: "retry" | "cancel") => {
+    if (
+      action === "cancel" &&
+      !(await confirmDialog(`Cancelar a execução de "${run.automation.name}" em #${run.card.number}?`, {
+        danger: true,
+        confirmLabel: "Cancelar execução",
+        cancelLabel: "Voltar",
+      }))
+    ) {
+      return;
+    }
+    setActing(run.id);
+    const res = await fetch("/api/crm/automation/runs", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: run.id, action }),
+    });
+    setActing(null);
+    // 409: it changed state meanwhile; the reload shows how it is now
+    if (!res.ok && res.status !== 409) await alertDialog("Não foi possível alterar a execução.");
+    await load();
+  };
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -223,6 +250,19 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
                       ? pendingDetail(run)
                       : run.error ?? ""}
                   {run.attempts > 1 && ` (${run.attempts} tentativas)`}
+                  {can("automation.edit") && (run.status === "FAILED" || run.status === "PENDING" || run.status === "WAITING") && (
+                    <button
+                      type="button"
+                      className="btn-secondary auto-btn-sm auto-runs__action"
+                      disabled={acting === run.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        act(run, run.status === "FAILED" ? "retry" : "cancel");
+                      }}
+                    >
+                      {run.status === "FAILED" ? "Reexecutar" : "Cancelar"}
+                    </button>
+                  )}
                 </td>
               </tr>
               {expanded === run.id && (

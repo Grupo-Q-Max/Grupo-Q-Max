@@ -5,6 +5,7 @@ import {
   ACTION_TYPES,
   DELAY_UNITS,
   EXECUTIONS,
+  OPERATORS,
   type ActionType,
   type AutomationCondition,
   type DelayUnit,
@@ -12,7 +13,7 @@ import {
 } from "@/lib/crm-automation-shared";
 import { AutomationModal, ModalRow } from "./AutomationModal";
 import { ActionFields, actionDraft, actionValidationError, type ActionDraft } from "./ActionFields";
-import { ConditionsEditor } from "./ConditionsEditor";
+import { ConditionsEditor, conditionFields } from "./ConditionsEditor";
 import { FlowEditor, flowDraft, flowValidationError, type FlowStepDraft } from "./FlowEditor";
 import type { AutomationRule, AutomationStage, CustomField, Member } from "./types";
 import { Select } from "@/components/ui/Select";
@@ -205,7 +206,80 @@ export function AutomationRuleModal({
         </label>
       </ModalRow>
 
+      {rule && <RuleTest ruleId={rule.id} customFields={customFields} />}
+
       {error && <p className="auto-error">{error}</p>}
     </AutomationModal>
+  );
+}
+
+type TestResult = {
+  matches: boolean;
+  inStage: boolean;
+  active: boolean;
+  conditions: (AutomationCondition & { actual: string; ok: boolean })[];
+  preview: string;
+};
+
+/** "Testar": runs nothing; shows, for a deal, which conditions match and what the saved rule would send or change. */
+function RuleTest({ ruleId, customFields }: { ruleId: string; customFields: CustomField[] }) {
+  const [cardNumber, setCardNumber] = useState("");
+  const [result, setResult] = useState<TestResult | null>(null);
+  const [error, setError] = useState("");
+  const [testing, setTesting] = useState(false);
+  const fieldLabel = (key: string) => conditionFields(customFields).find((f) => f.key === key)?.label ?? key;
+
+  const test = async () => {
+    setTesting(true);
+    setError("");
+    setResult(null);
+    const res = await fetch("/api/crm/automation/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ automationId: ruleId, cardNumber: Number(cardNumber.replace("#", "")) }),
+    });
+    setTesting(false);
+    if (res.ok) setResult(await res.json());
+    else setError(res.status === 404 ? "Negócio não encontrado neste pipeline." : "Não foi possível testar a regra.");
+  };
+
+  return (
+    <ModalRow label="Testar">
+      <div className="auto-inline">
+        <input
+          className="auto-input--short"
+          placeholder="nº do negócio"
+          value={cardNumber}
+          onChange={(e) => setCardNumber(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && cardNumber && test()}
+        />
+        <button type="button" className="btn-secondary auto-btn-sm" onClick={test} disabled={!cardNumber || testing}>
+          {testing ? "Testando..." : "Testar"}
+        </button>
+      </div>
+      {/* divs, not p: the site's global p font-size wins over the modal's */}
+      <div className="auto-hint">Testa a versão salva da regra. Nada é executado nem enviado.</div>
+      {error && <div className="auto-error">{error}</div>}
+      {result && (
+        <div className="auto-test">
+          <div className="auto-test__verdict">
+            <b>{result.matches ? "Executaria" : "Não executaria: condições não atendidas"}</b>
+            {!result.active && " · a regra está pausada"}
+            {!result.inStage && " · o negócio não está na etapa desta regra"}
+          </div>
+          {result.conditions.length > 0 && (
+            <ul>
+              {result.conditions.map((c, i) => (
+                <li key={i} className={c.ok ? "auto-test__ok" : "auto-test__fail"}>
+                  {c.ok ? "✓" : "✗"} {fieldLabel(c.field)} {OPERATORS[c.operator].label}
+                  {OPERATORS[c.operator].needsValue && ` "${c.value ?? ""}"`} · valor atual: {c.actual || "vazio"}
+                </li>
+              ))}
+            </ul>
+          )}
+          <pre>{result.preview}</pre>
+        </div>
+      )}
+    </ModalRow>
   );
 }
