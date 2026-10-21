@@ -114,6 +114,7 @@ export async function notifyQxback(dealNumber: number, event = "ONCRMDEALUPDATE"
 
   const candidates = [
     configured,
+    "https://qxback-hsb6hwcbfpgrf8du.brazilsouth-01.azurewebsites.net/api/webhook/crm",
     "https://qxback.com.br/teste/api/webhook/crm",
     "https://qxback.com.br/api/webhook/crm",
   ].filter((u): u is string => Boolean(u && (!u.includes("localhost") || process.env.NODE_ENV !== "production")));
