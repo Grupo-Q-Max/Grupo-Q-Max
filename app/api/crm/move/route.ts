@@ -32,9 +32,10 @@ export async function POST(req: Request) {
     // Record the stage change in the deal timeline and run the new stage's automation rules
     const stageHistory = async () => {
       if (current.stageId === newStageId) return;
+      // Dispara imediatamente para o QXBack atualizar o status da indicacao sem atraso
+      await onDealEnteredStage(cardId, newStageId).catch((e) => console.error("[crm-move] Erro ao disparar regras da etapa:", e));
       after(() => notifyMoved(cardId, newStageId, actorId));
       after(() => notifyUnblocked(cardId, actorId));
-      after(() => onDealEnteredStage(cardId, newStageId));
       const stage = await prisma.crmStage.findUnique({ where: { id: newStageId }, select: { name: true } });
       await prisma.crmHistory.create({
         data: { cardId, type: "STAGE_CHANGED", data: { from: current.stage.name, to: stage?.name ?? "" }, actorId },
