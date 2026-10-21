@@ -36,6 +36,17 @@ export async function GET(req: Request) {
 
     const deal = await getDealDetails(id);
     if (!deal) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    // Registra que a indicação foi aberta
+    const customData = (deal.customData as Record<string, any>) || {};
+    if (!customData.openedAt) {
+      customData.openedAt = new Date().toISOString();
+      await prisma.crmCard.update({
+        where: { id },
+        data: { customData },
+      }).catch(() => {});
+    }
+
     return NextResponse.json(deal);
   } catch (error) {
     console.error(error);

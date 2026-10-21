@@ -359,8 +359,14 @@ export async function callMethod(method: string, params: Params): Promise<{ body
       const companyId = text(fields.COMPANY_ID) || null;
       const contactId = text(fields.CONTACT_ID);
 
-      const deal = await prisma.$transaction(async (tx) =>
-        tx.crmCard.create({
+      const deal = await prisma.$transaction(async (tx) => {
+        // Incrementa a ordem dos cards existentes nessa etapa para que a nova indicação sempre fique no topo (ordem 0)
+        await tx.crmCard.updateMany({
+          where: { stageId },
+          data: { order: { increment: 1 } },
+        });
+
+        return tx.crmCard.create({
           data: {
             title,
             value: num(fields.OPPORTUNITY) || 0,
@@ -368,16 +374,16 @@ export async function callMethod(method: string, params: Params): Promise<{ body
             companyId: companyId ? (await tx.crmCompany.findUnique({ where: { id: companyId }, select: { id: true } }))?.id : null,
             comment: text(fields.COMMENTS) || null,
             source: "QXBACK",
-            customData,
-            order: await tx.crmCard.count({ where: { stageId } }),
+            customData: { ...customData, openedAt: null },
+            order: 0,
             history: { create: { type: "CREATED", data: { title } } },
             ...(contactId && (await tx.crmContact.findUnique({ where: { id: contactId }, select: { id: true } }))
               ? { contacts: { create: { contactId, order: 0 } } }
               : {}),
           },
           select: { id: true, number: true },
-        })
-      );
+        });
+      });
       return { body: { result: deal.number }, effect: { type: "created", dealId: deal.id, stageId } };
     }
 
