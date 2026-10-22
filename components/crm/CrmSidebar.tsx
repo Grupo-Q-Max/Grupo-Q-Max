@@ -107,7 +107,7 @@ export function CrmSidebar({ spaces }: { spaces: SidebarSpace[] }) {
             type="card"
             params="&global=1"
             value={search}
-            placeholder="Buscar negócio ou tarefa (Ctrl+K)"
+            placeholder="Buscar (Ctrl+K)"
             onChange={setSearch}
             describe={(card) => card.detail}
             onPick={(card) => {

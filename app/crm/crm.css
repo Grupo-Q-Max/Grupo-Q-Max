@@ -94,6 +94,10 @@
   margin: -32px 0 24px;
 }
 
+/* The sidebar is narrow: wrap long titles instead of scrolling sideways */
+.crm-search .deal-lookup__list { overflow-x: hidden; }
+.crm-search .deal-lookup__list button { white-space: normal; overflow-wrap: anywhere; }
+
 .crm-nav {
   display: flex;
   flex-direction: column;
