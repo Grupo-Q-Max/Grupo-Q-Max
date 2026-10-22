@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, Download, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Building2, Download, Upload, Users } from "lucide-react";
 import { matches } from "@/lib/text-search";
 import { downloadCsv } from "@/lib/csv";
+import { alertDialog } from "@/components/ui/Dialogs";
+import { useCan } from "./CrmAccess";
 
 type DealLink = { number: number; title: string };
 
@@ -49,6 +52,30 @@ export function CrmContacts({ contacts, companies }: { contacts: ContactRow[]; c
   const shownContacts = contacts.filter((c) => matches(search, c.name, c.email, c.phone, c.company));
   const shownCompanies = companies.filter((c) => matches(search, c.name, c.email, c.phone, c.document));
   const dealList = (deals: DealLink[]) => deals.map((d) => `#${d.number} ${d.title}`).join(", ");
+  const can = useCan();
+  const router = useRouter();
+  const [importing, setImporting] = useState(false);
+
+  const importCsv = async (file: File | undefined) => {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const res = await fetch("/api/crm/contacts/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv: await file.text() }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) return alertDialog(data?.error ?? "Não foi possível importar o arquivo.");
+      await alertDialog(
+        `${data.created} contato(s) criado(s), ${data.updated} atualizado(s) (mesmo e-mail ou telefone)` +
+          (data.skipped ? `, ${data.skipped} linha(s) sem nome ignorada(s).` : ".")
+      );
+      router.refresh();
+    } finally {
+      setImporting(false);
+    }
+  };
 
   // Exports what is on screen (current tab and search)
   const exportCsv = () =>
@@ -82,6 +109,25 @@ export function CrmContacts({ contacts, companies }: { contacts: ContactRow[]; c
         >
           <Download size={16} /> Exportar CSV
         </button>
+        {can("deal.create") && (
+          <label
+            className="btn-secondary"
+            title='CSV com cabeçalho: Nome, E-mail, Telefone, Empresa, CNPJ ("Nome" obrigatório)'
+            aria-disabled={importing}
+          >
+            <Upload size={16} /> {importing ? "Importando…" : "Importar CSV"}
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+              disabled={importing}
+              onChange={(e) => {
+                void importCsv(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        )}
       </header>
       <div className="crm-content crm-access">
         <input

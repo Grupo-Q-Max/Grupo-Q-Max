@@ -85,6 +85,19 @@
   color: #d90f81;
 }
 
+/* Global search: reuses the deal panel's LookupInput, so it needs the panel's color tokens */
+.crm-search {
+  --deal-surface-2: #1a1a1c;
+  --deal-border: rgba(255, 255, 255, 0.08);
+  --deal-text: #f7f7f7;
+  --deal-subtle: #716d75;
+  margin: -32px 0 24px;
+}
+
+/* The sidebar is narrow: wrap long titles instead of scrolling sideways */
+.crm-search .deal-lookup__list { overflow-x: hidden; }
+.crm-search .deal-lookup__list button { white-space: normal; overflow-wrap: anywhere; }
+
 .crm-nav {
   display: flex;
   flex-direction: column;

@@ -11,11 +11,24 @@ import { isQxbackStage } from "@/lib/crm-qxback";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
 import { activeCard, cardListInclude, serializeListCard } from "@/lib/crm-deal";
 
+// ponytail: fixed window; make it a pipeline setting if someone asks
+const CLOSED_ON_BOARD_DAYS = 30;
+
+/**
+ * Open cards plus the ones closed in the last CLOSED_ON_BOARD_DAYS: older closed cards leave the board
+ * (still in reports, the search and their URL). closedAt null = closed before the column existed, kept.
+ */
+const recentOrOpen = (): Prisma.CrmCardWhereInput => ({
+  OR: [{ status: "OPEN" }, { closedAt: null }, { closedAt: { gte: new Date(Date.now() - CLOSED_ON_BOARD_DAYS * 86_400_000) } }],
+});
+
 /** `cardWhere`: the private cards the user may see (visibleCardWhere) */
 const pipelineInclude = (cardWhere: Prisma.CrmCardWhereInput) => ({
   stages: {
     orderBy: [{ order: "asc" as const }, { createdAt: "desc" as const }],
-    include: { cards: { where: { ...activeCard, ...cardWhere }, orderBy: { order: "asc" as const }, include: cardListInclude } },
+    include: {
+      cards: { where: { ...activeCard, AND: [cardWhere, recentOrOpen()] }, orderBy: { order: "asc" as const }, include: cardListInclude },
+    },
   },
   groups: { select: { groupId: true } },
   members: { select: { memberId: true } },

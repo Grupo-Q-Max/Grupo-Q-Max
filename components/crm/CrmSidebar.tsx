@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { LookupInput } from "./deal/ui";
 import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package, ListChecks, CalendarCheck } from "lucide-react";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 import { useCan } from "./CrmAccess";
@@ -56,6 +57,20 @@ export function CrmSidebar({ spaces }: { spaces: SidebarSpace[] }) {
     return active ? "crm-nav__item is-active" : "crm-nav__item";
   };
   const state = open === null ? "" : open ? "is-open" : "is-closed";
+  const [search, setSearch] = useState("");
+  const router = useRouter();
+
+  // Ctrl/Cmd+K focuses the search (opening the sidebar on phones)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "k") return;
+      e.preventDefault();
+      setOpen(true);
+      document.querySelector<HTMLInputElement>(".crm-search input")?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const toggle = () => {
     const isOpen = open ?? !window.matchMedia(MOBILE_QUERY).matches;
@@ -85,6 +100,22 @@ export function CrmSidebar({ spaces }: { spaces: SidebarSpace[] }) {
         <div className="crm-sidebar__brand">
           <Handshake size={28} />
           <span>Q-Max CRM</span>
+        </div>
+
+        <div className="crm-search">
+          <LookupInput<{ id: string; name: string; number: number; detail: string }>
+            type="card"
+            params="&global=1"
+            value={search}
+            placeholder="Buscar (Ctrl+K)"
+            onChange={setSearch}
+            describe={(card) => card.detail}
+            onPick={(card) => {
+              setSearch("");
+              if (window.matchMedia(MOBILE_QUERY).matches) setOpen(false);
+              router.push(`/crm/deal/details/${card.number}`);
+            }}
+          />
         </div>
 
         <nav className="crm-nav">

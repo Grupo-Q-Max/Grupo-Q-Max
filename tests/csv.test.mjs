@@ -10,3 +10,14 @@ test("toCsv quotes every cell, escapes quotes and keeps ; and line breaks inside
 test("csvMoney uses a decimal comma", () => {
   assert.equal(csvMoney(1234.5), "1234,50");
 });
+
+test("parseCsv reads Excel ; files with BOM, quotes, escapes and line breaks; and plain , files", async () => {
+  const { parseCsv } = await import("../lib/csv.ts");
+  assert.deepEqual(parseCsv('\uFEFF"Nome";"E-mail"\r\n"Ana ""A""";"a@x.com"\r\n\r\n"l1\nl2";b\r\n'), [
+    ["Nome", "E-mail"],
+    ['Ana "A"', "a@x.com"],
+    ["l1\nl2", "b"],
+  ]);
+  assert.deepEqual(parseCsv("nome,email\nBia,b@x.com"), [["nome", "email"], ["Bia", "b@x.com"]]);
+  assert.deepEqual(parseCsv(toCsv([["a;b", 'x"y']])), [["a;b", 'x"y']]);
+});

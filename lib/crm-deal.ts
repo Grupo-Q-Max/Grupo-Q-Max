@@ -789,7 +789,7 @@ async function syncContacts(tx: Tx, dealId: string, input: ContactInput[]) {
       await tx.crmContact.update({ where: { id: existing.id }, data: fields });
       ids.push(existing.id);
     } else {
-      ids.push((await tx.crmContact.create({ data: fields })).id);
+      ids.push((await findOrCreateContact(tx, fields)).id);
     }
   }
 
@@ -825,6 +825,23 @@ async function syncProducts(tx: Tx, dealId: string, input: ProductInput[]) {
       },
     });
   }
+}
+
+type ContactFields = { name: string; phone: string | null; email: string | null; address?: string | null; info?: string | null; companyId?: string | null };
+
+/**
+ * Creates a contact, or reuses the one with the same e-mail (the column collation ignores case),
+ * else the same phone, filling in only the fields given. Returns the id and whether it was created.
+ * ponytail: phone match is exact text; normalize to digits in a column if formats vary too much
+ */
+export async function findOrCreateContact(tx: Tx, fields: ContactFields) {
+  const match =
+    (fields.email && (await tx.crmContact.findFirst({ where: { email: fields.email }, select: { id: true } }))) ||
+    (fields.phone && (await tx.crmContact.findFirst({ where: { phone: fields.phone }, select: { id: true } })));
+  if (!match) return { id: (await tx.crmContact.create({ data: fields })).id, created: true };
+  const given = Object.fromEntries(Object.entries(fields).filter(([, v]) => v != null && v !== ""));
+  await tx.crmContact.update({ where: { id: match.id }, data: given });
+  return { id: match.id, created: false };
 }
 
 /** Finds a company by exact name or creates it (used by the quick "Novo Negócio" form). */
