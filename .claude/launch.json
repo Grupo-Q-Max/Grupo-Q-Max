@@ -9,6 +9,18 @@
         "dev"
       ],
       "port": 3000
+    },
+    {
+      "name": "next-dev-redis",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "env": {
+        "REDIS_URL": "redis://127.0.0.1:6379"
+      },
+      "port": 3000
     }
   ]
 }

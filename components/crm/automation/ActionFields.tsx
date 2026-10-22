@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Braces, Plus, X } from "lucide-react";
 import {
   ACTIVITY_TYPES,
@@ -9,15 +9,23 @@ import {
   DELAY_UNITS,
   TASK_PRIORITIES,
   customFieldKey,
+  emailRecipients,
   hasDealUpdate,
+  notifyMemberIds,
+  HTTP_METHODS,
+  methodHasBody,
   type ActionType,
   type ActivityAction,
   type ActivityType,
+  type ChecklistAction,
+  type CopyAction,
   type DealStatus,
   type DealUpdateAction,
   type DelayUnit,
+  type EmailAction,
   type HttpMethod,
   type NotifyAction,
+  type SubtaskAction,
   type TaskPriority,
   type WebhookHeader,
 } from "@/lib/crm-automation-shared";
@@ -34,7 +42,14 @@ export type ActionDraft = {
   activity: ActivityAction;
   dealUpdate: DealUpdateAction;
   notify: NotifyAction;
+  subtask: SubtaskAction;
+  checklist: ChecklistAction;
+  email: EmailAction;
+  copy: CopyAction;
 };
+
+/** Pipelines (with stages) the user sees: targets of "Copiar negócio". Provided by the automation board. */
+export const PipelineStagesContext = createContext<{ id: string; name: string; stages: { id: string; name: string }[] }[]>([]);
 
 const DEFAULT_ACTIVITY: ActivityAction = {
   type: "TASK",
@@ -55,7 +70,11 @@ type SavedAction = {
   headers: WebhookHeader[];
   activity: ActivityAction | null;
   dealUpdate: DealUpdateAction | null;
-  notify: NotifyAction | null;
+  notify: (Omit<NotifyAction, "memberIds"> & { memberIds?: unknown; members?: { memberId: string }[] }) | null;
+  subtask?: SubtaskAction | null;
+  checklist?: { title: string }[];
+  email?: EmailAction | null;
+  copy?: CopyAction | null;
 };
 
 export function actionDraft(saved: SavedAction | null | undefined): ActionDraft {
@@ -70,8 +89,17 @@ export function actionDraft(saved: SavedAction | null | undefined): ActionDraft 
       message: saved?.notify?.message ?? "",
       notifyResponsible: saved?.notify?.notifyResponsible ?? true,
       notifyAssignees: saved?.notify?.notifyAssignees ?? false,
-      memberIds: saved?.notify?.memberIds ?? [],
+      memberIds: notifyMemberIds(saved?.notify),
     },
+    subtask: {
+      title: saved?.subtask?.title ?? "",
+      assignee: saved?.subtask?.assignee ?? "DEAL_RESPONSIBLE",
+      responsibleId: saved?.subtask?.responsibleId ?? null,
+      deadlineDays: saved?.subtask?.deadlineDays ?? null,
+    },
+    checklist: { items: saved?.checklist?.map((i) => i.title) ?? [] },
+    email: { to: saved?.email?.to ?? "{{deal.contactEmail}}", subject: saved?.email?.subject ?? "", body: saved?.email?.body ?? "" },
+    copy: { stageId: saved?.copy?.stageId ?? null, link: saved?.copy?.link ?? true },
   };
 }
 
@@ -92,6 +120,21 @@ export function actionValidationError(action: ActionType, draft: ActionDraft, st
   if (action === "NOTIFY") {
     if (!notify.message.trim()) return "Informe a mensagem";
     if (!notify.notifyResponsible && !notify.notifyAssignees && notify.memberIds.length === 0) return "Escolha quem será avisado";
+  }
+  if (action === "CREATE_SUBTASK") {
+    if (!draft.subtask.title.trim()) return "Informe o título da subtarefa";
+    if (draft.subtask.assignee === "MEMBER" && !draft.subtask.responsibleId) return "Escolha o membro responsável pela subtarefa";
+  }
+  if (action === "ADD_CHECKLIST" && !draft.checklist.items.some((i) => i.trim())) return "Informe ao menos um item";
+  if (action === "SEND_EMAIL") {
+    // Placeholders are filled on each run; only fixed addresses can be checked here
+    const fixed = draft.email.to.replace(/{{[^}]*}}/g, "");
+    if (!draft.email.to.includes("{{") && emailRecipients(fixed).length === 0) return "Informe ao menos um e-mail em Para";
+    if (!draft.email.body.trim()) return "Informe o texto do e-mail";
+  }
+  if (action === "COPY_CARD") {
+    if (!draft.copy.stageId) return "Escolha a etapa de destino";
+    if (draft.copy.stageId === stageId) return "A etapa de destino deve ser diferente da etapa da regra";
   }
   return "";
 }
@@ -157,6 +200,11 @@ export function ActionFields({
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  const subtaskRef = useRef<HTMLInputElement>(null);
+  const toRef = useRef<HTMLInputElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const emailBodyRef = useRef<HTMLTextAreaElement>(null);
+  const pipelines = useContext(PipelineStagesContext);
   // Tags for "Adicionar etiqueta", loaded when the action is "Modificar negócio"
   const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
@@ -174,6 +222,9 @@ export function ActionFields({
   const setActivity = (patch: Partial<ActivityAction>) => set({ activity: { ...activity, ...patch } });
   const setDealUpdate = (patch: Partial<DealUpdateAction>) => set({ dealUpdate: { ...dealUpdate, ...patch } });
   const setNotify = (patch: Partial<NotifyAction>) => set({ notify: { ...notify, ...patch } });
+  const { subtask, email, copy } = draft;
+  const setSubtask = (patch: Partial<SubtaskAction>) => set({ subtask: { ...subtask, ...patch } });
+  const setEmail = (patch: Partial<EmailAction>) => set({ email: { ...email, ...patch } });
   const setHeader = (index: number, patch: Partial<WebhookHeader>) =>
     set({ headers: draft.headers.map((h, i) => (i === index ? { ...h, ...patch } : h)) });
 
@@ -194,8 +245,11 @@ export function ActionFields({
                 value={draft.webhookMethod}
                 onChange={(e) => set({ webhookMethod: e.target.value as HttpMethod })}
               >
-                <option value="POST">POST</option>
-                <option value="GET">GET</option>
+                {HTTP_METHODS.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
               </Select>
               <input
                 ref={urlRef}
@@ -236,7 +290,7 @@ export function ActionFields({
             </div>
           </ModalRow>
 
-          {draft.webhookMethod === "POST" && (
+          {methodHasBody(draft.webhookMethod) && (
             <ModalRow label="Corpo">
               <div className="auto-body">
                 <textarea
@@ -552,6 +606,163 @@ export function ActionFields({
                 </label>
               ))}
             </div>
+          </ModalRow>
+        </>
+      )}
+
+      {action === "CREATE_SUBTASK" && (
+        <>
+          <ModalRow label="Título">
+            <div className="auto-inline">
+              <input
+                ref={subtaskRef}
+                value={subtask.title}
+                placeholder="Revisar {{deal.title}}"
+                onChange={(e) => setSubtask({ title: e.target.value })}
+              />
+              <PlaceholderMenu
+                customFields={customFields}
+                onInsert={(text) => setSubtask({ title: insertAt(subtaskRef.current, subtask.title, text) })}
+              />
+            </div>
+            <div className="auto-hint">Criada na mesma etapa do negócio. Uma subtarefa não ganha subtarefas.</div>
+          </ModalRow>
+
+          <ModalRow label="Responsável">
+            <div className="auto-inline">
+              <Select
+                value={subtask.assignee}
+                onChange={(e) =>
+                  setSubtask(
+                    e.target.value === "MEMBER"
+                      ? { assignee: "MEMBER", responsibleId: subtask.responsibleId ?? members[0]?.id ?? null }
+                      : { assignee: "DEAL_RESPONSIBLE", responsibleId: null }
+                  )
+                }
+              >
+                <option value="DEAL_RESPONSIBLE">Responsável do negócio</option>
+                <option value="MEMBER">Membro da equipe</option>
+              </Select>
+              {subtask.assignee === "MEMBER" && (
+                <Select value={subtask.responsibleId ?? ""} onChange={(e) => setSubtask({ responsibleId: e.target.value || null })}>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </div>
+          </ModalRow>
+
+          <ModalRow label="Prazo">
+            <div className="auto-inline">
+              <Select
+                value={subtask.deadlineDays === null ? "NONE" : "AFTER"}
+                onChange={(e) => setSubtask({ deadlineDays: e.target.value === "AFTER" ? 1 : null })}
+              >
+                <option value="NONE">Sem prazo</option>
+                <option value="AFTER">Dias após a execução</option>
+              </Select>
+              {subtask.deadlineDays !== null && (
+                <input
+                  type="number"
+                  min={0}
+                  className="auto-input--short"
+                  value={subtask.deadlineDays}
+                  onChange={(e) => setSubtask({ deadlineDays: Math.max(0, Number(e.target.value) || 0) })}
+                />
+              )}
+            </div>
+          </ModalRow>
+        </>
+      )}
+
+      {action === "ADD_CHECKLIST" && (
+        <ModalRow label="Itens">
+          <textarea
+            rows={5}
+            value={draft.checklist.items.join("\n")}
+            placeholder={"Um item por linha\nConferir contrato de {{deal.company}}"}
+            onChange={(e) => set({ checklist: { items: e.target.value.split("\n") } })}
+          />
+          <div className="auto-hint">Cada linha vira um item do checklist do negócio. Um item que ele já tem aberto não é repetido.</div>
+        </ModalRow>
+      )}
+
+      {action === "SEND_EMAIL" && (
+        <>
+          <ModalRow label="Para">
+            <div className="auto-inline">
+              <input
+                ref={toRef}
+                value={email.to}
+                placeholder="{{deal.contactEmail}}, financeiro@empresa.com"
+                onChange={(e) => setEmail({ to: e.target.value })}
+              />
+              <PlaceholderMenu customFields={customFields} onInsert={(text) => setEmail({ to: insertAt(toRef.current, email.to, text) })} />
+            </div>
+            <div className="auto-hint">Separe os e-mails por vírgula. Cada destinatário recebe uma mensagem separada.</div>
+          </ModalRow>
+
+          <ModalRow label="Assunto">
+            <div className="auto-inline">
+              <input
+                ref={subjectRef}
+                value={email.subject}
+                placeholder="{{deal.title}}"
+                onChange={(e) => setEmail({ subject: e.target.value })}
+              />
+              <PlaceholderMenu
+                customFields={customFields}
+                onInsert={(text) => setEmail({ subject: insertAt(subjectRef.current, email.subject, text) })}
+              />
+            </div>
+          </ModalRow>
+
+          <ModalRow label="Texto">
+            <div className="auto-body">
+              <textarea
+                ref={emailBodyRef}
+                rows={6}
+                value={email.body}
+                placeholder="Olá {{deal.contact}}, ..."
+                onChange={(e) => setEmail({ body: e.target.value })}
+              />
+              <PlaceholderMenu
+                customFields={customFields}
+                onInsert={(text) => setEmail({ body: insertAt(emailBodyRef.current, email.body, text) })}
+              />
+            </div>
+          </ModalRow>
+        </>
+      )}
+
+      {action === "COPY_CARD" && (
+        <>
+          <ModalRow label="Copiar para">
+            <Select value={copy.stageId ?? ""} onChange={(e) => set({ copy: { ...copy, stageId: e.target.value || null } })}>
+              <option value="">Escolha a etapa</option>
+              {pipelines.map((p) => (
+                <optgroup key={p.id} label={p.name}>
+                  {p.stages
+                    .filter((s) => s.id !== stageId)
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {p.name} → {s.name}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </Select>
+            <div className="auto-hint">Copia como "Duplicar": dados, contatos, serviços, etiquetas e checklist. As regras da etapa de destino rodam para a cópia.</div>
+          </ModalRow>
+
+          <ModalRow label="Vínculo">
+            <label className="auto-switch">
+              <input type="checkbox" checked={copy.link} onChange={(e) => set({ copy: { ...copy, link: e.target.checked } })} />
+              <span>Vincular a cópia ao negócio original</span>
+            </label>
           </ModalRow>
         </>
       )}

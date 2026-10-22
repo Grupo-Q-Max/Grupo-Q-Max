@@ -869,11 +869,14 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
       products: true,
       tags: true,
       activities: { where: { type: "TODO" }, orderBy: { createdAt: "asc" } },
-      stage: { select: { pipeline: { select: { stages: { orderBy: { order: "asc" }, take: 1 } } } } },
+      stage: { select: { pipelineId: true, pipeline: { select: { stages: { orderBy: { order: "asc" }, take: 1 } } } } },
     },
   });
 
   const stageId = options.stageId ?? deal.stage.pipeline.stages[0].id;
+  // A subtask's parent must be on the same board: a copy to another pipeline stands alone
+  const sameBoard =
+    !options.stageId || (await tx.crmStage.count({ where: { id: options.stageId, pipelineId: deal.stage.pipelineId } })) > 0;
   const title = options.title ?? deal.title;
   return tx.crmCard.create({
     data: {
@@ -898,8 +901,8 @@ export async function copyCard(tx: Tx, id: string, options: CopyOptions) {
       reminderMinutes: deal.reminderMinutes,
       recurrenceInterval: deal.recurrenceInterval,
       recurrenceWeekdays: deal.recurrenceWeekdays,
-      // A copied subtask stays under the same parent; templates stand alone
-      parentId: options.isTemplate ? null : deal.parentId,
+      // A copied subtask stays under the same parent; templates and copies to another board stand alone
+      parentId: options.isTemplate || !sameBoard ? null : deal.parentId,
       customData: deal.customData ?? Prisma.DbNull,
       startDate: options.startDate,
       closeDate: options.closeDate,

@@ -4,12 +4,25 @@
  */
 
 export type DelayUnit = "MINUTES" | "HOURS" | "DAYS";
-export type HttpMethod = "GET" | "POST";
+export const HTTP_METHODS = ["POST", "GET", "PUT", "PATCH", "DELETE"] as const;
+export type HttpMethod = (typeof HTTP_METHODS)[number];
+export const isHttpMethod = (value: unknown): value is HttpMethod => HTTP_METHODS.includes(value as HttpMethod);
+/** GET and DELETE webhooks are sent without a body */
+export const methodHasBody = (method: HttpMethod) => method !== "GET" && method !== "DELETE";
 export type ConditionOperator = "eq" | "neq" | "contains" | "empty" | "notEmpty" | "gt" | "lt";
 export type TriggerType = "WEBHOOK_IN" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DEAL_CREATED" | "DUE_REACHED" | "ESTIMATE_EXCEEDED";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type ActivityType = "TODO" | "TASK" | "CALL" | "MEETING" | "COMMENT";
-export type ActionType = "WEBHOOK" | "CREATE_ACTIVITY" | "UPDATE_DEAL" | "NOTIFY" | "FLOW";
+export type ActionType =
+  | "WEBHOOK"
+  | "CREATE_ACTIVITY"
+  | "UPDATE_DEAL"
+  | "NOTIFY"
+  | "CREATE_SUBTASK"
+  | "ADD_CHECKLIST"
+  | "SEND_EMAIL"
+  | "COPY_CARD"
+  | "FLOW";
 /** Actions a flow step can run (a flow inside a flow is not allowed) */
 export type StepActionType = Exclude<ActionType, "FLOW">;
 export type StepType = "ACTION" | "WAIT" | "CONDITION";
@@ -54,11 +67,34 @@ export type NotifyAction = {
   memberIds: string[];
 };
 
+/** CREATE_SUBTASK configuration of a rule (CrmAutomationSubtask). */
+export type SubtaskAction = {
+  /** Title, with placeholders */
+  title: string;
+  assignee: ActivityAssignee;
+  responsibleId: string | null;
+  /** Deadline in days from the run; null = none */
+  deadlineDays: number | null;
+};
+
+/** ADD_CHECKLIST configuration of a rule (CrmAutomationChecklistItem rows): item titles, with placeholders. */
+export type ChecklistAction = { items: string[] };
+
+/** SEND_EMAIL configuration of a rule (CrmAutomationEmail); every text accepts placeholders. */
+export type EmailAction = { to: string; subject: string; body: string };
+
+/** COPY_CARD configuration of a rule (CrmAutomationCopy). */
+export type CopyAction = { stageId: string | null; link: boolean };
+
 export const ACTION_TYPES:Record<ActionType, { label: string }> = {
   WEBHOOK: { label: "Webhook de saída" },
   CREATE_ACTIVITY: { label: "Criar atividade" },
   UPDATE_DEAL: { label: "Modificar negócio" },
   NOTIFY: { label: "Adicionar notificação" },
+  CREATE_SUBTASK: { label: "Criar subtarefa" },
+  ADD_CHECKLIST: { label: "Adicionar checklist" },
+  SEND_EMAIL: { label: "Enviar e-mail" },
+  COPY_CARD: { label: "Copiar negócio" },
   FLOW: { label: "Fluxo (ações de grupo)" },
 };
 
@@ -171,11 +207,15 @@ export function matchesConditions(conditions: AutomationCondition[], ctx: DealCo
   });
 }
 
-/** Replaces {{deal.title}}-style placeholders with the deal's values (URL-encoded when `encode`). */
+/**
+ * Replaces {{deal.title}}-style placeholders with the deal's values (URL-encoded when `encode`).
+ * In flows, {{response.<path>}} reads the JSON response of the last webhook step (ctx keys "response.<path>").
+ */
 export const fillPlaceholders = (template: string, ctx: DealContext, encode = false) =>
-  template.replace(/\{\{\s*deal\.([\w.-]+)\s*\}\}/g, (_, key: string) =>
-    encode ? encodeURIComponent(ctx[key] ?? "") : ctx[key] ?? ""
-  );
+  template.replace(/\{\{\s*(deal|response)\.([\w.-]+)\s*\}\}/g, (_, scope: string, key: string) => {
+    const value = ctx[scope === "deal" ? key : `response.${key}`] ?? "";
+    return encode ? encodeURIComponent(value) : value;
+  });
 
 export const TRIGGER_TYPES: Record<TriggerType, { label: string; description: string }> = {
   WEBHOOK_IN: { label: "Webhook de entrada", description: "Uma chamada externa à URL do gatilho move o negócio" },
@@ -185,6 +225,19 @@ export const TRIGGER_TYPES: Record<TriggerType, { label: string; description: st
   DUE_REACHED: { label: "Prazo chegou", description: "Quadros de tarefas: no dia do prazo (ou atrasada), junto com o lembrete do responsável" },
   ESTIMATE_EXCEEDED: { label: "Estimativa estourada", description: "Quadros de tarefas: quando o tempo gasto passa da estimativa" },
 };
+
+/** What starts a rule: entering its stage, or one of the trigger events while the deal is in the stage */
+export type StartOn = "STAGE_ENTERED" | "FIELD_CHANGED" | "ACTIVITY_COMPLETED" | "DUE_REACHED" | "ESTIMATE_EXCEEDED";
+
+export const START_ON: Record<StartOn, string> = {
+  STAGE_ENTERED: "Ao entrar na etapa",
+  FIELD_CHANGED: `${TRIGGER_TYPES.FIELD_CHANGED.label} (na etapa)`,
+  ACTIVITY_COMPLETED: `${TRIGGER_TYPES.ACTIVITY_COMPLETED.label} (na etapa)`,
+  DUE_REACHED: `${TRIGGER_TYPES.DUE_REACHED.label} (na etapa)`,
+  ESTIMATE_EXCEEDED: `${TRIGGER_TYPES.ESTIMATE_EXCEEDED.label} (na etapa)`,
+};
+
+export const isStartOn = (value: unknown): value is StartOn => typeof value === "string" && value in START_ON;
 
 export const TASK_PRIORITIES: Record<TaskPriority, string> = { URGENT: "Urgente", HIGH: "Alta", MEDIUM: "Média", LOW: "Baixa" };
 
@@ -258,6 +311,58 @@ export function parseNotifyAction(value: unknown): NotifyAction {
     memberIds,
   };
 }
+
+/**
+ * Members of a saved NOTIFY rule: its CrmAutomationNotifyMember rows plus the legacy
+ * `memberIds` JSON not migrated yet (scripts/migrate-notify-members.sql).
+ */
+export function notifyMemberIds(notify: { members?: { memberId: string }[]; memberIds?: unknown } | null | undefined) {
+  const legacy = Array.isArray(notify?.memberIds) ? notify.memberIds.filter((id): id is string => typeof id === "string") : [];
+  return [...new Set([...(notify?.members ?? []).map((m) => m.memberId), ...legacy])];
+}
+
+/** Validates the CREATE_SUBTASK configuration coming from the client. */
+export function parseSubtaskAction(value: unknown): SubtaskAction {
+  const input = (value ?? {}) as Partial<Record<keyof SubtaskAction, unknown>>;
+  const assignee: ActivityAssignee = input.assignee === "MEMBER" && input.responsibleId ? "MEMBER" : "DEAL_RESPONSIBLE";
+  const days = Math.round(Number(input.deadlineDays));
+  return {
+    title: String(input.title ?? "").trim() || "Subtarefa de {{deal.title}}",
+    assignee,
+    responsibleId: assignee === "MEMBER" ? String(input.responsibleId) : null,
+    deadlineDays: input.deadlineDays !== null && input.deadlineDays !== "" && days >= 0 ? days : null,
+  };
+}
+
+/** Validates the ADD_CHECKLIST configuration coming from the client: non-empty items, at most 50. */
+export function parseChecklistAction(value: unknown): ChecklistAction {
+  const input = (value ?? {}) as Partial<Record<keyof ChecklistAction, unknown>>;
+  const items = Array.isArray(input.items) ? input.items.map((i) => String(i ?? "").trim()).filter(Boolean) : [];
+  return { items: items.slice(0, 50) };
+}
+
+/** Validates the SEND_EMAIL configuration coming from the client. */
+export function parseEmailAction(value: unknown): EmailAction {
+  const input = (value ?? {}) as Partial<Record<keyof EmailAction, unknown>>;
+  return {
+    to: String(input.to ?? "").trim(),
+    subject: String(input.subject ?? "").trim() || "{{deal.title}}",
+    body: String(input.body ?? "").trim(),
+  };
+}
+
+/** Validates the COPY_CARD configuration coming from the client. */
+export function parseCopyAction(value: unknown): CopyAction {
+  const input = (value ?? {}) as Partial<Record<keyof CopyAction, unknown>>;
+  return {
+    stageId: typeof input.stageId === "string" && input.stageId.trim() ? input.stageId.trim() : null,
+    link: input.link !== false,
+  };
+}
+
+/** E-mail addresses in a filled "Para" field (separated by commas or semicolons); invalid ones are dropped. */
+export const emailRecipients = (text: string) =>
+  [...new Set(text.split(/[,;]/).map((a) => a.trim()).filter((a) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a)))];
 
 /** Fields that can be watched by a FIELD_CHANGED trigger (keys of SCALAR/RELATION_FIELDS in lib/crm-deal). */
 export const WATCHABLE_FIELDS: Record<string, string> = {

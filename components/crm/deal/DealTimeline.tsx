@@ -34,6 +34,7 @@ import {
 import { Avatar, formatDateOnly, formatDateTime, formatDay, formatTime } from "./ui";
 import { useCan, useViewer } from "../CrmAccess";
 import { Select } from "@/components/ui/Select";
+import { ACTION_TYPES, isActionType } from "@/lib/crm-automation-shared";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
 
@@ -702,7 +703,10 @@ function FeedItem({
         <Webhook size={14} />,
         data.status === "SUCCESS" ? "Regra de automação executada" : "Regra de automação falhou",
         <>
-          <p className="deal-feed__text">{data.name}</p>
+          <p className="deal-feed__text">
+            {data.name}
+            {isActionType(data.actionType) && <span className="deal-feed__meta"> · {ACTION_TYPES[data.actionType].label}</span>}
+          </p>
           {data.status !== "SUCCESS" && data.error && <span className="deal-feed__meta">{data.error}</span>}
         </>
       );

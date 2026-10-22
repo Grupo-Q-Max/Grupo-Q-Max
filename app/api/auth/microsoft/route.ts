@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       .create({ data: { success, reason, email: email?.slice(0, 191), memberId, ip, userAgent } })
       .catch((error) => console.error("[auth/microsoft] audit log failed", error));
 
-  const wait = rateLimit(`microsoft:ip:${ip}`, 20, 15 * 60_000);
+  const wait = await rateLimit(`microsoft:ip:${ip}`, 20, 15 * 60_000);
   if (wait) return tooManyRequests(wait);
 
   let config;

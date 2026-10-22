@@ -1,17 +1,25 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, type CrmActivityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { denyUnless } from "@/lib/crm-access";
+import { canSeePipeline, denyUnless } from "@/lib/crm-access";
 import { boardAutomations } from "@/lib/crm-automation";
 import {
   ACTION_TYPES,
+  ACTIVITY_TYPES,
+  WATCHABLE_FIELDS,
   isActionType,
   isDelayUnit,
+  isHttpMethod,
+  isStartOn,
   parseActivityAction,
   parseConditions,
   parseDealUpdateAction,
   parseFlowSteps,
   parseNotifyAction,
+  parseSubtaskAction,
+  parseChecklistAction,
+  parseEmailAction,
+  parseCopyAction,
   type ActionType,
   type Branch,
   type FlowStepInput,
@@ -59,18 +67,43 @@ async function dealUpdateData(value: unknown, ruleStageId: string) {
   };
 }
 
-/** NOTIFY config; members that no longer exist are dropped. */
+/** NOTIFY config; members that no longer exist are dropped. Saving moves them out of the legacy JSON column. */
 async function notifyData(value: unknown) {
   const notify = parseNotifyAction(value);
   const members = await prisma.teamMember.findMany({ where: { id: { in: notify.memberIds } }, select: { id: true } });
-  const memberIds = notify.memberIds.filter((id) => members.some((m) => m.id === id));
   return {
     message: notify.message || "{{deal.title}}",
     notifyResponsible: notify.notifyResponsible,
     notifyAssignees: notify.notifyAssignees,
-    memberIds: memberIds.length ? memberIds : Prisma.DbNull,
+    memberIds: Prisma.DbNull,
+    members: members.map((m) => ({ memberId: m.id })),
   };
 }
+
+/** CREATE_SUBTASK config; a member that no longer exists falls back to the deal's responsible. */
+async function subtaskData(value: unknown) {
+  const subtask = parseSubtaskAction(value);
+  if (subtask.assignee === "MEMBER") {
+    const member = await prisma.teamMember.findUnique({ where: { id: subtask.responsibleId! }, select: { id: true } });
+    if (!member) return { ...subtask, assignee: "DEAL_RESPONSIBLE" as const, responsibleId: null };
+  }
+  return subtask;
+}
+
+const checklistRows = (value: unknown) => parseChecklistAction(value).items.map((title, order) => ({ title, order }));
+
+/** COPY_CARD config of a rule in `ruleStageId`: the target must be a stage the user sees, other than the rule's own. */
+async function copyData(value: unknown, ruleStageId: string) {
+  const copy = parseCopyAction(value);
+  const ok = copy.stageId && copy.stageId !== ruleStageId && (await canSeePipeline({ stageId: copy.stageId }));
+  return { stageId: ok ? copy.stageId : null, link: copy.link };
+}
+
+/** Nested write of a NOTIFY config: its members replace the current ones. */
+const notifyWrite = ({ members, ...fields }: Awaited<ReturnType<typeof notifyData>>, replace: boolean) => ({
+  ...fields,
+  members: replace ? { deleteMany: {}, create: members } : { create: members },
+});
 
 const parseHeaders =(value: unknown) =>
   (Array.isArray(value) ? value : [])
@@ -85,10 +118,24 @@ function ruleFields(body: Record<string, unknown>, actionType: ActionType) {
     ...(body.delayAmount !== undefined && { delayAmount: Math.max(0, Math.round(Number(body.delayAmount) || 0)) }),
     ...(isDelayUnit(body.delayUnit) && { delayUnit: body.delayUnit }),
     ...(webhook && body.webhookUrl !== undefined && { webhookUrl: String(body.webhookUrl).trim() }),
-    ...(webhook && body.webhookMethod !== undefined && { webhookMethod: body.webhookMethod === "GET" ? ("GET" as const) : ("POST" as const) }),
+    ...(webhook && body.webhookMethod !== undefined && { webhookMethod: isHttpMethod(body.webhookMethod) ? body.webhookMethod : ("POST" as const) }),
     ...(webhook && body.webhookBody !== undefined && { webhookBody: String(body.webhookBody ?? "").trim() ? String(body.webhookBody) : null }),
     ...(body.active !== undefined && { active: Boolean(body.active) }),
     ...(body.execution !== undefined && { execution: body.execution === "SEQUENTIAL" ? ("SEQUENTIAL" as const) : ("PARALLEL" as const) }),
+    ...(body.startOn !== undefined && startFields(body)),
+  };
+}
+
+/** What starts the rule; the event's option only for its event, cleared otherwise. */
+function startFields(body: Record<string, unknown>) {
+  const startOn = isStartOn(body.startOn) ? body.startOn : "STAGE_ENTERED";
+  const field = String(body.startField ?? "");
+  const activityType = String(body.startActivityType ?? "");
+  return {
+    startOn,
+    startField: startOn === "FIELD_CHANGED" && field in WATCHABLE_FIELDS ? field : null,
+    startActivityType:
+      startOn === "ACTIVITY_COMPLETED" && activityType in ACTIVITY_TYPES ? (activityType as CrmActivityType) : null,
   };
 }
 
@@ -101,7 +148,11 @@ async function actionCreates(actionType: ActionType, body: Record<string, unknow
     ...(actionType === "WEBHOOK" && { headers: { create: parseHeaders(body.headers) } }),
     ...(actionType === "CREATE_ACTIVITY" && { activity: { create: await activityData(body.activity) } }),
     ...(actionType === "UPDATE_DEAL" && { dealUpdate: { create: await dealUpdateData(body.dealUpdate, stageId) } }),
-    ...(actionType === "NOTIFY" && { notify: { create: await notifyData(body.notify) } }),
+    ...(actionType === "NOTIFY" && { notify: { create: notifyWrite(await notifyData(body.notify), false) } }),
+    ...(actionType === "CREATE_SUBTASK" && { subtask: { create: await subtaskData(body.subtask) } }),
+    ...(actionType === "ADD_CHECKLIST" && { checklist: { create: checklistRows(body.checklist) } }),
+    ...(actionType === "SEND_EMAIL" && { email: { create: parseEmailAction(body.email) } }),
+    ...(actionType === "COPY_CARD" && { copy: { create: await copyData(body.copy, stageId) } }),
   };
 }
 
@@ -271,6 +322,9 @@ export async function PUT(req: Request) {
     const dealUpdate =
       actionType === "UPDATE_DEAL" && body.dealUpdate !== undefined ? await dealUpdateData(body.dealUpdate, stageId) : null;
     const notify = actionType === "NOTIFY" && body.notify !== undefined ? await notifyData(body.notify) : null;
+    const subtask = actionType === "CREATE_SUBTASK" && body.subtask !== undefined ? await subtaskData(body.subtask) : null;
+    const email = actionType === "SEND_EMAIL" && body.email !== undefined ? parseEmailAction(body.email) : null;
+    const copy = actionType === "COPY_CARD" && body.copy !== undefined ? await copyData(body.copy, stageId) : null;
     await prisma.crmAutomation.update({
       where: { id: body.id },
       data: {
@@ -279,7 +333,12 @@ export async function PUT(req: Request) {
           body.headers !== undefined && { headers: { deleteMany: {}, create: parseHeaders(body.headers) } }),
         ...(activity && { activity: { upsert: { create: activity, update: activity } } }),
         ...(dealUpdate && { dealUpdate: { upsert: { create: dealUpdate, update: dealUpdate } } }),
-        ...(notify && { notify: { upsert: { create: notify, update: notify } } }),
+        ...(notify && { notify: { upsert: { create: notifyWrite(notify, false), update: notifyWrite(notify, true) } } }),
+        ...(subtask && { subtask: { upsert: { create: subtask, update: subtask } } }),
+        ...(actionType === "ADD_CHECKLIST" &&
+          body.checklist !== undefined && { checklist: { deleteMany: {}, create: checklistRows(body.checklist) } }),
+        ...(email && { email: { upsert: { create: email, update: email } } }),
+        ...(copy && { copy: { upsert: { create: copy, update: copy } } }),
         ...(body.conditions !== undefined && { conditions: { deleteMany: {}, create: conditionRows(body.conditions) } }),
       },
     });

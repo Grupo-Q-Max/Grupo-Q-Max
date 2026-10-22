@@ -1,8 +1,27 @@
-// ponytail: in-memory fixed window, same single-instance limit as lib/realtime.ts; move to the DB/Redis if the app scales out
+import { redis } from "@/lib/realtime";
+
+// Fixed window. With REDIS_URL the count is shared by every instance; without it (or when Redis
+// fails) it falls back to this process's memory, so logins keep working while Redis is down.
 const hits = new Map<string, { count: number; resetAt: number }>();
 
 /** Counts a hit for `key`. Returns seconds to wait when over `limit` per `windowMs`, else null. */
-export function rateLimit(key: string, limit: number, windowMs: number) {
+export async function rateLimit(key: string, limit: number, windowMs: number) {
+  const client = redis();
+  if (client) {
+    try {
+      const redisKey = `ratelimit:${key}`;
+      const result = await client.multi().incr(redisKey).pexpire(redisKey, windowMs, "NX").pttl(redisKey).exec();
+      const count = Number(result?.[0]?.[1]);
+      const ttl = Number(result?.[2]?.[1]);
+      if (Number.isFinite(count)) return count > limit ? Math.ceil(Math.max(ttl, 1000) / 1000) : null;
+    } catch (error) {
+      console.error("[rate-limit] redis failed, counting in memory:", error instanceof Error ? error.message : error);
+    }
+  }
+  return memoryRateLimit(key, limit, windowMs);
+}
+
+function memoryRateLimit(key: string, limit: number, windowMs: number) {
   const now = Date.now();
   for (const [k, v] of hits) if (v.resetAt <= now) hits.delete(k);
 

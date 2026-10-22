@@ -13,17 +13,40 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities";
 import { useBoardSensors, vibrateOnTouchDrag } from "@/components/kanban/sensors";
 import { useCan } from "@/components/crm/CrmAccess";
-import { ArrowLeft, Bell, ChevronDown, LayoutTemplate, ListTodo, Pencil, PencilLine, Plus, Search, Webhook, Workflow, X, Zap } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  ChevronDown,
+  Copy,
+  LayoutTemplate,
+  ListChecks,
+  ListTodo,
+  ListTree,
+  Mail,
+  Pencil,
+  PencilLine,
+  Plus,
+  Search,
+  Webhook,
+  Workflow,
+  X,
+  Zap,
+} from "lucide-react";
 import {
   ACTION_TYPES,
   ACTIVITY_TYPES,
   DEAL_STATUSES,
+  START_ON,
   TRIGGER_TYPES,
   WATCHABLE_FIELDS,
   describeTiming,
+  notifyMemberIds,
   type ActionType,
 } from "@/lib/crm-automation-shared";
 import { AutomationRuleModal, type RuleDraft } from "./AutomationRuleModal";
+import { PipelineStagesContext } from "./ActionFields";
+
+type PipelineStages = { id: string; name: string; stages: { id: string; name: string }[] }[];
 import { TriggerModal, type TriggerDraft } from "./TriggerModal";
 import { AutomationRunsTab } from "./AutomationRunsTab";
 import { AUTOMATION_TEMPLATES } from "./templates";
@@ -78,7 +101,7 @@ function dealUpdateSummary(rule: AutomationRule, stages: AutomationStage[], memb
 }
 
 /** "para: ..." line of a rule card (who receives the action, like Bitrix24). */
-function ruleDetail(rule: AutomationRule, stages: AutomationStage[], members: Member[]) {
+function ruleDetail(rule: AutomationRule, stages: AutomationStage[], members: Member[], pipelines: PipelineStages) {
   if (rule.actionType === "FLOW") {
     const count = rule.steps.length;
     return <span className="auto-card__target">{count} {count === 1 ? "passo" : "passos"}</span>;
@@ -90,11 +113,40 @@ function ruleDetail(rule: AutomationRule, stages: AutomationStage[], members: Me
     const { notify } = rule;
     const targets = [
       notify.notifyResponsible && "responsável do negócio",
-      ...(notify.memberIds ?? []).map((id) => members.find((m) => m.id === id)?.name ?? "membro removido"),
+      ...notifyMemberIds(notify).map((id) => members.find((m) => m.id === id)?.name ?? "membro removido"),
     ].filter(Boolean);
     return (
       <>
         Comentário · para: <span className="auto-card__target">{targets.join(", ") || "ninguém"}</span>
+      </>
+    );
+  }
+  if (rule.actionType === "CREATE_SUBTASK" && rule.subtask) {
+    const { subtask } = rule;
+    const target =
+      subtask.assignee === "MEMBER" ? members.find((m) => m.id === subtask.responsibleId)?.name ?? "membro removido" : "responsável do negócio";
+    return (
+      <>
+        Subtarefa · para: <span className="auto-card__target">{target}</span>
+      </>
+    );
+  }
+  if (rule.actionType === "ADD_CHECKLIST") {
+    const count = rule.checklist?.length ?? 0;
+    return <span className="auto-card__target">{count} {count === 1 ? "item" : "itens"}</span>;
+  }
+  if (rule.actionType === "SEND_EMAIL" && rule.email) {
+    return (
+      <>
+        para: <span className="auto-card__target">{rule.email.to || "ninguém"}</span>
+      </>
+    );
+  }
+  if (rule.actionType === "COPY_CARD" && rule.copy) {
+    const target = pipelines.flatMap((p) => p.stages.map((s) => ({ ...s, pipeline: p.name }))).find((s) => s.id === rule.copy?.stageId);
+    return (
+      <>
+        → <span className="auto-card__target">{target ? `${target.pipeline} → ${target.name}` : "etapa removida"}</span>
       </>
     );
   }
@@ -122,6 +174,10 @@ const RULE_ACTIONS: { type: ActionType; icon: ReactNode }[] = [
   { type: "CREATE_ACTIVITY", icon: <ListTodo size={14} /> },
   { type: "UPDATE_DEAL", icon: <PencilLine size={14} /> },
   { type: "NOTIFY", icon: <Bell size={14} /> },
+  { type: "CREATE_SUBTASK", icon: <ListTree size={14} /> },
+  { type: "ADD_CHECKLIST", icon: <ListChecks size={14} /> },
+  { type: "SEND_EMAIL", icon: <Mail size={14} /> },
+  { type: "COPY_CARD", icon: <Copy size={14} /> },
   { type: "FLOW", icon: <Workflow size={14} /> },
 ];
 
@@ -143,7 +199,7 @@ export function CrmAutomationBoard({
   members,
 }: {
   pipeline: { id: string; name: string };
-  pipelines: { id: string; name: string }[];
+  pipelines: PipelineStages;
   initialStages: AutomationStage[];
   customFields: CustomField[];
   members: Member[];
@@ -176,7 +232,7 @@ export function CrmAutomationBoard({
     return stages.map((s) => ({
       ...s,
       automations: s.automations.filter((a) =>
-        match(a.name, a.webhookUrl ?? undefined, a.activity?.title, a.notify?.message, dealUpdateSummary(a, stages, members))
+        match(a.name, a.webhookUrl ?? undefined, a.activity?.title, a.notify?.message, a.subtask?.title, a.email?.subject, a.email?.to, dealUpdateSummary(a, stages, members))
       ),
       triggers: s.triggers.filter((t) => match(t.name, TRIGGER_TYPES[t.type]?.label)),
     }));
@@ -457,11 +513,13 @@ export function CrmAutomationBoard({
                                 disabled={!canEditRule}
                                 onClick={() => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType })}
                               >
-                                {describeTiming(rule.execution, rule.delayAmount, rule.delayUnit)}
+                                {rule.startOn === "STAGE_ENTERED"
+                                  ? describeTiming(rule.execution, rule.delayAmount, rule.delayUnit)
+                                  : `${START_ON[rule.startOn]} · ${describeTiming("PARALLEL", rule.delayAmount, rule.delayUnit)}`}
                               </button>
                             }
                             name={rule.name}
-                            detail={ruleDetail(rule, stages, members)}
+                            detail={ruleDetail(rule, stages, members, pipelines)}
                             conditions={rule.conditions.length}
                             onEdit={canEditRule ? () => setEditing({ kind: "rule", stageId: stage.id, item: rule, actionType: rule.actionType }) : undefined}
                             onRename={canEditRule ? (name) => rename("rule", rule.id, name) : undefined}
@@ -479,6 +537,7 @@ export function CrmAutomationBoard({
       </div>
 
       {editing?.kind === "rule" && (
+        <PipelineStagesContext value={pipelines}>
         <AutomationRuleModal
           rule={editing.item}
           actionType={editing.actionType}
@@ -490,6 +549,7 @@ export function CrmAutomationBoard({
           onClose={() => setEditing(null)}
           onSave={(draft) => saveRule(draft, editing.item)}
         />
+        </PipelineStagesContext>
       )}
       {editing?.kind === "trigger" && (
         <TriggerModal

@@ -3,16 +3,22 @@
 import { useState } from "react";
 import {
   ACTION_TYPES,
+  ACTIVITY_TYPES,
   DELAY_UNITS,
   EXECUTIONS,
+  OPERATORS,
+  START_ON,
+  WATCHABLE_FIELDS,
   type ActionType,
+  type ActivityType,
+  type StartOn,
   type AutomationCondition,
   type DelayUnit,
   type Execution,
 } from "@/lib/crm-automation-shared";
 import { AutomationModal, ModalRow } from "./AutomationModal";
 import { ActionFields, actionDraft, actionValidationError, type ActionDraft } from "./ActionFields";
-import { ConditionsEditor } from "./ConditionsEditor";
+import { ConditionsEditor, conditionFields } from "./ConditionsEditor";
 import { FlowEditor, flowDraft, flowValidationError, type FlowStepDraft } from "./FlowEditor";
 import type { AutomationRule, AutomationStage, CustomField, Member } from "./types";
 import { Select } from "@/components/ui/Select";
@@ -24,6 +30,9 @@ export type RuleDraft = ActionDraft & {
   execution: Execution;
   delayAmount: number;
   delayUnit: DelayUnit;
+  startOn: StartOn;
+  startField: string | null;
+  startActivityType: ActivityType | null;
   conditions: AutomationCondition[];
   active: boolean;
   /** Only for FLOW rules */
@@ -39,6 +48,9 @@ function ruleDraft(rule: AutomationRule | null, stageId: string, actionType: Act
     execution: rule?.execution ?? "PARALLEL",
     delayAmount: rule?.delayAmount ?? 0,
     delayUnit: rule?.delayUnit ?? "MINUTES",
+    startOn: rule?.startOn ?? "STAGE_ENTERED",
+    startField: rule?.startField ?? null,
+    startActivityType: rule?.startActivityType ?? null,
     conditions: rule?.conditions.map(({ field, operator, value }) => ({ field, operator, value })) ?? [],
     active: rule?.active ?? true,
     steps: flowDraft(rule?.steps ?? []),
@@ -125,16 +137,56 @@ export function AutomationRuleModal({
         </Select>
       </ModalRow>
 
+      <ModalRow label="Iniciar quando">
+        <Select value={draft.startOn} onChange={(e) => set({ startOn: e.target.value as StartOn })}>
+          {Object.entries(START_ON).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </Select>
+        {draft.startOn === "FIELD_CHANGED" && (
+          <Select value={draft.startField ?? ""} onChange={(e) => set({ startField: e.target.value || null })}>
+            <option value="">Qualquer campo</option>
+            {Object.entries(WATCHABLE_FIELDS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        )}
+        {draft.startOn === "ACTIVITY_COMPLETED" && (
+          <Select
+            value={draft.startActivityType ?? ""}
+            onChange={(e) => set({ startActivityType: (e.target.value || null) as ActivityType | null })}
+          >
+            <option value="">Qualquer tipo</option>
+            {Object.entries(ACTIVITY_TYPES).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        )}
+        {draft.startOn !== "STAGE_ENTERED" && (
+          <div className="auto-hint">Roda sem mover o negócio, sempre que o evento acontece enquanto ele está nesta etapa.</div>
+        )}
+      </ModalRow>
+
       <ModalRow label="Execução">
-        <Select value={draft.execution} onChange={(e) => set({ execution: e.target.value as Execution })}>
+        <Select
+          value={draft.execution}
+          disabled={draft.startOn !== "STAGE_ENTERED"}
+          onChange={(e) => set({ execution: e.target.value as Execution })}
+        >
           {Object.entries(EXECUTIONS).map(([key, label]) => (
             <option key={key} value={key}>
               {label}
             </option>
           ))}
         </Select>
-        {draft.execution === "SEQUENTIAL" && (
-          <p className="auto-hint">Começa quando a regra anterior desta etapa terminar para o negócio; o horário conta a partir daí.</p>
+        {draft.execution === "SEQUENTIAL" && draft.startOn === "STAGE_ENTERED" && (
+          <div className="auto-hint">Começa quando a regra anterior desta etapa terminar para o negócio; o horário conta a partir daí.</div>
         )}
       </ModalRow>
 
@@ -205,7 +257,80 @@ export function AutomationRuleModal({
         </label>
       </ModalRow>
 
-      {error && <p className="auto-error">{error}</p>}
+      {rule && <RuleTest ruleId={rule.id} customFields={customFields} />}
+
+      {error && <div className="auto-error">{error}</div>}
     </AutomationModal>
+  );
+}
+
+type TestResult = {
+  matches: boolean;
+  inStage: boolean;
+  active: boolean;
+  conditions: (AutomationCondition & { actual: string; ok: boolean })[];
+  preview: string;
+};
+
+/** "Testar": runs nothing; shows, for a deal, which conditions match and what the saved rule would send or change. */
+function RuleTest({ ruleId, customFields }: { ruleId: string; customFields: CustomField[] }) {
+  const [cardNumber, setCardNumber] = useState("");
+  const [result, setResult] = useState<TestResult | null>(null);
+  const [error, setError] = useState("");
+  const [testing, setTesting] = useState(false);
+  const fieldLabel = (key: string) => conditionFields(customFields).find((f) => f.key === key)?.label ?? key;
+
+  const test = async () => {
+    setTesting(true);
+    setError("");
+    setResult(null);
+    const res = await fetch("/api/crm/automation/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ automationId: ruleId, cardNumber: Number(cardNumber.replace("#", "")) }),
+    });
+    setTesting(false);
+    if (res.ok) setResult(await res.json());
+    else setError(res.status === 404 ? "Negócio não encontrado neste pipeline." : "Não foi possível testar a regra.");
+  };
+
+  return (
+    <ModalRow label="Testar">
+      <div className="auto-inline">
+        <input
+          className="auto-input--short"
+          placeholder="nº do negócio"
+          value={cardNumber}
+          onChange={(e) => setCardNumber(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && cardNumber && test()}
+        />
+        <button type="button" className="btn-secondary auto-btn-sm" onClick={test} disabled={!cardNumber || testing}>
+          {testing ? "Testando..." : "Testar"}
+        </button>
+      </div>
+      {/* divs, not p: the site's global p font-size wins over the modal's */}
+      <div className="auto-hint">Testa a versão salva da regra. Nada é executado nem enviado.</div>
+      {error && <div className="auto-error">{error}</div>}
+      {result && (
+        <div className="auto-test">
+          <div className="auto-test__verdict">
+            <b>{result.matches ? "Executaria" : "Não executaria: condições não atendidas"}</b>
+            {!result.active && " · a regra está pausada"}
+            {!result.inStage && " · o negócio não está na etapa desta regra"}
+          </div>
+          {result.conditions.length > 0 && (
+            <ul>
+              {result.conditions.map((c, i) => (
+                <li key={i} className={c.ok ? "auto-test__ok" : "auto-test__fail"}>
+                  {c.ok ? "✓" : "✗"} {fieldLabel(c.field)} {OPERATORS[c.operator].label}
+                  {OPERATORS[c.operator].needsValue && ` "${c.value ?? ""}"`} · valor atual: {c.actual || "vazio"}
+                </li>
+              ))}
+            </ul>
+          )}
+          <pre>{result.preview}</pre>
+        </div>
+      )}
+    </ModalRow>
   );
 }

@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { isAdminToken } from "@/lib/settings";
+import { ADMIN_COOKIE } from "@/lib/auth";
 
 const PUBLIC_BRANDS_DIR = path.join(process.cwd(), "public", "brands");
 const UPLOAD_BRANDS_DIR = path.join(process.cwd(), "data", "uploads", "brands");
 
 export async function POST(req: NextRequest) {
+  if (!isAdminToken(req.cookies.get(ADMIN_COOKIE)?.value)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
