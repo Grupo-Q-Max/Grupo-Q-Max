@@ -5,8 +5,13 @@ import {
   ArrowRight,
   ArrowUpRight,
   Briefcase,
+  Clock,
   GraduationCap,
+  Handshake,
   HeartHandshake,
+  Layers,
+  Lock,
+  Mail,
   ShieldCheck,
   Sparkles,
   UserCheck,
@@ -65,6 +70,82 @@ const services = [
   },
 ];
 
+const steps = [
+  {
+    title: "Diagnóstico da vaga",
+    text: "Entendemos o desafio da posição, a cultura da equipe e o perfil técnico e comportamental ideal.",
+  },
+  {
+    title: "Atração & hunting",
+    text: "Divulgação direcionada, base de talentos própria e busca ativa de profissionais no mercado.",
+  },
+  {
+    title: "Triagem e avaliação",
+    text: "Análise curricular, testes técnicos e avaliação comportamental para filtrar quem realmente tem fit.",
+  },
+  {
+    title: "Entrevistas & shortlist",
+    text: "Apresentamos uma lista enxuta de finalistas com parecer detalhado sobre cada candidato.",
+  },
+  {
+    title: "Acompanhamento",
+    text: "Apoio na proposta, na admissão e no período de adaptação do novo colaborador.",
+  },
+];
+
+const segments = ["Indústria", "Varejo", "Saúde", "Tecnologia", "Serviços", "Logística", "Agronegócio", "Construção"];
+
+const levels = ["Operacional", "Técnico", "Administrativo", "Gestão", "Executivo"];
+
+const differentials = [
+  {
+    icon: Layers,
+    title: "Integração com o Grupo Q-Max",
+    text: "RH conectado à contabilidade, ao departamento pessoal e à tecnologia do grupo, sem retrabalho entre fornecedores.",
+  },
+  {
+    icon: Clock,
+    title: "Agilidade com critério",
+    text: "Processos objetivos, com etapas e prazos definidos desde o início e comunicação constante sobre o andamento.",
+  },
+  {
+    icon: Lock,
+    title: "Sigilo e confidencialidade",
+    text: "Condução discreta de vagas confidenciais e substituições, preservando a empresa e os candidatos.",
+  },
+  {
+    icon: Handshake,
+    title: "Parceria de longo prazo",
+    text: "Acompanhamos o colaborador após a contratação e ajustamos a estratégia de RH conforme o negócio cresce.",
+  },
+];
+
+const faqs = [
+  {
+    question: "Quais tipos de vaga a Q-Max Talents atende?",
+    answer: "Atuamos do nível operacional ao executivo, em diferentes segmentos. Para cargos de liderança e posições críticas, aplicamos hunting e avaliação aprofundada.",
+  },
+  {
+    question: "Quanto tempo leva um processo seletivo?",
+    answer: "Depende do perfil e da complexidade da vaga. Na etapa de diagnóstico definimos junto com você um cronograma com cada fase do processo.",
+  },
+  {
+    question: "Vocês conduzem vagas confidenciais?",
+    answer: "Sim. Conduzimos processos sigilosos, sem expor o nome da empresa, inclusive para substituições estratégicas.",
+  },
+  {
+    question: "É possível contratar só a parte de Departamento Pessoal?",
+    answer: "Sim. Os serviços são modulares: você pode contratar recrutamento, T&D, DP ou consultoria separadamente ou de forma combinada.",
+  },
+  {
+    question: "Como funciona o primeiro contato?",
+    answer: "Fale com um consultor pelo WhatsApp ou e-mail. Fazemos uma conversa inicial para entender a necessidade e enviamos uma proposta personalizada.",
+  },
+];
+
+const whatsappUrl =
+  "https://wa.me/551128976514?text=Olá!%20Gostaria%20de%20conversar%20com%20a%20equipe%20da%20Q-Max%20Talents.";
+
 export default function TalentsPage() {
   return (
     <main className="talents-page">
@@ -100,7 +181,7 @@ export default function TalentsPage() {
               </a>
 
               <a
-                href="https://wa.me/551128976514?text=Olá!%20Gostaria%20de%20conversar%20com%20a%20equipe%20da%20Q-Max%20Talents."
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="talents-hero__primary"
@@ -210,10 +291,145 @@ export default function TalentsPage() {
       </section>
       </ScrollReveal>
 
+      {/* PROCESS SECTION */}
+      <ScrollReveal animation="fade-up">
+        <section id="processo" className="talents-section talents-section--alt">
+          <div className="container">
+            <header className="talents-section__head">
+              <span className="eyebrow" style={{ color: "#c084fc", borderColor: "rgba(143, 58, 168, 0.3)" }}>
+                <UserCheck size={13} />
+                COMO RECRUTAMOS
+              </span>
+              <h2>Um processo claro, do briefing à adaptação.</h2>
+              <p>Cada etapa tem objetivo definido e você acompanha o andamento do início ao fim.</p>
+            </header>
 
+            <ol className="talents-process">
+              {steps.map((step, index) => (
+                <li key={step.title} className="talents-process__step">
+                  <span className="talents-process__number">{String(index + 1).padStart(2, "0")}</span>
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      </ScrollReveal>
 
-      
-      
+      {/* SEGMENTS SECTION */}
+      <ScrollReveal animation="fade-up">
+        <section className="talents-section">
+          <div className="container talents-segments">
+            <div>
+              <span className="eyebrow" style={{ color: "#c084fc", borderColor: "rgba(143, 58, 168, 0.3)" }}>
+                <Briefcase size={13} />
+                PARA QUEM
+              </span>
+              <h2>Empresas de todos os portes e segmentos.</h2>
+              <p>Adaptamos o processo à realidade do seu setor e ao nível da posição.</p>
+            </div>
+
+            <div className="talents-segments__lists">
+              <div>
+                <small>SEGMENTOS</small>
+                <ul className="talents-chips">
+                  {segments.map((segment) => (
+                    <li key={segment}>{segment}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <small>NÍVEIS DE CARGO</small>
+                <ul className="talents-chips talents-chips--outline">
+                  {levels.map((level) => (
+                    <li key={level}>{level}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      </ScrollReveal>
+
+      {/* DIFFERENTIALS SECTION */}
+      <ScrollReveal animation="fade-up">
+        <section className="talents-section talents-section--alt">
+          <div className="container">
+            <header className="talents-section__head">
+              <span className="eyebrow" style={{ color: "#c084fc", borderColor: "rgba(143, 58, 168, 0.3)" }}>
+                <ShieldCheck size={13} />
+                POR QUE A Q-MAX TALENTS
+              </span>
+              <h2>RH estratégico, com o apoio de um grupo inteiro.</h2>
+            </header>
+
+            <div className="talents-diff">
+              {differentials.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <article key={item.title} className="talents-card">
+                    <div>
+                      <div className="talents-card__icon">
+                        <Icon size={22} />
+                      </div>
+                      <h3>{item.title}</h3>
+                      <p>{item.text}</p>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </ScrollReveal>
+
+      {/* FAQ SECTION */}
+      <ScrollReveal animation="fade-up">
+        <section id="duvidas" className="talents-section">
+          <div className="container talents-faq">
+            <header className="talents-section__head">
+              <span className="eyebrow" style={{ color: "#c084fc", borderColor: "rgba(143, 58, 168, 0.3)" }}>
+                <Sparkles size={13} />
+                DÚVIDAS FREQUENTES
+              </span>
+              <h2>Perguntas frequentes</h2>
+            </header>
+
+            {faqs.map((faq) => (
+              <details key={faq.question} className="talents-faq__item">
+                <summary>{faq.question}</summary>
+                <p>{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      </ScrollReveal>
+
+      {/* CONTACT SECTION */}
+      <ScrollReveal animation="fade-up">
+        <section id="contato" className="talents-section">
+          <div className="container">
+            <div className="talents-cta">
+              <div className="talents-hero__glow talents-hero__glow--purple" />
+              <h2>
+                Vamos encontrar <em>as pessoas certas</em> para o seu negócio?
+              </h2>
+              <p>Conte o seu desafio de RH e receba uma proposta sob medida da Q-Max Talents.</p>
+              <div className="talents-hero__actions">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="talents-hero__primary">
+                  Falar com consultor
+                  <ArrowUpRight size={16} />
+                </a>
+                <a href="mailto:contato@grupoqmax.com.br" className="talents-hero__primary talents-hero__primary--ghost">
+                  <Mail size={16} />
+                  contato@grupoqmax.com.br
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </ScrollReveal>
     </main>
   );
 }
