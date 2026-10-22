@@ -14,7 +14,7 @@ import { activeCard, cardListInclude, serializeListCard } from "@/lib/crm-deal";
 /** `cardWhere`: the private cards the user may see (visibleCardWhere) */
 const pipelineInclude = (cardWhere: Prisma.CrmCardWhereInput) => ({
   stages: {
-    orderBy: { order: "asc" as const },
+    orderBy: [{ order: "asc" as const }, { createdAt: "desc" as const }],
     include: { cards: { where: { ...activeCard, ...cardWhere }, orderBy: { order: "asc" as const }, include: cardListInclude } },
   },
   groups: { select: { groupId: true } },

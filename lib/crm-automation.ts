@@ -15,6 +15,7 @@ import { escapeHtml, sendMail } from "@/lib/mail";
 const isHiddenCard = async (cardId: string) => (await prisma.crmCard.count({ where: { id: cardId, NOT: activeCard } })) > 0;
 import { notifyQxbackStage } from "@/lib/crm-qxback";
 import { notifyRuleFailed } from "@/lib/crm-card-notify";
+import { notifyQxsignStage } from "@/lib/crm-qxsign";
 import {
   DEAL_STATUSES,
   FLOW_LIMITS,
@@ -124,6 +125,7 @@ export async function onDealEnteredStage(cardId: string, stageId: string) {
   if (await isHiddenCard(cardId)) return;
   // Every stage entry passes here (move, PATCH, automations, triggers, QXBACK route)
   await notifyQxbackStage(cardId, stageId).catch((error) => console.error("[crm-automation] QXBACK stage push failed", error));
+  await notifyQxsignStage(cardId, stageId).catch((error) => console.error("[crm-automation] QXSIGN stage push failed", error));
   try {
     const automations = await prisma.crmAutomation.findMany({
       // Rows with flowStepId are the actions of flow steps, run by their flow

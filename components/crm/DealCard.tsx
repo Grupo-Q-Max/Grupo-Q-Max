@@ -46,6 +46,8 @@ export type CrmDeal = {
   /** Task boards: estimated / spent time in minutes */
   estimateMinutes?: number | null;
   spentMinutes?: number | null;
+  source?: string | null;
+  customData?: unknown;
 };
 
 export function DealCard({
@@ -68,6 +70,33 @@ export function DealCard({
   const overdue = nextActivity?.deadline && new Date(nextActivity.deadline).getTime() < Date.now();
   const taskDone = isTask && deal.status === "WON";
   const taskOverdue = isTask && !taskDone && deal.closeDate && dueAt(deal.closeDate, deal.dueTime).getTime() < Date.now();
+
+  const customData = (deal.customData ?? {}) as Record<string, any>;
+  const isQxback =
+    deal.source === "QXBACK" ||
+    Boolean(customData.indicacao_id) ||
+    Boolean(customData.UF_CRM_INDICACAO_ID) ||
+    deal.title.includes("[QXBACK") ||
+    deal.title.includes("Indicação:");
+
+  // Sinalização de indicação ainda não aberta
+  const isUnopened =
+    !customData.openedAt &&
+    deal.status === "OPEN" &&
+    (isQxback || (!deal.activities?.length && !isTask));
+
+  const createdAtFormatted = deal.createdAt
+    ? new Date(deal.createdAt).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }) +
+      " às " +
+      new Date(deal.createdAt).toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
 
   return (
     <div
@@ -100,9 +129,23 @@ export function DealCard({
           <CornerDownRight size={11} /> #{deal.parent.number} · {deal.parent.title}
         </div>
       )}
+      {isUnopened && (
+        <div className="kanban-card__badge-row">
+          <span className="kanban-card__unopened-badge" title="Esta indicação ainda não foi aberta por ninguém da equipe">
+            <span className="kanban-card__unopened-dot" />
+            NÃO ABERTA · NOVA
+          </span>
+        </div>
+      )}
       <h3 className="kanban-card__title">{deal.title}</h3>
       {(deal.company || deal.contactName) && (
         <div className="kanban-card__company">{[deal.contactName, deal.company].filter(Boolean).join(" · ")}</div>
+      )}
+      {createdAtFormatted && (
+        <div className="kanban-card__created-at" title={`Data e hora da indicação: ${createdAtFormatted}`}>
+          <Clock size={11} />
+          <span>{createdAtFormatted}</span>
+        </div>
       )}
 
       {isTask ? (

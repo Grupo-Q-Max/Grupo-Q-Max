@@ -33,6 +33,7 @@ export default async function ReportsPage() {
         value: true,
         status: true,
         closedAt: true,
+        lostReason: true,
         createdAt: true,
         source: true,
         dealType: true,

@@ -11,6 +11,7 @@ export type ReportDeal = {
   value: number;
   status: "OPEN" | "WON" | "LOST";
   closedAt: string | null;
+  lostReason: string | null;
   createdAt: string;
   source: string | null;
   dealType: string | null;

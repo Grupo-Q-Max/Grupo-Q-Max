@@ -176,6 +176,9 @@ function useDealPanel(pipelineId: string, initialDealId?: string, closeUrl?: Rea
   const openDeal = useCallback(
     (deal: CrmDeal) => {
       dealChangedRef.current = false;
+      if (deal.customData && typeof deal.customData === "object") {
+        (deal.customData as any).openedAt = new Date().toISOString();
+      }
       setOpenDealId(deal.id);
       showDealUrl(deal.number);
     },

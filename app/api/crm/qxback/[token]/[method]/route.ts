@@ -30,7 +30,9 @@ async function handler(req: Request, { params }: { params: Promise<{ token: stri
         if (effect.type === "created" && !(await fireTriggers(effect.dealId, { type: "DEAL_CREATED" }))) {
           await onDealEnteredStage(effect.dealId, effect.stageId);
         }
-        if (effect.type === "updated" && effect.changedFields.length) {
+        // QXBACK moved the deal: run the new stage's rules like a move made in the board (this also tells QXBACK back)
+        if (effect.type === "updated" && effect.movedTo) await onDealEnteredStage(effect.dealId, effect.movedTo);
+        else if (effect.type === "updated" && effect.changedFields.length) {
           await fireTriggers(effect.dealId, { type: "FIELD_CHANGED", fields: effect.changedFields });
         }
       });

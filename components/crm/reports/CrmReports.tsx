@@ -274,6 +274,11 @@ export function CrmReports({
     .map((r) => ({ name: r.key, value: pick(r, "won") }))
     .filter((r) => r.value > 0)
     .sort((a, b) => b.value - a.value);
+  const byLostReason = breakdown(shown, range, (d) => d.lostReason?.trim() || "Sem motivo")
+    .map((r) => ({ name: r.key, value: pick(r, "lost") }))
+    .filter((r) => r.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
   const pie = bySource.length > 7 ? [...bySource.slice(0, 7), { name: "Outras", value: bySource.slice(7).reduce((s, r) => s + r.value, 0) }] : bySource;
 
   const closed = shown
@@ -282,7 +287,7 @@ export function CrmReports({
 
   const exportCsv = () =>
     downloadCsv(`relatorio-negocios-${range.from.toLocaleDateString("sv-SE")}.csv`, [
-      ["Número", "Negócio", "Status", "Valor", "Fechado em", "Responsável", "Funil", "Origem", "Tipo"],
+      ["Número", "Negócio", "Status", "Valor", "Fechado em", "Responsável", "Funil", "Origem", "Tipo", "Motivo da perda"],
       ...closed.map((d) => [
         d.number,
         d.title,
@@ -293,6 +298,7 @@ export function CrmReports({
         pipelineName(d.pipelineId),
         sourceOf(d),
         typeOf(d),
+        d.lostReason ?? "",
       ]),
     ]);
 
@@ -422,6 +428,16 @@ export function CrmReports({
               <YAxis type="category" dataKey="name" {...axis} width={110} />
               <Tooltip {...tooltipProps} formatter={(v) => pct.format(Number(v))} />
               <Bar dataKey="rate" name="Conversão" fill="#ff2b91" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ChartCard>
+
+          <ChartCard title="Motivos de perda" empty={!byLostReason.length} wide>
+            <BarChart data={byLostReason} layout="vertical">
+              <CartesianGrid stroke="rgba(255,255,255,0.05)" horizontal={false} />
+              <XAxis type="number" {...axis} tickFormatter={fmtAxis} allowDecimals={false} />
+              <YAxis type="category" dataKey="name" {...axis} width={180} />
+              <Tooltip {...tooltipProps} formatter={(v) => fmt(Number(v))} />
+              <Bar dataKey="value" name={lostLabel} fill={LOST} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ChartCard>
         </section>

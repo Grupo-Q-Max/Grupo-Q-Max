@@ -27,7 +27,7 @@ export class BitrixError extends Error {
 /** After a change the route refreshes the board and runs the CRM automations. */
 export type Effect = { stageId: string } & (
   | { type: "created"; dealId: string }
-  | { type: "updated"; dealId: string; changedFields: string[] }
+  | { type: "updated"; dealId: string; changedFields: string[]; /** stage the deal was moved into by this call */ movedTo?: string }
   | { type: "value" }
 );
 
@@ -106,26 +106,43 @@ export const isQxbackStage = (stageId: string) => Object.values(envMap("QXBACK_S
  * DEAL_SOURCE=crm) and refreshes its products/value — closing the gap after "Proposta enviada"
  * for edits made in the CRM UI, not through the QXBACK rest route above.
  */
-export async function notifyQxback(dealNumber: number, event = "ONCRMDEALUPDATE", extra: Record<string, string> = {}) {
-  const url = process.env.QXBACK_WEBHOOK_URL;
-  const secret = process.env.QXBACK_WEBHOOK_SECRET;
-  if (!url || !secret) return;
+const DEFAULT_QXBACK_SECRET = "qxb_hook_7c2e9a1b4d6f8e0c3a5b7d9e1f2a4c6e";
 
-  try {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        event,
-        "auth[application_token]": secret,
-        "data[FIELDS][ID]": String(dealNumber),
-        ...extra,
-      }),
-      signal: AbortSignal.timeout(10_000),
-      cache: "no-store",
-    });
-  } catch (error) {
-    console.error("Falha ao avisar QXBACK do negócio alterado:", error);
+export async function notifyQxback(dealNumber: number, event = "ONCRMDEALUPDATE", extra: Record<string, string> = {}) {
+  const secret = process.env.QXBACK_WEBHOOK_SECRET?.trim() || DEFAULT_QXBACK_SECRET;
+  const configured = process.env.QXBACK_WEBHOOK_URL?.trim();
+
+  const candidates = [
+    configured,
+    "https://qxback-hsb6hwcbfpgrf8du.brazilsouth-01.azurewebsites.net/api/webhook/crm",
+    "https://qxback.com.br/teste/api/webhook/crm",
+    "https://qxback.com.br/api/webhook/crm",
+  ].filter((u): u is string => Boolean(u && (!u.includes("localhost") || process.env.NODE_ENV !== "production")));
+
+  const urls = [...new Set(candidates)];
+  for (const targetUrl of urls) {
+    try {
+      const res = await fetch(targetUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          event,
+          "auth[application_token]": secret,
+          "data[FIELDS][ID]": String(dealNumber),
+          ...extra,
+        }),
+        signal: AbortSignal.timeout(10_000),
+        cache: "no-store",
+      });
+      if (res.ok) {
+        console.log(`[notifyQxback] Webhook entregue com sucesso para ${targetUrl} (deal #${dealNumber}, event ${event})`);
+        break;
+      } else {
+        console.warn(`[notifyQxback] Falha HTTP ${res.status} em ${targetUrl}`);
+      }
+    } catch (error) {
+      console.error(`[notifyQxback] Falha ao enviar webhook para ${targetUrl}:`, error);
+    }
   }
 }
 
@@ -280,14 +297,38 @@ export async function callMethod(method: string, params: Params): Promise<{ body
 
     case "crm.deal.update": {
       const deal = await findDeal(s, params.id);
-      // QXBACK only appends processing notes to the comment
-      if (!("COMMENTS" in fields)) return { body: { result: true } };
+      const wantsComment = "COMMENTS" in fields;
+      const wantsStage = "STAGE_ID" in fields;
+      // QXBACK appends processing notes to the comment and moves the deal when its admin moves/closes the card there
+      if (!wantsComment && !wantsStage) return { body: { result: true } };
+
       // The comment carries "ID da Indicação: N", the only link QXBACK's scripts have: never overwrite it with junk
-      if (typeof fields.COMMENTS !== "string") throw new BitrixError("INVALID_PARAMS", "COMMENTS deve ser texto");
-      const result = await updateDeal(deal.id, { comment: fields.COMMENTS });
+      if (wantsComment && typeof fields.COMMENTS !== "string") throw new BitrixError("INVALID_PARAMS", "COMMENTS deve ser texto");
+
+      let stageId: string | undefined;
+      if (wantsStage) {
+        const code = text(fields.STAGE_ID);
+        stageId = s.stages[code];
+        if (!stageId) throw new BitrixError("STAGE_NOT_MAPPED", `Etapa ${code || "(vazia)"} sem correspondente em QXBACK_STAGES`);
+        // Same entry rules as a manual move (Proposta em Análise needs priced services, Negócio Perdido needs the reason);
+        // a refusal is answered as a Bitrix error so QXBACK can show it
+        if (stageId !== deal.stageId) {
+          try {
+            await checkStageEntry(deal.id, stageId, fields[LOST_REASON_FIELD]);
+          } catch (error) {
+            if (error instanceof StageEntryError) throw new BitrixError("STAGE_ENTRY_REFUSED", error.message);
+            throw error;
+          }
+        }
+      }
+
+      const moved = stageId && stageId !== deal.stageId ? stageId : undefined;
+      const result = await updateDeal(deal.id, { ...(wantsComment ? { comment: fields.COMMENTS } : {}), ...(moved ? { stageId: moved } : {}) });
       return {
         body: { result: true },
-        effect: result.changed ? { type: "updated", dealId: deal.id, stageId: result.stageId, changedFields: result.changedFields } : undefined,
+        effect: result.changed
+          ? { type: "updated", dealId: deal.id, stageId: result.stageId, changedFields: result.changedFields, movedTo: result.movedTo ?? undefined }
+          : undefined,
       };
     }
 
@@ -335,8 +376,14 @@ export async function callMethod(method: string, params: Params): Promise<{ body
       const companyId = text(fields.COMPANY_ID) || null;
       const contactId = text(fields.CONTACT_ID);
 
-      const deal = await prisma.$transaction(async (tx) =>
-        tx.crmCard.create({
+      const deal = await prisma.$transaction(async (tx) => {
+        // Incrementa a ordem dos cards existentes nessa etapa para que a nova indicação sempre fique no topo (ordem 0)
+        await tx.crmCard.updateMany({
+          where: { stageId },
+          data: { order: { increment: 1 } },
+        });
+
+        return tx.crmCard.create({
           data: {
             title,
             value: num(fields.OPPORTUNITY) || 0,
@@ -344,16 +391,16 @@ export async function callMethod(method: string, params: Params): Promise<{ body
             companyId: companyId ? (await tx.crmCompany.findUnique({ where: { id: companyId }, select: { id: true } }))?.id : null,
             comment: text(fields.COMMENTS) || null,
             source: "QXBACK",
-            customData,
-            order: await tx.crmCard.count({ where: { stageId } }),
+            customData: { ...customData, openedAt: null },
+            order: 0,
             history: { create: { type: "CREATED", data: { title } } },
             ...(contactId && (await tx.crmContact.findUnique({ where: { id: contactId }, select: { id: true } }))
               ? { contacts: { create: { contactId, order: 0 } } }
               : {}),
           },
           select: { id: true, number: true },
-        })
-      );
+        });
+      });
       return { body: { result: deal.number }, effect: { type: "created", dealId: deal.id, stageId } };
     }
 
