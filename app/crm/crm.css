@@ -85,6 +85,15 @@
   color: #d90f81;
 }
 
+/* Global search: reuses the deal panel's LookupInput, so it needs the panel's color tokens */
+.crm-search {
+  --deal-surface-2: #1a1a1c;
+  --deal-border: rgba(255, 255, 255, 0.08);
+  --deal-text: #f7f7f7;
+  --deal-subtle: #716d75;
+  margin: -32px 0 24px;
+}
+
 .crm-nav {
   display: flex;
   flex-direction: column;

@@ -67,19 +67,46 @@ export async function GET(req: Request) {
     if (type === "card") {
       // Without pipelineId: any board the user sees ("Vínculos"), with the board name
       const pipelineId = url.searchParams.get("pipelineId");
+      // global=1: sidebar search, also by company and contact name/e-mail
+      const global = url.searchParams.get("global") === "1";
       const number = Number(q.replace(/^#/, ""));
       const cards = await prisma.crmCard.findMany({
         where: {
           ...activeCard,
           stage: { ...(pipelineId && { pipelineId }), pipeline: await visiblePipelineWhere() },
-          AND: [await visibleCardWhere(), { OR: [{ title: { contains: q } }, ...(Number.isInteger(number) && number > 0 ? [{ number }] : [])] }],
+          AND: [
+            await visibleCardWhere(),
+            {
+              OR: [
+                { title: { contains: q } },
+                ...(Number.isInteger(number) && number > 0 ? [{ number }] : []),
+                ...(global
+                  ? [
+                      { company: { name: { contains: q } } },
+                      { contacts: { some: { contact: { OR: [{ name: { contains: q } }, { email: { contains: q } }] } } } },
+                    ]
+                  : []),
+              ],
+            },
+          ],
         },
         orderBy: { number: "desc" },
         take: LIMIT,
-        select: { id: true, number: true, title: true, status: true, stage: { select: { pipeline: { select: { name: true } } } } },
+        select: {
+          id: true,
+          number: true,
+          title: true,
+          status: true,
+          company: { select: { name: true } },
+          stage: { select: { name: true, pipeline: { select: { name: true } } } },
+        },
       });
       return NextResponse.json(
-        cards.map(({ stage, ...c }) => ({ ...c, name: `#${c.number} ${c.title}${pipelineId ? "" : ` · ${stage.pipeline.name}`}` }))
+        cards.map(({ stage, company, ...c }) => ({
+          ...c,
+          name: `#${c.number} ${c.title}${pipelineId ? "" : ` · ${stage.pipeline.name}`}`,
+          detail: [stage.name, company?.name].filter(Boolean).join(" · "),
+        }))
       );
     }
 
