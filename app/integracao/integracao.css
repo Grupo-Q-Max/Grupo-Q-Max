@@ -141,8 +141,9 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
 }
 
+/* At most 3 columns */
 .onb-grid--3 {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, max(280px, (100% - 48px) / 3)), 1fr));
 }
 
 .onb-card {
@@ -316,6 +317,12 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
   gap: 20px;
+}
+
+@media (max-width: 600px) {
+  .onb-steps {
+    grid-template-columns: 1fr;
+  }
 }
 
 .onb-steps h4 {
