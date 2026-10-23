@@ -139,7 +139,7 @@ const otherProducts = [
     name: "QXSIGN",
     kicker: "Documentação digital",
     accent: "#16e1d4",
-    text: "Atendimento personalizado para emissão de certificados digitais e documentação digital. Ofereça quando o cliente precisa de e-CNPJ, e-CPF ou assinar documentos digitalmente — comum na abertura de empresas e em obrigações fiscais.",
+    text: "Atendimento personalizado para emissão de certificados digitais e documentação digital. Ofereça quando o cliente precisa de e-CNPJ, e-CPF ou assinar documentos digitalmente — comum na abertura de empresas e em obrigações fiscais. Cada pedido vira um card no pipeline QXSIGN do CRM e passa por: Pedidos, Aguardando Financeiro, Agendamento, Emissão de NF, Emissão do certificado, Pesquisa de satisfação e Concluído.",
     href: "https://qxsign.com.br",
     external: true,
   },
@@ -193,7 +193,7 @@ const crmFeatures = [
   },
 ];
 
-const closingUrl = "https://grupoqmax.com.br/controle-fechamento-2";
+const closingUrl = "https://grupoqmax.com.br/controle-fechamento-2/login";
 
 const closingSteps = [
   {
