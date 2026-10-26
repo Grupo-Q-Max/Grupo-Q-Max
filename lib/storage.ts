@@ -36,6 +36,13 @@ export function getUploadsDir(): string {
   return dir;
 }
 
+const IMAGE_EXTENSIONS: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/** Extension for an uploaded raster image (png/jpg/webp up to 5 MB), or null when not allowed. */
+export const imageExtension = (file: File) =>
+  file.size <= MAX_IMAGE_BYTES ? (IMAGE_EXTENSIONS[file.type] ?? null) : null;
+
 /**
  * Path of a file served by /api/files: persistent uploads first, then the packaged fallbacks
  * (public/team, public/brands). Case-insensitive; null when not found.

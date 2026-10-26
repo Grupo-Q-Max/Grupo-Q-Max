@@ -22,7 +22,7 @@ export async function GET(
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    const buffer = fs.readFileSync(/*turbopackIgnore: true*/ resolvedPath);
+    const buffer = await fs.promises.readFile(/*turbopackIgnore: true*/ resolvedPath);
     const ext = safeName.split(".").pop()?.toLowerCase() || "jpg";
 
     const mimeMap: Record<string, string> = {
@@ -43,6 +43,9 @@ export async function GET(
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=31536000, immutable",
+        "X-Content-Type-Options": "nosniff",
+        // An SVG opened directly could run script on this origin; the sandbox blocks it
+        "Content-Security-Policy": "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
       },
     });
   } catch (err) {
