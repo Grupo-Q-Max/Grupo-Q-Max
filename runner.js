@@ -6,28 +6,20 @@ console.log('[RUNNER] ==========================================');
 console.log('[RUNNER] INICIANDO ECOSSISTEMA GRUPO Q-MAX + EVENTOS');
 console.log('[RUNNER] ==========================================');
 
-// Variáveis de ambiente para a API de Eventos
+// Variáveis de ambiente para a API de Eventos (segredos vêm do .env gerado no deploy)
 const apiEnv = {
   ...process.env,
   PORT: '3334',
-  DATABASE_URL:
-    process.env.EVENTOS_DATABASE_URL ||
-    process.env.DATABASE_URL_EVENTOS ||
-    'mysql://eventos:U2a6M2slUs-^@webbd01-app-server.mysql.database.azure.com:3306/eventos?sslaccept=strict',
-  JWT_SECRET:
-    process.env.EVENTOS_JWT_SECRET ||
-    'LrHr6PbK8VwoJOyEAWJb8LQRmrL9BtnMPnV1FvKNXKAKaPGqX0zwE7znNm08u9cM4Tjc1KlyvByqXUzrRGU0wQ==',
-  CPF_HASH_SECRET:
-    process.env.EVENTOS_CPF_HASH_SECRET ||
-    'sH/m2ZPzl2LKsVk7vltdhyskTxw9AytxVWYUb4xHCgm0er8TPZPJU8AvKPfoaUnMYyTpteYEsW/k1k2SJKsMJQ==',
-  DATA_ENCRYPTION_KEY:
-    process.env.EVENTOS_DATA_ENCRYPTION_KEY ||
-    'KpNIaoTapxUlgRL8zfFJf28/h7GuRWt1/6x1pNwu9gU=',
-  FINORA_ADMIN_API_KEY:
-    process.env.FINORA_ADMIN_API_KEY ||
-    'd1e5e0767cdf3fa8011eac46f983cbaf3d2f5aff806d27c6631cb751b4c8c9b3',
+  DATABASE_URL: process.env.EVENTOS_DATABASE_URL || process.env.DATABASE_URL_EVENTOS,
+  JWT_SECRET: process.env.EVENTOS_JWT_SECRET,
+  CPF_HASH_SECRET: process.env.EVENTOS_CPF_HASH_SECRET,
+  DATA_ENCRYPTION_KEY: process.env.EVENTOS_DATA_ENCRYPTION_KEY,
+  FINORA_ADMIN_API_KEY: process.env.FINORA_ADMIN_API_KEY,
   DISABLE_WHATSAPP: process.env.DISABLE_WHATSAPP || 'true',
 };
+for (const name of ['EVENTOS_JWT_SECRET', 'EVENTOS_CPF_HASH_SECRET', 'EVENTOS_DATA_ENCRYPTION_KEY', 'FINORA_ADMIN_API_KEY']) {
+  if (!process.env[name]) console.warn(`[RUNNER] ${name} não definido no .env`);
+}
 
 // Variáveis de ambiente para o Web de Eventos
 const webEnv = {
@@ -36,12 +28,8 @@ const webEnv = {
   HOSTNAME: '0.0.0.0',
   FINORA_INTERNAL_API_URL: 'http://127.0.0.1:3334/api/v1',
   NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3334/api/v1',
-  FINORA_ADMIN_API_KEY:
-    process.env.FINORA_ADMIN_API_KEY ||
-    'd1e5e0767cdf3fa8011eac46f983cbaf3d2f5aff806d27c6631cb751b4c8c9b3',
-  FINORA_ADMIN_SESSION_TOKEN:
-    process.env.FINORA_ADMIN_SESSION_TOKEN ||
-    '66b34419aded34f57ad0b5a70375e8c9174bc3c1a10ee72b61272e7a2ee406df',
+  FINORA_ADMIN_API_KEY: process.env.FINORA_ADMIN_API_KEY,
+  FINORA_ADMIN_SESSION_TOKEN: process.env.FINORA_ADMIN_SESSION_TOKEN,
 };
 
 // 1. Iniciar API de Eventos

@@ -27,6 +27,13 @@ jobs:
       QXBACK_FIELDS: ${{ secrets.QXBACK_FIELDS }}
       QXBACK_WEBHOOK_URL: ${{ secrets.QXBACK_WEBHOOK_URL }}
       QXBACK_WEBHOOK_SECRET: ${{ secrets.QXBACK_WEBHOOK_SECRET }}
+      # Eventos (Finora Experience) API/web, read from the same .env by runner.js
+      EVENTOS_DATABASE_URL: ${{ secrets.EVENTOS_DATABASE_URL }}
+      EVENTOS_JWT_SECRET: ${{ secrets.EVENTOS_JWT_SECRET }}
+      EVENTOS_CPF_HASH_SECRET: ${{ secrets.EVENTOS_CPF_HASH_SECRET }}
+      EVENTOS_DATA_ENCRYPTION_KEY: ${{ secrets.EVENTOS_DATA_ENCRYPTION_KEY }}
+      FINORA_ADMIN_API_KEY: ${{ secrets.FINORA_ADMIN_API_KEY }}
+      FINORA_ADMIN_SESSION_TOKEN: ${{ secrets.FINORA_ADMIN_SESSION_TOKEN }}
 
     steps:
       - name: Checkout Repository
@@ -106,15 +113,10 @@ jobs:
           echo "MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID}" >> deploy/.env
           echo "MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}" >> deploy/.env
           echo "MICROSOFT_ALLOWED_DOMAINS=${MICROSOFT_ALLOWED_DOMAINS}" >> deploy/.env
-          echo "EVENTOS_DATABASE_URL='mysql://eventos:U2a6M2slUs-^@webbd01-app-server.mysql.database.azure.com:3306/eventos?sslaccept=strict'" >> deploy/.env
-          echo "EVENTOS_JWT_SECRET='LrHr6PbK8VwoJOyEAWJb8LQRmrL9BtnMPnV1FvKNXKAKaPGqX0zwE7znNm08u9cM4Tjc1KlyvByqXUzrRGU0wQ=='" >> deploy/.env
-          echo "EVENTOS_CPF_HASH_SECRET='sH/m2ZPzl2LKsVk7vltdhyskTxw9AytxVWYUb4xHCgm0er8TPZPJU8AvKPfoaUnMYyTpteYEsW/k1k2SJKsMJQ=='" >> deploy/.env
-          echo "EVENTOS_DATA_ENCRYPTION_KEY='KpNIaoTapxUlgRL8zfFJf28/h7GuRWt1/6x1pNwu9gU='" >> deploy/.env
-          echo "FINORA_ADMIN_API_KEY='d1e5e0767cdf3fa8011eac46f983cbaf3d2f5aff806d27c6631cb751b4c8c9b3'" >> deploy/.env
-          echo "FINORA_ADMIN_SESSION_TOKEN='66b34419aded34f57ad0b5a70375e8c9174bc3c1a10ee72b61272e7a2ee406df'" >> deploy/.env
           echo "DISABLE_WHATSAPP='true'" >> deploy/.env
           # Aspas simples: QXBACK_STAGES/QXBACK_FIELDS são JSON; secret vazio = variável fora do .env (node --env-file)
-          for name in AUTH_SECRET ADMIN_PASSWORD QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET; do
+          for name in AUTH_SECRET ADMIN_PASSWORD QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET \
+            EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN; do
             if [ -n "${!name}" ]; then echo "${name}='${!name}'" >> deploy/.env; fi
           done
 
