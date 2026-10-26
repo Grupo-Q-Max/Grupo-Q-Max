@@ -35,6 +35,11 @@ jobs:
       QXBACK_FIELDS: ${{ secrets.QXBACK_FIELDS }}
       QXBACK_WEBHOOK_URL: ${{ secrets.QXBACK_WEBHOOK_URL }}
       QXBACK_WEBHOOK_SECRET: ${{ secrets.QXBACK_WEBHOOK_SECRET }}
+      # Integração QXSign (lib/crm-qxsign.ts); sem QXSIGN_TOKEN a rota recusa tudo
+      QXSIGN_TOKEN: ${{ secrets.QXSIGN_TOKEN }}
+      QXSIGN_STAGES: ${{ secrets.QXSIGN_STAGES }}
+      QXSIGN_WEBHOOK_URL: ${{ secrets.QXSIGN_WEBHOOK_URL }}
+      QXSIGN_WEBHOOK_SECRET: ${{ secrets.QXSIGN_WEBHOOK_SECRET }}
       # Eventos (Finora Experience) API/web, read from the same .env by runner.js
       EVENTOS_DATABASE_URL: ${{ secrets.EVENTOS_DATABASE_URL }}
       EVENTOS_JWT_SECRET: ${{ secrets.EVENTOS_JWT_SECRET }}
@@ -128,6 +133,7 @@ jobs:
           echo "DISABLE_WHATSAPP='true'" >> deploy/.env
           # Aspas simples: QXBACK_STAGES/QXBACK_FIELDS são JSON; secret vazio = variável fora do .env (node --env-file)
           for name in AUTH_SECRET ADMIN_PASSWORD QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET \
+            QXSIGN_TOKEN QXSIGN_STAGES QXSIGN_WEBHOOK_URL QXSIGN_WEBHOOK_SECRET \
             EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN; do
             if [ -n "${!name}" ]; then echo "${name}='${!name}'" >> deploy/.env; fi
           done
