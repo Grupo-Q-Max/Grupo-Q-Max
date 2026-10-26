@@ -42,3 +42,6 @@ azure-pipelines.backup-*.yml
 /replace_colors.js
 /runs.json
 /seed_socios.*
+Grupo-Q-Max/
+*.sql
+*.git_backup

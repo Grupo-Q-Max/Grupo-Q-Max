@@ -1,0 +1,48 @@
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import EventSelector from "@/components/admin/EventSelector";
+import AdminAgendaView from "@/components/admin/AdminAgendaView";
+import { getEvents } from "@/lib/api";
+
+type Props = {
+  searchParams: Promise<{ event?: string }>;
+};
+
+export default async function AdminAgendaPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const events = await getEvents();
+  const eventId = params.event ? parseInt(params.event, 10) : 2;
+
+  return (
+    <div className="adminShell">
+      <AdminSidebar />
+      <main className="adminMain adminPaper bg-paper text-text flex-1 min-w-0 overflow-hidden p-6 md:p-10 lg:p-14 relative z-0">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E6F0FF] rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#EFEBFD] rounded-full blur-[120px] pointer-events-none -z-10" />
+
+        <div className="max-w-6xl mx-auto space-y-10">
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-line">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-3 py-1 bg-[#E6F0FF] border border-[#B9D4F7] text-finora-600 text-xs font-bold uppercase tracking-widest rounded-lg">
+                  Funil Comercial
+                </span>
+              </div>
+              <h1 className="font-display text-[30px] font-bold tracking-[-0.02em]">
+                Agenda de Reuniões
+              </h1>
+              <p className="text-text-2 mt-2 text-sm max-w-xl">
+                Gerencie todos os visitantes que agendaram consultoria VIP. Marque presença ou no-show para organizar seus leads.
+              </p>
+            </div>
+            
+            <div className="shrink-0 w-full md:w-64">
+              <EventSelector events={events} currentEventId={eventId} />
+            </div>
+          </header>
+
+          <AdminAgendaView eventId={eventId} />
+        </div>
+      </main>
+    </div>
+  );
+}

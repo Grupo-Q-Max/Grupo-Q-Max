@@ -1,0 +1,543 @@
+@import "tailwindcss";
+
+/* ============================================================
+   FINORA EXPERIENCE — REDESIGN TOKENS
+   Palco (ink): quiosque, telão, roleta, cofre, sorteio.
+   Papel (paper): celular e admin.
+   Destaque por evento: data-event="clinicorp|sucesso-odonto".
+   ============================================================ */
+
+@theme {
+  --color-ink-950: #050811;
+  --color-ink-900: #0A1020;
+  --color-ink-800: #101930;
+  --color-ink-700: #1A2845;
+  --color-ink-line: rgba(255, 255, 255, 0.08);
+  --color-ink-text: #F8FAFC;
+  --color-ink-text-2: #94A3B8;
+
+  --color-paper: #070B16;
+  --color-surface: #0E1628;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.16);
+  --color-text: #F8FAFC;
+  --color-text-2: #94A3B8;
+
+  --color-finora-300: #6BB0FF;
+  --color-finora-500: #0077FF;
+  --color-finora-600: #0062D6;
+  --color-finora-700: #004BA8;
+
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+
+  --color-legendary: #FFA24C;
+  --color-epic: #C084FC;
+  --color-rare: #38BDF8;
+
+  --radius-field: 14px;
+  --radius-card: 22px;
+}
+
+@theme inline {
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-sans: var(--font-figtree), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --color-accent: var(--event-accent);
+  --color-accent-ink: var(--event-accent-ink);
+}
+
+:root,
+[data-event="clinicorp"] {
+  --event-accent: #22C3DC;
+  --event-accent-ink: #0E7490;
+}
+
+[data-event="sucesso-odonto"] {
+  --event-accent: #F5B301;
+  --event-accent-ink: #8A5D00;
+}
+
+/* Provisório: trocar pela cor oficial do Invictus. */
+[data-event="invictus"] {
+  --event-accent: #E5484D;
+  --event-accent-ink: #B4232A;
+}
+
+:root {
+  --qmax-magenta: #d90f81;
+  --qmax-brand-white: #ffffff;
+  --bg: #050811;
+}
+
+.qmax-brand-word {
+  color: var(--qmax-magenta) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  color-scheme: dark;
+}
+
+html,
+body {
+  font-family: var(--font-sans);
+  background: #050811;
+  color: #F8FAFC;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit !important;
+}
+
+/* Kiosk Floating Tools in Corner */
+.clinicorpKioskTools {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 0 10px 30px rgba(6, 78, 59, 0.12);
+}
+
+.clinicorpConnectionStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.clinicorpConnectionStatus.online {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.clinicorpConnectionStatus.offline {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.clinicorpKioskToolButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.clinicorpKioskToolButton:hover {
+  color: #064e3b;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.clinicorpOfflineBanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  padding: 10px 20px;
+  background: #dc2626;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+}
+
+/* ROLETA AO VIVO: composição usada pelo totem em produção */
+
+.clinicorpKioskTools {
+  position: fixed;
+
+  z-index: 9998;
+
+  right: 18px;
+  bottom: 18px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 5px;
+
+  border:
+    1px solid
+    rgba(22, 96, 78, 0.09);
+
+  border-radius: 11px;
+
+  background:
+    rgba(255, 255, 255, 0.72);
+
+  backdrop-filter:
+    blur(16px);
+
+  box-shadow:
+    0 12px 32px
+    rgba(35, 74, 62, 0.08);
+}
+
+.clinicorpKioskToolButton,
+.clinicorpConnectionStatus {
+  width: 31px;
+  height: 31px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 8px;
+
+  border: 0;
+
+  background:
+    transparent;
+
+  color: #71857e;
+}
+
+.clinicorpKioskToolButton {
+  cursor: pointer;
+
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.clinicorpKioskToolButton:hover {
+  background: #e8f3ee;
+
+  color: #176f5c;
+
+  transform:
+    translateY(-1px);
+}
+
+.clinicorpConnectionStatus.online {
+  color: #1c8068;
+}
+
+.clinicorpConnectionStatus.offline {
+  color: #ba5955;
+
+  background: #fff0ef;
+}
+
+.clinicorpOfflineBanner {
+  position: fixed;
+
+  z-index: 10000;
+
+  top: 16px;
+  left: 50%;
+
+  transform:
+    translateX(-50%);
+
+  width:
+    min(
+      500px,
+      calc(100% - 32px)
+    );
+
+  min-height: 48px;
+
+  padding:
+    9px 14px;
+
+  display: grid;
+
+  grid-template-columns:
+    24px
+    auto;
+
+  align-items: center;
+
+  column-gap: 8px;
+
+  border:
+    1px solid
+    rgba(178, 71, 67, 0.16);
+
+  border-radius: 12px;
+
+  background:
+    rgba(255, 244, 243, 0.96);
+
+  backdrop-filter:
+    blur(18px);
+
+  color: #ad504d;
+
+  box-shadow:
+    0 18px 45px
+    rgba(111, 52, 49, 0.12);
+}
+
+.clinicorpOfflineBanner > svg {
+  grid-row:
+    1 / span 2;
+}
+
+.clinicorpOfflineBanner strong {
+  font-size: 9px;
+}
+
+.clinicorpOfflineBanner span {
+  color: #9b6b69;
+
+  font-size: 7px;
+}
+
+@media (max-width: 600px) {
+  .clinicorpKioskTools {
+    right: 10px;
+    bottom: 10px;
+  }
+}
+
+/* ============================================================
+   SHELL DO ADMIN — LUXURY COMMAND CENTER (GRUPO Q-MAX INSPIRATION)
+   ============================================================ */
+
+.adminShell {
+  display: flex;
+  min-height: 100dvh;
+  background: #050811;
+  color: #F8FAFC;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.adminMain {
+  flex: 1;
+  min-width: 0;
+  padding: 28px clamp(18px, 2.5vw, 40px) 48px;
+  background: #070B16;
+  color: #F8FAFC;
+}
+
+.adminMain.adminPaper {
+  background: radial-gradient(circle at 88% 8%, rgba(217, 15, 129, 0.05), transparent 45%),
+              radial-gradient(circle at 12% 92%, rgba(34, 195, 220, 0.04), transparent 40%),
+              #070B16;
+  color: #F8FAFC;
+}
+
+@media (max-width: 1024px) {
+  .adminShell {
+    flex-direction: column;
+  }
+
+  .adminMain {
+    padding: 18px 14px 36px;
+  }
+}
+
+/* Glassmorphism & High-End Card Design */
+.glass-panel {
+  background: rgba(14, 22, 40, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+}
+
+.glass-card {
+  background: rgba(14, 22, 40, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+/* Inputs & Form Elements */
+input, select, textarea {
+  color-scheme: dark;
+}
+
+/* Custom Sleek Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ============================================================
+   SPECTACULAR EVENT ANIMATIONS & VISUAL FX
+   ============================================================ */
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 25px var(--event-accent, #22C3DC), 0 0 50px rgba(34, 195, 220, 0.25);
+    opacity: 0.95;
+  }
+  50% {
+    box-shadow: 0 0 50px var(--event-accent, #22C3DC), 0 0 100px rgba(34, 195, 220, 0.5);
+    opacity: 1;
+  }
+}
+
+@keyframes pointerFlick {
+  0%, 100% {
+    transform: translateX(-50%) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-50%) rotate(-12deg);
+  }
+  75% {
+    transform: translateX(-50%) rotate(8deg);
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes holographicShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes ledBlink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 12px var(--event-accent, #22C3DC));
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+    filter: none;
+  }
+}
+
+@keyframes ledChase {
+  0% {
+    opacity: 0.25;
+    transform: scale(0.85);
+    filter: none;
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+    filter: drop-shadow(0 0 8px #ffffff) drop-shadow(0 0 18px var(--event-accent, #22C3DC));
+  }
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+    filter: none;
+  }
+}
+
+@keyframes popBurst {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+.animate-pointer-flick {
+  animation: pointerFlick 0.09s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: floatSlow 4s ease-in-out infinite;
+}
+
+.animate-pop-burst {
+  animation: popBurst 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.holographic-card {
+  background: linear-gradient(115deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.12) 30%, rgba(255,255,255,0.03) 60%);
+  background-size: 200% 100%;
+  animation: holographicShimmer 4s linear infinite;
+}
+
+.cyber-grid-overlay {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+}

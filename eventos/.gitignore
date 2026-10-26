@@ -1,0 +1,29 @@
+node_modules/
+.env
+.env.*.local
+.env.local
+.DS_Store
+dist/
+build/
+.next/
+coverage/
+*.log
+_backups/
+backup-*/
+*.backup-*
+*.bak
+
+
+# AI project skill (local, não versionar)
+/.claude/skills/project-finora-experience/
+*.ps1
+diff.txt
+
+# Arquivos locais e temporários de manutenção
+*.xlsx
+check.js
+check-dups.js
+test_db.js
+clean-queue.js
+clean-queue.mjs
+

@@ -1,0 +1,444 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "cjs"
+  generatedFileExtension = "ts"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model admin_users {
+  id                    Int                     @id @default(autoincrement()) @db.UnsignedInt
+  name                  String                  @db.VarChar(150)
+  email                 String                  @unique(map: "uq_admin_users_email") @db.VarChar(190)
+  password_hash         String                  @db.VarChar(255)
+  role                  admin_users_role        @default(ADMIN)
+  active                Boolean                 @default(true)
+  last_login_at         DateTime?               @db.DateTime(0)
+  created_at            DateTime                @default(now()) @db.DateTime(0)
+  updated_at            DateTime                @default(now()) @db.DateTime(0)
+  audit_logs            audit_logs[]
+  draws                 draws[]
+  prize_queue           prize_queue[]
+  prize_stock_movements prize_stock_movements[]
+
+  @@index([active], map: "idx_admin_users_active")
+  @@index([role], map: "idx_admin_users_role")
+}
+
+model audit_logs {
+  id            BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  event_id      Int?         @db.UnsignedInt
+  admin_user_id Int?         @db.UnsignedInt
+  actor_type    String       @db.VarChar(50)
+  action        String       @db.VarChar(100)
+  entity_type   String?      @db.VarChar(100)
+  entity_id     String?      @db.VarChar(100)
+  description   String?      @db.Text
+  before_data   String?      @db.LongText
+  after_data    String?      @db.LongText
+  metadata      String?      @db.LongText
+  ip_address    String?      @db.VarChar(64)
+  user_agent    String?      @db.Text
+  created_at    DateTime     @default(now()) @db.DateTime(0)
+  admin_users   admin_users? @relation(fields: [admin_user_id], references: [id], map: "fk_audit_admin")
+  events        events?      @relation(fields: [event_id], references: [id], map: "fk_audit_event")
+
+  @@index([action], map: "idx_audit_action")
+  @@index([admin_user_id], map: "idx_audit_admin")
+  @@index([created_at], map: "idx_audit_created_at")
+  @@index([entity_type, entity_id], map: "idx_audit_entity")
+  @@index([event_id], map: "idx_audit_event")
+}
+
+model draws {
+  id                 Int            @id @default(autoincrement()) @db.UnsignedInt
+  participation_id   Int            @unique(map: "uq_draws_participation") @db.UnsignedInt
+  prize_id           Int            @db.UnsignedInt
+  source             draws_source
+  probability_used   Decimal?       @db.Decimal(7, 4)
+  forced_by_admin_id Int?           @db.UnsignedInt
+  drawn_at           DateTime       @default(now()) @db.DateTime(0)
+  claimed_at         DateTime?      @db.DateTime(0)
+  admin_users        admin_users?   @relation(fields: [forced_by_admin_id], references: [id], map: "fk_draws_admin")
+  participations     participations @relation(fields: [participation_id], references: [id], onDelete: Cascade, map: "fk_draws_participation")
+  prizes             prizes         @relation(fields: [prize_id], references: [id], map: "fk_draws_prize")
+
+  @@index([forced_by_admin_id], map: "idx_draws_admin")
+  @@index([drawn_at], map: "idx_draws_drawn_at")
+  @@index([prize_id], map: "idx_draws_prize")
+}
+
+model event_participants {
+  id             Int          @id @default(autoincrement()) @db.UnsignedInt
+  event_id       Int          @db.UnsignedInt
+  participant_id Int          @db.UnsignedInt
+  registered_at  DateTime     @default(now()) @db.DateTime(0)
+  events         events       @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_event_participants_event")
+  participants   participants @relation(fields: [participant_id], references: [id], onDelete: Cascade, map: "fk_event_participants_participant")
+
+  @@unique([event_id, participant_id], map: "uq_event_participant")
+  @@index([event_id], map: "idx_event_participants_event")
+  @@index([participant_id], map: "idx_event_participants_participant")
+}
+
+model events {
+  id                      Int                     @id @default(autoincrement()) @db.UnsignedInt
+  name                    String                  @db.VarChar(190)
+  slug                    String                  @unique(map: "uq_events_slug") @db.VarChar(190)
+  description             String?                 @db.Text
+  status                  events_status           @default(DRAFT)
+  starts_at               DateTime?               @db.DateTime(0)
+  ends_at                 DateTime?               @db.DateTime(0)
+  participation_enabled   Boolean                 @default(false)
+  whatsapp_message        String?                 @db.Text
+  whatsapp_prize_message  String?                 @db.Text
+  whatsapp_resend_message String?                 @db.Text
+  whatsapp_vip_message    String?                 @db.Text
+  whatsapp_channel_link   String?                 @db.VarChar(500)
+  accent_color            String?                 @db.VarChar(7)
+  accent_ink_color        String?                 @db.VarChar(7)
+  experience              events_experience       @default(ROLETA)
+  alert_phone             String?                 @db.VarChar(20)
+  stock_alert_percent     Int                     @default(20) @db.UnsignedTinyInt
+  crm_webhook_url         String?                 @db.VarChar(500)
+  created_at              DateTime                @default(now()) @db.DateTime(0)
+  updated_at              DateTime                @default(now()) @db.DateTime(0)
+  audit_logs              audit_logs[]
+  event_participants      event_participants[]
+  fraud_checks            fraud_checks[]
+  fraud_rules             fraud_rules[]
+  participations          participations[]
+  prize_queue             prize_queue[]
+  prize_stock_movements   prize_stock_movements[]
+  prizes                  prizes[]
+  message_queue           message_queue[]
+  meetings                meetings[]
+  vip_codes               vip_codes[]
+
+  @@index([ends_at], map: "idx_events_ends_at")
+  @@index([starts_at], map: "idx_events_starts_at")
+  @@index([status], map: "idx_events_status")
+}
+
+model fraud_checks {
+  id                Int                    @id @default(autoincrement()) @db.UnsignedInt
+  event_id          Int                    @db.UnsignedInt
+  participation_id  Int?                   @db.UnsignedInt
+  rule_type         fraud_checks_rule_type
+  identifier_hash   String?                @db.VarChar(190)
+  identifier_masked String?                @db.VarChar(190)
+  previous_count    Int                    @default(0) @db.UnsignedInt
+  configured_limit  Int                    @db.UnsignedInt
+  decision          fraud_checks_decision
+  reason            String?                @db.Text
+  ip_address        String?                @db.VarChar(64)
+  device_id         String?                @db.VarChar(190)
+  created_at        DateTime               @default(now()) @db.DateTime(0)
+  events            events                 @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_fraud_checks_event")
+  participations    participations?        @relation(fields: [participation_id], references: [id], map: "fk_fraud_checks_participation")
+
+  @@index([created_at], map: "idx_fraud_checks_created_at")
+  @@index([event_id], map: "idx_fraud_checks_event")
+  @@index([identifier_hash], map: "idx_fraud_checks_identifier_hash")
+  @@index([participation_id], map: "idx_fraud_checks_participation")
+  @@index([rule_type], map: "idx_fraud_checks_rule_type")
+}
+
+model fraud_rules {
+  id          Int                @id @default(autoincrement()) @db.UnsignedInt
+  event_id    Int                @db.UnsignedInt
+  type        fraud_rules_type
+  enabled     Boolean            @default(true)
+  max_allowed Int                @default(1) @db.UnsignedInt
+  action      fraud_rules_action @default(BLOCK)
+  description String?            @db.VarChar(255)
+  created_at  DateTime           @default(now()) @db.DateTime(0)
+  updated_at  DateTime           @default(now()) @db.DateTime(0)
+  events      events             @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_fraud_rules_event")
+
+  @@unique([event_id, type], map: "uq_fraud_rules_event_type")
+  @@index([event_id], map: "idx_fraud_rules_event")
+}
+
+model participants {
+  id                 Int                  @id @default(autoincrement()) @db.UnsignedInt
+  full_name          String               @db.VarChar(190)
+  cpf_encrypted      String               @db.Text
+  cpf_hash           String               @unique(map: "uq_participants_cpf_hash") @db.VarChar(128)
+  cpf_last_digits    String               @db.Char(4)
+  phone              String               @db.VarChar(40)
+  phone_normalized   String               @db.VarChar(30)
+  email              String?              @db.VarChar(190)
+  email_normalized   String?              @db.VarChar(190)
+  cro_number         String?              @db.VarChar(50)
+  cro_state          String?              @db.Char(2)
+  clinic_name        String?              @db.VarChar(190)
+  city               String?              @db.VarChar(120)
+  state              String?              @db.Char(2)
+  chairs_count       Int?                 @db.UnsignedInt
+  marketing_consent  Boolean              @default(false)
+  privacy_consent    Boolean              @default(false)
+  consented_at       DateTime?            @db.DateTime(0)
+  created_at         DateTime             @default(now()) @db.DateTime(0)
+  updated_at         DateTime             @default(now()) @db.DateTime(0)
+  event_participants event_participants[]
+  participations     participations[]
+  message_queue      message_queue[]
+  meetings           meetings[]
+
+  @@index([cro_number, cro_state], map: "idx_participants_cro")
+  @@index([email_normalized], map: "idx_participants_email_normalized")
+  @@index([full_name], map: "idx_participants_name")
+  @@index([phone_normalized], map: "idx_participants_phone_normalized")
+}
+
+model participations {
+  id                 Int                   @id @default(autoincrement()) @db.UnsignedInt
+  event_id           Int                   @db.UnsignedInt
+  participant_id     Int                   @db.UnsignedInt
+  status             participations_status @default(PENDING)
+  device_id          String?               @db.VarChar(190)
+  ip_address         String?               @db.VarChar(64)
+  user_agent         String?               @db.Text
+  whatsapp_validated Boolean               @default(false)
+  whatsapp_token     String?               @unique(map: "uq_participations_whatsapp_token") @db.VarChar(128)
+  client_request_id  String?               @unique(map: "uq_participations_client_request") @db.Char(36)
+  crm_sent_at        DateTime?             @db.DateTime(0)
+  started_at         DateTime              @default(now()) @db.DateTime(0)
+  completed_at       DateTime?             @db.DateTime(0)
+  created_at         DateTime              @default(now()) @db.DateTime(0)
+  updated_at         DateTime              @default(now()) @db.DateTime(0)
+  draws              draws?
+  fraud_checks       fraud_checks[]
+  vip_codes          vip_codes?
+  events             events                @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_participations_event")
+  participants       participants          @relation(fields: [participant_id], references: [id], onDelete: Cascade, map: "fk_participations_participant")
+
+  @@index([device_id], map: "idx_participations_device")
+  @@index([event_id], map: "idx_participations_event")
+  @@index([event_id, status], map: "idx_participations_event_status")
+  @@index([ip_address], map: "idx_participations_ip")
+  @@index([participant_id], map: "idx_participations_participant")
+}
+
+model prize_queue {
+  id                  Int                @id @default(autoincrement()) @db.UnsignedInt
+  event_id            Int                @db.UnsignedInt
+  prize_id            Int                @db.UnsignedInt
+  position            Int                @db.UnsignedInt
+  status              prize_queue_status @default(WAITING)
+  created_by_admin_id Int?               @db.UnsignedInt
+  reason              String?            @db.VarChar(255)
+  consumed_at         DateTime?          @db.DateTime(0)
+  created_at          DateTime           @default(now()) @db.DateTime(0)
+  updated_at          DateTime           @default(now()) @db.DateTime(0)
+  admin_users         admin_users?       @relation(fields: [created_by_admin_id], references: [id], map: "fk_prize_queue_admin")
+  events              events             @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_prize_queue_event")
+  prizes              prizes             @relation(fields: [prize_id], references: [id], onDelete: Cascade, map: "fk_prize_queue_prize")
+
+  @@index([created_by_admin_id], map: "idx_prize_queue_admin")
+  @@index([event_id, status, position], map: "idx_prize_queue_event_status_position")
+  @@index([prize_id], map: "idx_prize_queue_prize")
+}
+
+model message_queue {
+  id              Int                  @id @default(autoincrement()) @db.UnsignedInt
+  event_id        Int?                 @db.UnsignedInt
+  participant_id  Int?                 @db.UnsignedInt
+  phone           String               @db.VarChar(40)
+  message         String               @db.Text
+  media_url       String?              @db.VarChar(500)
+  media_type      message_media_type   @default(TEXT)
+  status          message_queue_status @default(PENDING)
+  attempts        Int                  @default(0) @db.UnsignedInt
+  next_attempt_at DateTime             @default(now()) @db.DateTime(0)
+  error_reason    String?              @db.Text
+  created_at      DateTime             @default(now()) @db.DateTime(0)
+  updated_at      DateTime             @default(now()) @db.DateTime(0)
+
+  events       events?       @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_message_queue_event")
+  participants participants? @relation(fields: [participant_id], references: [id], onDelete: Cascade, map: "fk_message_queue_participant")
+
+  @@index([event_id], map: "idx_message_queue_event")
+  @@index([participant_id], map: "idx_message_queue_participant")
+  @@index([status, next_attempt_at], map: "idx_message_queue_status_next")
+}
+
+model prize_stock_movements {
+  id            Int                        @id @default(autoincrement()) @db.UnsignedInt
+  event_id      Int                        @db.UnsignedInt
+  prize_id      Int                        @db.UnsignedInt
+  type          prize_stock_movements_type
+  quantity      Int
+  stock_before  Int                        @db.UnsignedInt
+  stock_after   Int                        @db.UnsignedInt
+  reason        String?                    @db.VarChar(255)
+  admin_user_id Int?                       @db.UnsignedInt
+  created_at    DateTime                   @default(now()) @db.DateTime(0)
+  admin_users   admin_users?               @relation(fields: [admin_user_id], references: [id], map: "fk_stock_movements_admin")
+  events        events                     @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_stock_movements_event")
+  prizes        prizes                     @relation(fields: [prize_id], references: [id], onDelete: Cascade, map: "fk_stock_movements_prize")
+
+  @@index([admin_user_id], map: "idx_stock_movements_admin")
+  @@index([created_at], map: "idx_stock_movements_created_at")
+  @@index([event_id], map: "idx_stock_movements_event")
+  @@index([prize_id], map: "idx_stock_movements_prize")
+}
+
+model prizes {
+  id                    Int                     @id @default(autoincrement()) @db.UnsignedInt
+  event_id              Int                     @db.UnsignedInt
+  name                  String                  @db.VarChar(190)
+  description           String?                 @db.Text
+  image_url             String?                 @db.VarChar(500)
+  initial_stock         Int                     @default(0) @db.UnsignedInt
+  available_stock       Int                     @default(0) @db.UnsignedInt
+  probability           Decimal                 @default(0.0000) @db.Decimal(7, 4)
+  active                Boolean                 @default(true)
+  is_vip                Boolean                 @default(false)
+  created_at            DateTime                @default(now()) @db.DateTime(0)
+  updated_at            DateTime                @default(now()) @db.DateTime(0)
+  draws                 draws[]
+  prize_queue           prize_queue[]
+  prize_stock_movements prize_stock_movements[]
+  events                events                  @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_prizes_event")
+
+  @@index([event_id], map: "idx_prizes_event")
+  @@index([event_id, active], map: "idx_prizes_event_active")
+}
+
+enum fraud_rules_type {
+  CPF
+  PHONE
+  EMAIL
+  DEVICE
+  IP
+}
+
+enum prize_stock_movements_type {
+  INITIAL
+  DRAW
+  MANUAL_ADD
+  MANUAL_REMOVE
+  ADJUSTMENT
+  RETURN
+}
+
+enum fraud_checks_rule_type {
+  CPF
+  PHONE
+  EMAIL
+  DEVICE
+  IP
+}
+
+enum participations_status {
+  PENDING
+  APPROVED
+  BLOCKED
+  REVIEW
+  COMPLETED
+}
+
+enum draws_source {
+  AUTOMATIC
+  FORCED
+  QUEUE
+}
+
+enum admin_users_role {
+  SUPER_ADMIN
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+enum prize_queue_status {
+  WAITING
+  CONSUMED
+  CANCELLED
+  RETURNED
+}
+
+enum events_experience {
+  ROLETA
+  COFRE
+}
+
+enum events_status {
+  DRAFT
+  ACTIVE
+  PAUSED
+  CLOSED
+  ARCHIVED
+}
+
+enum fraud_rules_action {
+  BLOCK
+  REVIEW
+  ALLOW_WITH_ALERT
+}
+
+enum fraud_checks_decision {
+  ALLOWED
+  BLOCKED
+  REVIEW
+  ALERT
+}
+
+enum message_queue_status {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+enum meetings_status {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+  NO_SHOW
+}
+
+model meetings {
+  id             Int             @id @default(autoincrement()) @db.UnsignedInt
+  event_id       Int             @db.UnsignedInt
+  participant_id Int             @db.UnsignedInt
+  scheduled_at   DateTime        @db.DateTime(0)
+  status         meetings_status @default(SCHEDULED)
+  created_at     DateTime        @default(now()) @db.DateTime(0)
+  updated_at     DateTime        @default(now()) @db.DateTime(0)
+
+  events       events       @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_meetings_event")
+  participants participants @relation(fields: [participant_id], references: [id], onDelete: Cascade, map: "fk_meetings_participant")
+
+  @@unique([event_id, scheduled_at], map: "uq_meetings_event_scheduled_at")
+  @@index([event_id], map: "idx_meetings_event")
+  @@index([participant_id], map: "idx_meetings_participant")
+}
+
+enum message_media_type {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  VOICE
+  DOCUMENT
+}
+
+/// Código impresso no cartão VIP. Cada código libera o giro VIP de uma única participação.
+model vip_codes {
+  id               Int             @id @default(autoincrement()) @db.UnsignedInt
+  event_id         Int             @db.UnsignedInt
+  code             String          @unique(map: "uq_vip_codes_code") @db.VarChar(16)
+  participation_id Int?            @unique(map: "uq_vip_codes_participation") @db.UnsignedInt
+  redeemed_at      DateTime?       @db.DateTime(0)
+  created_at       DateTime        @default(now()) @db.DateTime(0)
+  events           events          @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_vip_codes_event")
+  participations   participations? @relation(fields: [participation_id], references: [id], onDelete: Cascade, map: "fk_vip_codes_participation")
+
+  @@index([event_id, participation_id], map: "idx_vip_codes_event_participation")
+}

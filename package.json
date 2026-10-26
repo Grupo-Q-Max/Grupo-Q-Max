@@ -4,7 +4,11 @@
     "private": true,
     "scripts": {
         "dev": "next dev --webpack",
+        "dev:eventos": "npm run dev --prefix eventos",
+        "dev:eventos:api": "npm run start:dev --prefix eventos/apps/api",
+        "dev:eventos:web": "npm run dev --prefix eventos/apps/web",
         "build": "next build",
+        "build:eventos": "npm run build --prefix eventos",
         "start": "next start",
         "test": "node --test \"tests/**/*.test.mjs\""
     },

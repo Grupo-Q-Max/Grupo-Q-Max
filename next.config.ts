@@ -22,10 +22,19 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
+    const eventosUrl = process.env.EVENTOS_URL || "http://127.0.0.1:3001";
     return [
       {
         source: "/team/:filename*",
         destination: "/api/files/:filename*",
+      },
+      {
+        source: "/finora-experience/:path*",
+        destination: `${eventosUrl}/finora-experience/:path*`,
+      },
+      {
+        source: "/eventos/:path*",
+        destination: `${eventosUrl}/finora-experience/:path*`,
       },
     ];
   },
