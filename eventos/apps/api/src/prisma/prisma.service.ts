@@ -14,6 +14,11 @@ function getDatabaseConfig() {
   }
 
   const url = new URL(databaseUrl);
+  const useSsl =
+    url.searchParams.get('ssl') === 'true' ||
+    url.searchParams.has('sslaccept') ||
+    url.hostname.includes('azure.com') ||
+    process.env.DB_SSL === 'true';
 
   return {
     host: url.hostname,
@@ -21,6 +26,7 @@ function getDatabaseConfig() {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: url.pathname.replace(/^\//, ''),
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
   };
 }
 
@@ -42,6 +48,7 @@ export class PrismaService
       user: config.user,
       password: config.password,
       database: config.database,
+      ssl: config.ssl,
       connectionLimit:
         Number.isInteger(poolLimit) && poolLimit > 0 ? poolLimit : 25,
     });
