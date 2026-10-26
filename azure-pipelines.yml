@@ -19,10 +19,14 @@ steps:
   inputs:
     version: '$(NODE_VERSION)'
  
-- script: npm ci
+- script: |
+    npm ci
+    cd eventos && (npm ci || npm install --prefer-offline --no-audit) && cd ..
   displayName: 'Instalar dependencias'
  
-- script: npx prisma generate
+- script: |
+    npx prisma generate
+    npx prisma generate --schema=eventos/apps/api/prisma/schema.prisma
   displayName: 'Gerar Prisma Client'
  
 - script: npx prisma db push
@@ -40,14 +44,16 @@ steps:
   env:
     DATABASE_URL: $(DATABASE_URL)
  
-- script: npm run build
-  displayName: 'Build Next.js'
+- script: |
+    npm run build
+    cd eventos && npm run build && cd ..
+  displayName: 'Build Next.js e Eventos'
  
 - bash: |
     set -e
  
     echo "=========================================="
-    echo " MONTANDO PACOTE STANDALONE Q-MAX"
+    echo " MONTANDO PACOTE STANDALONE Q-MAX + EVENTOS"
     echo "=========================================="
  
     rm -rf deploy
@@ -92,8 +98,38 @@ steps:
     echo "MICROSOFT_TENANT_ID=e3a65ea4-591b-4eab-acf5-059083274f98" >> deploy/.env
     echo "MICROSOFT_CLIENT_ID=365625d9-2647-489d-b319-48b960f9edab" >> deploy/.env
     echo "MICROSOFT_ALLOWED_DOMAINS=grupoqmax.com.br" >> deploy/.env
+    echo "EVENTOS_DATABASE_URL='mysql://eventos:U2a6M2slUs-^@webbd01-app-server.mysql.database.azure.com:3306/eventos?sslaccept=strict'" >> deploy/.env
+    echo "EVENTOS_JWT_SECRET='LrHr6PbK8VwoJOyEAWJb8LQRmrL9BtnMPnV1FvKNXKAKaPGqX0zwE7znNm08u9cM4Tjc1KlyvByqXUzrRGU0wQ=='" >> deploy/.env
+    echo "EVENTOS_CPF_HASH_SECRET='sH/m2ZPzl2LKsVk7vltdhyskTxw9AytxVWYUb4xHCgm0er8TPZPJU8AvKPfoaUnMYyTpteYEsW/k1k2SJKsMJQ=='" >> deploy/.env
+    echo "EVENTOS_DATA_ENCRYPTION_KEY='KpNIaoTapxUlgRL8zfFJf28/h7GuRWt1/6x1pNwu9gU='" >> deploy/.env
+    echo "FINORA_ADMIN_API_KEY='d1e5e0767cdf3fa8011eac46f983cbaf3d2f5aff806d27c6631cb751b4c8c9b3'" >> deploy/.env
+    echo "FINORA_ADMIN_SESSION_TOKEN='66b34419aded34f57ad0b5a70375e8c9174bc3c1a10ee72b61272e7a2ee406df'" >> deploy/.env
+    echo "DISABLE_WHATSAPP='true'" >> deploy/.env
     if defined "${AUTH_SECRET}"; then echo "AUTH_SECRET=${AUTH_SECRET}" >> deploy/.env; fi
     if defined "${ADMIN_PASSWORD}"; then echo "ADMIN_PASSWORD=${ADMIN_PASSWORD}" >> deploy/.env; fi
+
+    echo ""
+    echo "3.3. Copiando Runner e empacotando Eventos..."
+    cp runner.js deploy/runner.js
+
+    echo "Configurando Eventos API..."
+    mkdir -p deploy/eventos-api
+    cp -R eventos/apps/api/dist deploy/eventos-api/dist
+    if [ -d "eventos/apps/api/prisma" ]; then
+      cp -R eventos/apps/api/prisma deploy/eventos-api/prisma
+    fi
+    cp eventos/apps/api/package.json deploy/eventos-api/package.json
+    (cd deploy/eventos-api && npm install --omit=dev --prefer-offline --no-audit --no-fund)
+
+    echo "Configurando Eventos Web..."
+    mkdir -p deploy/eventos-web
+    cp -R eventos/apps/web/.next/standalone/. deploy/eventos-web/
+    mkdir -p deploy/eventos-web/apps/web/.next
+    cp -R eventos/apps/web/.next/static deploy/eventos-web/apps/web/.next/static
+    if [ -d "eventos/apps/web/public" ]; then
+      mkdir -p deploy/eventos-web/apps/web/public
+      cp -R eventos/apps/web/public/. deploy/eventos-web/apps/web/public/
+    fi
 
     echo ""
     echo "4. Validando logos obrigatorias..."
@@ -118,7 +154,7 @@ steps:
       const p = './deploy/package.json';
       const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
       pkg.scripts = pkg.scripts || {};
-      pkg.scripts.start = 'node --env-file=.env server.js';
+      pkg.scripts.start = 'node --env-file=.env runner.js';
       fs.writeFileSync(p, JSON.stringify(pkg, null, 2));
     "
  
@@ -137,6 +173,9 @@ steps:
     unzip -l site.zip | grep "public/brands/brand-talents.png"
     unzip -l site.zip | grep "public/brands/brand-technology.png"
     unzip -l site.zip | grep "public/brands/brand-lagerhaus.png"
+    unzip -l site.zip | grep "runner.js"
+    unzip -l site.zip | grep "eventos-api/dist/src/main.js"
+    unzip -l site.zip | grep "eventos-web/apps/web/server.js"
  
     echo ""
     echo "PACOTE VALIDADO COM SUCESSO."

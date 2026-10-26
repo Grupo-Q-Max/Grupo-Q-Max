@@ -17,8 +17,11 @@ const nextConfig: NextConfig = {
   },
 
   async redirects() {
-    // Access levels moved under settings
-    return [{ source: "/crm/access", destination: "/crm/settings/access", permanent: true }];
+    return [
+      { source: "/crm/access", destination: "/crm/settings/access", permanent: true },
+      { source: "/eventos", destination: "/finora-experience", permanent: false },
+      { source: "/eventos/:path*", destination: "/finora-experience/:path*", permanent: false },
+    ];
   },
 
   async rewrites() {
@@ -29,11 +32,11 @@ const nextConfig: NextConfig = {
         destination: "/api/files/:filename*",
       },
       {
-        source: "/finora-experience/:path*",
-        destination: `${eventosUrl}/finora-experience/:path*`,
+        source: "/finora-experience",
+        destination: `${eventosUrl}/finora-experience`,
       },
       {
-        source: "/eventos/:path*",
+        source: "/finora-experience/:path*",
         destination: `${eventosUrl}/finora-experience/:path*`,
       },
     ];
