@@ -5,6 +5,14 @@ on:
     branches:
       - main
 
+# One deploy at a time: db push and the Kudu zip deploy must not overlap; a newer push waits
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -54,6 +62,10 @@ jobs:
         run: |
           npx prisma generate
           npx prisma generate --schema=eventos/apps/api/prisma/schema.prisma
+
+      # Before touching the production database
+      - name: Testes (node:test)
+        run: npm test
 
       - name: Sincronizar Banco de Dados (DB Push)
         run: npx prisma db push
