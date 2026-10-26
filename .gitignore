@@ -45,3 +45,9 @@ azure-pipelines.backup-*.yml
 Grupo-Q-Max/
 *.sql
 *.git_backup
+
+# Azure App Service settings export (secrets)
+azure-appsettings.json
+
+# Local uploads (team photos, brand logos, CRM attachments)
+data/uploads/
