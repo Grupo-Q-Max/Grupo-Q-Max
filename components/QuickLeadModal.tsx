@@ -18,6 +18,7 @@ export function QuickLeadModal() {
   const [selectedCompany, setSelectedCompany] = useState(companies[0]);
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [phone, setPhone] = useState("");
   // Quem abriu o modal, para devolver o foco ao fechar (guardado na
   // abertura: o autoFocus do campo de nome muda o foco antes dos efeitos)
   const openerRef = useRef<HTMLElement | null>(null);
@@ -68,8 +69,7 @@ export function QuickLeadModal() {
       keepalive: true,
       body: JSON.stringify({
         name: name || "Visitante",
-        email: "Não informado", // Adicionar campo no form se quiser
-        phone: "WhatsApp Chat", // Adicionar campo se quiser capturar
+        phone,
         company: companyName,
         message: `Deseja diagnóstico com ${selectedCompany.name}`,
       }),
@@ -166,6 +166,18 @@ export function QuickLeadModal() {
               placeholder="Nome da sua empresa (opcional)"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
+              className="qmax-modal-input"
+            />
+            <input
+              type="tel"
+              name="phone"
+              autoComplete="tel"
+              inputMode="tel"
+              maxLength={40}
+              aria-label="Telefone ou WhatsApp (opcional)"
+              placeholder="Telefone ou WhatsApp (opcional)"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               className="qmax-modal-input"
             />
           </div>
