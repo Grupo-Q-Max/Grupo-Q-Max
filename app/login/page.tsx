@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import { MicrosoftLogin } from "@/components/crm/MicrosoftLogin";
 import { microsoftConfig } from "@/lib/microsoft-auth";
 import "./login.css";
 
 // Reads the Entra ID app at request time (App Service settings), not at build time
 export const dynamic = "force-dynamic";
+
+// The root layout says index + canonical "/"; the CRM sign-in is neither
+export const metadata: Metadata = {
+  title: "Entrar no CRM",
+  robots: { index: false, follow: false },
+  alternates: { canonical: "/login" },
+};
 
 export default function LoginPage() {
   let config;
