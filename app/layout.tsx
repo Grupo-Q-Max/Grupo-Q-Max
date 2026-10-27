@@ -2,9 +2,7 @@ import { Montserrat } from "next/font/google";
 import Script from "next/script";
 import { QmaxAnalytics } from "@/components/QmaxAnalytics";
 import { OrganizationJsonLd } from "@/components/OrganizationJsonLd";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { ClientLayoutElements } from "@/components/ClientLayoutElements";
+import { ClientLayoutElements, SiteOnly } from "@/components/ClientLayoutElements";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { BackToTop } from "@/components/BackToTop";
 import { SettingsProvider } from "@/components/SettingsProvider";
@@ -14,6 +12,7 @@ import type { Metadata, Viewport } from "next";
 import "./qmax-base.css";
 import "./qmax-overrides.css";
 import "./qmax-brand-system.css";
+// Here, not in the CRM/admin layouts: crm.css and admin.css override its rules and must load after it
 import "@/components/ui/ui.css";
 
 export const metadata: Metadata = {
@@ -106,37 +105,42 @@ export default function RootLayout({
     <html lang="pt-BR" className={montserrat.variable} suppressHydrationWarning>
       <body>
         <SettingsProvider settings={settings}>
-          <Script
-            id="qmax-ga4-bootstrap"
-            strategy="afterInteractive"
-          >
-            {`
-              window.dataLayer = window.dataLayer || [];
+          {/* GA, visit tracking and the floating buttons are for site visitors, not CRM/admin users */}
+          <SiteOnly>
+            <Script
+              id="qmax-ga4-bootstrap"
+              strategy="afterInteractive"
+            >
+              {`
+                window.dataLayer = window.dataLayer || [];
 
-              window.gtag = window.gtag || function(){
-                window.dataLayer.push(arguments);
-              };
+                window.gtag = window.gtag || function(){
+                  window.dataLayer.push(arguments);
+                };
 
-              window.gtag('js', new Date());
+                window.gtag('js', new Date());
 
-              window.gtag('config', 'G-L5CSV2XQL3', {
-                send_page_view: true
-              });
-            `}
-          </Script>
+                window.gtag('config', 'G-L5CSV2XQL3', {
+                  send_page_view: true
+                });
+              `}
+            </Script>
 
-          <Script
-            src="https://www.googletagmanager.com/gtag/js?id=G-L5CSV2XQL3"
-            strategy="lazyOnload"
-          />
-          <QmaxAnalytics />
+            <Script
+              src="https://www.googletagmanager.com/gtag/js?id=G-L5CSV2XQL3"
+              strategy="lazyOnload"
+            />
+            <QmaxAnalytics />
+          </SiteOnly>
           <OrganizationJsonLd />
           <ClientLayoutElements type="navbar" />
           {children}
           <ClientLayoutElements type="footer" />
-          <FloatingWhatsApp whatsapp={settings.whatsapp} />
-          <PageTracker />
-          <BackToTop />
+          <SiteOnly>
+            <FloatingWhatsApp whatsapp={settings.whatsapp} />
+            <PageTracker />
+            <BackToTop />
+          </SiteOnly>
         </SettingsProvider>
       </body>
     </html>
