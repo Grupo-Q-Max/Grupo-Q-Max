@@ -57,6 +57,13 @@ export function FinoraFooter() {
       <p className="fnr-footer__copy">
         Copyright © 2026 Grupo Q-Max | Desenvolvido por <strong>Q-Max Technology</strong>
       </p>
+      <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8, fontSize: "0.8rem", color: "#a1a1aa" }}>
+        <a href="/termos-de-uso" style={{ color: "#a1a1aa", textDecoration: "none" }}>Termos de Uso</a>
+        <span>·</span>
+        <a href="/politica-de-privacidade" style={{ color: "#a1a1aa", textDecoration: "none" }}>Privacidade (LGPD)</a>
+        <span>·</span>
+        <a href="/politica-de-cookies" style={{ color: "#a1a1aa", textDecoration: "none" }}>Cookies</a>
+      </div>
     </footer>
   );
 }

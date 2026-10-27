@@ -1,0 +1,297 @@
+/* ==========================================================================
+   GRUPO Q-MAX — EDITORIAL STYLES FOR LEGAL & COMPLIANCE PAGES
+   (Política de Privacidade, Termos de Uso, Política de Cookies)
+   ========================================================================== */
+
+.qmax-legal-page {
+  background-color: #050506;
+  color: #d4d4d8;
+  font-family: var(--font-montserrat, "Montserrat", sans-serif);
+  min-height: 100vh;
+  padding-top: 130px;
+  padding-bottom: 90px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle background glowing ambient orbs */
+.qmax-legal-page::before {
+  content: "";
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(20, 208, 193, 0.08) 0%, rgba(5, 5, 6, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.qmax-legal-container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header section */
+.qmax-legal-header {
+  text-align: center;
+  margin-bottom: 50px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qmax-legal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(20, 208, 193, 0.1);
+  border: 1px solid rgba(20, 208, 193, 0.3);
+  color: #14d0c1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 20px;
+}
+
+.qmax-legal-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+
+.qmax-legal-subtitle {
+  font-size: 1.05rem;
+  color: #a1a1aa;
+  max-width: 700px;
+  margin: 0 auto 20px;
+  line-height: 1.6;
+}
+
+.qmax-legal-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  font-size: 0.82rem;
+  color: #71717a;
+  flex-wrap: wrap;
+}
+
+.qmax-legal-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Callout Box (Highlights, DPO box, etc) */
+.qmax-legal-callout {
+  background: rgba(20, 208, 193, 0.05);
+  border: 1px solid rgba(20, 208, 193, 0.25);
+  border-left: 4px solid #14d0c1;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 28px 0;
+  color: #e4e4e7;
+}
+
+.qmax-legal-callout-warning {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.3);
+  border-left-color: #f59e0b;
+}
+
+.qmax-legal-callout-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Body Content */
+.qmax-legal-body {
+  font-size: 0.98rem;
+  line-height: 1.8;
+  color: #d4d4d8;
+}
+
+.qmax-legal-section {
+  margin-bottom: 46px;
+  padding-bottom: 36px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.qmax-legal-section:last-child {
+  border-bottom: none;
+}
+
+.qmax-legal-heading {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: -0.01em;
+}
+
+.qmax-legal-subheading {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 24px 0 12px;
+}
+
+.qmax-legal-body p {
+  margin-bottom: 16px;
+}
+
+.qmax-legal-body ul,
+.qmax-legal-body ol {
+  margin: 16px 0 24px;
+  padding-left: 24px;
+}
+
+.qmax-legal-body li {
+  margin-bottom: 10px;
+  line-height: 1.7;
+}
+
+.qmax-legal-body strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.qmax-legal-body a {
+  color: #14d0c1;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+}
+
+.qmax-legal-body a:hover {
+  color: #4df8ec;
+}
+
+/* Legal Tables */
+.qmax-legal-table-wrapper {
+  overflow-x: auto;
+  margin: 24px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.qmax-legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.qmax-legal-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-weight: 700;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+}
+
+.qmax-legal-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: top;
+  color: #a1a1aa;
+}
+
+.qmax-legal-table tr:last-child td {
+  border-bottom: none;
+}
+
+.qmax-legal-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+  color: #f4f4f5;
+}
+
+/* Quick Index / Anchor Navigator */
+.qmax-legal-index {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 40px;
+}
+
+.qmax-legal-index-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qmax-legal-index-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px 20px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.qmax-legal-index-list li a {
+  color: #a1a1aa;
+  font-size: 0.86rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.qmax-legal-index-list li a:hover {
+  color: #14d0c1;
+  transform: translateX(3px);
+}
+
+/* Action button inside page */
+.qmax-legal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #14d0c1 0%, #0bb3a5 100%);
+  color: #050506;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 12px 24px;
+  border-radius: 10px;
+  text-decoration: none !important;
+  margin-top: 10px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.qmax-legal-btn:hover {
+  background: linear-gradient(135deg, #4df8ec 0%, #14d0c1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(20, 208, 193, 0.35);
+}

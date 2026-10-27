@@ -186,6 +186,14 @@ export function QuickLeadModal() {
             <span>Iniciar Conversa no WhatsApp</span>
             <ArrowRight size={17} />
           </button>
+
+          <p style={{ marginTop: 14, fontSize: "0.74rem", color: "#71717a", textAlign: "center", lineHeight: 1.45 }}>
+            Ao prosseguir, você concorda com nossos{" "}
+            <a href="/termos-de-uso" target="_blank" style={{ color: "#14d0c1", textDecoration: "underline" }}>Termos de Uso</a>{" "}
+            e nossa{" "}
+            <a href="/politica-de-privacidade" target="_blank" style={{ color: "#14d0c1", textDecoration: "underline" }}>Política de Privacidade</a>{" "}
+            em estrita observância à LGPD (Lei 13.709/18).
+          </p>
         </form>
       </div>
     </div>

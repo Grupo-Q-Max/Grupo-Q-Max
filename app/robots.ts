@@ -6,7 +6,17 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Internal tools and endpoints: nothing to index there
-      disallow: ["/crm", "/admin", "/api/", "/login", "/auth/", "/integracao"],
+      disallow: [
+        "/crm",
+        "/admin",
+        "/api/",
+        "/login",
+        "/auth/",
+        "/integracao",
+        "/fechamento",
+        "/controle-fechamento",
+        "/controle_fechamento",
+      ],
     },
     sitemap: "https://qmaxbrasil.com.br/sitemap.xml",
   };

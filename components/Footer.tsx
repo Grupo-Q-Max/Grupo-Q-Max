@@ -210,6 +210,36 @@ export function Footer() {
               FINORA
             </a>
           </div>
+
+          <div>
+            <strong>CONFORMIDADE &amp; LGPD</strong>
+            <a href="/politica-de-privacidade">Política de Privacidade</a>
+            <a href="/termos-de-uso">Termos de Uso</a>
+            <a href="/politica-de-cookies">Política de Cookies</a>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("open-cookie-preferences"));
+                }
+              }}
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                color: "inherit",
+                fontSize: "inherit",
+                fontFamily: "inherit",
+                textAlign: "left",
+                cursor: "pointer",
+                display: "block",
+                transition: "color 0.2s ease"
+              }}
+            >
+              Preferências de Cookies
+            </button>
+            <a href="mailto:dpo@grupoqmax.com.br">Encarregado (DPO)</a>
+          </div>
         </div>
       </div>
 
@@ -217,19 +247,23 @@ export function Footer() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, fontSize: "0.78rem", color: "#a1a1aa" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <span style={{ color: "#14d0c1", fontWeight: 700 }}>🔒 CONFORMIDADE LGPD:</span>
-            <span>Ambiente seguro, governança corporativa e sigilo rigoroso de dados protegidos pela Lei 13.709/18.</span>
+            <span>Ambiente seguro, governança corporativa e sigilo rigoroso de dados protegidos pela Lei Federal nº 13.709/18.</span>
           </span>
-          <span style={{ color: "#71717a" }}>Certificados Digitais & Auditoria Contábil Regular</span>
+          <span style={{ color: "#71717a" }}>Certificados Digitais &amp; Auditoria Contábil Regular</span>
         </div>
       </div>
 
       <div className="container finish-footer__bottom">
-        <span>© 2026 {settings.siteName} <QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span></span>
+        <span>© 2026 {settings.siteName} <QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span> Todos os direitos reservados.</span>
 
-        <div>
-          <span>{settings.address.split("-")[1] || settings.address}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <a href="/termos-de-uso" style={{ color: "#a1a1aa", textDecoration: "none", fontSize: "0.82rem" }}>Termos</a>
           <i />
-          <span>Atendimento Nacional</span>
+          <a href="/politica-de-privacidade" style={{ color: "#a1a1aa", textDecoration: "none", fontSize: "0.82rem" }}>Privacidade</a>
+          <i />
+          <a href="/politica-de-cookies" style={{ color: "#a1a1aa", textDecoration: "none", fontSize: "0.82rem" }}>Cookies</a>
+          <i />
+          <span>{settings.address.split("-")[1] || settings.address}</span>
         </div>
       </div>
     </footer>

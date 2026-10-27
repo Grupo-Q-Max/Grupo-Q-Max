@@ -22,13 +22,15 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          // No includeSubDomains: other *.qmaxbrasil.com.br hosts are not known to be HTTPS-only
           { key: "Strict-Transport-Security", value: "max-age=31536000" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "X-DNS-Prefetch-Control", value: "on" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
           // camera=(self): the Finora Experience admin (rewritten under this origin) scans with the camera
-          { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
+          { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(), payment=()" },
         ],
       },
     ];

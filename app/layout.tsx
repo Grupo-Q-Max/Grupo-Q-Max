@@ -8,6 +8,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { SettingsProvider } from "@/components/SettingsProvider";
 import { readSettings, withoutPassword } from "@/lib/settings";
 import { PageTracker } from "@/components/PageTracker";
+import { CookieConsent } from "@/components/CookieConsent";
 import type { Metadata, Viewport } from "next";
 import "./qmax-base.css";
 import "./qmax-overrides.css";
@@ -113,14 +114,23 @@ export default function RootLayout({
             >
               {`
                 window.dataLayer = window.dataLayer || [];
+                function gtag(){window.dataLayer.push(arguments);}
+                window.gtag = gtag;
 
-                window.gtag = window.gtag || function(){
-                  window.dataLayer.push(arguments);
-                };
+                // Google Consent Mode v2 (Conformidade estrita com a LGPD Lei 13.709/18)
+                gtag('consent', 'default', {
+                  'analytics_storage': 'denied',
+                  'ad_storage': 'denied',
+                  'ad_user_data': 'denied',
+                  'ad_personalization': 'denied',
+                  'functionality_storage': 'granted',
+                  'security_storage': 'granted',
+                  'wait_for_update': 500
+                });
 
-                window.gtag('js', new Date());
+                gtag('js', new Date());
 
-                window.gtag('config', 'G-L5CSV2XQL3', {
+                gtag('config', 'G-L5CSV2XQL3', {
                   send_page_view: true
                 });
               `}
@@ -131,6 +141,7 @@ export default function RootLayout({
               strategy="lazyOnload"
             />
             <QmaxAnalytics />
+            <CookieConsent />
           </SiteOnly>
           <OrganizationJsonLd />
           <ClientLayoutElements type="navbar" />
