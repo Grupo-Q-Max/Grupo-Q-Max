@@ -257,7 +257,8 @@ jobs:
 
           # Async: Kudu answers 202 right after the upload and deploys on the server. The synchronous
           # call outlived the ~4 min front-end timeout (504 GatewayTimeout) once the package grew with Eventos.
-          $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true&isAsync=true"
+          # OneDeploy (/api/publish) reads "async"; "isAsync" is the /api/zipdeploy name and is ignored here.
+          $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true&async=true"
 
           Write-Host "Publicando Grupo Q-Max..."
 
