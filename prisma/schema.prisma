@@ -20,6 +20,9 @@ model ContactLead {
   message   String
   status    String   @default("NEW") // NEW, CONTACTED, CLOSED
   createdAt DateTime @default(now())
+
+  // /admin lists the latest leads
+  @@index([createdAt])
 }
 
 model SiteSetting {
@@ -189,6 +192,9 @@ model PageVisit {
   referrer  String? // de onde veio (ex: google.com)
   userAgent String?
   createdAt DateTime @default(now())
+
+  // /admin lists the latest visits
+  @@index([createdAt])
 }
 
 // ==========================================
@@ -638,6 +644,8 @@ model CrmHistory {
   createdAt DateTime    @default(now())
 
   @@index([cardId])
+  // Deal timeline: a card's history newest first
+  @@index([cardId, createdAt])
   @@index([actorId])
 }
 
@@ -967,6 +975,8 @@ model CrmNotification {
   createdAt DateTime    @default(now())
 
   @@index([memberId, readAt])
+  // Bell: a member's latest notifications
+  @@index([memberId, createdAt])
   @@index([cardId])
   @@index([requestId])
 }
