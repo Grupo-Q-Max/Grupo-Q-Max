@@ -21,9 +21,11 @@ export const cardListInclude = {
   contacts: { orderBy: { order: "asc" }, take: 1, select: { contact: { select: { name: true } } } },
   responsible: { select: { id: true, name: true, role: true, photo: true } },
   assignees: { select: { member: { select: { id: true, name: true, role: true, photo: true } } } },
-  // ponytail: loads every activity of the card; fine while cards hold a handful, aggregate in SQL if that grows
+  // Only what serializeListCard counts: pending activities and checklist items (TODO). Done calls,
+  // meetings etc. pile up over a deal's life and are never shown on the card.
+  // ponytail: still loads every pending/TODO row; aggregate in SQL (groupBy cardId) if cards hold hundreds
   activities: {
-    where: { type: { not: "COMMENT" } },
+    where: { type: { not: "COMMENT" }, OR: [{ completed: false }, { type: "TODO" }] },
     orderBy: [{ deadline: "asc" }, { createdAt: "asc" }],
     select: { id: true, title: true, deadline: true, type: true, completed: true },
   },

@@ -70,18 +70,25 @@ export async function PATCH(req: Request) {
       const column = await tx.crmRequestColumn.findUnique({ where: { id: columnId }, select: { isDone: true } });
       if (!request || !column) return false;
 
-      const ids = (
-        await tx.crmRequest.findMany({
-          where: { columnId, archivedAt: null, NOT: { id } },
-          orderBy: { order: "asc" },
-          select: { id: true },
-        })
-      ).map((r) => r.id);
-      ids.splice(Math.max(0, Math.min(index, ids.length)), 0, id);
-      await Promise.all(ids.map((rid, order) => tx.crmRequest.update({ where: { id: rid }, data: { columnId, order } })));
+      const siblings = await tx.crmRequest.findMany({
+        where: { columnId, archivedAt: null, NOT: { id } },
+        orderBy: { order: "asc" },
+        select: { id: true, order: true },
+      });
+      const ids = siblings.map((r) => r.id);
+      const at = Math.max(0, Math.min(index, ids.length));
+      ids.splice(at, 0, id);
+      // Only requests whose position changed; the moved one is written below with its column
+      const currentOrder = new Map(siblings.map((r) => [r.id, r.order]));
+      await Promise.all(
+        ids
+          .map((rid, order) => ({ rid, order }))
+          .filter(({ rid, order }) => rid !== id && currentOrder.get(rid) !== order)
+          .map(({ rid, order }) => tx.crmRequest.update({ where: { id: rid }, data: { order } }))
+      );
       // The archive countdown starts when the request enters the done column
       const completedAt = column.isDone ? (request.completedAt ?? new Date()) : null;
-      await tx.crmRequest.update({ where: { id }, data: { completedAt } });
+      await tx.crmRequest.update({ where: { id }, data: { columnId, order: at, completedAt } });
       return true;
     });
     if (!found) return NextResponse.json({ error: "Pedido ou coluna não encontrado." }, { status: 404 });
