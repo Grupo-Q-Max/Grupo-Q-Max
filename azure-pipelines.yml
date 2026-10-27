@@ -64,7 +64,9 @@ steps:
     echo ""
     echo "1. Copiando standalone..."
     cp -R .qmax-next/standalone/. deploy/
- 
+    # Remover pastas rastreadas duplicadas para reduzir o tamanho do ZIP
+    rm -rf deploy/eventos deploy/Grupo-Q-Max deploy/backup-* deploy/tests
+
     echo ""
     echo "2. Copiando PUBLIC..."
     mkdir -p deploy/public
@@ -249,10 +251,12 @@ steps:
           Authorization = "Basic $base64"
       }
  
-      # Async (see .github/workflows/deploy.yml): the synchronous call hit the 504 gateway timeout
-      $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true&async=true"
+      # Async: O endpoint oficial do Kudu para deploy assincrono via ZIP e /api/zipdeploy?isAsync=true.
+      # Ele aceita o upload do ZIP e retorna HTTP 202 imediatamente com o header Location para acompanhamento,
+      # evitando qualquer timeout (504 GatewayTimeout) do proxy do Azure App Service.
+      $url = "$kuduBase/api/zipdeploy?isAsync=true"
  
-      Write-Host "Publicando Grupo Q-Max..."
+      Write-Host "Publicando Grupo Q-Max via Kudu ZipDeploy (async)..."
  
       $response = Invoke-WebRequest `
           -Uri $url `
@@ -263,24 +267,31 @@ steps:
           -UseBasicParsing `
           -TimeoutSec 900
  
-      Write-Host "Status HTTP: $($response.StatusCode)"
+      Write-Host "Status HTTP inicial: $($response.StatusCode)"
  
       if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
           throw "Deploy falhou com HTTP $($response.StatusCode)"
       }
-
-      # Kudu DeployStatus: 3 = Failed, 4 = Success
+ 
+      # Acompanhar o deploy assincrono pelo endpoint de status
+      # Kudu DeployStatus: 0 = Pending, 1 = Building, 2 = Deploying, 3 = Failed, 4 = Success
       $statusUrl = "$($response.Headers.Location)"
-      if ([string]::IsNullOrWhiteSpace($statusUrl)) { $statusUrl = "$kuduBase/api/deployments/latest" }
+      if ([string]::IsNullOrWhiteSpace($statusUrl)) {
+          $statusUrl = "$kuduBase/api/deployments/latest"
+      } elseif (-not $statusUrl.StartsWith("http")) {
+          $statusUrl = "$kuduBase$statusUrl"
+      }
+      Write-Host "URL de monitoramento do deploy: $statusUrl"
+
       $deadline = (Get-Date).AddMinutes(30)
       $deployment = $null
       do {
-          Start-Sleep -Seconds 15
+          Start-Sleep -Seconds 10
           try {
               $deployment = Invoke-RestMethod -Uri $statusUrl -Headers $headers -TimeoutSec 60
-              Write-Host "Deploy: status=$($deployment.status) $($deployment.status_text) complete=$($deployment.complete)"
+              Write-Host "Deploy: status=$($deployment.status) ($($deployment.status_text)) complete=$($deployment.complete)"
           } catch {
-              Write-Host "Status do deploy indisponivel: $($_.Exception.Message)"
+              Write-Host "Aguardando status do deploy: $($_.Exception.Message)"
           }
       } until (($deployment -and $deployment.complete) -or (Get-Date) -gt $deadline)
 
