@@ -91,7 +91,12 @@ export async function visiblePipelineWhere(): Promise<Prisma.CrmPipelineWhereInp
 
 /** visiblePipelineWhere for any member (e.g. who may be notified about a card). Blocked members see only open pipelines. */
 export async function pipelineWhereFor(memberId: string | null): Promise<Prisma.CrmPipelineWhereInput> {
-  const group = await memberGroup(memberId);
+  return pipelineWhereForGroup(await memberGroup(memberId), memberId);
+}
+
+type MemberGroup = Awaited<ReturnType<typeof memberGroup>>;
+
+function pipelineWhereForGroup(group: MemberGroup, memberId: string | null): Prisma.CrmPipelineWhereInput {
   if (group?.isAdmin) return {};
   return {
     OR: [
@@ -108,12 +113,21 @@ export async function pipelineWhereFor(memberId: string | null): Promise<Prisma.
  * off) they are responsible for, co-assigned to or observe. Admins see every card. Use as `where` on CrmCard.
  */
 export async function cardWhereFor(memberId: string | null): Promise<Prisma.CrmCardWhereInput> {
-  const group = await memberGroup(memberId);
+  return cardWhereForGroup(await memberGroup(memberId), memberId);
+}
+
+function cardWhereForGroup(group: MemberGroup, memberId: string | null): Prisma.CrmCardWhereInput {
   if (group?.isAdmin) return {};
   if (!memberId) return { isPublic: true };
   return {
     OR: [{ isPublic: true }, { responsibleId: memberId }, { assignees: { some: { memberId } } }, { observers: { some: { memberId } } }],
   };
+}
+
+/** `where` on CrmCard for the cards a member sees (pipeline + card visibility), with one group lookup. */
+export async function seenCardWhereFor(memberId: string | null): Promise<Prisma.CrmCardWhereInput> {
+  const group = await memberGroup(memberId);
+  return { stage: { pipeline: pipelineWhereForGroup(group, memberId) }, ...cardWhereForGroup(group, memberId) };
 }
 
 /** cardWhereFor the current user. */

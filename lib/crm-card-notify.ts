@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { cardWhereFor, pipelineWhereFor } from "@/lib/crm-access";
+import { seenCardWhereFor } from "@/lib/crm-access";
 import { notifyMember } from "@/lib/crm-realtime";
 import { findMentions } from "@/lib/crm-mentions";
 
@@ -8,15 +8,14 @@ import { findMentions } from "@/lib/crm-mentions";
  * blocked or can't see the card (its pipeline, or the card itself when private). Call after the change is committed.
  */
 async function notifyAboutCard(cardId: string, memberIds: string[], message: string, authorId: string | null) {
-  for (const memberId of new Set(memberIds)) {
-    if (memberId === authorId) continue;
-    const sees = await prisma.crmCard.count({
-      where: { id: cardId, stage: { pipeline: await pipelineWhereFor(memberId) }, ...(await cardWhereFor(memberId)) },
-    });
-    if (!sees) continue;
-    await prisma.crmNotification.create({ data: { memberId, cardId, message } });
-    notifyMember(memberId);
-  }
+  const candidates = [...new Set(memberIds)].filter((id) => id !== authorId);
+  const seen = await Promise.all(
+    candidates.map(async (memberId) => (await prisma.crmCard.count({ where: { id: cardId, ...(await seenCardWhereFor(memberId)) } })) > 0),
+  );
+  const recipients = candidates.filter((_, i) => seen[i]);
+  if (!recipients.length) return;
+  await prisma.crmNotification.createMany({ data: recipients.map((memberId) => ({ memberId, cardId, message })) });
+  recipients.forEach(notifyMember);
 }
 
 const authorName = async (authorId: string | null) =>
