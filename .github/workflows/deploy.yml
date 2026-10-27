@@ -139,9 +139,10 @@ jobs:
             EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN; do
             if [ -n "${!name}" ]; then echo "${name}='${!name}'" >> deploy/.env; fi
           done
-          if [ -z "${EVENTOS_DATABASE_URL}" ]; then
-            echo "EVENTOS_DATABASE_URL='mysql://eventos:U2a6M2slUs-^@webbd01-app-server.mysql.database.azure.com:3306/eventos?sslaccept=strict'" >> deploy/.env
-          fi
+          # Eventos/Finora secrets are required: fail here instead of shipping a site without them
+          for name in EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN; do
+            if [ -z "${!name}" ]; then echo "Secret ${name} vazio no GitHub"; exit 1; fi
+          done
 
           echo ""
           echo "3.3. Copiando Runner e empacotando Eventos..."
