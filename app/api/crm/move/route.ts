@@ -58,16 +58,19 @@ export async function POST(req: Request) {
         // Same cards the board shows, so `index` (counted on the board) lands where it was dropped
         where: { stageId: newStageId, NOT: { id: cardId }, ...activeCard, ...cardWhere },
         orderBy: { order: "asc" },
-        select: { id: true },
+        select: { id: true, order: true },
       });
 
       const ids = siblings.map((c) => c.id);
       ids.splice(Math.max(0, Math.min(index, ids.length)), 0, cardId);
 
+      // Only cards whose position changed (usually those after the drop point), not the whole column
+      const currentOrder = new Map(siblings.map((c) => [c.id, c.order]));
       await Promise.all(
         ids
-          .filter((id) => id !== cardId)
-          .map((id) => tx.crmCard.update({ where: { id }, data: { order: ids.indexOf(id) } }))
+          .map((id, order) => ({ id, order }))
+          .filter(({ id, order }) => id !== cardId && currentOrder.get(id) !== order)
+          .map(({ id, order }) => tx.crmCard.update({ where: { id }, data: { order } }))
       );
 
       await tx.crmCard.update({
