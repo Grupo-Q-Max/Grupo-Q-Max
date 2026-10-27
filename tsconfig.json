@@ -41,6 +41,7 @@
   "exclude": [
     "node_modules",
     "eventos",
-    "Grupo-Q-Max"
+    "Grupo-Q-Max",
+    "controle_fechamento"
   ]
 }

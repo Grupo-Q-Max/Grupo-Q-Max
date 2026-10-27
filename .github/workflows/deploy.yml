@@ -47,6 +47,8 @@ jobs:
       EVENTOS_DATA_ENCRYPTION_KEY: ${{ secrets.EVENTOS_DATA_ENCRYPTION_KEY }}
       FINORA_ADMIN_API_KEY: ${{ secrets.FINORA_ADMIN_API_KEY }}
       FINORA_ADMIN_SESSION_TOKEN: ${{ secrets.FINORA_ADMIN_SESSION_TOKEN }}
+      # Controle de Fechamento (PHP App Service URL)
+      FECHAMENTO_URL: ${{ secrets.FECHAMENTO_URL }}
 
     steps:
       - name: Checkout Repository
@@ -101,7 +103,7 @@ jobs:
           echo "1. Copiando standalone..."
           cp -R .qmax-next/standalone/. deploy/
           # Remover pastas rastreadas duplicadas para reduzir o tamanho do ZIP
-          rm -rf deploy/eventos deploy/Grupo-Q-Max deploy/backup-* deploy/tests
+          rm -rf deploy/eventos deploy/Grupo-Q-Max deploy/controle_fechamento deploy/backup-* deploy/tests
 
           echo ""
           echo "2. Copiando PUBLIC..."
@@ -136,7 +138,8 @@ jobs:
           # Aspas simples: QXBACK_STAGES/QXBACK_FIELDS são JSON; secret vazio = variável fora do .env (node --env-file)
           for name in AUTH_SECRET ADMIN_PASSWORD QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET \
             QXSIGN_TOKEN QXSIGN_STAGES QXSIGN_WEBHOOK_URL QXSIGN_WEBHOOK_SECRET \
-            EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN; do
+            EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN \
+            FECHAMENTO_URL; do
             if [ -n "${!name}" ]; then echo "${name}='${!name}'" >> deploy/.env; fi
           done
           # Eventos/Finora secrets are required: fail here instead of shipping a site without them

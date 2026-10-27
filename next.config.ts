@@ -44,6 +44,7 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     const eventosUrl = process.env.EVENTOS_URL || "http://127.0.0.1:3001";
+    const fechamentoUrl = process.env.FECHAMENTO_URL || "http://127.0.0.1:8002";
     return [
       {
         source: "/team/:filename*",
@@ -56,6 +57,22 @@ const nextConfig: NextConfig = {
       {
         source: "/finora-experience/:path*",
         destination: `${eventosUrl}/finora-experience/:path*`,
+      },
+      {
+        source: "/fechamento",
+        destination: `${fechamentoUrl}/index.php`,
+      },
+      {
+        source: "/fechamento/:path*",
+        destination: `${fechamentoUrl}/:path*`,
+      },
+      {
+        source: "/controle-fechamento",
+        destination: `${fechamentoUrl}/index.php`,
+      },
+      {
+        source: "/controle-fechamento/:path*",
+        destination: `${fechamentoUrl}/:path*`,
       },
     ];
   },

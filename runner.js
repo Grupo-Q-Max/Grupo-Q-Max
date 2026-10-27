@@ -90,9 +90,32 @@ if (webScript) {
   console.warn('[RUNNER] Aviso: Web de Eventos não encontrada.');
 }
 
-// 3. Iniciar Site Principal (Next.js)
+// 3. Iniciar PHP para Controle de Fechamento (se diretório existir e php estiver disponível)
+let phpProcess = null;
+const fechamentoDir = path.join(__dirname, 'controle_fechamento');
+if (!process.env.FECHAMENTO_URL && fs.existsSync(fechamentoDir)) {
+  try {
+    const { spawnSync } = require('child_process');
+    const hasPhp = spawnSync('php', ['-v'], { stdio: 'ignore' }).status === 0;
+    if (hasPhp) {
+      console.log('[RUNNER] 3/4 Iniciando PHP Controle de Fechamento na porta 8002...');
+      phpProcess = spawn('php', ['-S', '127.0.0.1:8002', '-t', fechamentoDir], {
+        cwd: fechamentoDir,
+        env: process.env,
+        stdio: 'inherit',
+      });
+      phpProcess.on('exit', (code) => {
+        console.error(`[RUNNER] PHP Controle de Fechamento encerrou com código ${code}`);
+      });
+    }
+  } catch (e) {
+    // PHP não instalado no ambiente
+  }
+}
+
+// 4. Iniciar Site Principal (Next.js)
 const targetPort = process.env.PORT || 8080;
-console.log(`[RUNNER] 3/3 Iniciando Site Principal Q-Max na porta ${targetPort}...`);
+console.log(`[RUNNER] Iniciando Site Principal Q-Max na porta ${targetPort}...`);
 const mainScriptCandidates = [
   path.join(__dirname, 'server.js'),
   path.join(__dirname, '.qmax-next/standalone/server.js'),
@@ -123,6 +146,9 @@ function cleanup() {
   }
   if (webProcess && !webProcess.killed) {
     try { webProcess.kill(); } catch (e) {}
+  }
+  if (phpProcess && !phpProcess.killed) {
+    try { phpProcess.kill(); } catch (e) {}
   }
 }
 

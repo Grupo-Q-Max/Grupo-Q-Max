@@ -1,0 +1,777 @@
+:root {
+  --primary-color: #6a11cb;
+  --primary-dark: #2575fc;
+  --primary-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  --bg-color: #f4f7f9;
+  --card-bg: #ffffff;
+  --text-color: #34495e;
+  --text-muted: #7f8c8d;
+  --border-color: #e0e5ec;
+  --shadow-color: rgba(106, 17, 203, 0.1);
+  --success-color: #27ae60;
+  --error-color: #c0392b;
+  --animation-speed: 0.3s;
+}
+:root[data-theme="dark"] {
+  --bg-color: #1a1a2e;
+  --card-bg: #16213e;
+  --text-color: #e0e0e0;
+  --text-muted: #a7a9be;
+  --border-color: #2a3b5a;
+  --input-bg: #0f192e;
+  --shadow-color: rgba(0, 0, 0, 0.2);
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color var(--animation-speed) ease;
+}
+.header {
+  background: var(--card-bg);
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  box-shadow: 0 4px 15px var(--shadow-color);
+  border-bottom: 2px solid var(--primary-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 {
+  color: var(--text-color);
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin: 0;
+}
+.header h1 span {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.btn {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--animation-speed) ease;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 10px var(--shadow-color);
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px var(--shadow-color);
+}
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+.btn-outline:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+.btn-icon:hover {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+.btn-icon.btn-logout:hover {
+  color: var(--error-color);
+  border-color: var(--error-color);
+}
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+.main-content {
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px var(--shadow-color);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
+}
+.card h2 {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+  margin: 0 0 2rem 0;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+.team-progress-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+.member-card {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-left: 5px solid var(--primary-color);
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all var(--animation-speed) ease;
+}
+.member-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 20px var(--shadow-color);
+  border-left-color: var(--primary-dark);
+}
+.member-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.member-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-color);
+}
+.voce-tag-header {
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: var(--primary-dark);
+  margin-left: 0.5rem;
+}
+.member-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.member-stats span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.member-stats i {
+  color: var(--primary-color);
+}
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background-color: var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--primary-gradient);
+  border-radius: 12px;
+  transition: width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.member-card .btn {
+  align-self: flex-end;
+}
+.delegation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+.delegation-column h3 {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.search-container {
+  position: relative;
+  margin-bottom: 1rem;
+}
+.form-control {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+.scrollable-list {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+.scrollable-list label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.scrollable-list label:hover {
+  background-color: var(--bg-color);
+}
+.scrollable-list input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.delegated-icon {
+  color: var(--success-color);
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+.voce-tag {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--primary-dark);
+  background-color: rgba(37, 117, 252, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.action-footer {
+  text-align: center;
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+.btn-large {
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+}
+.btn-success {
+  background: var(--success-color);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.alert {
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.alert-success {
+  background-color: rgba(39, 174, 96, 0.1);
+  border-left: 5px solid var(--success-color);
+  color: #218838;
+}
+.alert-error {
+  background-color: rgba(192, 57, 43, 0.1);
+  border-left: 5px solid var(--error-color);
+  color: var(--error-color);
+}
+.alert.fixed-top {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 2000;
+  display: none;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  border-left: 5px solid;
+  color: white;
+}
+.alert-success.fixed-top {
+  background-color: rgba(39, 174, 96, 0.95);
+  border-color: #1e7e34;
+}
+.alert-error.fixed-top {
+  background-color: rgba(192, 57, 43, 0.95);
+  border-color: #a71d2a;
+}
+@media (max-width: 992px) {
+  .delegation-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+  }
+  .main-content {
+    margin-top: 1rem;
+  }
+  .card {
+    padding: 1.5rem;
+  }
+}
+/* --- CSS ADICIONAL PARA EXIBIR RESPONSÁVEIS --- */
+/* --- CSS ADICIONAL PARA AVATARES DE RESPONSÁVEIS --- */
+
+.scrollable-list label {
+  align-items: center; /* Garante alinhamento vertical perfeito */
+}
+
+.empresa-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  /* Faz com que o nome da empresa ocupe o espaço disponível */
+  flex-grow: 1;
+  min-width: 0; /* Previne que o nome empurre os avatares */
+}
+.empresa-info span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.responsible-avatars {
+  display: flex;
+  flex-shrink: 0; /* Impede que os avatares encolham */
+}
+
+.avatar-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 2px solid var(--card-bg);
+  margin-left: -10px; /* Efeito de sobreposição */
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+.avatar-initials:hover {
+  transform: scale(1.2);
+  z-index: 10;
+  background-color: var(--primary-color);
+  color: white;
+}
+/* =================================== */
+/* ==== ESTILOS PARA MODAL DE SENHA ==== */
+/* =================================== */
+
+.modal {
+  display: none; /* Começa escondido */
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: var(--card-bg);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--primary-color);
+}
+
+.modal-close {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: all 0.2s ease;
+}
+.modal-close:hover {
+  color: var(--error-color);
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-notifications {
+  margin-top: 1rem;
+}
+/* assets/css/painel_lider.css */
+
+/* Deixa o modal de logs maior */
+.modal-content.large {
+  max-width: 950px;
+}
+
+/* Estilos para a tabela de logs */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.logs-table th,
+.logs-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.logs-table th {
+  background-color: var(--input-bg);
+  font-weight: 600;
+}
+
+.logs-table tr:hover td {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .logs-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Estilos para o status Online/Offline */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.status-badge.status-online {
+  background-color: var(--success-color);
+}
+.status-badge.status-online::before {
+  content: "●";
+  margin-right: 5px;
+  animation: pulse 1.5s infinite;
+}
+
+.status-badge.status-offline {
+  background-color: var(--text-muted);
+}
+.status-badge.status-offline::before {
+  content: "●";
+  margin-right: 5px;
+} /* assets/css/painel_lider.css (adicione no final do arquivo) */
+
+/* Estilos para o novo modal com abas */
+.modal-body-tabs {
+  display: flex;
+  padding: 0;
+  min-height: 60vh; /* Garante uma altura mínima */
+}
+
+.user-list-column {
+  width: 280px;
+  background-color: var(--input-bg);
+  border-right: 1px solid var(--border-color);
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.user-tab {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-bottom: 0.5rem;
+}
+
+.user-tab:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.user-tab.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.user-tab.active .user-name {
+  color: white;
+}
+
+[data-theme="dark"] .user-tab:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-image: var(--primary-gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.user-tab .status-badge {
+  align-self: flex-start; /* Alinha o status badge */
+  margin-top: 4px;
+}
+
+.user-content-column {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.user-content {
+  display: none;
+}
+
+.user-content.active {
+  display: block;
+  animation: fadeIn 0.4s ease;
+}
+
+.user-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.user-kpis .kpi-item {
+  background-color: var(--input-bg);
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-kpis .kpi-item i {
+  font-size: 1.8rem;
+  color: var(--primary-color);
+}
+
+.user-kpis .kpi-item span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.user-kpis .kpi-item strong {
+  font-size: 1.1rem;
+  color: var(--text-color);
+}
+
+.user-content-column h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--primary-dark);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.valor-antigo {
+  color: var(--danger-color);
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.valor-novo {
+  color: var(--success-color);
+  font-weight: bold;
+}
+
+.user-subtext {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.user-tab.active .user-subtext {
+  color: rgba(255, 255, 255, 0.8);
+}
+/* ========================================================== */
+/* ADICIONADO: Correção para as abas do Modal de Alterações */
+/* ========================================================== */
+
+/* Esconde todos os conteúdos de alterações por padrão */
+.user-content-alteracoes {
+  display: none;
+}
+
+/* Mostra apenas o conteúdo que está com a classe "active" */
+.user-content-alteracoes.active {
+  display: block;
+  animation: fadeIn 0.4s ease; /* Efeito de transição suave */
+}
+
+/* Um pequeno ajuste para a classe da aba do novo modal */
+.user-tab-alteracoes {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-bottom: 0.5rem;
+}
+
+.user-tab-alteracoes:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.user-tab-alteracoes.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.user-tab-alteracoes.active .user-name,
+.user-tab-alteracoes.active .user-subtext {
+  color: white;
+}
+
+[data-theme="dark"] .user-tab-alteracoes:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+/* Adicione este código ao seu assets/css/painel_lider.css */
+
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.progress-percentage {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+/* ========================================================= */
+/* ESTILOS PARA CONTROLES DE PÁGINA (SELETOR DE MÊS) */
+/* ========================================================= */
+
+.page-controls {
+  display: flex;
+  justify-content: flex-start; /* Alinha à esquerda */
+  align-items: center;
+  margin-bottom: 1.5rem; /* Espaçamento abaixo */
+}
+
+.month-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--card-bg);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.month-selector label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.month-selector select {
+  background-color: transparent;
+  border: none;
+  color: var(--primary-color);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.month-selector select:focus {
+  outline: none;
+  background-color: rgba(106, 17, 203, 0.1);
+}
+
+/* Garante que o seletor no header (se existir) seja escondido */
+.header .month-selector {
+  display: none;
+}
