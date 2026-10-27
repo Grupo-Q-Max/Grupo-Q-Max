@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     const eventosUrl = process.env.EVENTOS_URL || "http://127.0.0.1:3001";
-    const fechamentoUrl = process.env.FECHAMENTO_URL || "http://127.0.0.1:8002";
+    const fechamentoUrl = (process.env.FECHAMENTO_URL || "https://grupoqmax.com.br/controle_fechamento").replace(/\/$/, "");
     return [
       {
         source: "/team/:filename*",
@@ -63,11 +63,19 @@ const nextConfig: NextConfig = {
         destination: `${fechamentoUrl}/index.php`,
       },
       {
+        source: "/fechamento/",
+        destination: `${fechamentoUrl}/index.php`,
+      },
+      {
         source: "/fechamento/:path*",
         destination: `${fechamentoUrl}/:path*`,
       },
       {
         source: "/controle-fechamento",
+        destination: `${fechamentoUrl}/index.php`,
+      },
+      {
+        source: "/controle-fechamento/",
         destination: `${fechamentoUrl}/index.php`,
       },
       {
