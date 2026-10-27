@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { isAdminToken } from "@/lib/settings";
 import { ADMIN_COOKIE } from "@/lib/auth";
+import { imageExtension } from "@/lib/storage";
 
 const PUBLIC_BRANDS_DIR = path.join(process.cwd(), "public", "brands");
 const UPLOAD_BRANDS_DIR = path.join(process.cwd(), "data", "uploads", "brands");
@@ -13,19 +14,22 @@ export async function POST(req: NextRequest) {
   }
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const filename = formData.get("filename") as string | null;
+    const file = formData.get("file");
+    const filename = formData.get("filename");
 
-    if (!file || !filename) {
+    if (!(file instanceof File) || typeof filename !== "string") {
       return NextResponse.json({ error: "Missing file or filename" }, { status: 400 });
     }
 
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "Only images allowed" }, { status: 400 });
+    if (!imageExtension(file)) {
+      return NextResponse.json({ error: "Only PNG, JPG or WebP images up to 5 MB" }, { status: 400 });
     }
 
-    // Sanitize filename
+    // Files land in public/: plain names with an image extension only (no .html/.svg)
     const safeName = path.basename(filename);
+    if (!/^[\w-]+\.(png|jpe?g|webp)$/i.test(safeName)) {
+      return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
+    }
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Save to both public/brands (dev/build static) and data/uploads/brands (runtime)

@@ -25,7 +25,7 @@ function isCrossSite(req: NextRequest) {
 }
 
 /**
- * CRM pages and APIs require a signed-in team member; editing the team requires the site admin;
+ * CRM pages, /integracao and CRM APIs require a signed-in team member; editing the team requires the site admin;
  * sign-in (/api/auth) is open. Changes from other sites are refused everywhere here.
  */
 export function proxy(req: NextRequest) {
@@ -51,5 +51,6 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/crm/:path*", "/api/crm/:path*", "/api/team/:path*", "/api/auth/:path*"],
+  // /integracao is the internal onboarding page: same sign-in as the CRM
+  matcher: ["/crm/:path*", "/integracao/:path*", "/api/crm/:path*", "/api/team/:path*", "/api/auth/:path*"],
 };

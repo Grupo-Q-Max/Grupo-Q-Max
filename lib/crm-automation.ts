@@ -15,6 +15,7 @@ import { escapeHtml, sendMail } from "@/lib/mail";
 const isHiddenCard = async (cardId: string) => (await prisma.crmCard.count({ where: { id: cardId, NOT: activeCard } })) > 0;
 import { notifyQxbackStage } from "@/lib/crm-qxback";
 import { notifyRuleFailed } from "@/lib/crm-card-notify";
+import { isPublicUrl } from "@/lib/public-url";
 import { notifyQxsignStage } from "@/lib/crm-qxsign";
 import {
   DEAL_STATUSES,
@@ -692,6 +693,10 @@ type Deal = NonNullable<Awaited<ReturnType<typeof dealContext>>>;
 async function sendWebhook(rule: WebhookRule, ctx: DealContext): Promise<ActionOutcome | string> {
   const request = buildWebhookRequest(rule, ctx);
   if (!request) return "URL do webhook não configurada";
+  // Dev keeps localhost webhooks working; production must not reach the server's own network
+  if (process.env.NODE_ENV === "production" && !(await isPublicUrl(request.url))) {
+    return { request: redactRequest(request), error: "Endereço do webhook não permitido (rede interna ou host inválido)", final: true };
+  }
 
   try {
     const res = await fetch(request.url, {
@@ -700,6 +705,8 @@ async function sendWebhook(rule: WebhookRule, ctx: DealContext): Promise<ActionO
       body: request.body,
       signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
       cache: "no-store",
+      // A redirect could point at an internal address after the check above
+      redirect: "manual",
     });
     // Masked before the cut, so a secret split by slice() can't leak half of it
     const responseBody = redactSecrets(await res.text(), request.headers).slice(0, RESPONSE_LOG_CHARS);

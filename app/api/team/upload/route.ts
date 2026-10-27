@@ -1,23 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { getUploadsDir } from "@/lib/storage";
+import { getUploadsDir, imageExtension } from "@/lib/storage";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
-  const file = formData.get("file") as File | null;
-  const memberId = formData.get("memberId") as string | null;
+  const file = formData.get("file");
+  const memberId = formData.get("memberId");
 
-  if (!file || !memberId) {
+  // memberId goes into the file name: only id characters, so it can't escape the uploads folder
+  if (!(file instanceof File) || typeof memberId !== "string" || !/^[\w-]{1,64}$/.test(memberId)) {
     return NextResponse.json({ error: "Missing file or memberId" }, { status: 400 });
   }
 
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Only images allowed" }, { status: 400 });
+  const ext = imageExtension(file);
+  if (!ext) {
+    return NextResponse.json({ error: "Only PNG, JPG or WebP images up to 5 MB" }, { status: 400 });
   }
 
   const uploadDir = getUploadsDir();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const fileName = `team-${memberId}-${Date.now()}.${ext}`;
   const filePath = path.join(uploadDir, fileName);
 

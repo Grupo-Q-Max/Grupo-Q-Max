@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(team.map(toTeamDto), { headers: noStore });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: String(error), stack: error instanceof Error ? error.stack : undefined }, { status: 500 });
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
 

@@ -80,9 +80,9 @@ export function isQxsignStage(stageId: string) {
  * Notifica o QXSign via Webhook quando um card do QXSign é alterado ou movido
  */
 export async function notifyQxsign(dealNumber: number, event = "ONCRMDEALUPDATE", extra: Record<string, string> = {}) {
-  const url = process.env.QXSIGN_WEBHOOK_URL || "http://localhost:3000/api/webhook/crm";
-  const secret = process.env.QXSIGN_WEBHOOK_SECRET || "qxs_hook_3f5a7c9b1d2e4f6a8b0c2d4e6f8a0b2c";
-  if (!url) return;
+  const url = process.env.QXSIGN_WEBHOOK_URL;
+  const secret = process.env.QXSIGN_WEBHOOK_SECRET;
+  if (!url || !secret) return;
 
   try {
     await fetch(url, {

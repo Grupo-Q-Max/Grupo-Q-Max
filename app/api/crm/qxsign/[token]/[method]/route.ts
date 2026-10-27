@@ -11,7 +11,7 @@ const digest = (value: string) => createHash("sha256").update(value).digest();
  */
 async function handler(req: Request, { params }: { params: Promise<{ token: string; method: string }> }) {
   const { token, method } = await params;
-  const secret = process.env.QXSIGN_TOKEN || "qxs_token_7a1b3c5d9e0f2a4c6e8b0d1e3f5a7c9b";
+  const secret = process.env.QXSIGN_TOKEN;
   if (!secret || !timingSafeEqual(digest(token), digest(secret))) {
     return NextResponse.json({ error: "INVALID_TOKEN", error_description: "Token inválido" }, { status: 401 });
   }

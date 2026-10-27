@@ -106,10 +106,12 @@ export const isQxbackStage = (stageId: string) => Object.values(envMap("QXBACK_S
  * DEAL_SOURCE=crm) and refreshes its products/value — closing the gap after "Proposta enviada"
  * for edits made in the CRM UI, not through the QXBACK rest route above.
  */
-const DEFAULT_QXBACK_SECRET = "qxb_hook_7c2e9a1b4d6f8e0c3a5b7d9e1f2a4c6e";
-
 export async function notifyQxback(dealNumber: number, event = "ONCRMDEALUPDATE", extra: Record<string, string> = {}) {
-  const secret = process.env.QXBACK_WEBHOOK_SECRET?.trim() || DEFAULT_QXBACK_SECRET;
+  const secret = process.env.QXBACK_WEBHOOK_SECRET?.trim();
+  if (!secret) {
+    console.warn("[notifyQxback] QXBACK_WEBHOOK_SECRET not set; skipping webhook");
+    return;
+  }
   const configured = process.env.QXBACK_WEBHOOK_URL?.trim();
 
   const candidates = [
