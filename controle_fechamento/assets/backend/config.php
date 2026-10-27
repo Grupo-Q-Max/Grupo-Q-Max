@@ -27,17 +27,38 @@ if (file_exists($envFile)) {
     }
 }
 
-$dbHost = getenv('DB_HOST') ?: '74.249.25.198';
-$dbUsername = getenv('DB_USER') ?: 'controle_fechamento';
+$dbHost = getenv('DB_HOST') ?: 'webbd01-app-server.mysql.database.azure.com';
+if ($dbHost === '74.249.25.198') {
+    $dbHost = 'webbd01-app-server.mysql.database.azure.com';
+}
+$dbUsername = getenv('DB_USER') ?: 'eventos';
+if ($dbUsername === 'controle_fechamento') {
+    $dbUsername = 'eventos';
+}
 $dbUser = $dbUsername;
-$dbPassword = getenv('DB_PASS') ?: 'By!U-Hr/8lOPa(y*';
+$dbPassword = getenv('DB_PASS') ?: 'U2a6M2slUs-^';
+if ($dbPassword === 'By!U-Hr/8lOPa(y*') {
+    $dbPassword = 'U2a6M2slUs-^';
+}
 $dbPass = $dbPassword;
-$dbName = getenv('DB_NAME') ?: 'controle_fechamento';
-$dbPort = (int)(getenv('DB_PORT') ?: 33306);
+$dbName = getenv('DB_NAME') ?: 'eventos';
+if ($dbName === 'controle_fechamento') {
+    $dbName = 'eventos';
+}
+$dbPort = (int)(getenv('DB_PORT') ?: 3306);
+if ($dbPort === 33306) {
+    $dbPort = 3306;
+}
 
-$conexao = new mysqli($dbHost, $dbUsername, $dbPassword, $dbName, $dbPort);
+$conexao = mysqli_init();
+if ($dbHost && (strpos($dbHost, 'azure.com') !== false || getenv('DB_SSL') === 'true')) {
+    $conexao->ssl_set(NULL, NULL, NULL, NULL, NULL);
+    $flags = MYSQLI_CLIENT_SSL;
+} else {
+    $flags = 0;
+}
 
-if ($conexao->connect_error) {
+if (!$conexao->real_connect($dbHost, $dbUsername, $dbPassword, $dbName, $dbPort, NULL, $flags)) {
     die("Erro de conexão: " . $conexao->connect_error);
 }
 
