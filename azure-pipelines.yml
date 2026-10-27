@@ -250,7 +250,7 @@ steps:
       }
  
       # Async (see .github/workflows/deploy.yml): the synchronous call hit the 504 gateway timeout
-      $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true&isAsync=true"
+      $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true&async=true"
  
       Write-Host "Publicando Grupo Q-Max..."
  
