@@ -16,6 +16,24 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
 
+  // CSP left out on purpose: GA4, MSAL popup and the Google Maps embed need a tuned policy
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          // No includeSubDomains: other *.qmaxbrasil.com.br hosts are not known to be HTTPS-only
+          { key: "Strict-Transport-Security", value: "max-age=31536000" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // camera=(self): the Finora Experience admin (rewritten under this origin) scans with the camera
+          { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
+
   async redirects() {
     return [
       { source: "/crm/access", destination: "/crm/settings/access", permanent: true },

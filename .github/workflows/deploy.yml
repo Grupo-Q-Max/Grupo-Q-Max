@@ -5,6 +5,14 @@ on:
     branches:
       - main
 
+# One deploy at a time: db push and the Kudu zip deploy must not overlap; a newer push waits
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -27,6 +35,18 @@ jobs:
       QXBACK_FIELDS: ${{ secrets.QXBACK_FIELDS }}
       QXBACK_WEBHOOK_URL: ${{ secrets.QXBACK_WEBHOOK_URL }}
       QXBACK_WEBHOOK_SECRET: ${{ secrets.QXBACK_WEBHOOK_SECRET }}
+      # Integração QXSign (lib/crm-qxsign.ts); sem QXSIGN_TOKEN a rota recusa tudo
+      QXSIGN_TOKEN: ${{ secrets.QXSIGN_TOKEN }}
+      QXSIGN_STAGES: ${{ secrets.QXSIGN_STAGES }}
+      QXSIGN_WEBHOOK_URL: ${{ secrets.QXSIGN_WEBHOOK_URL }}
+      QXSIGN_WEBHOOK_SECRET: ${{ secrets.QXSIGN_WEBHOOK_SECRET }}
+      # Eventos (Finora Experience) API/web, read from the same .env by runner.js
+      EVENTOS_DATABASE_URL: ${{ secrets.EVENTOS_DATABASE_URL }}
+      EVENTOS_JWT_SECRET: ${{ secrets.EVENTOS_JWT_SECRET }}
+      EVENTOS_CPF_HASH_SECRET: ${{ secrets.EVENTOS_CPF_HASH_SECRET }}
+      EVENTOS_DATA_ENCRYPTION_KEY: ${{ secrets.EVENTOS_DATA_ENCRYPTION_KEY }}
+      FINORA_ADMIN_API_KEY: ${{ secrets.FINORA_ADMIN_API_KEY }}
+      FINORA_ADMIN_SESSION_TOKEN: ${{ secrets.FINORA_ADMIN_SESSION_TOKEN }}
 
     steps:
       - name: Checkout Repository
@@ -47,6 +67,10 @@ jobs:
         run: |
           npx prisma generate
           npx prisma generate --schema=eventos/apps/api/prisma/schema.prisma
+
+      # Before touching the production database
+      - name: Testes (node:test)
+        run: npm test
 
       - name: Sincronizar Banco de Dados (DB Push)
         run: npx prisma db push
@@ -106,15 +130,11 @@ jobs:
           echo "MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID}" >> deploy/.env
           echo "MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}" >> deploy/.env
           echo "MICROSOFT_ALLOWED_DOMAINS=${MICROSOFT_ALLOWED_DOMAINS}" >> deploy/.env
-          echo "EVENTOS_DATABASE_URL='mysql://eventos:U2a6M2slUs-^@webbd01-app-server.mysql.database.azure.com:3306/eventos?sslaccept=strict'" >> deploy/.env
-          echo "EVENTOS_JWT_SECRET='LrHr6PbK8VwoJOyEAWJb8LQRmrL9BtnMPnV1FvKNXKAKaPGqX0zwE7znNm08u9cM4Tjc1KlyvByqXUzrRGU0wQ=='" >> deploy/.env
-          echo "EVENTOS_CPF_HASH_SECRET='sH/m2ZPzl2LKsVk7vltdhyskTxw9AytxVWYUb4xHCgm0er8TPZPJU8AvKPfoaUnMYyTpteYEsW/k1k2SJKsMJQ=='" >> deploy/.env
-          echo "EVENTOS_DATA_ENCRYPTION_KEY='KpNIaoTapxUlgRL8zfFJf28/h7GuRWt1/6x1pNwu9gU='" >> deploy/.env
-          echo "FINORA_ADMIN_API_KEY='d1e5e0767cdf3fa8011eac46f983cbaf3d2f5aff806d27c6631cb751b4c8c9b3'" >> deploy/.env
-          echo "FINORA_ADMIN_SESSION_TOKEN='66b34419aded34f57ad0b5a70375e8c9174bc3c1a10ee72b61272e7a2ee406df'" >> deploy/.env
           echo "DISABLE_WHATSAPP='true'" >> deploy/.env
           # Aspas simples: QXBACK_STAGES/QXBACK_FIELDS são JSON; secret vazio = variável fora do .env (node --env-file)
-          for name in AUTH_SECRET ADMIN_PASSWORD QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET; do
+          for name in AUTH_SECRET ADMIN_PASSWORD QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET \
+            QXSIGN_TOKEN QXSIGN_STAGES QXSIGN_WEBHOOK_URL QXSIGN_WEBHOOK_SECRET \
+            EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN; do
             if [ -n "${!name}" ]; then echo "${name}='${!name}'" >> deploy/.env; fi
           done
 
@@ -235,7 +255,9 @@ jobs:
               Authorization = "Basic $base64"
           }
 
-          $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true"
+          # Async: Kudu answers 202 right after the upload and deploys on the server. The synchronous
+          # call outlived the ~4 min front-end timeout (504 GatewayTimeout) once the package grew with Eventos.
+          $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true&isAsync=true"
 
           Write-Host "Publicando Grupo Q-Max..."
 
@@ -252,6 +274,28 @@ jobs:
 
           if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
               throw "Deploy falhou com HTTP $($response.StatusCode)"
+          }
+
+          # Kudu DeployStatus: 3 = Failed, 4 = Success
+          $statusUrl = "$($response.Headers.Location)"
+          if ([string]::IsNullOrWhiteSpace($statusUrl)) { $statusUrl = "$kuduBase/api/deployments/latest" }
+          $deadline = (Get-Date).AddMinutes(30)
+          $deployment = $null
+          do {
+              Start-Sleep -Seconds 15
+              try {
+                  $deployment = Invoke-RestMethod -Uri $statusUrl -Headers $headers -TimeoutSec 60
+                  Write-Host "Deploy: status=$($deployment.status) $($deployment.status_text) complete=$($deployment.complete)"
+              } catch {
+                  Write-Host "Status do deploy indisponivel: $($_.Exception.Message)"
+              }
+          } until (($deployment -and $deployment.complete) -or (Get-Date) -gt $deadline)
+
+          if (-not ($deployment -and $deployment.complete)) {
+              throw "Deploy nao terminou em 30 minutos."
+          }
+          if ($deployment.status -ne 4) {
+              throw "Deploy falhou no servidor (status $($deployment.status)): $($deployment.status_text)"
           }
 
           Write-Host "Deploy concluido com sucesso."

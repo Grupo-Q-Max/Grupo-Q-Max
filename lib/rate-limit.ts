@@ -1,4 +1,5 @@
-import { redis } from "@/lib/realtime";
+// Relative path with extension so node:test can load this file (Node resolves neither @/ nor extensionless imports)
+import { redis } from "./realtime.ts";
 
 // Fixed window. With REDIS_URL the count is shared by every instance; without it (or when Redis
 // fails) it falls back to this process's memory, so logins keep working while Redis is down.
