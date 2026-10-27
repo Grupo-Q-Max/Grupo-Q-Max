@@ -249,7 +249,8 @@ steps:
           Authorization = "Basic $base64"
       }
  
-      $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true"
+      # Async (see .github/workflows/deploy.yml): the synchronous call hit the 504 gateway timeout
+      $url = "$kuduBase/api/publish?type=zip&clean=true&restart=true&isAsync=true"
  
       Write-Host "Publicando Grupo Q-Max..."
  
@@ -267,7 +268,29 @@ steps:
       if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
           throw "Deploy falhou com HTTP $($response.StatusCode)"
       }
- 
+
+      # Kudu DeployStatus: 3 = Failed, 4 = Success
+      $statusUrl = "$($response.Headers.Location)"
+      if ([string]::IsNullOrWhiteSpace($statusUrl)) { $statusUrl = "$kuduBase/api/deployments/latest" }
+      $deadline = (Get-Date).AddMinutes(30)
+      $deployment = $null
+      do {
+          Start-Sleep -Seconds 15
+          try {
+              $deployment = Invoke-RestMethod -Uri $statusUrl -Headers $headers -TimeoutSec 60
+              Write-Host "Deploy: status=$($deployment.status) $($deployment.status_text) complete=$($deployment.complete)"
+          } catch {
+              Write-Host "Status do deploy indisponivel: $($_.Exception.Message)"
+          }
+      } until (($deployment -and $deployment.complete) -or (Get-Date) -gt $deadline)
+
+      if (-not ($deployment -and $deployment.complete)) {
+          throw "Deploy nao terminou em 30 minutos."
+      }
+      if ($deployment.status -ne 4) {
+          throw "Deploy falhou no servidor (status $($deployment.status)): $($deployment.status_text)"
+      }
+
       Write-Host "Deploy concluido com sucesso."
   env:
     PUBLISH_USER: $(PUBLISH_USER)
