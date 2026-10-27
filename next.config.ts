@@ -82,6 +82,46 @@ const nextConfig: NextConfig = {
         source: "/controle-fechamento/:path*",
         destination: `${fechamentoUrl}/:path*`,
       },
+      {
+        source: "/controle_fechamento",
+        destination: `${fechamentoUrl}/index.php`,
+      },
+      {
+        source: "/controle_fechamento/",
+        destination: `${fechamentoUrl}/index.php`,
+      },
+      {
+        source: "/controle_fechamento/:path*",
+        destination: `${fechamentoUrl}/:path*`,
+      },
+      {
+        source: "/assets/:path*",
+        destination: `${fechamentoUrl}/assets/:path*`,
+      },
+      {
+        source: "/partes/:path*",
+        destination: `${fechamentoUrl}/partes/:path*`,
+      },
+      {
+        source: "/Documentos/:path*",
+        destination: `${fechamentoUrl}/Documentos/:path*`,
+      },
+      {
+        source: "/scripts_globais.js",
+        destination: `${fechamentoUrl}/scripts_globais.js`,
+      },
+      {
+        source: "/password_modal.js",
+        destination: `${fechamentoUrl}/password_modal.js`,
+      },
+      {
+        source: "/notifications.js",
+        destination: `${fechamentoUrl}/notifications.js`,
+      },
+      {
+        source: "/:file.php",
+        destination: `${fechamentoUrl}/:file.php`,
+      },
     ];
   },
 };

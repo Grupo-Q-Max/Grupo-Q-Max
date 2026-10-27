@@ -1,0 +1,282 @@
+/* ============================================= */
+/* CSS para a página de Fechamento Completo     */
+/* ============================================= */
+
+/* --- VARIÁVEIS GLOBAIS --- */
+:root {
+  --primary-color: #6a11cb;
+  --primary-dark: #2575fc;
+  --primary-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  --success-color: #27ae60;
+  --error-color: #c0392b;
+  --warning-color: #f39c12;
+  --info-color: #3498db;
+  --animation-speed: 0.3s;
+  /* Light Theme */
+  --bg-color: #f4f7f9;
+  --card-bg: #ffffff;
+  --text-color: #34495e;
+  --text-muted: #7f8c8d;
+  --border-color: #e0e5ec;
+  --input-bg: #fdfdfd;
+  --shadow-color: rgba(106, 17, 203, 0.1);
+}
+:root[data-theme="dark"] {
+  --bg-color: #1a1a2e;
+  --card-bg: #16213e;
+  --text-color: #e0e0e0;
+  --text-muted: #a7a9be;
+  --border-color: #2a3b5a;
+  --input-bg: #0f192e;
+  --shadow-color: rgba(0, 0, 0, 0.2);
+}
+
+/* --- ESTILOS BASE E FUNDO --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Segoe UI", sans-serif;
+  transition: background-color var(--animation-speed) ease;
+}
+
+/* --- HEADER --- */
+.header {
+  background: var(--card-bg);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px var(--shadow-color);
+  border-bottom: 2px solid var(--primary-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+.btn-primary-custom {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--animation-speed) ease;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-primary-custom:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px var(--shadow-color);
+}
+
+/* --- LAYOUT PRINCIPAL E CARD DE FILTROS --- */
+.main-content {
+  padding: 1.5rem;
+  max-width: 100%;
+}
+.filters-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 30px var(--shadow-color);
+  border: 1px solid var(--border-color);
+}
+.filters-card h2 {
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+.filter-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.form-select {
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.2);
+}
+
+/* --- TABELA E DATATABLES --- */
+.table-container {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 8px 30px var(--shadow-color);
+  border: 1px solid var(--border-color);
+}
+.table-container {
+  overflow-x: auto;
+  position: relative;
+}
+
+/* Fixar as primeiras 3 colunas (Código, Empresa, CNPJ) */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1),
+.data-table th:nth-child(3),
+.data-table td:nth-child(3),
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) {
+  position: sticky;
+  left: 0;
+  background-color: #fff;
+  z-index: 2;
+  border-right: 1px solid #ccc;
+}
+
+/* Ajuste das colunas subsequentes para não sobrepor */
+.data-table th:nth-child(3) {
+  left: 60px;
+} /* largura da coluna Código */
+.data-table th:nth-child(4) {
+  left: 300px;
+} /* largura da coluna Empresa */
+.data-table td:nth-child(3) {
+  left: 60px;
+}
+.data-table td:nth-child(4) {
+  left: 300px;
+}
+
+.dataTables_wrapper {
+  background: transparent;
+}
+table.dataTable {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+.dataTables_scrollHead th {
+  background: var(--primary-color) !important;
+  color: white !important;
+}
+.dataTables_scrollBody {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) var(--input-bg);
+}
+.dataTables_scrollBody::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.dataTables_scrollBody::-webkit-scrollbar-track {
+  background: var(--input-bg);
+}
+.dataTables_scrollBody::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 10px;
+  border: 2px solid var(--input-bg);
+}
+
+/* Estilização da tabela no Tema Escuro */
+[data-theme="dark"] table.dataTable tr:hover td {
+  background-color: rgba(37, 117, 252, 0.1);
+}
+[data-theme="dark"] .dataTables_length select,
+[data-theme="dark"] .dataTables_filter input {
+  background-color: var(--input-bg);
+  color: var(--text-color);
+}
+
+/* Badges */
+.badge {
+  padding: 0.3rem 0.7rem;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+.badge-success {
+  background-color: var(--success-color);
+  color: white;
+}
+.badge-danger {
+  background-color: var(--error-color);
+  color: white;
+}
+.badge-warning {
+  background-color: var(--warning-color);
+  color: #fff;
+}
+
+/* Células Editáveis e Checkboxes */
+td.editable {
+  cursor: pointer;
+}
+.month-check {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 2px solid var(--border-color);
+  background-color: transparent;
+  position: relative;
+  transition: all var(--animation-speed) ease;
+  cursor: pointer;
+}
+.month-check.checked {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
+.month-check.checked::after {
+  content: "✓";
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* --- THEME TOGGLE (BOTÃO DE TEMA) --- */
+.theme-toggle {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 5px 15px var(--shadow-color);
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 8px 20px var(--shadow-color);
+}
+
+.theme-toggle i {
+  font-size: 1.3rem;
+  color: var(--primary-color);
+}
