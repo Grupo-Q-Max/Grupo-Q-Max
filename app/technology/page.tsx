@@ -81,35 +81,34 @@ export default function TechnologyPage() {
       <TechPreloader />
 
       {/* HERO SECTION - VÍDEO */}
-      <ScrollReveal animation="fade-up">
-        <section className="tech-hero">
-          <div className="tech-hero__video-wrapper">
-            <Image 
-              src="/technology/futuristic-hero.jpg"
-              alt="Futuristic Digital Landscape"
-              fill
-              className="tech-hero__bg-image"
-              priority
-              style={{ objectFit: 'cover' }}
-            />
-            <div className="tech-hero__overlay" />
-            
-            <div className="tech-hero__orb tech-hero__orb--1"></div>
-            <div className="tech-hero__orb tech-hero__orb--2"></div>
-            <div className="tech-hero__orb tech-hero__orb--3"></div>
-            
-            <div className="tech-hero__content">
-              <h1 className="tech-hero__title">
-                CONSTRUINDO O <span className="text-glow-tech">FUTURO DIGITAL</span> <br />
-                DA SUA EMPRESA.
-              </h1>
-              <p className="tech-hero__subtitle">
-                Estratégias avançadas, automações e desenvolvimento de alto desempenho para marcas que exigem o melhor.
-              </p>
-            </div>
+      {/* Not inside ScrollReveal: this is the LCP image, it must show without waiting for JS */}
+      <section className="tech-hero">
+        <div className="tech-hero__video-wrapper">
+          <Image 
+            src="/technology/futuristic-hero.jpg"
+            alt="Futuristic Digital Landscape"
+            fill
+            className="tech-hero__bg-image"
+            priority
+            style={{ objectFit: 'cover' }}
+          />
+          <div className="tech-hero__overlay" />
+          
+          <div className="tech-hero__orb tech-hero__orb--1"></div>
+          <div className="tech-hero__orb tech-hero__orb--2"></div>
+          <div className="tech-hero__orb tech-hero__orb--3"></div>
+          
+          <div className="tech-hero__content">
+            <h1 className="tech-hero__title">
+              CONSTRUINDO O <span className="text-glow-tech">FUTURO DIGITAL</span> <br />
+              DA SUA EMPRESA.
+            </h1>
+            <p className="tech-hero__subtitle">
+              Estratégias avançadas, automações e desenvolvimento de alto desempenho para marcas que exigem o melhor.
+            </p>
           </div>
-        </section>
-      </ScrollReveal>
+        </div>
+      </section>
 
       {/* INTRO SECTION */}
       <ScrollReveal animation="fade-up" delay={0.1}>
