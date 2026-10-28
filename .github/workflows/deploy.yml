@@ -64,6 +64,7 @@ jobs:
         run: |
           npm ci
           cd eventos && (npm ci || npm install --prefer-offline --no-audit) && cd ..
+          cd proposta && (npm ci || npm install --prefer-offline --no-audit) && cd ..
 
       - name: Generate Prisma Client
         run: |
@@ -182,7 +183,31 @@ jobs:
             echo "Configurando Proposta..."
             mkdir -p deploy/proposta
             cp -R proposta/. deploy/proposta/
-            rm -rf deploy/proposta/.git deploy/proposta/*.docx deploy/proposta/*.docx.txt deploy/proposta/*.zip deploy/proposta/storage/propostas_pdf/*
+            rm -rf deploy/proposta/.git deploy/proposta/*.docx deploy/proposta/*.docx.txt deploy/proposta/*.zip deploy/proposta/storage/propostas_pdf/* deploy/proposta/.git_backup deploy/proposta/*.sql
+            (cd deploy/proposta && npm install --omit=dev --prefer-offline --no-audit --no-fund)
+
+            echo "Criando .env da Proposta..."
+            echo "PORT=3005" > deploy/proposta/.env
+            echo "DB_HOST=webbd01-app-server.mysql.database.azure.com" >> deploy/proposta/.env
+            echo "DB_USER=proposta" >> deploy/proposta/.env
+            echo "DB_PASS=0_6]},3]4Nt}" >> deploy/proposta/.env
+            echo "DB_NAME=proposta" >> deploy/proposta/.env
+            echo "DB_PORT=3306" >> deploy/proposta/.env
+            echo "DB_SSL=true" >> deploy/proposta/.env
+            echo "BASE_URL=https://qmaxbrasil.com.br" >> deploy/proposta/.env
+            echo "APP_BASE_PATH=/proposta" >> deploy/proposta/.env
+            echo "JWT_SECRET='Finora@QMax_2026_SecureKey!'" >> deploy/proposta/.env
+            echo "EMAIL_USER='envio@qmax.com.br'" >> deploy/proposta/.env
+            echo "OAUTH_CLIENT_ID='a3abbfff-849d-4f75-9fd7-d1a87f57b7be'" >> deploy/proposta/.env
+            echo "OAUTH_CLIENT_SECRET='Ct48Q~mI3T2Shm5lCDk4z.vwJDdgtIe6QZA9nbze'" >> deploy/proposta/.env
+            echo "OAUTH_REFRESH_TOKEN='1.AbcApF6m4xtZq06s9QWQgydPmP-_q6OdhHVPn9fRqH9Xt74AAKq3AA.BQABAwEAAAADAOz_BQD0_0V2b1N0c0FydGlmYWN0cwIAAAAAAIuL6GsVsqKQSMhx0kAjkUcioDgViuBj9zCSjSOzUMlPUI0mFtglHR_7-tftTTKTE9b4YJIsDXPCJC5Lyw8LVREUQHkTFU1UdwRwgmY6Ox0FA7mtXnWyG5z3KLmvjldk1VmMQVWmw6v_bnzBQTlAny_gM9H_7y3OwWoxBcFfAZlNB2WJVC8R-Lxd0HGZmctsmIpqtEAn37dr4mi37Y7yjM1ZVCU8TRO_AkROUK4lAwDvyrJp4XRoGZtBiRx-SwLKw8CIBojJ6wxMmvylKZGgCpdTp066dBSncJb9EpJtNc4UgVzwj-bzWP95GnvkhhQTydDkngPHZpPSpjE0nejGQViTT6MF28xIAvuoe5CIy33gee3sjPpdut4w6rn_aQFXAh-QWEggdK_Hw2DWMM2EB7-mZUPSecGAQhOrPadEWvq34DebcIdl_udHZwjCgqhzHsLbEIm-TZpTf43g4UC9kXhUMKi5pj5a2mDE-9bZfm4p9HnVOtSVY2ifu6X7bBYAEl3nHA6WHAYEEukFa-cv_sM8NoCG23CI9tytub0wtEizyj9UgXkR8G0S_4buowUsKb_8AhEBI9zG31zQEwDwzu9mvvHhZwAguOH61S5tZ8c4UoHHARcl7sAKojL9EbQ873_NHiWWcl672Q4w13Ff46dX_5T9VVd5FIDa2gXTXyu0e-o8P3Ih9jnQaT-0ahk_zLYoFhww2fKoto1eViDUQAwb-XLrEmUfOj8WsGMEfpvF9JHShGAOU5FaOQgqHFaAKhmtyak1D4wsLqJvr90o32xdTPdSfMOKdMcT1Wk58dn57TuRa8MissXg1x-RAesoeUOL5wVkX8zYJ8XLc3nPRaTUuicaVeygen0VxJGrSbz_3ZAmuxJfe9ERLwkGluH7hslpUZn8bsFaIKgsX3cWZG8sJ4362iXpUQfxq498Iy-HeN58C1G2VGSalpMrJX96976DjOutSl_OaujCln3pgaG7Kk2Z-9aOtinalW5y0PhGHHuhZ1hJJFGFFQWlo4vJvd262K-LUB1HJRnLu14tFPDay2ra_i6kkTwHFDQ0S-XbM8mFX_5aoVWh9uGzg4bSAIL3ydpAIyNAr5qKqxVtp0OGJj2GjXIeyC0Uy_9Iop3lDoWVNVYrB--f_BC3DVzfQ1qcyPTDhGduZd3JOvs54kVh5AcYlFwFvbcQ5qKWtiLDOiN-zIhXkJ1BH9Suf9nWfMyaWAPhBrL3ygs-1GnXAUGcH3kRuyk3-66vj7tQBXodW68gOhAo0iaNpeZYD9GMRSnbgC5SAeFgQACVPXR0n1uHEJyOrCw_3KMee7co8emdf-GlYBfh2aYHpyfNNP-6SLN1MMDEnC5J9qljbcE'" >> deploy/proposta/.env
+            echo "OAUTH_TENANT_ID='e3a65ea4-591b-4eab-acf5-059083274f98'" >> deploy/proposta/.env
+            echo "D4SIGN_API_TOKEN='live_3e1ff18366cea06770e356b676c8aa00e81f81d9408bf4775de62fe34876e09b'" >> deploy/proposta/.env
+            echo "D4SIGN_API_SECRET='live_crypt_Yn74v8AsTUJfetf7Vwn4ORdrqX0Yd7iG'" >> deploy/proposta/.env
+            echo "D4SIGN_API_URL='https://secure.d4sign.com.br/api/v1'" >> deploy/proposta/.env
+            echo "D4SIGN_UUID_COFRE='d447cb15-9fc3-4da2-9367-eb630dfd800a'" >> deploy/proposta/.env
+            echo "EMAIL_REPRESENTANTE_QMAX='contato@grupoqmax.com.br'" >> deploy/proposta/.env
+            echo "CERTIFICADO_ENCRYPTION_KEY='RB0dT344lLMfQJfCYu36+wK5WZVuSpF9KzYEob4/hyUPX2+s/gpxXY1J8J+2gAbQ'" >> deploy/proposta/.env
           fi
 
           echo "Configurando Eventos Web..."
@@ -235,6 +260,7 @@ jobs:
           unzip -l site.zip | grep "runner.js"
           unzip -l site.zip | grep "eventos-api/dist/src/main.js"
           unzip -l site.zip | grep "eventos-web/apps/web/server.js"
+          unzip -l site.zip | grep "proposta/server.js"
 
           echo ""
           echo "PACOTE VALIDADO COM SUCESSO."
