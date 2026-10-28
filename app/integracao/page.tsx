@@ -168,8 +168,8 @@ const crmFeatures = [
   },
   {
     icon: Layers,
-    title: "Espaços e permissões",
-    text: "Pipelines são agrupados em espaços na barra lateral. Você só vê os pipelines liberados para você ou para o seu grupo.",
+    title: "Times e permissões",
+    text: "Pipelines são agrupados em times na barra lateral. Você só vê os pipelines liberados para você ou para o seu grupo.",
   },
   {
     icon: Contact,

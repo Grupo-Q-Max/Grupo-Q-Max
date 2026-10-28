@@ -17,10 +17,12 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
     prisma.crmSpace.findMany({ orderBy: { order: "asc" }, select: { id: true, name: true, pipelines: pipelineSelect } }),
     prisma.crmPipeline.findMany({ ...pipelineSelect, where: { ...pipelineSelect.where, spaceId: null } }),
   ]);
-  // Pipelines without a space go under "Geral"; spaces with nothing visible are hidden
+  // Pipelines without a team go under "Geral". Empty teams are hidden, except for whoever can
+  // move pipelines (drag and drop needs every team as a drop target)
+  const canMove = permissions.includes("pipeline.edit");
   const sidebarSpaces: SidebarSpace[] = [
-    ...(loose.length ? [{ id: "", name: "Geral", pipelines: loose }] : []),
-    ...spaces.filter((space) => space.pipelines.length > 0),
+    ...(loose.length || canMove ? [{ id: "", name: "Geral", pipelines: loose }] : []),
+    ...spaces.filter((space) => canMove || space.pipelines.length > 0),
   ];
 
   return (
