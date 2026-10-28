@@ -208,8 +208,8 @@ export function CrmButtons({
               </Select>
             </div>
             <div className="crm-modal-group" style={{ flex: 1 }}>
-              <label>Espaço</label>
-              <Select value={pipelineSpace} onChange={(e) => setPipelineSpace(e.target.value)} disabled={isLoading} aria-label="Espaço">
+              <label>Time</label>
+              <Select value={pipelineSpace} onChange={(e) => setPipelineSpace(e.target.value)} disabled={isLoading} aria-label="Time">
                 <option value="">Geral</option>
                 {spaces.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>

@@ -107,7 +107,7 @@ export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; opti
           <X size={20} />
         </button>
         <h2>Configurações do Pipeline</h2>
-        <p>Defina nome, espaço, tipo, quem vê o pipeline e os campos personalizados.</p>
+        <p>Defina nome, time, tipo, quem vê o pipeline e os campos personalizados.</p>
 
         <div className="crm-modal-group" style={{ marginTop: '24px' }}>
           <label>Nome do Pipeline</label>
@@ -121,8 +121,8 @@ export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; opti
 
         <div style={{ display: 'flex', gap: '16px' }}>
           <div className="crm-modal-group" style={{ flex: 1 }}>
-            <label>Espaço</label>
-            <Select value={spaceId} onChange={(e) => setSpaceId(e.target.value)} aria-label="Espaço">
+            <label>Time</label>
+            <Select value={spaceId} onChange={(e) => setSpaceId(e.target.value)} aria-label="Time">
               <option value="">Geral</option>
               {options.spaces.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>

@@ -40,19 +40,19 @@ export function CrmSettings({
       setError((await res.json().catch(() => null))?.error ?? "Não foi possível salvar.");
       return false;
     }
-    setNotice("Espaços atualizados.");
+    setNotice("Times atualizados.");
     router.refresh();
     return true;
   };
 
   const renameSpace = async (space: Space) => {
-    const name = (await promptDialog("Novo nome do espaço", { title: "Renomear espaço", defaultValue: space.name }))?.trim();
+    const name = (await promptDialog("Novo nome do time", { title: "Renomear time", defaultValue: space.name }))?.trim();
     if (name && name !== space.name) saveSpace("PATCH", { id: space.id, name });
   };
 
   const deleteSpace = async (space: Space) => {
-    const ok = await confirmDialog(`Excluir o espaço "${space.name}"? Os pipelines dele vão para "Geral".`, {
-      title: "Excluir espaço",
+    const ok = await confirmDialog(`Excluir o time "${space.name}"? Os pipelines dele vão para "Geral".`, {
+      title: "Excluir time",
       confirmLabel: "Excluir",
     });
     if (ok) saveSpace("DELETE", undefined, `?id=${encodeURIComponent(space.id)}`);
@@ -103,9 +103,9 @@ export function CrmSettings({
 
         {spaces && (
           <section className="crm-access__editor crm-settings__section">
-            <h3>Espaços</h3>
+            <h3>Times</h3>
             <p className="crm-access__note">
-              Áreas que agrupam os pipelines na barra lateral (ex.: Comercial, Marketing, Tecnologia). O espaço de cada
+              Áreas que agrupam os pipelines na barra lateral (ex.: Comercial, Marketing, Tecnologia). O time de cada
               pipeline é escolhido nas configurações do pipeline.
             </p>
             <ul className="crm-settings__list">
@@ -133,14 +133,14 @@ export function CrmSettings({
               <input
                 type="text"
                 maxLength={100}
-                placeholder="Novo espaço (ex.: Tecnologia)"
+                placeholder="Novo time (ex.: Tecnologia)"
                 value={newSpace}
                 onChange={(e) => setNewSpace(e.target.value)}
                 disabled={saving}
-                aria-label="Nome do novo espaço"
+                aria-label="Nome do novo time"
               />
               <button type="submit" className="btn-primary" disabled={saving || !newSpace.trim()}>
-                <Plus size={16} /> Criar espaço
+                <Plus size={16} /> Criar time
               </button>
             </form>
           </section>

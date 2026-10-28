@@ -8,7 +8,7 @@ const validName = (value: unknown) => {
   return name && name.length <= 100 ? name : null;
 };
 
-const duplicate = () => NextResponse.json({ error: "Já existe um espaço com esse nome." }, { status: 409 });
+const duplicate = () => NextResponse.json({ error: "Já existe um time com esse nome." }, { status: 409 });
 
 /** Adds a space at the end of the sidebar: `{ name }`. */
 export async function POST(req: Request) {
@@ -42,7 +42,7 @@ export async function PATCH(req: Request) {
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return duplicate();
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
-      return NextResponse.json({ error: "Espaço não encontrado." }, { status: 404 });
+      return NextResponse.json({ error: "Time não encontrado." }, { status: 404 });
     }
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

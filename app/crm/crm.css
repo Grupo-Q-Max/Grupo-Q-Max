@@ -181,6 +181,51 @@
   background: rgba(217, 15, 129, 0.12);
 }
 
+/* Drag and drop of pipelines between teams */
+.crm-space {
+  border-radius: 8px;
+  outline: 1px dashed transparent;
+  transition: background 0.15s, outline-color 0.15s;
+}
+
+.crm-space.is-drop-target {
+  background: rgba(217, 15, 129, 0.06);
+  outline-color: rgba(217, 15, 129, 0.5);
+}
+
+.crm-space__item[draggable="true"] {
+  cursor: grab;
+}
+
+.crm-space__item.is-dragging {
+  opacity: 0.4;
+}
+
+.crm-space__empty {
+  margin: 0;
+  padding: 4px 10px 8px;
+  color: #5a5560;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.crm-space__add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 0;
+  background: none;
+  color: #6f6a75;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.crm-space__add:hover {
+  color: #fff;
+}
+
 .crm-main {
   flex: 1;
   display: flex;

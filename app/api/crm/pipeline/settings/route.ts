@@ -29,7 +29,16 @@ export async function PUT(req: Request) {
       }
       dataToUpdate.name = name.trim();
     }
-    if (spaceId !== undefined) dataToUpdate.spaceId = typeof spaceId === "string" && spaceId ? spaceId : null;
+    if (spaceId !== undefined) {
+      const target = typeof spaceId === "string" && spaceId ? spaceId : null;
+      const current = await prisma.crmPipeline.findUnique({ where: { id }, select: { spaceId: true } });
+      // A pipeline that changes team goes to the end of the new team's list
+      if (current && current.spaceId !== target) {
+        const last = await prisma.crmPipeline.findFirst({ where: { spaceId: target }, orderBy: { order: "desc" }, select: { order: true } });
+        dataToUpdate.order = (last?.order ?? -1) + 1;
+      }
+      dataToUpdate.spaceId = target;
+    }
     if (kind !== undefined) {
       if (kind !== "DEALS" && kind !== "TASKS") return NextResponse.json({ error: "Invalid kind" }, { status: 400 });
       if (kind === "TASKS") {

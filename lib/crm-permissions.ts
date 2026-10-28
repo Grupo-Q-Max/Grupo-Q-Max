@@ -8,8 +8,8 @@ export const PERMISSION_SECTIONS = [
     label: "Pipelines e etapas",
     permissions: {
       "pipeline.create": "Criar pipelines",
-      "pipeline.edit": "Editar pipelines (nome, campos personalizados, espaço, tipo e grupos com acesso)",
-      "space.manage": "Criar, renomear e excluir espaços (áreas que agrupam os pipelines)",
+      "pipeline.edit": "Editar pipelines (nome, campos personalizados, time, tipo e grupos com acesso)",
+      "space.manage": "Criar, renomear e excluir times (áreas que agrupam os pipelines)",
       "stage.create": "Criar etapas",
       "stage.edit": "Renomear etapas",
       "stage.delete": "Excluir etapas",
