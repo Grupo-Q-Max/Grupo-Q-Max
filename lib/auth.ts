@@ -45,6 +45,23 @@ export const ADMIN_COOKIE = "qmax_admin";
 export const createAdminToken = (password: string) => createToken(`admin:${password}`, "admin", SESSION_MAX_AGE);
 export const readAdminToken = (token: string | undefined, password: string) => readToken(`admin:${password}`, token) === "admin";
 
+/** E-mailed link to set the /admin password (30 min). Bound to the current password, so it works only once. */
+export const createAdminResetToken = (password: string) => createToken(`admin-reset:${password}`, "admin", 30 * 60);
+export const readAdminResetToken = (token: string | undefined, password: string) =>
+  readToken(`admin-reset:${password}`, token) === "admin";
+
+/** Signs the site admin in on `res` with the admin password now in force. */
+export function setAdminCookie(res: NextResponse, password: string) {
+  res.cookies.set(ADMIN_COOKIE, createAdminToken(password), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE,
+  });
+  return res;
+}
+
 /** Constant-time password check; an empty expected password never matches. */
 export const samePassword = (input: unknown, expected: string) => typeof input === "string" && !!expected && sameText(input, expected);
 

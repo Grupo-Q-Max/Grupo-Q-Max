@@ -88,6 +88,22 @@
   text-align: left;
 }
 
+.qadmin-login__info {
+  font-size: .8rem;
+  color: #a1a1aa;
+  text-align: left;
+}
+
+.qadmin-login__link {
+  background: none;
+  border: none;
+  color: #14d0c1;
+  font-size: .8rem;
+  cursor: pointer;
+  padding: 4px;
+}
+.qadmin-login__link:hover { text-decoration: underline; }
+
 /* ── Shared Buttons ──────────────────────────────────────── */
 .qadmin-btn {
   display: inline-flex;

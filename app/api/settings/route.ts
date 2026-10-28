@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import fs from "fs";
-import path from "path";
-import { getSettingsJsonPath } from "@/lib/storage";
-import { adminPassword, isAdminToken, readSettings, withoutPassword } from "@/lib/settings";
-import { ADMIN_COOKIE, createAdminToken, SESSION_MAX_AGE } from "@/lib/auth";
-
-function write(data: object) {
-  const p = getSettingsJsonPath();
-  const dir = path.dirname(p);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf8");
-}
+import { adminCookieKey, isAdminToken, readSettings, withoutPassword, writeSettings } from "@/lib/settings";
+import { ADMIN_COOKIE, setAdminCookie } from "@/lib/auth";
 
 const isAdmin = async () => isAdminToken((await cookies()).get(ADMIN_COOKIE)?.value);
 
@@ -30,18 +20,10 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "A senha precisa ter pelo menos 8 caracteres." }, { status: 400 });
   }
   const updated = { ...current, ...body, adminPassword: newPassword ?? current.adminPassword };
-  write(updated);
+  writeSettings(updated);
 
   const res = NextResponse.json(withoutPassword(updated));
   // The admin cookie is signed with the password: re-issue it so the admin who changed it stays signed in
-  if (newPassword) {
-    res.cookies.set(ADMIN_COOKIE, createAdminToken(adminPassword()), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: SESSION_MAX_AGE,
-    });
-  }
+  if (newPassword) setAdminCookie(res, adminCookieKey());
   return res;
 }
