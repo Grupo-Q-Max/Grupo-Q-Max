@@ -1,6 +1,6 @@
 /*
  * CRM automation ticker: every minute, run the delayed automation rules that
- * are due and remind responsibles of due tasks/activities. Set CRM_AUTOMATION_TICKER=off to disable it (e.g. when an external
+ * are due, remind responsibles of due tasks/activities and e-mail them what changed on their tasks. Set CRM_AUTOMATION_TICKER=off to disable it (e.g. when an external
  * scheduler calls /api/crm/automation/cron instead).
  *
  * The automation engine (and with it Prisma) is imported lazily inside the
@@ -13,8 +13,9 @@ async function tick() {
   try {
     const { processDueRuns } = await import("./lib/crm-automation");
     await processDueRuns();
-    const { remindDueTasks } = await import("./lib/crm-my-tasks");
+    const { mailTaskChanges, remindDueTasks } = await import("./lib/crm-my-tasks");
     await remindDueTasks();
+    await mailTaskChanges();
   } catch (error) {
     console.error("[crm-automation] ticker failed:", error);
   }

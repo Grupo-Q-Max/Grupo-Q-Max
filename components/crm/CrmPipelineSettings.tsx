@@ -5,7 +5,8 @@ import { createPortal } from "react-dom";
 import { Settings, X, Plus, Trash2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Select } from "@/components/ui/Select";
-import { alertDialog } from "@/components/ui/Dialogs";
+import { alertDialog, confirmDialog } from "@/components/ui/Dialogs";
+import { useCan } from "./CrmAccess";
 
 export type PipelineOptions = {
   spaces: { id: string; name: string }[];
@@ -18,6 +19,7 @@ const memberIdsOf = (pipeline: any): string[] => (pipeline.members ?? []).map((m
 
 export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; options: PipelineOptions }) {
   const router = useRouter();
+  const can = useCan();
   const [isOpen, setIsOpen] = useState(false);
   const parseFields = (config: any) => {
     if (!config) return [];
@@ -94,6 +96,20 @@ export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; opti
       router.refresh();
     } else {
       alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível salvar as configurações.");
+    }
+    setIsLoading(false);
+  };
+
+  const handleDelete = async () => {
+    if (!(await confirmDialog(`Excluir o pipeline "${pipeline.name}"? Etapas, automações, cards arquivados e modelos dele também são excluídos.`, { danger: true, confirmLabel: "Excluir" }))) return;
+    setIsLoading(true);
+    const res = await fetch(`/api/crm/pipeline?id=${pipeline.id}`, { method: 'DELETE' });
+    if (res.ok) {
+      setIsOpen(false);
+      router.push('/crm');
+      router.refresh();
+    } else {
+      alertDialog((await res.json().catch(() => null))?.error ?? "Não foi possível excluir o pipeline.");
     }
     setIsLoading(false);
   };
@@ -219,6 +235,16 @@ export function CrmPipelineSettings({ pipeline, options }: { pipeline: any; opti
         </div>
 
         <div className="crm-modal-actions">
+          {can("pipeline.delete") && (
+            <button
+              className="btn-secondary"
+              onClick={handleDelete}
+              disabled={isLoading}
+              style={{ marginRight: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ff8080' }}
+            >
+              <Trash2 size={16} /> Excluir pipeline
+            </button>
+          )}
           <button className="btn-secondary" onClick={() => setIsOpen(false)} disabled={isLoading}>
             Cancelar
           </button>

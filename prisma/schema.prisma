@@ -376,6 +376,8 @@ model CrmCard {
   reminderMinutes    Int?
   /// Instant of the minutes-before reminder already sent; a new date, time or lead gets its own reminder
   timeRemindedFor    DateTime?
+  /// Task boards: changes (history, comments) up to this instant were already e-mailed to the responsible (lib/crm-my-tasks.ts)
+  changesMailedAt    DateTime      @default(now())
   /// Task boards: estimated time, in minutes (typed by hand)
   estimateMinutes    Int?
   /// Cached sum of the card's finished CrmTimeEntry minutes, kept in sync by lib/crm-time.ts

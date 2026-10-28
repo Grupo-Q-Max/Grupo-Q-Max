@@ -9,6 +9,7 @@ export const PERMISSION_SECTIONS = [
     permissions: {
       "pipeline.create": "Criar pipelines",
       "pipeline.edit": "Editar pipelines (nome, campos personalizados, time, tipo e grupos com acesso)",
+      "pipeline.delete": "Excluir pipelines vazios",
       "space.manage": "Criar, renomear e excluir times (áreas que agrupam os pipelines)",
       "stage.create": "Criar etapas",
       "stage.edit": "Renomear etapas",

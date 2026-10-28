@@ -6,6 +6,7 @@ import { dueAt, dueState, reminderBase, todayKey } from "@/lib/crm-due";
 import { escapeHtml, sendMail } from "@/lib/mail";
 import { activeCard } from "@/lib/crm-deal";
 import { fireTriggers } from "@/lib/crm-automation";
+import { seenCardWhereFor } from "@/lib/crm-access";
 
 /** End of a Brazilian day, so date-only closeDates sort among activity deadlines of that day. */
 const endOfDay = (day: string) => new Date(`${day}T23:59:59.999-03:00`);
@@ -273,6 +274,90 @@ export async function remindDueTasks(limit = 100) {
         console.error("[crm-my-tasks] reminder e-mail failed:", error instanceof Error ? error.message : error)
       );
     }
+  }
+  return sent;
+}
+
+const CHANGE_TYPES = ["FIELD_CHANGED", "STAGE_CHANGED", "STATUS_CHANGED"];
+const STATUS_NAMES: Record<string, string> = { OPEN: "Aberta", WON: "Concluída", LOST: "Perdida" };
+/** Quiet time after the last change before the summary goes out (the deal panel saves field by field) */
+const CHANGE_MAIL_DELAY = 5 * 60_000;
+
+type ChangeData = { label?: string; from?: unknown; to?: unknown };
+const shown = (value: unknown) => escapeHtml(value == null || value === "" ? "—" : String(value));
+
+/**
+ * E-mails the responsible of a task card (TASKS pipelines) one summary of what other people (or automations)
+ * changed on it: fields, column/status and new comments, once no change came in for CHANGE_MAIL_DELAY.
+ * `changesMailedAt` is the cursor of what was already covered; the conditional claim makes the ticker and
+ * the external cron safe to overlap. Changes made by the responsible move the cursor without a mail.
+ */
+export async function mailTaskChanges(limit = 100) {
+  const now = Date.now();
+  // ponytail: only cards changed in the last day are scanned; a ticker down for longer skips those changes
+  const recent = { gt: new Date(now - 86_400_000) };
+  const cards = await prisma.crmCard.findMany({
+    where: {
+      ...activeCard,
+      stage: { pipeline: { kind: "TASKS" } },
+      responsible: { crmActive: true, email: { not: null } },
+      OR: [{ history: { some: { type: { in: CHANGE_TYPES }, createdAt: recent } } }, { activities: { some: { type: "COMMENT", createdAt: recent } } }],
+    },
+    take: limit,
+    select: { id: true, number: true, title: true, changesMailedAt: true, responsibleId: true, responsible: { select: { email: true } } },
+  });
+
+  let sent = 0;
+  for (const card of cards) {
+    const since = { gt: card.changesMailedAt };
+    const [history, comments] = await Promise.all([
+      prisma.crmHistory.findMany({
+        where: { cardId: card.id, type: { in: CHANGE_TYPES }, createdAt: since },
+        select: { type: true, data: true, actorId: true, createdAt: true, actor: { select: { name: true } } },
+      }),
+      prisma.crmActivity.findMany({
+        where: { cardId: card.id, type: "COMMENT", createdAt: since },
+        select: { title: true, authorId: true, createdAt: true, author: { select: { name: true } } },
+      }),
+    ]);
+    const entries = [
+      ...history.map((h) => {
+        const d = (h.data ?? {}) as ChangeData;
+        const text =
+          h.type === "STAGE_CHANGED"
+            ? `<b>Coluna</b>: ${shown(d.from)} → ${shown(d.to)}`
+            : h.type === "STATUS_CHANGED"
+              ? `<b>Status</b>: ${shown(STATUS_NAMES[String(d.from)] ?? d.from)} → ${shown(STATUS_NAMES[String(d.to)] ?? d.to)}`
+              : "from" in d || "to" in d
+                ? `<b>${shown(d.label)}</b>: ${shown(d.from)} → ${shown(d.to)}`
+                : `<b>${shown(d.label)}</b> alterado`;
+        return { at: h.createdAt, actorId: h.actorId, author: h.actor?.name ?? "Automação", text };
+      }),
+      ...comments.map((c) => ({
+        at: c.createdAt,
+        actorId: c.authorId,
+        author: c.author?.name ?? "Alguém",
+        text: `<b>Comentário</b>: "${escapeHtml(c.title.length > 300 ? `${c.title.slice(0, 300)}…` : c.title)}"`,
+      })),
+    ].sort((a, b) => a.at.getTime() - b.at.getTime());
+    const last = entries.at(-1)?.at;
+    if (!last || now - last.getTime() < CHANGE_MAIL_DELAY) continue;
+
+    const { count } = await prisma.crmCard.updateMany({ where: { id: card.id, changesMailedAt: card.changesMailedAt }, data: { changesMailedAt: last } });
+    if (!count) continue;
+    const lines = entries.filter((e) => e.actorId !== card.responsibleId);
+    if (!lines.length || !(await prisma.crmCard.count({ where: { id: card.id, ...(await seenCardWhereFor(card.responsibleId)) } }))) continue;
+
+    const link = `${appBase()}/crm/deal/details/${card.number}`;
+    const html =
+      `<p>A tarefa <b>#${card.number} "${escapeHtml(card.title)}"</b> foi alterada:</p>` +
+      `<ul>${lines.map((e) => `<li>${e.text} <small>(${escapeHtml(e.author)})</small></li>`).join("")}</ul>` +
+      `<p><a href="${link}">Abrir no CRM</a></p>`;
+    // The cursor already moved: a mail failure is logged, never retried
+    await sendMail(card.responsible!.email!, `Tarefa #${card.number} "${card.title}" foi alterada`, html).then(
+      () => sent++,
+      (error) => console.error("[crm-my-tasks] change e-mail failed:", error instanceof Error ? error.message : error)
+    );
   }
   return sent;
 }

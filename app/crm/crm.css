@@ -226,6 +226,86 @@
   color: #fff;
 }
 
+/* "..." menu of a team (in its summary) or pipeline row: shown on hover/focus, always on touch screens */
+.crm-space__name,
+.crm-space__row {
+  position: relative;
+}
+
+.crm-space__row .crm-space__item {
+  padding-right: 30px;
+}
+
+.crm-space__menu-btn {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  translate: 0 -50%;
+  display: flex;
+  padding: 3px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: #a5a0aa;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.crm-space__name:hover .crm-space__menu-btn,
+.crm-space__row:hover .crm-space__menu-btn,
+.crm-space__menu-btn:focus-visible {
+  opacity: 1;
+}
+
+.crm-space__menu-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (hover: none) {
+  .crm-space__menu-btn {
+    opacity: 1;
+  }
+}
+
+/* Popover (top layer): top/left are set from the button when it opens */
+.crm-row-menu {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  min-width: 150px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #1a1a1c;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.crm-row-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #e5e0ea;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.crm-row-menu__item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.crm-row-menu__item.is-danger {
+  color: #ff8080;
+}
+
 .crm-main {
   flex: 1;
   display: flex;
