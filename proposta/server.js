@@ -40,29 +40,22 @@ app.use(
   }),
 );
 
+app.get(["/", APP_BASE_PATH, `${APP_BASE_PATH}/`], (req, res) => {
+  res.redirect(`${APP_BASE_PATH}/login.html`);
+});
+
 app.use(
   APP_BASE_PATH,
   express.static(publicPath, {
     maxAge: process.env.NODE_ENV === "production" ? "1d" : 0,
     etag: true,
+    redirect: false,
     // HTML/JS/CSS sem versão no nome: revalidar sempre (ETag) para não rodar motor de preço antigo após deploy
     setHeaders: (res, filePath) => {
       if (/\.(html|js|css)$/.test(filePath)) res.setHeader("Cache-Control", "no-cache");
     },
   })
 );
-
-app.get("/", (req, res) => {
-  res.redirect(`${APP_BASE_PATH}/login.html`);
-});
-
-app.get(APP_BASE_PATH, (req, res) => {
-  res.redirect(`${APP_BASE_PATH}/login.html`);
-});
-
-app.get(`${APP_BASE_PATH}/`, (req, res) => {
-  res.redirect(`${APP_BASE_PATH}/login.html`);
-});
 
 app.use(compression());
 

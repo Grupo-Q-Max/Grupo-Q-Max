@@ -57,7 +57,11 @@ const nextConfig: NextConfig = {
       // Sistema de Propostas (Finora / Q-Max)
       {
         source: "/proposta",
-        destination: `${propostaUrl}/proposta`,
+        destination: `${propostaUrl}/proposta/login.html`,
+      },
+      {
+        source: "/proposta/",
+        destination: `${propostaUrl}/proposta/login.html`,
       },
       {
         source: "/proposta/:path*",
