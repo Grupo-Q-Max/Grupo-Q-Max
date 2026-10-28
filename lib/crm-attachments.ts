@@ -47,3 +47,10 @@ export async function deleteCardWithFiles(id: string) {
   await Promise.all(files.map((f) => fsp.rm(attachmentPath(f.fileName), { force: true })));
   return card;
 }
+
+/** Deletes a pipeline with its stages and cards (cascade) and removes the cards' attachment files. */
+export async function deletePipelineWithFiles(id: string) {
+  const files = await prisma.crmAttachment.findMany({ where: { card: { stage: { pipelineId: id } } }, select: { fileName: true } });
+  await prisma.crmPipeline.delete({ where: { id } });
+  await Promise.all(files.map((f) => fsp.rm(attachmentPath(f.fileName), { force: true })));
+}

@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, startTransition, useEffect, useOptimistic, useState } from "react";
+import { Suspense, startTransition, useEffect, useId, useOptimistic, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LookupInput } from "./deal/ui";
-import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package, ListChecks, CalendarCheck, FolderPlus } from "lucide-react";
-import { alertDialog, promptDialog } from "@/components/ui/Dialogs";
+import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package, ListChecks, CalendarCheck, FolderPlus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { alertDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 import { useCan } from "./CrmAccess";
 
@@ -24,9 +24,58 @@ function movePipeline(spaces: SidebarSpace[], { pipelineId, spaceId }: { pipelin
   }));
 }
 
+type MenuItem = { label: string; icon: ReactNode; danger?: boolean; onSelect: () => void };
+
+/**
+ * "..." button with a native popover menu: it lives in the top layer, so the scrolling team list
+ * doesn't clip it, and the browser closes it on an outside click or Esc.
+ */
+function RowMenu({ label, items }: { label: string; items: MenuItem[] }) {
+  const id = useId();
+  if (!items.length) return null;
+  return (
+    <>
+      <button
+        type="button"
+        className="crm-space__menu-btn"
+        popoverTarget={id}
+        aria-label={label}
+        title={label}
+        onClick={(e) => {
+          // Opens under the button (the popover's own toggle runs after this handler)
+          const menu = document.getElementById(id);
+          const rect = e.currentTarget.getBoundingClientRect();
+          if (menu) {
+            menu.style.top = `${rect.bottom + 4}px`;
+            menu.style.left = `${rect.left}px`;
+          }
+        }}
+      >
+        <MoreHorizontal size={15} />
+      </button>
+      <div id={id} popover="auto" className="crm-row-menu">
+        {items.map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            className={`crm-row-menu__item${item.danger ? " is-danger" : ""}`}
+            onClick={() => {
+              document.getElementById(id)?.hidePopover();
+              item.onSelect();
+            }}
+          >
+            {item.icon} {item.label}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /**
  * Pipelines grouped by team; the open one is the `pipelineId` param, or the first one on a bare /crm.
  * With `pipeline.edit` a pipeline can be dragged onto another team; with `space.manage` teams are created here.
+ * The "..." menu renames or deletes a pipeline (`pipeline.edit` / `pipeline.delete`) or a team (`space.manage`).
  */
 function SpaceList({ spaces, onNavigate }: { spaces: SidebarSpace[]; onNavigate: () => void }) {
   const pathname = usePathname();
@@ -59,17 +108,49 @@ function SpaceList({ spaces, onNavigate }: { spaces: SidebarSpace[]; onNavigate:
   const createSpace = async () => {
     const name = (await promptDialog("Nome do novo time", { title: "Novo time" }))?.trim();
     if (!name) return;
-    const res = await fetch("/api/crm/space", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    }).catch(() => null);
+    await send("/api/crm/space", json("POST", { name }), "Novo time", "Não foi possível criar o time.");
+  };
+
+  /** Sends a change and refreshes the sidebar; shows the API error (or `fallback`) when it fails. */
+  const send = async (url: string, init: RequestInit, title: string, fallback: string) => {
+    const res = await fetch(url, init).catch(() => null);
     if (!res?.ok) {
       const error = res ? ((await res.json().catch(() => null))?.error as string | undefined) : undefined;
-      await alertDialog(error ?? "Não foi possível criar o time.", { title: "Novo time" });
-      return;
+      await alertDialog(error ?? fallback, { title });
+      return false;
     }
     router.refresh();
+    return true;
+  };
+  const json = (method: string, body: unknown): RequestInit => ({
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const renamePipeline = async (p: SidebarSpace["pipelines"][number]) => {
+    const name = (await promptDialog("Novo nome do pipeline", { title: "Renomear pipeline", defaultValue: p.name }))?.trim();
+    if (!name || name === p.name) return;
+    await send("/api/crm/pipeline/settings", json("PUT", { id: p.id, name }), "Renomear pipeline", "Não foi possível renomear o pipeline.");
+  };
+
+  const deletePipeline = async (p: SidebarSpace["pipelines"][number]) => {
+    const message = `Excluir o pipeline "${p.name}"? Etapas, automações, cards arquivados e modelos dele também são excluídos.`;
+    if (!(await confirmDialog(message, { danger: true, confirmLabel: "Excluir" }))) return;
+    const ok = await send(`/api/crm/pipeline?id=${p.id}`, { method: "DELETE" }, "Excluir pipeline", "Não foi possível excluir o pipeline.");
+    if (ok && p.id === current) router.push("/crm");
+  };
+
+  const renameSpace = async (space: SidebarSpace) => {
+    const name = (await promptDialog("Novo nome do time", { title: "Renomear time", defaultValue: space.name }))?.trim();
+    if (!name || name === space.name) return;
+    await send("/api/crm/space", json("PATCH", { id: space.id, name }), "Renomear time", "Não foi possível renomear o time.");
+  };
+
+  const deleteSpace = async (space: SidebarSpace) => {
+    const message = `Excluir o time "${space.name}"? Os pipelines dele passam para "Geral".`;
+    if (!(await confirmDialog(message, { danger: true, confirmLabel: "Excluir" }))) return;
+    await send(`/api/crm/space?id=${space.id}`, { method: "DELETE" }, "Excluir time", "Não foi possível excluir o time.");
   };
 
   return (
@@ -83,21 +164,43 @@ function SpaceList({ spaces, onNavigate }: { spaces: SidebarSpace[]; onNavigate:
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(null); }}
           onDrop={canMove ? (e) => { e.preventDefault(); drop(space.id); } : undefined}
         >
-          <summary className="crm-space__name">{space.name}</summary>
+          <summary className="crm-space__name">
+            {space.name}
+            {/* "Geral" (id "") is not a real team: nothing to rename or delete */}
+            {space.id && can("space.manage") && (
+              <RowMenu
+                label={`Opções do time ${space.name}`}
+                items={[
+                  { label: "Renomear", icon: <Pencil size={14} />, onSelect: () => renameSpace(space) },
+                  { label: "Excluir", icon: <Trash2 size={14} />, danger: true, onSelect: () => deleteSpace(space) },
+                ]}
+              />
+            )}
+          </summary>
           {space.pipelines.length === 0 && <span className="crm-space__empty">Arraste pipelines para cá</span>}
           {space.pipelines.map((p) => (
-            <Link
-              key={p.id}
-              href={`/crm?pipelineId=${p.id}`}
-              onClick={onNavigate}
-              draggable={canMove}
-              onDragStart={canMove ? (e) => { e.dataTransfer.effectAllowed = "move"; setDragging(p.id); } : undefined}
-              onDragEnd={() => { setDragging(null); setOver(null); }}
-              className={`crm-space__item${p.id === current ? " is-active" : ""}${p.id === dragging ? " is-dragging" : ""}`}
-            >
-              {p.kind === "TASKS" ? <ListChecks size={15} /> : <Handshake size={15} />}
-              <span>{p.name}</span>
-            </Link>
+            <div key={p.id} className="crm-space__row">
+              <Link
+                href={`/crm?pipelineId=${p.id}`}
+                onClick={onNavigate}
+                draggable={canMove}
+                onDragStart={canMove ? (e) => { e.dataTransfer.effectAllowed = "move"; setDragging(p.id); } : undefined}
+                onDragEnd={() => { setDragging(null); setOver(null); }}
+                className={`crm-space__item${p.id === current ? " is-active" : ""}${p.id === dragging ? " is-dragging" : ""}`}
+              >
+                {p.kind === "TASKS" ? <ListChecks size={15} /> : <Handshake size={15} />}
+                <span>{p.name}</span>
+              </Link>
+              <RowMenu
+                label={`Opções do pipeline ${p.name}`}
+                items={[
+                  ...(can("pipeline.edit") ? [{ label: "Renomear", icon: <Pencil size={14} />, onSelect: () => renamePipeline(p) }] : []),
+                  ...(can("pipeline.delete")
+                    ? [{ label: "Excluir", icon: <Trash2 size={14} />, danger: true, onSelect: () => deletePipeline(p) }]
+                    : []),
+                ]}
+              />
+            </div>
           ))}
         </details>
       ))}
