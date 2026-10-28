@@ -95,7 +95,7 @@ export async function listMyTasks(memberId: string, visible: Prisma.CrmPipelineW
   return items.sort((a, b) => a.sort - b.sort).map(({ sort: _, ...item }) => item);
 }
 
-const appBase = () => (process.env.APP_URL || "https://qmaxbrasil.com.br").replace(/\/+$/, "");
+const appBase = () => (process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://grupoqmax.com.br").replace(/\/+$/, "");
 
 /** Active co-assignees of a task card: they get its reminders too */
 const coAssignees = { where: { member: { crmActive: true } }, select: { memberId: true, member: { select: { email: true } } } } as const;

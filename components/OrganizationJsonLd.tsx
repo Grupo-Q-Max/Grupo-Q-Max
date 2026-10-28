@@ -1,13 +1,15 @@
 export function OrganizationJsonLd() {
+  const baseUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://grupoqmax.com.br").replace(/\/+$/, "");
+
   const data = {
     "@context": "https://schema.org",
     "@type": ["Organization", "ProfessionalService"],
 
     name: "Grupo Q-Max",
 
-    url: "https://qmaxbrasil.com.br",
+    url: baseUrl,
 
-    logo: "https://qmaxbrasil.com.br/icon.png",
+    logo: `${baseUrl}/icon.png`,
 
     description:
       "Ecossistema empresarial que conecta auditoria, contabilidade, talentos, tecnologia, estrutura e soluções digitais para apoiar empresas em diferentes áreas de gestão e desenvolvimento.",
@@ -35,15 +37,9 @@ export function OrganizationJsonLd() {
       name: "Brazil",
     },
 
-    knowsAbout: [
-      "Auditoria",
-      "Contabilidade",
-      "Gestão de Pessoas",
-      "Tecnologia",
-      "Coworking",
-      "Documentação Digital",
-      "Inteligência Financeira",
-      "Soluções Empresariais",
+    sameAs: [
+      "https://www.linkedin.com/company/grupoqmax",
+      "https://www.instagram.com/grupoqmax",
     ],
   };
 

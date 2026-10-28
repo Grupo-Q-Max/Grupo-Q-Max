@@ -46,12 +46,82 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     const eventosUrl = process.env.EVENTOS_URL || "http://127.0.0.1:3001";
+    const propostaUrl = (process.env.PROPOSTA_URL || "http://127.0.0.1:3005").replace(/\/$/, "");
     const fechamentoUrl = (process.env.FECHAMENTO_URL || "https://grupoqmax.com.br/controle_fechamento").replace(/\/$/, "");
     return [
       {
         source: "/team/:filename*",
         destination: "/api/files/:filename*",
+      
       },
+      // Sistema de Propostas (Finora / Q-Max)
+      {
+        source: "/proposta",
+        destination: `${propostaUrl}/proposta`,
+      },
+      {
+        source: "/proposta/:path*",
+        destination: `${propostaUrl}/proposta/:path*`,
+      },
+      {
+        source: "/api/propostas/:path*",
+        destination: `${propostaUrl}/api/propostas/:path*`,
+      },
+      {
+        source: "/api/propostas",
+        destination: `${propostaUrl}/api/propostas`,
+      },
+      {
+        source: "/api/solicitacoes/:path*",
+        destination: `${propostaUrl}/api/solicitacoes/:path*`,
+      },
+      {
+        source: "/api/solicitacoes",
+        destination: `${propostaUrl}/api/solicitacoes`,
+      },
+      {
+        source: "/api/regras/:path*",
+        destination: `${propostaUrl}/api/regras/:path*`,
+      },
+      {
+        source: "/api/regras",
+        destination: `${propostaUrl}/api/regras`,
+      },
+      {
+        source: "/api/funis/:path*",
+        destination: `${propostaUrl}/api/funis/:path*`,
+      },
+      {
+        source: "/api/funis",
+        destination: `${propostaUrl}/api/funis`,
+      },
+      {
+        source: "/api/automacoes/:path*",
+        destination: `${propostaUrl}/api/automacoes/:path*`,
+      },
+      {
+        source: "/api/automacoes",
+        destination: `${propostaUrl}/api/automacoes`,
+      },
+      {
+        source: "/api/prospeccao/:path*",
+        destination: `${propostaUrl}/api/prospeccao/:path*`,
+      },
+      {
+        source: "/api/prospeccao",
+        destination: `${propostaUrl}/api/prospeccao`,
+      },
+      {
+        source: "/api/auth/login",
+        destination: `${propostaUrl}/api/auth/login`,
+      },
+      {
+        source: "/api/usuarios/:path*",
+        destination: `${propostaUrl}/api/usuarios/:path*`,
+      },
+      {
+        source: "/api/notifications/stream",
+        destination: `${propostaUrl}/api/notifications/stream`,},
       {
         source: "/finora-experience",
         destination: `${eventosUrl}/finora-experience`,

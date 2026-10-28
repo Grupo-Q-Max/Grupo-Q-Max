@@ -74,7 +74,7 @@ export default function TermosDeUsoPage() {
             <h2 className="qmax-legal-heading">1. Aceite das Condições</h2>
             <p>
               Ao acessar, navegar ou utilizar qualquer página, ferramenta, formulário ou funcionalidade disponibilizada no
-              endereço <code>qmaxbrasil.com.br</code> ou em seus subdomínios, o usuário declara ter lido, compreendido e
+              endereços <code>grupoqmax.com.br</code>, <code>qmaxbrasil.com.br</code> ou em seus subdomínios, o usuário declara ter lido, compreendido e
               concordado de forma integral e sem ressalvas com as presentes condições.
             </p>
             <p>

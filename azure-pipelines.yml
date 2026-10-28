@@ -142,6 +142,13 @@ steps:
     cp eventos/apps/api/package.json deploy/eventos-api/package.json
     (cd deploy/eventos-api && npm install --omit=dev --prefer-offline --no-audit --no-fund)
 
+    if [ -d "proposta" ]; then
+      echo "Configurando Proposta..."
+      mkdir -p deploy/proposta
+      cp -R proposta/. deploy/proposta/
+      rm -rf deploy/proposta/.git deploy/proposta/*.docx deploy/proposta/*.docx.txt deploy/proposta/*.zip deploy/proposta/storage/propostas_pdf/*
+    fi
+
     echo "Configurando Eventos Web..."
     mkdir -p deploy/eventos-web
     cp -R eventos/apps/web/.next/standalone/. deploy/eventos-web/

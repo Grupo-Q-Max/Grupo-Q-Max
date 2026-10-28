@@ -1,63 +1,65 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://grupoqmax.com.br").replace(/\/+$/, "");
+
   return [
     {
-      url: "https://qmaxbrasil.com.br",
+      url: `${baseUrl}`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
-      url: "https://qmaxbrasil.com.br/auditoria",
+      url: `${baseUrl}/auditoria`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: "https://qmaxbrasil.com.br/contabil",
+      url: `${baseUrl}/contabil`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: "https://qmaxbrasil.com.br/finora",
+      url: `${baseUrl}/finora`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
-      url: "https://qmaxbrasil.com.br/talents",
+      url: `${baseUrl}/talents`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: "https://qmaxbrasil.com.br/technology",
+      url: `${baseUrl}/technology`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: "https://qmaxbrasil.com.br/lagerhaus",
+      url: `${baseUrl}/lagerhaus`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: "https://qmaxbrasil.com.br/politica-de-privacidade",
+      url: `${baseUrl}/politica-de-privacidade`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
-      url: "https://qmaxbrasil.com.br/termos-de-uso",
+      url: `${baseUrl}/termos-de-uso`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
-      url: "https://qmaxbrasil.com.br/politica-de-cookies",
+      url: `${baseUrl}/politica-de-cookies`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.5,

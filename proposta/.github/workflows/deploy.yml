@@ -1,0 +1,162 @@
+name: Deploy App para Webmin
+
+on:
+  push:
+    branches:
+      - main
+  # PR roda só os testes (o deploy abaixo exige push na main)
+  pull_request:
+
+jobs:
+  # Testes E2E (tests/run-tests.js) contra MySQL 8.4 descartável, mesma versão do Azure.
+  # Banco montado como em produção nova: database.sql + migrations. Nenhuma credencial real.
+  testes:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: proposta_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      # Todas as chaves definidas (mesmo vazias): auth.js e emailService.js chamam dotenv.config() sem path.
+      # D4Sign com "placeholder" entra em modo mock; e-mail, Teams e WhatsApp desligados.
+      - name: Criar .env.test
+        run: |
+          cat > .env.test <<'ENV'
+          PORT=3015
+          NODE_ENV=test
+          BASE_URL=http://127.0.0.1:3015
+          APP_BASE_PATH=/proposta
+          JWT_SECRET=ci-segredo-de-teste
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_USER=root
+          DB_PASS=root
+          DB_PASSWORD=root
+          DB_NAME=proposta_test
+          RESEND_API_KEY=
+          EMAIL_FROM=
+          EMAIL_REPLY_TO=
+          EMAIL_USER=
+          NOTIFY_EMAIL=
+          OAUTH_CLIENT_ID=
+          OAUTH_CLIENT_SECRET=
+          OAUTH_REFRESH_TOKEN=
+          OAUTH_TENANT_ID=
+          D4SIGN_API_TOKEN=placeholder
+          D4SIGN_API_SECRET=placeholder
+          D4SIGN_API_URL=https://sandbox.d4sign.com.br/api/v1
+          D4SIGN_UUID_COFRE=placeholder
+          EMAIL_REPRESENTANTE_QMAX=
+          CERTIFICADO_ENCRYPTION_KEY=ci-chave-de-teste-ci-chave-de-teste
+          TEAMS_WEBHOOK_URL=
+          WHATSAPP_AUTO_SEND=false
+          WHATSAPP_API_URL=
+          WHATSAPP_API_KEY=
+          WHATSAPP_INSTANCE=
+          QA_DIRETOR_EMAIL=
+          QA_DIRETOR_SENHA=
+          QA_COMERCIAL_EMAIL=
+          QA_COMERCIAL_SENHA=
+          WEBHOOK_SECRET=ci-webhook
+          D4SIGN_WEBHOOK_SECRET=ci-webhook-d4sign
+          ENV
+
+      - name: Montar banco (database.sql + migrations)
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot proposta_test < database.sql
+          NODE_ENV=test npx knex migrate:latest
+
+      - name: Subir servidor
+        run: |
+          NODE_ENV=test node server.js > servidor.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:3015/api/health && break; sleep 1; done
+
+      - name: Testes E2E
+        run: npm test
+
+      - name: Log do servidor (falha)
+        if: failure()
+        run: tail -n 200 servidor.log
+
+  build-and-deploy:
+    needs: testes
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar codigo do GitHub
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Variável não declarada ou import morto barra o deploy antes de chegar ao servidor
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Compactar arquivos do Projeto
+        run: |
+          tar -czf deploy.tar.gz server.js ecosystem.config.js knexfile.js migrations public config routes middleware services validations package.json package-lock.json database.sql
+
+      - name: Enviar pacote compactado via SFTP
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0 (SHA fixo: action com chave SSH do servidor)
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "deploy.tar.gz"
+          target: "/var/www/html/grqm/proposta"
+
+      - name: Extrair e Reiniciar a Aplicacao no Servidor (SSH)
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # Qualquer falha interrompe o deploy (o processo antigo continua no ar)
+            set -e
+            cd /var/www/html/grqm/proposta
+            
+            # Descompacta o arquivo e limpa o pacote temporario
+            tar -xzf deploy.tar.gz
+            rm -f deploy.tar.gz
+            
+            # Instala apenas dependencias essenciais de producao
+            npm ci --omit=dev
+            
+            # Executa migracoes pendentes do banco de dados
+            npx knex migrate:latest
+            
+            # Garante que o PM2 esteja disponivel no servidor (instala se tiver sido desinstalado)
+            command -v pm2 >/dev/null 2>&1 || npm install -g pm2
+            
+            # Recarrega sem derrubar (ou inicia, se ainda não existir)
+            pm2 startOrReload ecosystem.config.js --update-env
+            pm2 save

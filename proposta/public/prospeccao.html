@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central de Prospecção Ativa & Radar IA | Q-MAX Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/qmax-ui.css">
+  <style>
+    .tab-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid rgba(226, 232, 240, 0.8);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      font-weight: 800;
+      font-size: 13.5px;
+      padding: 10px 18px;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: #0f172a;
+      background: rgba(15, 23, 42, 0.04);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);
+    }
+
+    .card-prospec {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+      margin-bottom: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 960px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    textarea, input, select {
+      width: 100%;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #0f172a;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .whatsapp-preview-box {
+      background: #efeae2;
+      border: 1px solid #d1d7db;
+      border-radius: 20px;
+      padding: 20px;
+      position: relative;
+      background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 0);
+      background-size: 16px 16px;
+    }
+
+    .wa-bubble {
+      background: #ffffff;
+      color: #111b21;
+      padding: 16px 18px;
+      border-radius: 14px 14px 2px 14px;
+      font-size: 14px;
+      line-height: 1.55;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      white-space: pre-wrap;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 16px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+
+    .styled-table th {
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .styled-table td {
+      background: #ffffff;
+      color: #334155;
+      padding: 14px 18px;
+      font-size: 13.5px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .styled-table tbody tr:hover td {
+      background: #f8fafc;
+    }
+
+    .badge-score {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 11.5px;
+    }
+
+    .tag-chip {
+      background: #e2e8f0;
+      color: #334155;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid #cbd5e1;
+      transition: all 0.15s;
+    }
+
+    .tag-chip:hover {
+      background: #10b981;
+      color: white;
+      border-color: #10b981;
+    }
+
+    .calc-stat-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 18px 20px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+    }
+  </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <link rel="stylesheet" href="css/tema-escritorio.css">
+</head>
+
+<body class="page-dashboard theme-finora">
+  <script>
+    const APP_BASE_PATH = "/proposta";
+    const token = localStorage.getItem("finora_token");
+    const role = localStorage.getItem("finora_role");
+
+    if (!token) {
+      window.location.href = "/proposta/login.html";
+    }
+
+    const authHeaders = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+  </script>
+
+  <div class="app-layout">
+    <!-- Sidebar Master Unificada -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">Q</div>
+          <span><span class="highlight">Q-MAX</span> Intelligence</span>
+        </div>
+        
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" id="sidebarAvatar">Q</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebarUserName">Carregando...</div>
+            <div class="sidebar-user-role" id="sidebarUserRole">...</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="sidebar-section-title">Comercial & Leads</div>
+          <a href="/proposta/dashboard.html" class="sidebar-link" id="navDashboard">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+            <span>Dashboard Geral</span>
+          </a>
+          <a href="/proposta/crm.html" class="sidebar-link" id="navCrm">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <span>Funil CRM Leads</span>
+          </a>
+          <a href="/proposta/prospeccao.html" class="sidebar-link active" id="navProspeccao">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <span>Prospecção Ativa</span>
+          </a>
+
+          <div class="sidebar-section-title">Propostas & Fechamento</div>
+          <a href="/proposta/index.html" class="sidebar-link" id="navNovaProposta">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>Nova Proposta</span>
+          </a>
+
+          <div class="sidebar-section-title sec-gestao" id="secGestaoTitle" style="display: none;">Gestão & Diretoria</div>
+          <a href="/proposta/admin.html" class="sidebar-link" id="navAdmin" style="display: none;">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span>Painel da Diretoria</span>
+          </a>
+          <a href="/proposta/crm-config.html" class="sidebar-link" id="navCrmConfig" style="display: none;">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+            <span>Configurações CRM</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-status-box">
+          <span class="status-indicator">
+            <span id="sseStatusDot" class="sidebar-status-dot"></span>
+            <span id="sseStatusText">Ao vivo</span>
+          </span>
+          <button id="btnToggleSound" onclick="toggleMuteSound()" class="sidebar-btn-mute" title="Silenciar som">Som</button>
+        </div>
+        <button onclick="localStorage.clear(); window.location.href='/proposta/login.html'" class="sidebar-btn-logout">
+          Sair da Conta
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 28px; font-weight: 900; color: #0f172a; margin: 0 0 6px 0;">
+          Central de Prospecção Ativa & Radar IA
+        </h1>
+        <p style="color: #64748b; font-size: 14px; margin: 0;">
+          Localize clínicas médicas e odontológicas qualificadas, descubra os sócios e dispare abordagens comerciais personalizadas.
+        </p>
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button type="button" class="tab-btn active" onclick="trocarTabProspec('tabRadarIA')">
+          1. Radar Inteligente com IA
+        </button>
+        <button type="button" class="tab-btn" onclick="trocarTabProspec('tabEnriquecer')">
+          2. Consultar CNPJs na Receita
+        </button>
+        <button type="button" class="tab-btn" onclick="trocarTabProspec('tabDisparos')">
+          3. Editor & Áudio WhatsApp
+        </button>
+        <button type="button" class="tab-btn" onclick="trocarTabProspec('tabCalculadoraFatorR')">
+          4. Calculadora Rápida Fator R
+        </button>
+      </div>
+
+      <!-- TAB 1: RADAR INTELIGENTE COM IA -->
+      <div id="tabRadarIA" class="card-prospec">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:0 0 4px 0;">
+              Radar Automático de Prospecção com IA & Dados Reais
+            </h2>
+            <p style="color:#64748b; font-size:13.5px; margin:0;">
+              Selecione o Estado, Cidade e Nicho. O sistema mapeia clínicas ativas, médicos sócios reais, telefones com DDD oficial e calcula a economia do Fator R na hora.
+            </p>
+          </div>
+          <button type="button" class="btn-action" onclick="executarRadarIA()" id="btnRadarIA">
+            Ativar Radar IA & Buscar Contatos
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px; background:#f8fafc; padding:20px; border-radius:18px; border:1px solid #e2e8f0;">
+          <div class="form-group" style="margin:0;">
+            <label for="radarUF">1. Estado (UF):</label>
+            <select id="radarUF" onchange="carregarCidades(this.value)">
+              <option value="SP" selected>São Paulo (SP)</option>
+              <option value="RJ">Rio de Janeiro (RJ)</option>
+              <option value="MG">Minas Gerais (MG)</option>
+              <option value="PR">Paraná (PR)</option>
+              <option value="SC">Santa Catarina (SC)</option>
+              <option value="RS">Rio Grande do Sul (RS)</option>
+              <option value="BA">Bahia (BA)</option>
+              <option value="PE">Pernambuco (PE)</option>
+              <option value="CE">Ceará (CE)</option>
+              <option value="GO">Goiás (GO)</option>
+              <option value="DF">Distrito Federal (DF)</option>
+              <option value="ES">Espírito Santo (ES)</option>
+              <option value="MT">Mato Grosso (MT)</option>
+              <option value="MS">Mato Grosso do Sul (MS)</option>
+              <option value="PA">Pará (PA)</option>
+              <option value="AM">Amazonas (AM)</option>
+              <option value="RN">Rio Grande do Norte (RN)</option>
+              <option value="PB">Paraíba (PB)</option>
+              <option value="AL">Alagoas (AL)</option>
+              <option value="SE">Sergipe (SE)</option>
+              <option value="PI">Piauí (PI)</option>
+              <option value="MA">Maranhão (MA)</option>
+              <option value="TO">Tocantins (TO)</option>
+              <option value="RO">Rondônia (RO)</option>
+              <option value="AC">Acre (AC)</option>
+              <option value="AP">Amapá (AP)</option>
+              <option value="RR">Roraima (RR)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="radarCidade">2. Cidade / Município:</label>
+            <select id="radarCidade">
+              <option value="São Paulo" selected>Carregando cidades...</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="radarEspecialidade">3. Especialidade / Nicho:</label>
+            <select id="radarEspecialidade">
+              <option value="Odontologia" selected>Odontologia & Harmonização</option>
+              <option value="Dermatologia">Dermatologia & Estética</option>
+              <option value="Cirurgia Plástica">Cirurgia Plástica & Estética</option>
+              <option value="Ortopedia">Ortopedia & Traumatologia</option>
+              <option value="Oftalmologia">Oftalmologia & Cirurgia Ocular</option>
+              <option value="Cardiologia">Cardiologia</option>
+              <option value="Ginecologia & Obstetrícia">Ginecologia & Obstetrícia</option>
+              <option value="Clínica Geral & Estética">Clínica Geral Integrada</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="radarQuantidade">4. Quantidade de Leads:</label>
+            <select id="radarQuantidade">
+              <option value="5">5 Clínicas</option>
+              <option value="10" selected>10 Clínicas (Recomendado)</option>
+              <option value="15">15 Clínicas</option>
+              <option value="20">20 Clínicas</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tabela de Resultados do Radar IA -->
+        <div id="resultadoRadarWrapper" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <h3 style="font-size:17px; font-weight:800; color:#059669; margin:0;" id="contadorRadarIA">
+              Clínicas Qualificadas com IA
+            </h3>
+            <!-- Telefone e CNPJ do Radar são gerados, não consultados: não vão para o CRM nem viram contato -->
+            <p style="margin:4px 0 0; font-size:12px; color:#b45309; font-weight:700;">Dados simulados: telefone e CNPJ são estimativas. Confirme na Receita (aba de CNPJs) antes de abordar.</p>
+            <div style="display:flex; gap:10px;">
+              <button type="button" class="btn-action" onclick="exportarRadarCSV()" style="background:#0f172a;">
+                Exportar Excel (.CSV)
+              </button>
+            </div>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table class="styled-table">
+              <thead>
+                <tr>
+                  <th>Match IA</th>
+                  <th>Clínica & Endereço Real</th>
+                  <th>Dr.(a) Sócio(a)</th>
+                  <th>WhatsApp / Telefone</th>
+                  <th>Economia Fator R</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaRadarIA"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: CONSULTAR CNPJS NA RECEITA -->
+      <div id="tabEnriquecer" class="card-prospec" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+          <div>
+            <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:0 0 4px 0;">
+              Localizador & Enriquecedor por CNPJ
+            </h2>
+            <p style="color:#64748b; font-size:13.5px; margin:0;">
+              Cole CNPJs para consultar instantaneamente os sócios, telefones e enquadramento da Receita Federal.
+            </p>
+          </div>
+          <button type="button" class="btn-action" onclick="consultarCnpjsEmLote()" id="btnConsultar">
+            Consultar na Receita Federal
+          </button>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label for="inputCnpjsLote" style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">
+              Cole os CNPJs (um por linha ou separados por vírgula):
+            </label>
+            <textarea id="inputCnpjsLote" rows="6" placeholder="Ex:&#10;12.345.678/0001-90&#10;98.765.432/0001-10"></textarea>
+          </div>
+
+          <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:16px; padding:20px; display:flex; flex-direction:column; justify-content:center;">
+            <strong style="color:#0284c7; font-size:14px; display:block; margin-bottom:6px;">O que a ferramenta extrai:</strong>
+            <ul style="color:#475569; font-size:13.5px; line-height:1.6; margin:0; padding-left:18px;">
+              <li>Nome completo do Médico / Dentista sócio administrador</li>
+              <li>Telefones de contato com DDD e e-mail cadastrado</li>
+              <li>Opção pelo Simples Nacional e CNAE de Saúde</li>
+              <li>Endereço completo da unidade</li>
+            </ul>
+          </div>
+        </div>
+
+        <div id="resultadoEnriquecimentoWrapper" style="display:none; margin-top:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="font-size:16px; font-weight:800; color:#059669; margin:0;" id="contadorEncontradas">
+              Clínicas Localizadas
+            </h3>
+            <button type="button" class="btn-action" onclick="importarSelecionadosCrm()" style="background:#0284c7;">
+              Importar Todas para o CRM
+            </button>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table class="styled-table">
+              <thead>
+                <tr>
+                  <th>Clínica</th>
+                  <th>Sócio(a)</th>
+                  <th>Telefone</th>
+                  <th>Cidade / UF</th>
+                  <th>Simples?</th>
+                  <th>Ações Rápidas</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaClinicasEnriquecidas"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: EDITOR & DISPARADOR WHATSAPP (COM MODO ÁUDIO) -->
+      <div id="tabDisparos" class="card-prospec" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+          <div>
+            <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:0 0 4px 0;">
+              Central de Abordagens WhatsApp & Roteiro de Áudio
+            </h2>
+            <p style="color:#64748b; font-size:13.5px; margin:0;">
+              Alterne entre mensagem de texto ou roteiro narrado para gravar áudio de 25 segundos no WhatsApp.
+            </p>
+          </div>
+
+          <!-- Seletor Modo Texto vs Modo Áudio -->
+          <div style="display:flex; background:#e2e8f0; border-radius:12px; padding:4px;">
+            <button type="button" id="btnModoTexto" onclick="setModoMensagem('texto')" style="border:none; background:#ffffff; color:#0f172a; font-weight:800; font-size:13px; padding:6px 14px; border-radius:8px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+              Mensagem de Texto
+            </button>
+            <button type="button" id="btnModoAudio" onclick="setModoMensagem('audio')" style="border:none; background:transparent; color:#64748b; font-weight:800; font-size:13px; padding:6px 14px; border-radius:8px; cursor:pointer;">
+              Roteiro de Áudio (25s)
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Coluna Esquerda: Edição -->
+          <div>
+            <div class="form-group">
+              <label for="selectTemplateCopy">Roteiro / Gancho de Conversão:</label>
+              <select id="selectTemplateCopy" onchange="trocarModeloCopy()">
+                <option value="fator_r" selected>Oportunidade do Fator R (Redução de 13,3% para 6% no Simples)</option>
+                <option value="auditoria_cro">Blindagem Fiscal & Proteção de Pró-labore dos Sócios</option>
+                <option value="diagnostico_ia">Convite para Diagnóstico Tributário com IA</option>
+                <option value="personalizado">Mensagem Livre / Personalizada</option>
+              </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div class="form-group">
+                <label for="copyNomeSocio">Nome do Médico(a):</label>
+                <input type="text" id="copyNomeSocio" value="Dr. Roberto" oninput="sincronizarCamposNaMensagem()">
+              </div>
+              <div class="form-group">
+                <label for="copyNomeClinica">Nome da Clínica:</label>
+                <input type="text" id="copyNomeClinica" value="Clínica Odonto Prime" oninput="sincronizarCamposNaMensagem()">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div class="form-group">
+                <label for="copyCidade">Cidade:</label>
+                <input type="text" id="copyCidade" value="São Paulo" oninput="sincronizarCamposNaMensagem()">
+              </div>
+              <div class="form-group">
+                <label for="copyTelefone">WhatsApp de Destino:</label>
+                <input type="tel" id="copyTelefone" value="11999998888">
+              </div>
+            </div>
+
+            <!-- Tags Rápidas -->
+            <div style="margin-bottom:10px;">
+              <label style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:4px; display:block;">Tags Rápidas (Clique para Inserir no Texto):</label>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <span class="tag-chip" onclick="inserirTag('{DOUTOR}')">{DOUTOR}</span>
+                <span class="tag-chip" onclick="inserirTag('{CLINICA}')">{CLINICA}</span>
+                <span class="tag-chip" onclick="inserirTag('{CIDADE}')">{CIDADE}</span>
+                <span class="tag-chip" onclick="inserirTag('{ECONOMIA}')">{ECONOMIA}</span>
+              </div>
+            </div>
+
+            <!-- Textarea Editável em Tempo Real -->
+            <div class="form-group">
+              <label for="txtMensagemLive" id="lblTituloEditor">Texto da Mensagem (100% Editável):</label>
+              <textarea id="txtMensagemLive" rows="7" oninput="atualizarPreviaEmTempoReal()"></textarea>
+              <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:12px; color:#64748b;">
+                <span id="txtCaracteresCount">0 caracteres</span>
+                <span>Dica: Áudios de 20-30s têm 3x mais taxa de resposta</span>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:16px;">
+              <button type="button" class="btn-action" onclick="abrirConversaWhatsApp()" style="background:#25d366; flex:1;">
+                Abrir no WhatsApp
+              </button>
+              <button type="button" class="btn-action" onclick="copiarMensagemWhatsApp()" style="background:#334155;">
+                Copiar Roteiro
+              </button>
+            </div>
+          </div>
+
+          <!-- Coluna Direita: Prévia no Celular -->
+          <div>
+            <label style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">
+              Prévia no WhatsApp:
+            </label>
+            <div class="whatsapp-preview-box">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; border-bottom:1px solid #d1d7db; padding-bottom:10px;">
+                
+                <div>
+                  <strong style="color:#111b21; font-size:14px; display:block;" id="waPreviewDestinatario">
+                    Dr. Roberto (Clínica Odonto Prime)
+                  </strong>
+                  <span style="color:#667781; font-size:12px;">Online</span>
+                </div>
+              </div>
+              <div class="wa-bubble" id="waPreviewTexto">Carregando mensagem...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: CALCULADORA RÁPIDA DO FATOR R (PITCH DE 1 MINUTO) -->
+      <div id="tabCalculadoraFatorR" class="card-prospec" style="display:none;">
+        <div style="margin-bottom:20px;">
+          <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:0 0 4px 0;">
+            Calculadora Rápida de Economia Tributária (Fator R 6%)
+          </h2>
+          <p style="color:#64748b; font-size:13.5px; margin:0;">
+            Calcule o Pró-labore ideal de 28% e a redução imediata de impostos da clínica durante a ligação com o médico.
+          </p>
+        </div>
+
+        <div class="grid-2">
+          <!-- Entradas da Calculadora -->
+          <div style="background:#f8fafc; padding:24px; border-radius:20px; border:1px solid #e2e8f0;">
+            <div class="form-group">
+              <label for="calcFatMensal">Faturamento Mensal da Clínica (R$):</label>
+              <input type="number" id="calcFatMensal" value="80000" step="5000" oninput="recalcularFatorR()">
+            </div>
+
+            <div class="form-group">
+              <label for="calcQtdSocios">Quantidade de Sócios Médicos / Dentistas:</label>
+              <input type="number" id="calcQtdSocios" value="2" min="1" max="10" oninput="recalcularFatorR()">
+            </div>
+
+            <div class="form-group">
+              <label for="calcNomeClinica">Nome da Clínica (Opcional):</label>
+              <input type="text" id="calcNomeClinica" value="Clínica Médica Especializada">
+            </div>
+
+            <button type="button" class="btn-action" onclick="levarCalculoParaProposta()" style="width:100%; margin-top:10px;">
+              Gerar Proposta com Este Cálculo
+            </button>
+          </div>
+
+          <!-- Resultados Comparativos da Calculadora -->
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div class="calc-stat-card" style="border-left:5px solid #ef4444;">
+              <span style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">Imposto Atual (Anexo V - 13,30%)</span>
+              <div style="font-size:22px; font-weight:900; color:#dc2626; margin-top:4px;" id="lblImpostoAnexoV">
+                R$ 12.400,00/mês
+              </div>
+            </div>
+
+            <div class="calc-stat-card" style="border-left:5px solid #10b981; background:rgba(16, 185, 129, 0.04);">
+              <span style="font-size:12px; font-weight:700; color:#059669; text-transform:uppercase;">Imposto FINORA (Fator R Anexo III - 6,00%)</span>
+              <div style="font-size:22px; font-weight:900; color:#059669; margin-top:4px;" id="lblImpostoAnexoIII">
+                R$ 4.800,00/mês
+              </div>
+              <small style="color:#64748b; font-size:12px; display:block; margin-top:4px;" id="lblProLaboreIdeal">
+                Pró-labore ideal dos sócios: R$ 22.400,00/mês (28%)
+              </small>
+            </div>
+
+            <div class="calc-stat-card" style="border-left:5px solid #0284c7; background:rgba(2, 132, 199, 0.05);">
+              <span style="font-size:12px; font-weight:700; color:#0284c7; text-transform:uppercase;">Economia Líquida no Bolso dos Sócios</span>
+              <div style="font-size:26px; font-weight:900; color:#0284c7; margin-top:4px;" id="lblEconomiaAnualCalc">
+                R$ 91.200,00 / ano
+              </div>
+              <small style="color:#64748b; font-size:12px; display:block; margin-top:4px;" id="lblEconomia5Anos">
+                Projeção em 5 anos: R$ 456.000,00 economizados
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/qmax-theme.js"></script>
+  <script>
+    let clinicasCarregadas = [];
+    let radarLeadsCarregados = [];
+    let modoMensagemAtual = "texto"; // "texto" ou "audio"
+
+    const templatesTexto = {
+      fator_r: `Olá, {DOUTOR}! Tudo bem?\n\nSou especialista em gestão tributária para clínicas médicas e odontológicas da FINORA.\n\nAnalisamos clínicas de {CIDADE} e identificamos que muitas estão recolhendo 13,3% de imposto sem necessidade, quando poderiam estar legalmente enquadradas no *Fator R com alíquota de apenas 6,0%*.\n\nPara a estrutura da *{CLINICA}*, essa adequação pode gerar uma economia anual média de R$ 35.000,00 a R$ 60.000,00 diretamente no bolso dos sócios.\n\nPodemos fazer um diagnóstico fiscal gratuito de 5 minutos sem compromisso nesta semana?`,
+      auditoria_cro: `Olá, {DOUTOR}! Como estão os atendimentos na *{CLINICA}*?\n\nPassando para compartilhar um alerta importante: a Receita Federal intensificou o cruzamento de distribuição de lucros vs. Pró-labore de sócios médicos e dentistas parceiros.\n\nDesenvolvemos uma metodologia de *Blindagem Fiscal Completa* que reduz os impostos da clínica e zera o risco de autuações e multas tributárias.\n\nGostaria de receber uma auditoria preventiva gratuita da sua operação contábil atual?`,
+      diagnostico_ia: `Olá, {DOUTOR}! Tudo bem?\n\nEstamos disponibilizando para clínicas médicas e odontológicas em {CIDADE} um *Diagnóstico Tributário Inteligente com IA*.\n\nEm menos de 2 minutos, o sistema simula a economia anual de impostos e a viabilidade do Fator R para a *{CLINICA}*.\n\nSe fizer sentido, posso gerar uma demonstração personalizada em PDF para você agora mesmo!`
+    };
+
+    const templatesAudio = {
+      fator_r: `[0:00 - 0:08] "Fala, {DOUTOR}! Tudo bem? Quem tá falando é o consultor tributário da FINORA. Passando rapidinho em áudio porque sei que a sua rotina de atendimentos na {CLINICA} é super corrida!\n\n[0:09 - 0:18] Eu fiz um levantamento com a nossa IA de clínicas aqui de {CIDADE} e vi que pela estrutura de vocês é muito provável que dê para enquadrar no Fator R a 6,0% no Simples, o que gera uma economia de mais de {ECONOMIA} no ano direto no bolso dos sócios.\n\n[0:19 - 0:26] Queria te mandar um Estudo Tributário de 2 páginas em PDF sem compromisso nenhum. Posso te enviar por aqui mesmo?"`,
+      auditoria_cro: `[0:00 - 0:08] "Oi, {DOUTOR}! Tudo bem por aí? Consultor da FINORA Contabilidade Médica por aqui!\n\n[0:09 - 0:18] Tô te mandando esse áudio rápido porque a Receita aumentou muito a fiscalização em cima de clínicas de {CIDADE} na questão de Pró-labore e distribuição de lucros.\n\n[0:19 - 0:26] A gente montou um diagnóstico preventivo de blindagem fiscal para a {CLINICA}. Posso te enviar o resumo em PDF para você dar uma olhada?"`,
+      diagnostico_ia: `[0:00 - 0:08] "Olá, {DOUTOR}! Tudo bom? Especialista da FINORA aqui!\n\n[0:09 - 0:18] Liberamos essa semana nosso Radar de Inteligência Artificial para simulação tributária de clínicas em {CIDADE}, e a {CLINICA} deu compatibilidade altíssima para redução de impostos.\n\n[0:19 - 0:26] Se fizer sentido, eu gero a simulação oficial em PDF e te mando em 1 minuto. Me dá um ok se puder!"`
+    };
+
+    function setModoMensagem(modo) {
+      modoMensagemAtual = modo;
+      const btnT = document.getElementById('btnModoTexto');
+      const btnA = document.getElementById('btnModoAudio');
+      const lbl = document.getElementById('lblTituloEditor');
+
+      if (modo === 'audio') {
+        btnA.style.background = '#ffffff';
+        btnA.style.color = '#0f172a';
+        btnA.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+        btnT.style.background = 'transparent';
+        btnT.style.color = '#64748b';
+        btnT.style.boxShadow = 'none';
+        lbl.innerText = "Roteiro para Gravação de Áudio no WhatsApp (25 segundos):";
+      } else {
+        btnT.style.background = '#ffffff';
+        btnT.style.color = '#0f172a';
+        btnT.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+        btnA.style.background = 'transparent';
+        btnA.style.color = '#64748b';
+        btnA.style.boxShadow = 'none';
+        lbl.innerText = "Texto da Mensagem (100% Editável):";
+      }
+
+      trocarModeloCopy();
+    }
+
+    // Carregamento dinâmico de municípios reais do IBGE por Estado (UF)
+    async function carregarCidades(uf, cidadeSelecionada = null) {
+      const selectCidade = document.getElementById('radarCidade');
+      if (!selectCidade) return;
+
+      selectCidade.disabled = true;
+      selectCidade.innerHTML = `<option value="">Carregando municípios de ${uf}...</option>`;
+
+      try {
+        const res = await fetch(`/api/prospeccao/cidades/${uf}`, { headers: authHeaders });
+        const data = await res.json();
+
+        if (data.success && Array.isArray(data.cidades) && data.cidades.length > 0) {
+          selectCidade.innerHTML = "";
+          
+          data.cidades.forEach(cid => {
+            const opt = document.createElement('option');
+            opt.value = cid;
+            opt.textContent = cid;
+            selectCidade.appendChild(opt);
+          });
+
+          // Selecionar cidade padrão ou a primeira
+          if (cidadeSelecionada && data.cidades.includes(cidadeSelecionada)) {
+            selectCidade.value = cidadeSelecionada;
+          } else {
+            // Tenta priorizar capitais conhecidas
+            const capitais = ["São Paulo", "Rio de Janeiro", "Belo Horizonte", "Curitiba", "Porto Alegre", "Florianópolis", "Salvador", "Recife", "Fortaleza", "Goiânia", "Brasília", "Vitória", "Cuiabá", "Campo Grande", "Belém", "Manaus", "Natal", "João Pessoa", "Maceió", "Aracaju", "Teresina", "São Luís", "Palmas", "Porto Velho", "Rio Branco", "Macapá", "Boa Vista"];
+            const capFound = data.cidades.find(c => capitais.includes(c));
+            selectCidade.value = capFound || data.cidades[0];
+          }
+        } else {
+          selectCidade.innerHTML = `<option value="${uf === 'SP' ? 'São Paulo' : 'Capital'}">${uf === 'SP' ? 'São Paulo' : 'Capital'}</option>`;
+        }
+      } catch (err) {
+        selectCidade.innerHTML = `<option value="São Paulo">São Paulo</option><option value="Campinas">Campinas</option>`;
+      } finally {
+        selectCidade.disabled = false;
+      }
+    }
+
+    function trocarTabProspec(tabId) {
+      document.getElementById('tabRadarIA').style.display = tabId === 'tabRadarIA' ? 'block' : 'none';
+      document.getElementById('tabEnriquecer').style.display = tabId === 'tabEnriquecer' ? 'block' : 'none';
+      document.getElementById('tabDisparos').style.display = tabId === 'tabDisparos' ? 'block' : 'none';
+      document.getElementById('tabCalculadoraFatorR').style.display = tabId === 'tabCalculadoraFatorR' ? 'block' : 'none';
+
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      if (tabId === 'tabCalculadoraFatorR') recalcularFatorR();
+    }
+
+    async function executarRadarIA() {
+      const selectCid = document.getElementById('radarCidade');
+      const cidade = selectCid.value || "São Paulo";
+      const uf = document.getElementById('radarUF').value;
+      const especialidade = document.getElementById('radarEspecialidade').value;
+      const quantidade = document.getElementById('radarQuantidade').value;
+
+      const btn = document.getElementById('btnRadarIA');
+      btn.disabled = true;
+      btn.innerHTML = "Mapeando Clínicas & Dados Reais...";
+
+      try {
+        const res = await fetch('/api/prospeccao/radar-ia', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ cidade, uf, especialidade, quantidade })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          radarLeadsCarregados = data.leads;
+          renderTabelaRadarIA(data.leads);
+        } else {
+          alert("Erro no Radar IA: " + data.error);
+        }
+      } catch (err) {
+        alert("Erro de conexão ao executar Radar IA.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "Ativar Radar IA & Buscar Contatos";
+      }
+    }
+
+    function renderTabelaRadarIA(leads) {
+      const tbody = document.getElementById('tabelaRadarIA');
+      tbody.innerHTML = "";
+      document.getElementById('contadorRadarIA').innerText = `${leads.length} Clínicas & Médicos Reais Localizados`;
+      document.getElementById('resultadoRadarWrapper').style.display = 'block';
+
+      leads.forEach((l, idx) => {
+        const tr = document.createElement('tr');
+        const econFmt = Number(l.economiaAnualEstimada).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        const fatFmt = Number(l.faturamentoEstimado).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        const telFmt = l.telefoneFormatado || l.telefone;
+        const waDirectUrl = `https://wa.me/55${(l.telefone || "").replace(/\D/g, "")}`;
+
+        tr.innerHTML = `
+          <td>
+            <span class="badge-score">${l.scoreIA}% Match</span>
+            ${l.reviewsCount ? `<br><small style="color:#64748b; font-size:11px; font-weight:600;">(${l.reviewsCount} avaliações)</small>` : ''}
+          </td>
+          <td>
+            <strong style="color:#0f172a; font-size:14px;">${escapeHTML(l.nomeFantasia)}</strong><br>
+            <span style="color:#0284c7; font-size:12px; font-weight:600;">${escapeHTML(l.endereco)}</span><br>
+            <small style="color:#64748b;">${escapeHTML(l.cnpjFormatado || l.cnpj)} • ${escapeHTML(l.cidade)}/${escapeHTML(l.uf)}</small>
+          </td>
+          <td>
+            <strong style="color:#0f172a; font-size:13.5px;">${escapeHTML(l.socioPrincipal)}</strong><br>
+            <small style="color:#059669; font-weight:700;">${escapeHTML(l.especialidade)}</small>
+          </td>
+          <td>
+            <a href="${waDirectUrl}" target="_blank" style="font-weight:800; color:#10b981; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+              ${escapeHTML(telFmt)}
+            </a>
+          </td>
+          <td>
+            <strong style="color:#059669; font-size:14px;">${econFmt}/ano</strong><br>
+            <small style="color:#64748b;">Fat. est: ${fatFmt}/mês</small>
+          </td>
+          <td>
+            <button type="button" class="btn-action" style="padding:7px 14px; font-size:12px;" onclick="prepararAbordagemRadar(${idx})">
+              Abordar no WhatsApp
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function exportarRadarCSV() {
+      if (radarLeadsCarregados.length === 0) return alert("Nenhuma clínica no Radar para exportar.");
+
+      let csv = "\uFEFF"; // BOM para acentuação correta no Excel
+      csv += "CNPJ;Razao Social;Nome Fantasia;Socio Principal;Especialidade;Telefone;Cidade;UF;Faturamento Estimado;Economia Anual Fator R;Score IA\n";
+
+      radarLeadsCarregados.forEach(l => {
+        csv += `"${l.cnpjFormatado}";"${l.razaoSocial}";"${l.nomeFantasia}";"${l.socioPrincipal}";"${l.especialidade}";"${l.telefoneFormatado}";"${l.cidade}";"${l.uf}";"R$ ${l.faturamentoEstimado}";"R$ ${l.economiaAnualEstimada}";"${l.scoreIA}%"\n`;
+      });
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `leads-prospeccao-radar-ia-${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function prepararAbordagemRadar(idx) {
+      const l = radarLeadsCarregados[idx];
+      if (!l) return;
+
+      document.getElementById('copyNomeSocio').value = l.socioPrincipal;
+      document.getElementById('copyNomeClinica').value = l.nomeFantasia;
+      document.getElementById('copyCidade').value = l.cidade;
+      document.getElementById('copyTelefone').value = l.telefone;
+
+      document.querySelectorAll('.tab-btn')[2].click();
+      trocarModeloCopy();
+    }
+
+    async function consultarCnpjsEmLote() {
+      const rawText = document.getElementById('inputCnpjsLote').value.trim();
+      if (!rawText) return alert("Por favor, cole ao menos um CNPJ.");
+
+      const cnpjs = rawText.split(/[\n,;]+/).map(c => c.trim()).filter(c => c.length >= 8);
+      const btn = document.getElementById('btnConsultar');
+      btn.disabled = true;
+      btn.innerHTML = "Consultando Receita Federal...";
+
+      try {
+        const res = await fetch('/api/prospeccao/enriquecer-cnpj', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ cnpjs })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          clinicasCarregadas = data.clinicas;
+          renderTabelaClinicas(data.clinicas);
+        } else {
+          alert("Erro ao consultar CNPJs: " + data.error);
+        }
+      } catch (err) {
+        alert("Erro na conexão ao consultar CNPJs.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "Consultar na Receita Federal";
+      }
+    }
+
+    function renderTabelaClinicas(lista) {
+      const tbody = document.getElementById('tabelaClinicasEnriquecidas');
+      tbody.innerHTML = "";
+      document.getElementById('contadorEncontradas').innerText = `${lista.length} Clínica(s) Localizada(s)`;
+      document.getElementById('resultadoEnriquecimentoWrapper').style.display = 'block';
+
+      lista.forEach((c, idx) => {
+        const tr = document.createElement('tr');
+        const telFmt = c.telefone ? escapeHTML(c.telefone) : '<span style="color:#64748b;">Não informado</span>';
+        const simplesTag = c.simplesNacional === 'Sim' ? '<span class="badge-tag" style="background:#ecfdf5; color:#059669;">Simples (6%)</span>' : '<span class="badge-tag" style="background:#fef2f2; color:#dc2626;">Presumido</span>';
+
+        tr.innerHTML = `
+          <td>
+            <strong>${escapeHTML(c.nomeFantasia || c.razaoSocial)}</strong><br>
+            <small style="color:#64748b;">${escapeHTML(c.cnpjFormatado || c.cnpj)}</small>
+          </td>
+          <td>${escapeHTML(c.socioPrincipal || 'Doutor(a)')}</td>
+          <td>${telFmt}</td>
+          <td>${escapeHTML(c.municipio || '-')}/${escapeHTML(c.uf || '-')}</td>
+          <td>${simplesTag}</td>
+          <td>
+            <button type="button" class="btn-action" style="padding:6px 12px; font-size:11.5px;" onclick="prepararAbordagemEnriquecida(${idx})">
+              Abordar no WhatsApp
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function prepararAbordagemEnriquecida(idx) {
+      const c = clinicasCarregadas[idx];
+      if (!c) return;
+
+      document.getElementById('copyNomeSocio').value = c.socioPrincipal || "Doutor(a)";
+      document.getElementById('copyNomeClinica').value = c.nomeFantasia || c.razaoSocial || "sua clínica";
+      document.getElementById('copyCidade').value = c.municipio || "";
+      document.getElementById('copyTelefone').value = c.telefone || "";
+
+      document.querySelectorAll('.tab-btn')[2].click();
+      trocarModeloCopy();
+    }
+
+    async function importarSelecionadosCrm() {
+      if (clinicasCarregadas.length === 0) return;
+      try {
+        const res = await fetch('/api/prospeccao/importar-leads', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ clinicas: clinicasCarregadas })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`Sucesso! ${data.importados} clínicas foram importadas e distribuídas na fila comercial do CRM!`);
+        }
+      } catch (err) {
+        alert("Erro ao importar para o CRM.");
+      }
+    }
+
+    function trocarModeloCopy() {
+      const tipo = document.getElementById('selectTemplateCopy').value;
+      const socio = document.getElementById('copyNomeSocio').value || "Doutor(a)";
+      const clinica = document.getElementById('copyNomeClinica').value || "sua clínica";
+      const cidade = document.getElementById('copyCidade').value || "sua região";
+
+      if (tipo === "personalizado") {
+        atualizarPreviaEmTempoReal();
+        return;
+      }
+
+      const dict = modoMensagemAtual === "audio" ? templatesAudio : templatesTexto;
+      let templateStr = dict[tipo] || dict.fator_r;
+      let msgFormatada = templateStr
+        .replace(/\{DOUTOR\}/g, socio)
+        .replace(/\{CLINICA\}/g, clinica)
+        .replace(/\{CIDADE\}/g, cidade)
+        .replace(/\{ECONOMIA\}/g, "R$ 45.000,00/ano");
+
+      document.getElementById('txtMensagemLive').value = msgFormatada;
+      atualizarPreviaEmTempoReal();
+    }
+
+    function sincronizarCamposNaMensagem() {
+      trocarModeloCopy();
+    }
+
+    function inserirTag(tag) {
+      const txtArea = document.getElementById('txtMensagemLive');
+      const start = txtArea.selectionStart;
+      const end = txtArea.selectionEnd;
+      const text = txtArea.value;
+      txtArea.value = text.substring(0, start) + tag + text.substring(end);
+      txtArea.focus();
+      txtArea.selectionStart = txtArea.selectionEnd = start + tag.length;
+      atualizarPreviaEmTempoReal();
+    }
+
+    function atualizarPreviaEmTempoReal() {
+      const socio = document.getElementById('copyNomeSocio').value || "Doutor(a)";
+      const clinica = document.getElementById('copyNomeClinica').value || "sua clínica";
+      const texto = document.getElementById('txtMensagemLive').value;
+
+      document.getElementById('waPreviewDestinatario').innerText = `${socio} (${clinica})`;
+      document.getElementById('waPreviewTexto').innerText = texto || "Digite uma mensagem...";
+      document.getElementById('txtCaracteresCount').innerText = `${texto.length} caracteres`;
+    }
+
+    function abrirConversaWhatsApp() {
+      const tel = (document.getElementById('copyTelefone').value || "").replace(/\D/g, "");
+      const msg = encodeURIComponent(document.getElementById('txtMensagemLive').value || "");
+      const url = tel ? `https://wa.me/55${tel}?text=${msg}` : `https://wa.me/?text=${msg}`;
+      window.open(url, "_blank");
+    }
+
+    function copiarMensagemWhatsApp() {
+      const msg = document.getElementById('txtMensagemLive').value || "";
+      navigator.clipboard.writeText(msg).then(() => {
+        alert("Roteiro copiado com sucesso!");
+      });
+    }
+
+    // --- CALCULADORA RÁPIDA FATOR R ---
+    function recalcularFatorR() {
+      const fat = Number(document.getElementById('calcFatMensal').value) || 80000;
+      const socios = Number(document.getElementById('calcQtdSocios').value) || 2;
+
+      const proLaboreIdeal = Math.round(fat * 0.28);
+      const proLaborePorSocio = Math.round(proLaboreIdeal / socios);
+
+      const impostoAnexoV = Math.round(fat * 0.133);
+      const impostoAnexoIII = Math.round(fat * 0.060);
+      const economiaMensal = impostoAnexoV - impostoAnexoIII;
+      const economiaAnual = economiaMensal * 12;
+      const economia5Anos = economiaAnual * 5;
+
+      const fmt = (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+      document.getElementById('lblImpostoAnexoV').innerText = `${fmt(impostoAnexoV)}/mês`;
+      document.getElementById('lblImpostoAnexoIII').innerText = `${fmt(impostoAnexoIII)}/mês`;
+      document.getElementById('lblProLaboreIdeal').innerText = `Pró-labore total (28%): ${fmt(proLaboreIdeal)}/mês (${fmt(proLaborePorSocio)} para cada um dos ${socios} sócios)`;
+      document.getElementById('lblEconomiaAnualCalc').innerText = `${fmt(economiaAnual)} / ano`;
+      document.getElementById('lblEconomia5Anos').innerText = `Projeção em 5 anos: ${fmt(economia5Anos)} economizados líquido`;
+    }
+
+    function levarCalculoParaProposta() {
+      // Nomes que o index.html lê (antes ?fat=&clinica= eram ignorados); o campo da proposta é faturamento ANUAL
+      const params = new URLSearchParams({
+        nomeClinica: document.getElementById('calcNomeClinica').value || "Clínica",
+        faturamento: String(Number(document.getElementById('calcFatMensal').value || 0) * 12),
+      });
+      window.location.href = `/proposta/index.html?${params}`;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const userNome = localStorage.getItem("finora_nome") || "Usuário";
+      const userRole = localStorage.getItem("finora_role") || "Vendedor";
+
+      const nameEl = document.getElementById("sidebarUserName");
+      const roleEl = document.getElementById("sidebarUserRole");
+      const avatarEl = document.getElementById("sidebarAvatar");
+
+      if (nameEl) nameEl.innerText = userNome;
+      if (roleEl) roleEl.innerText = userRole;
+      if (avatarEl) avatarEl.innerText = userNome.charAt(0).toUpperCase();
+
+      if (userRole === "Diretor") {
+        const navAdmin = document.getElementById("navAdmin");
+        const navCrmConfig = document.getElementById("navCrmConfig");
+        const secGestaoTitle = document.getElementById("secGestaoTitle");
+        if (navAdmin) navAdmin.style.display = "flex";
+        if (navCrmConfig) navCrmConfig.style.display = "flex";
+        if (secGestaoTitle) secGestaoTitle.style.display = "block";
+      }
+
+      trocarModeloCopy();
+      recalcularFatorR();
+      carregarCidades("SP", "São Paulo");
+    });
+  </script>
+</body>
+</html>

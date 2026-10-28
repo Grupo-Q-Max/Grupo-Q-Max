@@ -1,0 +1,2588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizar Proposta | FINORA</title>
+  <link rel="manifest" href="/proposta/manifest.json">
+  <meta name="theme-color" content="#10b981">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/qmax-ui.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Sem service worker aqui: a página é do cliente, e o SW instalava no aparelho dele o cache das telas internas -->
+  <style>
+    /* 🌟 ANIMAÇÕES E POLIMENTO VISUAL PREMIUM */
+    @keyframes glowPulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+      70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    @keyframes modalSpringIn {
+      0% { opacity: 0; transform: scale(0.92) translateY(16px); }
+      60% { opacity: 1; transform: scale(1.02) translateY(-2px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes shimmerAnim {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    @keyframes floatBadge {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .viewer-action-bar {
+      background: var(--q-surface) !important;
+      border-bottom: 1px solid var(--q-line) !important;
+      box-shadow: none !important;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .viewer-actions button, .viewer-actions a {
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    }
+
+    .viewer-actions button:hover, .viewer-actions a:hover {
+      filter: brightness(0.97);
+    }
+
+    .btn-aprovar {
+      background: var(--brand-primary, var(--q-brand)) !important;
+      box-shadow: none !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.01em;
+    }
+
+    .modal-recusar-card {
+      animation: modalSpringIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8) !important;
+      border-radius: 6px !important;
+    }
+
+    .modal-recusar-overlay {
+      background: rgba(15, 23, 42, 0.65) !important;
+      transition: all 0.3s ease;
+    }
+
+    #canvasConfetesCelebracao {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99999;
+    }
+
+    /* 📱 STICKY BOTTOM CONVERSION BAR */
+    .sticky-bottom-cta {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      z-index: 9999;
+      animation: modalSpringIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .sticky-cta-left {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sticky-cta-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-sticky-whatsapp {
+      background: rgba(37, 211, 102, 0.15);
+      color: #25d366;
+      border: 1.5px solid #25d366;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-sticky-whatsapp:hover {
+      background: #25d366;
+      color: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    .btn-sticky-aprovar {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+      animation: glowPulse 2.5s infinite;
+      transition: all 0.2s ease;
+    }
+
+    .btn-sticky-aprovar:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+    }
+
+    /* 📄 CONTAINER PREMIUM DO PDF DA PROPOSTA */
+    body.page-visualizar {
+      height: auto !important;
+      min-height: 100vh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      background: #f1f5f9 !important;
+    }
+
+    .proposal-viewer-shell {
+      min-height: 100vh !important;
+      height: auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      background: #f1f5f9 !important;
+    }
+
+    .pdf-wrapper {
+      max-width: 1140px;
+      width: 96%;
+      margin: 20px auto 30px auto;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.85);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    .pdf-toolbar-header {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .pdf-toolbar-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .pdf-toolbar-badge {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .pdf-toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pdf-btn-action {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f8fafc !important;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .pdf-btn-action:hover {
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff !important;
+      transform: translateY(-1px);
+    }
+
+    .pdf-container {
+      width: 100% !important;
+      height: 85vh !important;
+      min-height: 820px !important;
+      background: #525659 !important;
+      position: relative;
+      flex: none !important;
+      display: block !important;
+    }
+
+    .pdf-container iframe {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 820px !important;
+      border: none !important;
+      display: block !important;
+    }
+
+    #pdfWrapperCard:fullscreen {
+      max-width: 100vw !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+      background: #0f172a !important;
+    }
+
+    #pdfWrapperCard:fullscreen .pdf-container {
+      height: calc(100vh - 48px) !important;
+      min-height: 0 !important;
+    }
+
+    @media (max-width: 768px) {
+      .pdf-wrapper {
+        width: 100%;
+        margin: 8px 0 18px 0;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+      }
+      .pdf-container {
+        height: 75vh !important;
+        min-height: 520px !important;
+      }
+      .pdf-container iframe {
+        min-height: 520px !important;
+      }
+      .pdf-toolbar-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .pdf-btn-action {
+        font-size: 11.5px;
+        padding: 5px 10px;
+      }
+    }
+
+    /* 🖨️ MODO IMPRESSÃO EXECUTIVO TIMBRADO */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 11pt !important;
+      }
+      .viewer-action-bar,
+      .sticky-bottom-cta,
+      #validityBanner,
+      #bannerAudioPitch,
+      #playerVideoPitchWrapper,
+      #toastContainerViewer,
+      .modal-recusar-overlay,
+      .modal-fullscreen-pitch,
+      #canvasConfetesCelebracao,
+      .pdf-toolbar-header {
+        display: none !important;
+      }
+      .proposal-viewer-shell {
+        box-shadow: none !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .pdf-wrapper {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+      }
+      .pdf-container {
+        display: block !important;
+      }
+    }
+  </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <link rel="stylesheet" href="css/tema-escritorio.css">
+</head>
+
+<body class="page-visualizar theme-finora">
+  <canvas id="canvasConfetesCelebracao"></canvas>
+  <div class="proposal-viewer-shell">
+    <header class="viewer-action-bar">
+      <div class="viewer-brand">
+        <div class="viewer-mark" data-brand-mark>F</div>
+        <div>
+          <strong><span data-brand-label>FINORA</span> Propostas</strong>
+          <span>Ambiente seguro de visualização</span>
+        </div>
+      </div>
+
+      <div class="viewer-actions" id="action-buttons">
+        <a id="btnDownloadPdfOficial" class="btn-pdf" href="#" target="_blank">
+          Baixar PDF
+        </a>
+        <button class="btn-recusar" onclick="recusarProposta()">Negar</button>
+        <button class="btn-aprovar btn-aprovar-parcial" onclick="abrirModalAprovarParcial()">Aprovar Parcialmente</button>
+        <button class="btn-aprovar" onclick="aprovarProposta()">Aprovar Todos</button>
+      </div>
+    </header>
+
+    <!-- BANNER DE VALIDADE E ESCASSEZ -->
+    <div id="validityBanner" class="validity-banner" style="display:none; background:linear-gradient(135deg, #f8fafc, #f1f5f9); border-bottom:1px solid #cbd5e1; padding:10px 24px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:13px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span id="validityIcon" style="font-size:18px;"></span>
+        <div>
+          <strong id="validityTitle" style="color:#0f172a;">Proposta Comercial Ativa</strong>
+          <span id="validitySubtitle" style="color:#64748b; margin-left:6px; font-size:12px;">(Condições comerciais e valores garantidos)</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button type="button" onclick="abrirModalPagamento()" style="background:#fff; border:1.5px solid #0284c7; color:#0284c7; font-weight:800; font-size:12px; padding:6px 14px; border-radius:999px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s ease;">
+          Formas de Pagamento
+        </button>
+        <div id="validityTimerBadge" style="background:#0d9488; color:#fff; font-weight:800; font-size:12px; padding:6px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:6px;">
+          Condição Garantida
+        </div>
+      </div>
+    </div>
+
+    <!-- BANNER DE VÍDEO PITCH DO CONSULTOR COMERCIAL (OPCIONAL) -->
+    <div id="bannerVideoPitch" style="display:none; background: linear-gradient(135deg, #1e1b4b, #312e81); color: #ffffff; padding: 14px 24px; border-bottom: 1px solid #4338ca; box-shadow: 0 4px 14px rgba(0,0,0,0.1);">
+      <div style="max-width: 1000px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+                    <div>
+            <strong style="font-size: 14px; display: block; color: #e0e7ff; font-weight: 800;">
+              Mensagem em Vídeo do seu Consultor Comercial
+            </strong>
+            <span style="font-size: 12px; color: #a5b4fc;">
+              Assista a uma rápida apresentação personalizada de 1 minuto sobre a proposta da sua clínica.
+            </span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btnToggleVideoPitch" onclick="toggleVideoPitch()" style="background: #6366f1; color: #ffffff; border: none; padding: 8px 18px; border-radius: 999px; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(99,102,241,0.4);">
+            Assistir Vídeo Pitch
+          </button>
+        </div>
+      </div>
+
+      <!-- Player Embutido (Expansível) -->
+      <div id="playerVideoPitchWrapper" style="display: none; max-width: 720px; margin: 16px auto 4px auto; background: #0f172a; border-radius: 14px; overflow: hidden; border: 1.5px solid #4f46e5;">
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+          <iframe id="iframeVideoPitch" src="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- BANNER DE ÁUDIO DO CONSULTOR COMERCIAL (OPCIONAL) -->
+    <div id="bannerAudioPitch" style="display:none; background: linear-gradient(135deg, #064e3b, #047857); color: #ffffff; padding: 12px 24px; border-bottom: 1px solid #059669; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+      <div style="max-width: 1000px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+                    <div>
+            <strong style="font-size: 13.5px; display: block; color: #ecfdf5; font-weight: 800;">
+              Mensagem de Voz do seu Consultor Comercial
+            </strong>
+            <span style="font-size: 11.5px; color: #a7f3d0;">
+              Ouça uma rápida saudação em áudio gravada especialmente para a sua clínica.
+            </span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <audio id="audioPitchViewerPlayer" controls style="height: 36px; border-radius: 999px; outline: none;"></audio>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📄 VIEWER PRINCIPAL DO PDF DA PROPOSTA -->
+    <div class="pdf-wrapper" id="pdfWrapperCard">
+      <div class="pdf-toolbar-header">
+        <div class="pdf-toolbar-info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <span>Documento Oficial da Proposta</span>
+          <span class="pdf-toolbar-badge" id="pdfToolbarBadge">Pronta para Leitura</span>
+        </div>
+        <div class="pdf-toolbar-actions">
+          <button type="button" class="pdf-btn-action" onclick="toggleFullscreenPdf()" title="Visualizar em Tela Cheia">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            Tela Cheia
+          </button>
+          <a id="btnNovaAbaPdf" class="pdf-btn-action" href="#" target="_blank" rel="noopener" title="Abrir em Nova Aba">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Nova Aba
+          </a>
+          <a id="btnBaixarPdfToolbar" class="pdf-btn-action" href="#" target="_blank" rel="noopener" title="Baixar PDF Oficial">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Baixar PDF
+          </a>
+        </div>
+      </div>
+      <main class="pdf-container">
+        <iframe id="pdf-viewer" src="" title="Visualizador da Proposta Comercial"></iframe>
+      </main>
+    </div>
+
+    <!-- PITCH ODONTO: só propostas FINORA / QMAX Contábil (body.seg-odonto) -->
+    <section id="secaoOdonto" class="secao-odonto" aria-labelledby="secaoOdontoTitulo">
+      <div class="secao-odonto-topo">
+        <svg class="secao-odonto-icone" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3C4.5 3 3 5 3 7.5c0 2 .7 3.3 1.3 4.8.6 1.6.8 3.6 1.2 5.6.3 1.6.8 3.1 1.9 3.1 1.3 0 1.5-2.2 1.9-4 .3-1.5.9-2.5 2.7-2.5s2.4 1 2.7 2.5c.4 1.8.6 4 1.9 4 1.1 0 1.6-1.5 1.9-3.1.4-2 .6-4 1.2-5.6.6-1.5 1.3-2.8 1.3-4.8C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>
+        <div>
+          <h2 id="secaoOdontoTitulo">Contabilidade feita para o consultório odontológico</h2>
+          <p id="secaoOdontoMetricas"></p>
+        </div>
+      </div>
+      <div class="secao-odonto-grid">
+        <div><strong>Fator R e pró-labore</strong><span>Pró-labore calibrado para a clínica ficar no Anexo III (6%) em vez do Anexo V (13,3%).</span></div>
+        <div><strong>Dentistas parceiros PJ</strong><span>Contratos, repasses e notas dos parceiros organizados, sem risco de vínculo trabalhista.</span></div>
+        <div><strong>CRO e Vigilância Sanitária</strong><span>Inscrição no CRO, alvará e licença sanitária acompanhados junto com a contabilidade.</span></div>
+      </div>
+      <div class="secao-odonto-acoes">
+        <button type="button" onclick="abrirModalComparativoFiscal()">Comparar com e sem Fator R</button>
+        <button type="button" onclick="abrirModalCalculadoraRoi()">Calcular o retorno</button>
+        <button type="button" onclick="abrirModalFaqGarantias()">Dúvidas frequentes</button>
+      </div>
+    </section>
+
+    <!-- 🔄 SEÇÃO: TRANSIÇÃO DE CONTABILIDADE DESCOMPLICADA (QUEBRA DE OBJEÇÃO) — só FINORA / QMAX Contábil -->
+    <div id="secaoTransicaoContabil" style="max-width:1000px; margin:20px auto; background:#ffffff; border-radius:12px; padding:20px 24px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border:1px solid #e2e8f0;">
+      <div style="text-align:center; max-width:650px; margin:0 auto 16px;">
+        <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0 0 6px 0;">
+          Como Funciona a Troca da sua Contabilidade para a <span data-brand-label>FINORA</span>?
+        </h2>
+        <p style="color:#64748b; font-size:13px; line-height:1.4; margin:0;">
+          Assumimos toda a burocracia de transição sem gerar atrito com seu contador anterior.
+        </p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
+        <!-- Passo 1 -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; gap:12px; align-items:flex-start;">
+          <div style="width:28px; height:28px; border-radius:50%; background:#2b6a36; color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px;">1</div>
+          <div>
+            <strong style="color:#0f172a; font-size:14px; display:block; margin-bottom:2px;">Notificamos seu Contador</strong>
+            <p style="color:#64748b; font-size:12px; line-height:1.4; margin:0;">Elaboramos o comunicado formal de distrato e transição de responsabilidade.</p>
+          </div>
+        </div>
+
+        <!-- Passo 2 -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; gap:12px; align-items:flex-start;">
+          <div style="width:28px; height:28px; border-radius:50%; background:#2e4a8c; color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px;">2</div>
+          <div>
+            <strong style="color:#0f172a; font-size:14px; display:block; margin-bottom:2px;">Resgate Técnico de Dados</strong>
+            <p style="color:#64748b; font-size:12px; line-height:1.4; margin:0;">Baixamos os livros fiscais e folhas de pagamento sem interromper seu dia.</p>
+          </div>
+        </div>
+
+        <!-- Passo 3 -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; gap:12px; align-items:flex-start;">
+          <div style="width:28px; height:28px; border-radius:50%; background:#5b3a7a; color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px;">3</div>
+          <div>
+            <strong style="color:#0f172a; font-size:14px; display:block; margin-bottom:2px;">Início da Economia Tributária</strong>
+            <p style="color:#64748b; font-size:12px; line-height:1.4; margin:0;">Enquadramento no Fator R e blindagem fiscal na próxima competência.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📱 STICKY BOTTOM CONVERSION BAR -->
+  <div id="stickyBottomCta" class="sticky-bottom-cta" style="display:none;">
+    <div class="sticky-cta-left">
+      <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Investimento Mensal</div>
+      <div id="stickyValorMensal" style="font-size:22px; font-weight:900; color:var(--q-ink); line-height:1.2;">R$ 0,00 <span style="font-size:12px; font-weight:600; color:#cbd5e1;">/mês</span></div>
+    </div>
+    <div class="sticky-cta-right">
+      <button type="button" onclick="recusarProposta()" class="btn-recusar" style="padding:12px 20px; margin-right: 10px;">
+        Negar
+      </button>
+      <button type="button" onclick="abrirModalAprovarParcial()" class="btn-sticky-aprovar btn-aprovar-parcial" style="margin-right: 10px;">
+        Aprovar Parcial
+      </button>
+      <button type="button" onclick="aprovarProposta()" class="btn-sticky-aprovar">
+        Aprovar Todos
+      </button>
+    </div>
+  </div>
+
+  <!-- 📈 MODAL CALCULADORA INTERATIVA DE ROI & ECONOMIA -->
+  <div id="modalCalculadoraRoi" class="modal-recusar-overlay" style="display:none;">
+    <div class="modal-recusar-card" style="max-width:680px; max-height:92vh; overflow-y:auto; background:#ffffff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+        <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          Calculadora de ROI & Retorno sobre Investimento
+        </h3>
+        <button onclick="fecharModalCalculadoraRoi()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <p style="font-size:13px; color:#64748b; margin-bottom:16px;">
+        Simule o retorno financeiro real gerado pela gestão contábil especializada e BPO financeiro na sua clínica.
+      </p>
+
+      <!-- Controles da Calculadora -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:18px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div>
+            <label for="roiFaturamentoMensal" style="font-size:12px; font-weight:800; color:#334155; display:block; margin-bottom:4px;">Faturamento Mensal da Clínica</label>
+            <input type="number" id="roiFaturamentoMensal" value="50000" min="10000" step="5000" oninput="recalcularRoiViewer()" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-weight:800; font-size:14px;">
+          </div>
+          <div>
+            <label for="roiQtdMedicos" style="font-size:12px; font-weight:800; color:#334155; display:block; margin-bottom:4px;" data-odonto="Quantidade de Dentistas">Quantidade de Médicos / Dentistas</label>
+            <input type="number" id="roiQtdMedicos" value="2" min="1" max="30" oninput="recalcularRoiViewer()" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-weight:800; font-size:14px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultados do ROI -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+        <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:14px; padding:16px;">
+          <span style="font-size:11px; font-weight:800; color:#166534; text-transform:uppercase;">Economia Tributária Anual</span>
+          <div id="roiEconomiaImpostos" style="font-size:22px; font-weight:900; color:#15803d; margin:6px 0;">R$ 43.980,00 /ano</div>
+          <small style="color:#475569; font-size:11px;">Benefício do Fator R (redução de 13,3% para 6,0%).</small>
+        </div>
+
+        <div style="background:#eff6ff; border:1.5px solid #93c5fd; border-radius:14px; padding:16px;">
+          <span style="font-size:11px; font-weight:800; color:#1e40af; text-transform:uppercase;">Produtividade / Horas Salvas</span>
+          <div id="roiHorasSalvas" style="font-size:22px; font-weight:900; color:#1d4ed8; margin:6px 0;">~ 180h /ano</div>
+          <small style="color:#475569; font-size:11px;">15 horas/mês economizadas em conciliações e burocracias.</small>
+        </div>
+      </div>
+
+      <!-- Card de Retorno Total -->
+      <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; border-radius:16px; padding:20px; text-align:center; margin-bottom:18px; box-shadow:0 10px 25px rgba(15,23,42,0.2);">
+        <span style="font-size:12px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.5px;">Retorno Estimado sobre Investimento (ROI)</span>
+        <div id="roiMultiplicador" style="font-size:32px; font-weight:900; color:#10b981; margin:8px 0;">4.8x de Retorno</div>
+        <p style="font-size:12.5px; color:#cbd5e1; margin:0; line-height:1.5;">
+          A cada <strong>R$ 1,00 investido</strong> na nossa assessoria contábil, a sua clínica gera aproximadamente <strong>R$ 4,80 em economia direta e produtividade</strong>.
+        </p>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <button type="button" class="btn-mini btn-mini-light" style="padding:10px 18px; border-radius:10px;" onclick="fecharModalCalculadoraRoi()">
+          Fechar
+        </button>
+        <button type="button" class="btn-primary" style="background:#10b981; padding:10px 22px; font-weight:800; border-radius:10px; border:none; cursor:pointer;" onclick="fecharModalCalculadoraRoi(); aprovarProposta();">
+          Quero Essa Economia - Assinar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 💼 MODAL DE MODO APRESENTAÇÃO 1-A-1 (SLIDE DECK EXECUTIVO) -->
+  <div id="modalFullscreenPitch" class="modal-recusar-overlay" style="display:none; background:rgba(11,15,25,0.96); z-index:999999;">
+    <div class="modal-recusar-card" style="max-width:850px; width:95vw; background:#0f172a; color:#f8fafc; border:1px solid rgba(255,255,255,0.15); box-shadow:0 30px 60px rgba(0,0,0,0.6); padding:32px 28px; border-radius:24px; position:relative;">
+      <!-- Header do Slide -->
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:14px; margin-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="background:rgba(16,185,129,0.2); color:#34d399; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:800;">
+            Apresentação Executiva
+          </span>
+          <strong class="pitchClinicaNome" style="font-size:16px; color:#ffffff;" data-odonto="Clínica Odontológica">Clínica Médica / Odonto</strong>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span id="pitchSlideContador" style="font-size:12px; color:#94a3b8; font-weight:700;">Slide 1 de 4</span>
+          <button onclick="fecharModoApresentacao()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+      </div>
+
+      <!-- Conteúdo Dinâmico do Slide -->
+      <div id="pitchConteudoSlide" style="min-height:300px; display:flex; flex-direction:column; justify-content:center; text-align:center; padding:10px 0;">
+        <!-- Injetado via JS -->
+      </div>
+
+      <!-- Rodapé com Navegação -->
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px; margin-top:20px;">
+        <button type="button" onclick="voltarSlidePitch()" id="btnPitchAnterior" style="background:rgba(255,255,255,0.08); color:#ffffff; border:none; padding:10px 20px; border-radius:12px; font-weight:800; cursor:pointer;">
+          Anterior
+        </button>
+
+        <div id="pitchDots" style="display:flex; gap:8px;">
+          <span style="width:10px; height:10px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+          <span style="width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.2); display:inline-block;"></span>
+          <span style="width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.2); display:inline-block;"></span>
+          <span style="width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.2); display:inline-block;"></span>
+        </div>
+
+        <button type="button" onclick="avancarSlidePitch()" id="btnPitchProximo" style="background:linear-gradient(135deg, #10b981, #059669); color:#ffffff; border:none; padding:10px 24px; border-radius:12px; font-weight:800; cursor:pointer; box-shadow:0 4px 15px rgba(16,185,129,0.4);">
+          Próximo ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CERTIFICADO DE BLINDAGEM FISCAL & CONFORMIDADE -->
+  <div id="modalCertificadoBlindagem" class="modal-recusar-overlay" style="display:none;">
+    <div class="modal-recusar-card" style="max-width:680px; max-height:92vh; overflow-y:auto; background:#ffffff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+        <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          Certificado de Blindagem Fiscal & Conformidade
+        </h3>
+        <button onclick="fecharModalCertificadoBlindagem()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <!-- Certificado Timbrado Visual -->
+      <div style="background:#fffbeb; border:2px solid #fde047; border-radius:18px; padding:28px 24px; text-align:center; position:relative; box-shadow:0 10px 25px rgba(234,179,8,0.1);">
+                <span style="font-size:12px; font-weight:900; color:#b45309; text-transform:uppercase; letter-spacing:1px; display:block;">
+          GARANTIA DE CONFORMIDADE TRIBUTÁRIA & FISCAL
+        </span>
+        <h2 id="certClinicaNome" style="font-size:24px; font-weight:900; color:#0f172a; margin:8px 0 14px 0;">
+          Clínica Odontológica
+        </h2>
+        <p style="color:#475569; font-size:13.5px; line-height:1.6; max-width:540px; margin:0 auto 20px;">
+          Atestamos que a assessoria contratada prevê o enquadramento fiscal no <strong>Fator R (Anexo III - 6%)</strong>, gestão rigorosa do Pró-labore dos sócios e regularidade cadastral nos termos das normativas da <strong>Receita Federal do Brasil</strong> e dos Conselhos Regionais (<span data-odonto="CRO">CRO/CRF</span>).
+        </p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; text-align:left;">
+          <div style="background:#ffffff; border:1px solid #fef08a; border-radius:12px; padding:12px 14px;">
+            <strong style="color:#0f172a; font-size:12px; display:block;">Responsabilidade Técnica</strong>
+            <span style="color:#64748b; font-size:11px;">Equipe Contábil Registrada no CRC</span>
+          </div>
+          <div style="background:#ffffff; border:1px solid #fef08a; border-radius:12px; padding:12px 14px;">
+            <strong style="color:#0f172a; font-size:12px; display:block;">Suporte e Defesa Fiscal</strong>
+            <span style="color:#64748b; font-size:11px;">Assistência integral em notificações fiscais</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
+        <button type="button" class="btn-mini btn-mini-light" style="padding:10px 18px; border-radius:10px;" onclick="fecharModalCertificadoBlindagem()">
+          Fechar
+        </button>
+        <button type="button" class="btn-primary" style="background:#b45309; padding:10px 22px; font-weight:800; border-radius:10px; border:none; cursor:pointer;" onclick="window.print()">
+          Imprimir Certificado
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE COMPARATIVO TRIBUTÁRIO VISUAL (FATOR R) -->
+  <div id="modalComparativoFiscal" class="modal-recusar-overlay" style="display:none;">
+    <div class="modal-recusar-card" style="max-width:650px; max-height:92vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          Comparativo Tributário & Benefício Fator R
+        </h3>
+        <button onclick="fecharModalComparativoFiscal()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <p style="color:#64748b; font-size:13px; margin:0 0 16px 0; line-height:1.45;">
+        Simulação tributária calculada sobre o faturamento mensal da clínica demonstrando a redução efetiva de impostos:
+      </p>
+
+      <!-- Gráfico Comparativo de Barras Visuais -->
+      <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:18px;">
+        <div style="margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:6px;">
+            <span style="color:#b91c1c;">Tributação Tradicional Sem Fator R (Anexo V - 13,3%)</span>
+            <strong id="compValorSemFatorR" style="color:#b91c1c;">R$ 9.300,00 / mês</strong>
+          </div>
+          <div style="background:#fee2e2; height:20px; border-radius:999px; overflow:hidden;">
+            <div style="background:linear-gradient(90deg, #ef4444, #dc2626); width:100%; height:100%; border-radius:999px;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:6px;">
+            <span style="color:#15803d;">Com Planejamento Tributário FINORA (Anexo III - 6,0%)</span>
+            <strong id="compValorComFatorR" style="color:#15803d;">R$ 3.600,00 / mês</strong>
+          </div>
+          <div style="background:#dcfce7; height:20px; border-radius:999px; overflow:hidden;">
+            <div id="compBarraEconomia" style="background:linear-gradient(90deg, #10b981, #059669); width:38.7%; height:100%; border-radius:999px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Destaque de Economia Real -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+        <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:14px; text-align:center;">
+          <span style="font-size:11px; font-weight:800; color:#166534; text-transform:uppercase;">Economia Mensal Direta</span>
+          <strong id="compEconomiaMensal" style="font-size:22px; font-weight:900; color:#15803d; display:block; margin-top:4px;">R$ 5.700,00</strong>
+          <small style="color:#166534; font-size:11px;">Mais caixa livre todo mês</small>
+        </div>
+        <div style="background:#eff6ff; border:1.5px solid #93c5fd; border-radius:12px; padding:14px; text-align:center;">
+          <span style="font-size:11px; font-weight:800; color:#1e40af; text-transform:uppercase;">Economia Acumulada em 1 Ano</span>
+          <strong id="compEconomiaAnual" style="font-size:22px; font-weight:900; color:#1d4ed8; display:block; margin-top:4px;">R$ 68.400,00</strong>
+          <small style="color:#1e40af; font-size:11px;">Dinheiro recuperado para reinvestir</small>
+        </div>
+      </div>
+
+      <!-- Botões de Ação -->
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <button type="button" class="btn-mini btn-mini-light" style="padding:10px 18px; border-radius:10px;" onclick="fecharModalComparativoFiscal()">
+          Fechar
+        </button>
+        <button type="button" class="btn-primary" style="background:#15803d; padding:10px 22px; font-weight:800; border-radius:10px; border:none; cursor:pointer;" onclick="fecharModalComparativoFiscal(); aprovarProposta();">
+          Aplicar Esta Economia (Aprovar)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE DIAGNÓSTICO E SCORE DE SAÚDE DA CLÍNICA -->
+  <div id="modalDiagnostico" class="modal-recusar-overlay" style="display:none;">
+    <div class="modal-recusar-card" style="max-width:620px; max-height:92vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          Diagnóstico de Eficiência & Saúde da Clínica
+        </h3>
+        <button onclick="fecharModalDiagnostico()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <!-- Card do Score -->
+      <div style="background:linear-gradient(135deg, #fff7ed, #ffedd5); border:1.5px solid #fed7aa; border-radius:16px; padding:18px; margin-bottom:18px; text-align:center;">
+        <span style="font-size:11px; font-weight:800; color:#c2410c; text-transform:uppercase; letter-spacing:0.5px;">Score de Eficiência Atual</span>
+        <div style="font-size:36px; font-weight:900; color:#ea580c; margin:4px 0;">
+          <span id="diagScoreDisplay">68</span><span style="font-size:20px; color:#9a3412;">/100</span>
+        </div>
+        <span id="diagClassificacaoDisplay" style="background:#ea580c; color:#ffffff; font-weight:800; font-size:11px; padding:4px 12px; border-radius:999px; display:inline-block;">
+          Oportunidade Alta de Otimização Operacional & Fiscal
+        </span>
+      </div>
+
+      <!-- 3 Bandeiras de Diagnóstico -->
+      <div style="display:grid; gap:12px; margin-bottom:18px;">
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start;">
+                    <div>
+            <strong style="font-size:13px; color:#0f172a; display:block;">Sobrecarga em Rotinas Administrativas</strong>
+            <small style="color:#64748b; line-height:1.4; display:block; margin-top:2px;">
+              Estima-se que o sócio gaste cerca de <strong>35 horas por mês</strong> com conciliação, notas fiscais e pagamentos, tempo que a FINORA/Q-MAX assume integralmente.
+            </small>
+          </div>
+        </div>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start;">
+                    <div>
+            <strong style="font-size:13px; color:#0f172a; display:block;">Blindagem Fiscal e Pró-labore Regulamentado</strong>
+            <small style="color:#64748b; line-height:1.4; display:block; margin-top:2px;">
+              Prevenção contra bitributação de sócios, enquadramento de dentistas parceiros e segurança em eventuais fiscalizações da Receita Federal.
+            </small>
+          </div>
+        </div>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start;">
+                    <div>
+            <strong style="font-size:13px; color:#0f172a; display:block;">Oportunidade Imediata de Alívio de Caixa</strong>
+            <small style="color:#64748b; line-height:1.4; display:block; margin-top:2px;">
+              A redução tributária gerada pela consultoria cobre o valor dos honorários e gera saldo financeiro positivo líquido para a clínica.
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end;">
+        <button type="button" class="btn-primary" style="padding:10px 24px; font-weight:800; border-radius:10px;" onclick="fecharModalDiagnostico()">
+          Entendi o Diagnóstico
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE FAQ & GARANTIAS (ACCORDION INTERATIVO) -->
+  <div id="modalFaqGarantias" class="modal-recusar-overlay" style="display:none;">
+    <div class="modal-recusar-card" style="max-width:640px; max-height:92vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          Dúvidas Frequentes & Garantias
+        </h3>
+        <button onclick="fecharModalFaqGarantias()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <p style="color:#64748b; font-size:13px; margin:0 0 16px 0;">
+        Respostas transparentes para as principais dúvidas sobre a nossa assessoria contábil e BPO:
+      </p>
+
+      <div style="display:grid; gap:10px; margin-bottom:20px;">
+        <!-- Item 1 -->
+        <details style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; cursor:pointer;" open>
+          <summary style="font-weight:700; font-size:13.5px; color:#0f172a; outline:none;">
+            1. Como funciona a transição do meu contador antigo para a FINORA?
+          </summary>
+          <p style="color:#475569; font-size:12.5px; line-height:1.5; margin:8px 0 0 0;">
+            Você não precisa se preocupar com nada. Nossa equipe técnica de Onboarding entra em contato direto com seu antigo prestador e solicita o fechamento contábil, saldo de balanço, livros fiscais e folhas anteriores sem atrito nem dor de cabeça.
+          </p>
+        </details>
+
+        <!-- Item 2 -->
+        <details style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; cursor:pointer;">
+          <summary style="font-weight:700; font-size:13.5px; color:#0f172a; outline:none;">
+            2. Como é garantida a segurança do meu Certificado Digital e dados financeiros?
+          </summary>
+          <p style="color:#475569; font-size:12.5px; line-height:1.5; margin:8px 0 0 0;">
+            Utilizamos infraestrutura em nuvem de alta segurança com criptografia de ponta a ponta e cofre digital. O acesso é estritamente restrito e auditado conforme a LGPD.
+          </p>
+        </details>
+
+        <!-- Item 3 -->
+        <details style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; cursor:pointer;">
+          <summary style="font-weight:700; font-size:13.5px; color:#0f172a; outline:none;">
+            3. Qual é o canal de atendimento no dia a dia da clínica?
+          </summary>
+          <p style="color:#475569; font-size:12.5px; line-height:1.5; margin:8px 0 0 0;">
+            Sua clínica terá um canal de WhatsApp dedicado com equipe contábil e financeira de prontidão, além de telefone e e-mail com SLA de atendimento rápido.
+          </p>
+        </details>
+
+        <!-- Item 4 -->
+        <details style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; cursor:pointer;">
+          <summary style="font-weight:700; font-size:13.5px; color:#0f172a; outline:none;">
+            4. Há cláusula de fidelidade obrigatória ou multa de cancelamento?
+          </summary>
+          <p style="color:#475569; font-size:12.5px; line-height:1.5; margin:8px 0 0 0;">
+            Não exigimos fidelidade abusiva. Confiamos na qualidade e economia gerada pelos nossos serviços. Caso deseje cancelar, solicitamos apenas o aviso prévio formal de 30 dias.
+          </p>
+        </details>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end;">
+        <button type="button" class="btn-primary" style="padding:10px 24px; font-weight:800; border-radius:10px;" onclick="fecharModalFaqGarantias()">
+          Fechar Dúvidas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY MODO APRESENTAÇÃO 1-A-1 FULLSCREEN (TABLET / REUNIÃO) -->
+  <div id="overlayModoApresentacao" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0f172a; z-index:9999; color:#fff; flex-direction:column; justify-content:space-between; padding:24px 32px; box-sizing:border-box;">
+    <!-- Topo da Apresentação -->
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="background:rgba(255,255,255,0.1); padding:6px 12px; border-radius:8px; font-weight:800; font-size:12px; letter-spacing:0.5px;">
+          MODO APRESENTAÇÃO
+        </span>
+        <span class="pitchClinicaNome" style="font-size:14px; color:#94a3b8; font-weight:700;" data-odonto="Clínica Odontológica">Clínica</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span id="pitchSlideContador" style="font-size:12px; color:#94a3b8; font-weight:700;">Slide 1 de 4</span>
+        <button onclick="fecharModoApresentacao()" style="background:rgba(255,255,255,0.15); color:#fff; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">
+          ✕ Sair da Apresentação
+        </button>
+      </div>
+    </div>
+
+    <!-- Conteúdo do Slide Ativo -->
+    <div id="pitchConteudoSlide" style="max-width:850px; margin:0 auto; width:100%; text-align:center;">
+      <!-- Injetado dinamicamente via JS -->
+    </div>
+
+    <!-- Rodapé de Controles -->
+    <div style="display:flex; justify-content:space-between; align-items:center; max-width:850px; margin:0 auto; width:100%;">
+      <button type="button" id="btnPitchAnterior" onclick="voltarSlidePitch()" style="background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:10px 20px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer;">
+        ← Slide Anterior
+      </button>
+      <div style="display:flex; gap:8px;" id="pitchDots">
+        <span style="width:10px; height:10px; border-radius:50%; background:#fff; display:inline-block;"></span>
+        <span style="width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.3); display:inline-block;"></span>
+        <span style="width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.3); display:inline-block;"></span>
+        <span style="width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.3); display:inline-block;"></span>
+      </div>
+      <button type="button" id="btnPitchProximo" onclick="avancarSlidePitch()" style="background:#10b981; color:#fff; border:none; padding:10px 24px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer;">
+        Próximo Slide →
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL DE ONBOARDING E ENVIO DE DOCUMENTOS (OPCIONAL) -->
+  <div id="modalDocumentosOnboarding" class="modal-recusar-overlay" style="display:none;">
+    <div class="modal-recusar-card" style="max-width:620px; max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          Envio de Documentos (Opcional)
+        </h3>
+        <button onclick="fecharModalDocumentosOnboarding()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <p style="color:#64748b; font-size:13px; margin:0 0 16px 0; line-height:1.45;">
+        Para agilizar a implantação dos serviços da sua clínica, você pode anexar seus arquivos abaixo agora ou optar por enviar diretamente à equipe depois:
+      </p>
+
+      <!-- Checklist de Envio -->
+      <div style="display:grid; gap:12px; margin-bottom:18px;">
+        <!-- Documento 1: Contrato Social -->
+        <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:13px; color:#0f172a;">1. Contrato Social / Cartão CNPJ</strong>
+            <span style="font-size:10px; background:#e0f2fe; color:#0369a1; font-weight:700; padding:2px 8px; border-radius:999px;">Recomendado</span>
+          </div>
+          <small style="color:#64748b; display:block; margin-bottom:10px;">Última alteração contratual consolidada ou espelho de CNPJ.</small>
+          <input type="file" id="fileContratoSocial" onchange="uploadArquivoOnboarding('Contrato Social', this)" accept=".pdf,image/*" style="font-size:12px; width:100%;">
+        </div>
+
+        <!-- Documento 2: Certificado Digital -->
+        <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:13px; color:#0f172a;">2. Certificado Digital A1 (.pfx / .p12)</strong>
+            <span style="font-size:10px; background:#fef3c7; color:#b45309; font-weight:700; padding:2px 8px; border-radius:999px;">Opcional</span>
+          </div>
+          <small style="color:#64748b; display:block; margin-bottom:10px;">Arquivo do certificado para emissão de notas e conciliação fiscal.</small>
+          <input type="file" id="fileCertificadoA1" onchange="uploadArquivoOnboarding('Certificado Digital A1', this)" accept=".pfx,.p12,.pdf" style="font-size:12px; width:100%;">
+        </div>
+
+        <!-- Documento 3: Alvarás e Licenças -->
+        <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:13px; color:#0f172a;">3. Alvará Sanitário / Licença da Vigilância</strong>
+            <span style="font-size:10px; background:#f1f5f9; color:#64748b; font-weight:700; padding:2px 8px; border-radius:999px;">Opcional</span>
+          </div>
+          <small style="color:#64748b; display:block; margin-bottom:10px;">Para controle de vencimentos e renovações automáticas.</small>
+          <input type="file" id="fileAlvara" onchange="uploadArquivoOnboarding('Alvará Sanitário', this)" accept=".pdf,image/*" style="font-size:12px; width:100%;">
+        </div>
+
+        <!-- Documento 4: Folha de Pagamento -->
+        <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:13px; color:#0f172a;">4. Folha de Pagamento / Lista de Sócios</strong>
+            <span style="font-size:10px; background:#f1f5f9; color:#64748b; font-weight:700; padding:2px 8px; border-radius:999px;">Opcional</span>
+          </div>
+          <small style="color:#64748b; display:block; margin-bottom:10px;">Relação atual de funcionários e pró-labore dos sócios.</small>
+          <input type="file" id="fileFolha" onchange="uploadArquivoOnboarding('Folha de Pagamento', this)" accept=".pdf,.xlsx,.csv,image/*" style="font-size:12px; width:100%;">
+        </div>
+      </div>
+
+      <!-- Lista de Arquivos Já Enviados -->
+      <div id="listaDocumentosEnviadosWrapper" style="margin-bottom:16px; display:none; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px;">
+        <strong style="font-size:12px; color:#166534; display:block; margin-bottom:6px;">Documentos Enviados com Sucesso:</strong>
+        <div id="listaDocumentosEnviados"></div>
+      </div>
+
+      <!-- Ações Finais -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
+        <button type="button" class="btn-mini btn-mini-light" style="padding:10px 18px; border-radius:10px;" onclick="fecharModalDocumentosOnboarding()">
+          Enviar Depois / Concluir
+        </button>
+        <button type="button" class="btn-primary" style="padding:10px 22px; font-weight:800; border-radius:10px;" onclick="fecharModalDocumentosOnboarding()">
+          Finalizar Envio
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE SIMULADOR DE ECONOMIA E ROI -->
+  <div id="modalSimuladorROI" class="modal-recusar-overlay" style="display:none;">
+    <div class="modal-recusar-card" style="max-width:580px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          Calculadora de Economia & ROI da Clínica
+        </h3>
+        <button onclick="fecharModalSimuladorROI()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <p style="color:#64748b; font-size:13px; margin:0 0 16px 0; line-height:1.4;">
+        Arraste a barra abaixo com o faturamento mensal da clínica para simular a economia tributária e o ganho operacional:
+      </p>
+
+      <!-- Slider de Faturamento -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <label for="sliderRoiFaturamento" style="font-size:13px; font-weight:700; color:#334155;">Faturamento Mensal da Clínica:</label>
+          <strong id="roiFaturamentoDisplay" style="font-size:17px; color:#0284c7; font-weight:900;">R$ 60.000,00</strong>
+        </div>
+        <input type="range" id="sliderRoiFaturamento" min="20000" max="300000" step="5000" value="60000" oninput="calcularROIInterativo()" style="width:100%; cursor:pointer;">
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-top:4px;">
+          <span>R$ 20 mil/mês</span>
+          <span>R$ 150 mil/mês</span>
+          <span>R$ 300 mil/mês</span>
+        </div>
+      </div>
+
+      <!-- Métricas Calculadas -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+        <!-- Economia Tributária Anual -->
+        <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:14px;">
+          <span style="font-size:11px; font-weight:800; color:#166534; text-transform:uppercase; display:block;">Economia Tributária Estimada</span>
+          <strong id="roiEconomiaAnual" style="font-size:20px; font-weight:900; color:#15803d; display:block; margin-top:4px;">R$ 61.200,00</strong>
+          <small style="font-size:11px; color:#166534; display:block; margin-top:2px;">Economia estimada por ano via Fator R & Planejamento</small>
+        </div>
+
+        <!-- Horas de Gestão Poupadas -->
+        <div style="background:#eff6ff; border:1.5px solid #93c5fd; border-radius:12px; padding:14px;">
+          <span style="font-size:11px; font-weight:800; color:#1e40af; text-transform:uppercase; display:block;">Tempo Poupado dos Sócios</span>
+          <strong id="roiHorasPoupadas" style="font-size:20px; font-weight:900; color:#1d4ed8; display:block; margin-top:4px;">35 horas / mês</strong>
+          <small style="font-size:11px; color:#1e40af; display:block; margin-top:2px;">Foco 100% em atendimentos e cirurgias</small>
+        </div>
+      </div>
+
+      <!-- Box de ROI Multiplicador -->
+      <div style="background:linear-gradient(135deg, #fdf4ff, #fae8ff); border:1.5px solid #d8b4fe; border-radius:12px; padding:14px; margin-bottom:20px; text-align:center;">
+        <span style="font-size:12px; font-weight:800; color:#7e22ce; text-transform:uppercase;">Retorno sobre o Investimento (ROI Estimado)</span>
+        <div id="roiMultiplicadorDisplay" style="font-size:24px; font-weight:900; color:#6b21a8; margin-top:4px;">
+          Retorno de 4.8x sobre a mensalidade
+        </div>
+        <span style="font-size:11px; color:#7e22ce; display:block; margin-top:2px;">A consultoria se paga apenas com o benefício fiscal gerado!</span>
+      </div>
+
+      <!-- Botões de Ação -->
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <button type="button" class="btn-mini btn-mini-light" style="padding:10px 18px; border-radius:10px;" onclick="fecharModalSimuladorROI()">
+          Fechar
+        </button>
+        <button type="button" class="btn-primary" style="background:#15803d; padding:10px 22px; font-weight:800; border-radius:10px; border:none; cursor:pointer;" onclick="fecharModalSimuladorROI(); aprovarProposta();">
+          Garantir Esta Economia (Aprovar)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE FORMAS DE PAGAMENTO -->
+  <div id="modalPagamento" class="modal-recusar-overlay" style="display:none;">
+    <div class="modal-recusar-card" style="max-width:550px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          Condições Comerciais & Pagamento
+        </h3>
+        <button onclick="fecharModalPagamento()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <p style="color:#64748b; font-size:13px; margin:0 0 16px 0; line-height:1.5;">
+        Conheça as facilidades de pagamento disponíveis para os serviços contratados:
+      </p>
+
+      <div style="display:grid; gap:12px;">
+        <!-- PIX -->
+        <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; display:flex; gap:12px; align-items:flex-start;">
+                    <div>
+            <strong style="color:#0f172a; font-size:14px; display:block;">Pix / Transferência Instantânea</strong>
+            <small style="color:#64748b; line-height:1.4; display:block; margin-top:2px;">
+              Bônus de 5% de pontualidade no primeiro mês para liquidação à vista da implantação ou primeira mensalidade.
+            </small>
+          </div>
+        </div>
+
+        <!-- BOLETO -->
+        <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; display:flex; gap:12px; align-items:flex-start;">
+                    <div>
+            <strong style="color:#0f172a; font-size:14px; display:block;">Boleto Bancário Recorrente</strong>
+            <small style="color:#64748b; line-height:1.4; display:block; margin-top:2px;">
+              Cobrança mensal automatizada enviada ao financeiro da sua empresa com vencimento todo dia 10 (ou negociável), sem bloquear limite de cartão.
+            </small>
+          </div>
+        </div>
+
+        <!-- CARTÃO -->
+        <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; display:flex; gap:12px; align-items:flex-start;">
+                    <div>
+            <strong style="color:#0f172a; font-size:14px; display:block;">Cartão de Crédito em até 12x</strong>
+            <small style="color:#64748b; line-height:1.4; display:block; margin-top:2px;">
+              Disponível para parcelamento de serviços pontuais (laudos técnicos, alvarás, implantação Tech ou auditoria inicial).
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+        <button type="button" class="btn-primary" style="padding:10px 24px; font-weight:800; border-radius:999px;" onclick="fecharModalPagamento()">
+          Entendi, fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE ASSINATURA DIGITAL TOUCH / DESKTOP -->
+  <div id="modalAssinatura" class="modal-recusar-overlay" style="display:none;">
+    <div class="modal-recusar-card" style="max-width:560px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          Assinatura e Aceite Digital
+        </h3>
+        <button onclick="fecharModalAssinatura()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <p style="color:#64748b; font-size:13px; margin:0 0 14px 0; line-height:1.4;">
+        Informe seus dados e assine no quadro abaixo (com o dedo no celular ou mouse no computador):
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div>
+          <label for="signNome" style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Nome Completo</label>
+          <input type="text" id="signNome" placeholder="Ex: Dr. Roberto Silva" style="width:100%; height:38px; border:1px solid #cbd5e1; border-radius:10px; padding:0 10px; font-size:13px; font-family:inherit;">
+        </div>
+        <div>
+          <label for="signCpf" style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">CPF do Responsável</label>
+          <input type="text" id="signCpf" placeholder="000.000.000-00" style="width:100%; height:38px; border:1px solid #cbd5e1; border-radius:10px; padding:0 10px; font-size:13px; font-family:inherit;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <label style="font-size:12px; font-weight:700; color:#334155;">Rubrica / Assinatura:</label>
+        <button type="button" onclick="limparCanvasAssinatura()" style="background:none; border:none; color:#ef4444; font-size:11px; font-weight:800; cursor:pointer;">
+          Limpar Traço
+        </button>
+      </div>
+
+      <div style="border:2px dashed #94a3b8; border-radius:14px; background:#fafafa; overflow:hidden; touch-action:none; position:relative;">
+        <canvas id="canvasSignature" width="500" height="150" style="width:100%; height:150px; cursor:crosshair; display:block;"></canvas>
+        <div id="canvasPlaceholderText" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:#94a3b8; font-size:13px; pointer-events:none;">
+          Assine aqui com o dedo ou mouse
+        </div>
+      </div>
+
+      <div style="font-size:11px; color:#64748b; margin-top:10px; line-height:1.4;">
+        Ao confirmar, seu aceite será registrado com validação de IP, carimbo de data/hora e hash de integridade digital.
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+        <button type="button" class="btn-cancelar-renegociar" onclick="fecharModalAssinatura()">Cancelar</button>
+        <button type="button" class="btn-primary" id="btnConfirmarAssinatura" style="padding:10px 24px; font-weight:800; border-radius:999px;" onclick="enviarAssinaturaDigital()">
+          Confirmar e Aprovar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTÕES FLUTUANTES DE CONTATO & VCARD COM O CONSULTOR -->
+  <div style="position:fixed; bottom:24px; right:24px; z-index:999; display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
+    <button id="btnSalvarContato" type="button" onclick="salvarVCardConsultor()" style="display:none; align-items:center; gap:8px; background:#ffffff; color:#0f172a; border:1.5px solid #cbd5e1; padding:8px 16px; border-radius:999px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 6px 16px rgba(0,0,0,0.08); transition:all 0.2s ease;">
+       Salvar Contato na Agenda
+    </button>
+    <a id="btnFloatingWhatsApp" href="#" target="_blank" rel="noopener" style="display:none; align-items:center; gap:10px; background:linear-gradient(135deg, #25D366, #128C7E); color:#ffffff; padding:12px 20px; border-radius:999px; font-weight:800; font-size:13px; text-decoration:none; box-shadow:0 10px 25px rgba(37,211,102,0.4); transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      <span>Falar com o Consultor</span>
+    </a>
+  </div>
+
+  <div id="overlay" class="viewer-overlay">
+    <div class="overlay-card">
+      <div class="loader-ring"></div>
+      <h2 id="overlay-title">Processando...</h2>
+      <p id="overlay-message">Aguarde um momento.</p>
+    </div>
+  </div>
+
+  <script src="js/qmax-theme.js"></script>
+  <script>
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (!token) {
+      document.getElementById('action-buttons').style.display = 'none';
+      document.getElementById('pdf-viewer').outerHTML = '<div class="viewer-error">Link inválido ou expirado.</div>';
+    } else {
+      carregarPropostaPublica();
+    }
+
+    // Proposta já decidida (ou em análise interna): o link não aceita nova decisão. O servidor também bloqueia.
+    function bloquearDecisaoSeEncerrada(status) {
+      const avisos = {
+        'Recusada': 'Proposta recusada. Fale com seu consultor para receber uma nova proposta.',
+        'Aprovada': 'Proposta aprovada.',
+        'Aguardando Aprovação': 'Proposta em análise interna. Em breve você receberá a versão final.'
+      };
+      if (!avisos[status]) return;
+      document.querySelectorAll('#action-buttons button, .sticky-cta-right button').forEach(b => b.style.display = 'none');
+      const box = document.getElementById('action-buttons');
+      if (box && !document.getElementById('avisoStatusDecisao')) {
+        const aviso = document.createElement('span');
+        aviso.id = 'avisoStatusDecisao';
+        aviso.style.cssText = 'font-size:12px; font-weight:800; color:#475569;';
+        aviso.textContent = avisos[status];
+        box.appendChild(aviso);
+      }
+    }
+
+    // Produto é vendido quase só para clínicas odontológicas: FINORA / QMAX Contábil = odonto
+    function ehOdonto(p) {
+      return ["finora", "contabil"].includes(String(p.tipo_proposta || "").toLowerCase());
+    }
+
+    function aplicarSegmentoOdonto(p) {
+      if (!ehOdonto(p)) return;
+      document.body.classList.add('seg-odonto');
+      document.querySelectorAll('[data-odonto]').forEach(el => { el.textContent = el.dataset.odonto; });
+      const metricas = [];
+      if (Number(p.cadeiras) > 0) metricas.push(`<strong>${esc(p.cadeiras)}</strong> cadeiras`);
+      if (Number(p.dentistas_parceiros) > 0) metricas.push(`<strong>${esc(p.dentistas_parceiros)}</strong> dentistas parceiros`);
+      const el = document.getElementById('secaoOdontoMetricas');
+      if (el) el.innerHTML = metricas.length ? `${esc(p.nome_clinica || 'Sua clínica')} · ${metricas.join(' · ')}` : esc(p.nome_clinica || '');
+    }
+
+    async function carregarPropostaPublica() {
+      try {
+        const res = await fetch(`/api/propostas/${token}/publica`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          document.getElementById('action-buttons').style.display = 'none';
+          document.getElementById('pdf-viewer').outerHTML = `<div class="viewer-error">${esc(data.error || 'Link inválido ou expirado.')}</div>`;
+          return;
+        }
+
+        if (window.aplicarTemaEmpresa) {
+          window.aplicarTemaEmpresa(data.tipo_proposta || data.tipoProposta || data.empresa_proposta || data.empresaProposta || 'finora');
+        }
+        // Marca certa no título e conteúdo de troca de contador só para marcas de contabilidade
+        const temaMarca = document.body.dataset.empresaTema;
+        const rotuloMarca = document.querySelector('[data-brand-label]')?.textContent || 'FINORA';
+        document.title = `Visualizar Proposta | ${rotuloMarca}`;
+        if (temaMarca && !['finora', 'contabil'].includes(temaMarca)) {
+          document.getElementById('secaoTransicaoContabil')?.style.setProperty('display', 'none');
+        }
+
+        window.dadosPropostaAtual = data;
+        aplicarSegmentoOdonto(data);
+        window.visualizacaoIdAtual = data.visualizacao_id || 0;
+        renderBannerValidade(data);
+        renderBannerVideoPitch(data);
+        renderBannerAudioPitch(data);
+        inicializarStickyBottomCta(data);
+        bloquearDecisaoSeEncerrada(data.status);
+        iniciarRastreadorTempoLeitura();
+        iniciarAlertaLeituraQuente();
+
+        // Configurar botão flutuante de contato WhatsApp
+        const btnWa = document.getElementById('btnFloatingWhatsApp');
+        if (btnWa) {
+          const nomeClinica = data.nome_clinica || "nossa empresa";
+          const numProp = data.numero_proposta || "";
+          const msg = encodeURIComponent(`Olá! Estou analisando a proposta comercial da *${nomeClinica}* (Proposta #${numProp}) e gostaria de tirar uma dúvida.`);
+          const telConsultor = String(data.consultor_telefone || "").replace(/\D/g, "");
+          btnWa.href = telConsultor ? `https://wa.me/55${telConsultor}?text=${msg}` : `https://wa.me/?text=${msg}`;
+          btnWa.style.display = 'inline-flex';
+        }
+
+        // Configurar botão de salvar vCard
+        const btnVcf = document.getElementById('btnSalvarContato');
+        if (btnVcf) {
+          btnVcf.style.display = 'inline-flex';
+        }
+
+        const pdfUrl = `/api/propostas/${encodeURIComponent(token)}/pdf`;
+
+        // Configurar botão de download oficial do PDF
+        const btnPdf = document.getElementById('btnDownloadPdfOficial');
+        if (btnPdf) {
+          btnPdf.href = pdfUrl;
+        }
+
+        // Configurar botões da barra do PDF
+        const btnNovaAbaPdf = document.getElementById('btnNovaAbaPdf');
+        if (btnNovaAbaPdf) {
+          btnNovaAbaPdf.href = pdfUrl;
+        }
+        const btnBaixarPdfToolbar = document.getElementById('btnBaixarPdfToolbar');
+        if (btnBaixarPdfToolbar) {
+          btnBaixarPdfToolbar.href = pdfUrl;
+        }
+
+        // Configurar link da Minuta de Contrato
+        const btnContrato = document.getElementById('btnVerMinutaContrato');
+        if (btnContrato) {
+          btnContrato.href = `/api/propostas/${encodeURIComponent(token)}/contrato`;
+        }
+
+        // Inicializar simulador com o valor da proposta
+        calcularROIInterativo();
+
+        const pdfViewer = document.getElementById('pdf-viewer');
+        if (pdfViewer) {
+          pdfViewer.src = `${pdfUrl}#toolbar=1&navpanes=0&view=FitH`;
+        }
+      } catch (err) {
+        document.getElementById('action-buttons').style.display = 'none';
+        document.getElementById('pdf-viewer').outerHTML = '<div class="viewer-error">Erro ao carregar proposta.</div>';
+      }
+    }
+
+    // --- 🗖 TELA CHEIA PARA O VISUALIZADOR DE PDF ---
+    function toggleFullscreenPdf() {
+      const card = document.getElementById('pdfWrapperCard');
+      if (!card) return;
+      if (!document.fullscreenElement) {
+        if (card.requestFullscreen) {
+          card.requestFullscreen();
+        } else if (card.webkitRequestFullscreen) {
+          card.webkitRequestFullscreen();
+        } else if (card.msRequestFullscreen) {
+          card.msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // --- 📱 CONTROLE DO STICKY BOTTOM CONVERSION BAR ---
+    function inicializarStickyBottomCta(data) {
+      const sticky = document.getElementById('stickyBottomCta');
+      const elVal = document.getElementById('stickyValorMensal');
+      if (!sticky) return;
+
+      const moedaFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+      const mensal = Number(data.total_mensal || data.totalMensal || 0);
+      if (elVal && mensal > 0) {
+        elVal.innerHTML = `${moedaFmt.format(mensal)} <span style="font-size:12px; font-weight:600; color:#cbd5e1;">/mês</span>`;
+      }
+
+      // Exibir barra fixa após rolar 180px
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 180) {
+          sticky.style.display = 'flex';
+        } else {
+          sticky.style.display = 'none';
+        }
+      });
+    }
+
+    function abrirWhatsAppConsultor() {
+      const p = window.dadosPropostaAtual || {};
+      const nomeClinica = p.nome_clinica || "minha clínica";
+      const numProp = p.numero_proposta || "";
+      const msg = encodeURIComponent(`Olá! Estou visualizando a proposta comercial da *${nomeClinica}* (Proposta #${numProp}) e gostaria de tirar uma dúvida.`);
+      // Telefone do consultor (cadastro do usuário); p.telefone é o do próprio cliente. Sem cadastro, o WhatsApp pede o contato
+      const tel = String(p.consultor_telefone || "").replace(/\D/g, "");
+      window.open(tel ? `https://wa.me/55${tel}?text=${msg}` : `https://wa.me/?text=${msg}`, "_blank");
+    }
+
+    // --- 📈 CALCULADORA DE ROI & RETORNO SOBRE INVESTIMENTO ---
+    function abrirModalCalculadoraRoi() {
+      const modal = document.getElementById('modalCalculadoraRoi');
+      if (modal) modal.style.display = 'flex';
+      recalcularRoiViewer();
+    }
+
+    function fecharModalCalculadoraRoi() {
+      const modal = document.getElementById('modalCalculadoraRoi');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function recalcularRoiViewer() {
+      const faturamento = Number(document.getElementById('roiFaturamentoMensal')?.value || 50000);
+      const medicos = Number(document.getElementById('roiQtdMedicos')?.value || 2);
+      const moedaFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+      // Economia de Fator R (~7.33% de redução sobre o faturamento)
+      const economiaImpostosAnual = (faturamento * 0.0733) * 12;
+      // Horas salvas: ~12h base + 3h por médico
+      const horasSalvasAno = (12 + (medicos * 3)) * 12;
+      
+      const elEcon = document.getElementById('roiEconomiaImpostos');
+      const elHoras = document.getElementById('roiHorasSalvas');
+      const elMult = document.getElementById('roiMultiplicador');
+
+      if (elEcon) elEcon.textContent = `${moedaFmt.format(economiaImpostosAnual)} /ano`;
+      if (elHoras) elHoras.textContent = `~ ${horasSalvasAno}h /ano`;
+
+      // Multiplicador de ROI baseado em honorário médio estimado de R$ 1.200/mês (R$ 14.400/ano)
+      const custoAnualEstimado = 14400;
+      const retornoTotal = economiaImpostosAnual + (horasSalvasAno * 120); // hora técnica avaliada em R$ 120
+      const roiRatio = Math.max(2.5, (retornoTotal / custoAnualEstimado)).toFixed(1);
+
+      if (elMult) elMult.textContent = `${roiRatio}x de Retorno`;
+    }
+
+    // --- SIMULADOR DE ECONOMIA & ROI (LEGADO) ---
+    function abrirModalSimuladorROI() {
+      abrirModalCalculadoraRoi();
+    }
+
+    function fecharModalSimuladorROI() {
+      fecharModalCalculadoraRoi();
+    }
+
+    // --- ❓ FAQ & GARANTIAS ---
+    function abrirModalFaqGarantias() {
+      const modal = document.getElementById('modalFaqGarantias');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function fecharModalFaqGarantias() {
+      const modal = document.getElementById('modalFaqGarantias');
+      if (modal) modal.style.display = 'none';
+    }
+
+    // --- 🎙️ ÁUDIO DO CONSULTOR COMERCIAL ---
+    function renderBannerAudioPitch(data) {
+      const audioBase64 = data.audio_pitch || data.audioPitch;
+      const banner = document.getElementById("bannerAudioPitch");
+      const player = document.getElementById("audioPitchViewerPlayer");
+      if (!banner || !player || !audioBase64 || audioBase64.length < 50) return;
+
+      player.src = audioBase64;
+      banner.style.display = "block";
+    }
+
+    // --- 📜 CERTIFICADO DE BLINDAGEM FISCAL ---
+    function abrirModalCertificadoBlindagem() {
+      const modal = document.getElementById('modalCertificadoBlindagem');
+      const elNome = document.getElementById('certClinicaNome');
+      const p = window.dadosPropostaAtual || {};
+      if (elNome) elNome.innerText = p.nome_clinica || "Clínica";
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function fecharModalCertificadoBlindagem() {
+      const modal = document.getElementById('modalCertificadoBlindagem');
+      if (modal) modal.style.display = 'none';
+    }
+
+    // --- 🍞 ENGINE DE NOTIFICAÇÕES TOAST EXECUTIVO ---
+    function mostrarToastViewer(mensagem, tipo = "sucesso") {
+      let toastContainer = document.getElementById("toastContainerViewer");
+      if (!toastContainer) {
+        toastContainer = document.createElement("div");
+        toastContainer.id = "toastContainerViewer";
+        toastContainer.style.cssText = "position:fixed; top:20px; right:20px; z-index:999999; display:flex; flex-direction:column; gap:10px; max-width:380px; width:calc(100vw - 40px); pointer-events:none;";
+        document.body.appendChild(toastContainer);
+      }
+
+      const toast = document.createElement("div");
+      toast.style.cssText = `
+        pointer-events:auto;
+        background:#0f172a;
+        color:#f8fafc;
+        border:1.5px solid ${tipo === 'sucesso' ? '#10b981' : tipo === 'erro' ? '#ef4444' : '#38bdf8'};
+        border-radius:14px;
+        padding:12px 18px;
+        box-shadow:0 20px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.3);
+        font-size:13.5px;
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:10px;
+        animation:modalSpringIn 0.3s ease forwards;
+        backdrop-filter:blur(12px);
+      `;
+      const icon = tipo === 'sucesso' ? '✓' : tipo === 'erro' ? '✕' : 'i';
+      toast.innerHTML = `<span style="font-size:18px;">${icon}</span><span style="flex:1; line-height:1.4;">${mensagem}</span>`;
+
+      toastContainer.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = "all 0.4s ease";
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(-10px) scale(0.95)";
+        setTimeout(() => toast.remove(), 400);
+      }, 3500);
+    }
+
+    // --- 🔗 LINK CURTO PARA SMS/WHATSAPP ---
+    function copiarLinkCurtoProposta() {
+      const p = window.dadosPropostaAtual || {};
+      const tokenAtual = p.token_acesso || token;
+      const linkCurto = `${window.location.origin}/proposta/p/${encodeURIComponent(tokenAtual)}`;
+
+      navigator.clipboard.writeText(linkCurto).then(() => {
+        mostrarToastViewer(`Link curto copiado com sucesso!<br><strong style="font-size:11.5px; color:#38bdf8;">${linkCurto}</strong>`);
+      }).catch(() => {
+        prompt("Copie o link curto da proposta:", linkCurto);
+      });
+    }
+
+    // --- 📑 DOWNLOAD DO ESTUDO TRIBUTÁRIO COMPARATIVO EM PDF ---
+    function baixarEstudoTributarioPDF() {
+      const p = window.dadosPropostaAtual || {};
+      const tokenAtual = p.token_acesso || token;
+      if (!tokenAtual) {
+        mostrarToastViewer("Aguarde o carregamento dos dados da proposta...", "alerta");
+        return;
+      }
+      mostrarToastViewer("Gerando Relatório Executivo de Viabilidade Fiscal...");
+      window.location.href = `/api/propostas/${encodeURIComponent(tokenAtual)}/estudo-tributario-pdf`;
+    }
+
+    // --- 🌙 ALTERNADOR DE MODO ESCURO / CLARO ---
+    let modoEscuroAtivo = false;
+    function toggleDarkModeViewer() {
+      modoEscuroAtivo = !modoEscuroAtivo;
+      const btn = document.getElementById('btnToggleDark');
+      if (btn) btn.innerText = modoEscuroAtivo ? "Modo claro" : "Modo escuro";
+
+      if (modoEscuroAtivo) {
+        document.body.style.backgroundColor = "#0b0f19";
+        document.body.style.color = "#f8fafc";
+        const bar = document.querySelector('.viewer-action-bar');
+        if (bar) {
+          bar.style.backgroundColor = "rgba(15, 23, 42, 0.9)";
+          bar.style.borderColor = "#334155";
+        }
+      } else {
+        document.body.style.backgroundColor = "";
+        document.body.style.color = "";
+        const bar = document.querySelector('.viewer-action-bar');
+        if (bar) {
+          bar.style.backgroundColor = "";
+          bar.style.borderColor = "";
+        }
+      }
+    }
+
+    // --- 📊 COMPARATIVO TRIBUTÁRIO (FATOR R) ---
+    // propostas.faturamento é ANUAL (campo do formulário e faixas do preço em R$ 2 mi). As contas abaixo são mensais:
+    // usar o anual direto mostrava ao cliente economia 12x maior.
+    function faturamentoMensalProposta(p, padrao) {
+      const anual = Number(p.faturamento || 0);
+      return anual > 0 ? anual / 12 : padrao;
+    }
+
+    function abrirModalComparativoFiscal() {
+      const modal = document.getElementById('modalComparativoFiscal');
+      if (modal) modal.style.display = 'flex';
+      calcularComparativoFiscal();
+    }
+
+    function fecharModalComparativoFiscal() {
+      const modal = document.getElementById('modalComparativoFiscal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function calcularComparativoFiscal() {
+      const p = window.dadosPropostaAtual || {};
+      const faturamento = faturamentoMensalProposta(p, 60000);
+      
+      const impostoSemFatorR = faturamento * 0.133; // 13.3% (Anexo V)
+      const impostoComFatorR = faturamento * 0.060; // 6.0% (Anexo III)
+      const economiaMensal = impostoSemFatorR - impostoComFatorR;
+      const economiaAnual = economiaMensal * 12;
+
+      const elSem = document.getElementById('compValorSemFatorR');
+      const elCom = document.getElementById('compValorComFatorR');
+      const elMensal = document.getElementById('compEconomiaMensal');
+      const elAnual = document.getElementById('compEconomiaAnual');
+      const barra = document.getElementById('compBarraEconomia');
+
+      if (elSem) elSem.innerText = impostoSemFatorR.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) + " / mês";
+      if (elCom) elCom.innerText = impostoComFatorR.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) + " / mês";
+      if (elMensal) elMensal.innerText = economiaMensal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      if (elAnual) elAnual.innerText = economiaAnual.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      if (barra) barra.style.width = `${((impostoComFatorR / impostoSemFatorR) * 100).toFixed(1)}%`;
+    }
+
+    // --- 🛡️ DIAGNÓSTICO DE SAÚDE & EFICIÊNCIA ---
+    function abrirModalDiagnostico() {
+      const modal = document.getElementById('modalDiagnostico');
+      if (modal) modal.style.display = 'flex';
+      calcularDiagnosticoSaude();
+    }
+
+    function fecharModalDiagnostico() {
+      const modal = document.getElementById('modalDiagnostico');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function calcularDiagnosticoSaude() {
+      const p = window.dadosPropostaAtual || {};
+      const cadeiras = Number(p.cadeiras || 2);
+      const func = Number(p.funcionarios || 2);
+      const fat = faturamentoMensalProposta(p, 50000);
+
+      // Algoritmo de Score inteligente
+      let score = 55;
+      if (cadeiras >= 3) score += 10;
+      if (func >= 3) score += 8;
+      if (fat >= 60000) score += 12;
+      score = Math.min(score, 88);
+
+      const elScore = document.getElementById('diagScoreDisplay');
+      if (elScore) elScore.innerText = score;
+    }
+
+    // --- 💼 MODO APRESENTAÇÃO 1-A-1 FULLSCREEN (TABLET / REUNIÃO) ---
+    let pitchSlideAtual = 0;
+
+    function iniciarModoApresentacao() {
+      const modal = document.getElementById('modalFullscreenPitch');
+      if (!modal) return;
+      pitchSlideAtual = 0;
+      modal.style.display = 'flex';
+      renderSlidePitch(0);
+    }
+
+    function fecharModoApresentacao() {
+      const modal = document.getElementById('modalFullscreenPitch');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function avancarSlidePitch() {
+      if (pitchSlideAtual < 3) {
+        pitchSlideAtual++;
+        renderSlidePitch(pitchSlideAtual);
+      } else {
+        fecharModoApresentacao();
+        aprovarProposta();
+      }
+    }
+
+    function voltarSlidePitch() {
+      if (pitchSlideAtual > 0) {
+        pitchSlideAtual--;
+        renderSlidePitch(pitchSlideAtual);
+      }
+    }
+
+    function renderSlidePitch(idx) {
+      const p = window.dadosPropostaAtual || {};
+      const nomeClinica = p.nome_clinica || "Sua Clínica";
+      const mensalidade = Number(p.valor_total || p.investimento_mensal || 1500).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      const fatMensal = faturamentoMensalProposta(p, 60000);
+      const faturamento = fatMensal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      const econAnual = (fatMensal * 12 * 0.085).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+      const odonto = ehOdonto(p);
+      const elContador = document.getElementById('pitchSlideContador');
+      const elConteudo = document.getElementById('pitchConteudoSlide');
+      const btnProximo = document.getElementById('btnPitchProximo');
+      const dots = document.getElementById('pitchDots');
+
+      document.querySelectorAll('.pitchClinicaNome').forEach(el => { el.innerText = nomeClinica; });
+      if (elContador) elContador.innerText = `Slide ${idx + 1} de 4`;
+
+      if (dots) {
+        dots.querySelectorAll('span').forEach((dot, dIdx) => {
+          dot.style.background = dIdx === idx ? '#fff' : 'rgba(255,255,255,0.3)';
+        });
+      }
+
+      if (btnProximo) {
+        btnProximo.innerText = idx === 3 ? "Assinar Digitalmente no Tablet" : "Próximo Slide →";
+        btnProximo.style.background = idx === 3 ? "#10b981" : "#3b82f6";
+      }
+
+      if (!elConteudo) return;
+
+      if (idx === 0) {
+        elConteudo.innerHTML = `
+          <div style="animation: fadeIn 0.4s ease;">
+                        <h1 style="font-size:32px; font-weight:900; margin:0 0 10px; color:#ffffff;">${esc(nomeClinica)}</h1>
+            <p style="font-size:16px; color:#94a3b8; max-width:600px; margin:0 auto 24px;">
+              Apresentação Executiva de Assessoria Contábil, Fiscal & BPO Financeiro Especializado
+            </p>
+            <div style="display:inline-flex; gap:16px; background:rgba(255,255,255,0.06); padding:12px 24px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
+              <div><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Faturamento Estimado</span><strong style="color:#38bdf8; font-size:16px;">${faturamento}/mês</strong></div>
+              <div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">${odonto ? 'Cadeiras' : 'Cadeiras Odonto'}</span><strong style="color:#fff; font-size:16px;">${esc(p.cadeiras || 2)}</strong></div>
+              <div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Equipe</span><strong style="color:#fff; font-size:16px;">${esc(p.funcionarios || 2)} funcionários</strong></div>
+            </div>
+          </div>
+        `;
+      } else if (idx === 1) {
+        elConteudo.innerHTML = `
+          <div style="animation: fadeIn 0.4s ease;">
+                        <h2 style="font-size:28px; font-weight:900; margin:0 0 10px; color:#ffffff;">O Que a FINORA Assume ${odonto ? 'no Seu Consultório' : 'na Sua Clínica'}</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; text-align:left; margin-top:20px;">
+              <div style="background:rgba(255,255,255,0.06); padding:18px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
+                <strong style="color:#38bdf8; font-size:15px; display:block; margin-bottom:4px;">BPO Financeiro Completo</strong>
+                <span style="color:#94a3b8; font-size:13px; line-height:1.4;">Conciliação de cartões diária, emissão de notas fiscais de convênio/particular e contas a pagar.</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.06); padding:18px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
+                <strong style="color:#34d399; font-size:15px; display:block; margin-bottom:4px;">Inteligência Tributária (Fator R)</strong>
+                <span style="color:#94a3b8; font-size:13px; line-height:1.4;">Redução do imposto do Simples Nacional de 13,3% para 6% com enquadramento legal seguro.</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (idx === 2) {
+        elConteudo.innerHTML = `
+          <div style="animation: fadeIn 0.4s ease;">
+                        <h2 style="font-size:28px; font-weight:900; margin:0 0 10px; color:#ffffff;">Impacto Financeiro Direto no Caixa</h2>
+            <div style="background:linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.25)); border:2px solid #10b981; border-radius:20px; padding:24px; max-width:600px; margin:20px auto;">
+              <span style="font-size:12px; font-weight:800; color:#6ee7b7; text-transform:uppercase;">Economia Tributária Estimada (1 Ano)</span>
+              <div style="font-size:42px; font-weight:900; color:#ffffff; margin:8px 0;">${econAnual}</div>
+              <span style="color:#a7f3d0; font-size:13px;">O valor economizado cobre com folga a mensalidade da assessoria.</span>
+            </div>
+          </div>
+        `;
+      } else if (idx === 3) {
+        elConteudo.innerHTML = `
+          <div style="animation: fadeIn 0.4s ease;">
+                        <h2 style="font-size:28px; font-weight:900; margin:0 0 10px; color:#ffffff;">Investimento & Aceite Digital</h2>
+            <p style="font-size:15px; color:#94a3b8; margin:0 0 20px;">Plano completo de assessoria com início de implantação imediato</p>
+            <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:18px; padding:20px; max-width:450px; margin:0 auto 20px;">
+              <span style="color:#94a3b8; font-size:12px; text-transform:uppercase;">Honorários Mensais</span>
+              <div style="font-size:36px; font-weight:900; color:#38bdf8; margin:4px 0;">${mensalidade}</div>
+              <small style="color:#94a3b8; font-size:12px;">Sem fidelidade abusiva • Suporte via WhatsApp direto com o contador</small>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // --- VÍDEO PITCH DO CONSULTOR COMERCIAL ---
+    function renderBannerVideoPitch(data) {
+      const url = data.video_pitch || data.videoPitch;
+      const banner = document.getElementById("bannerVideoPitch");
+      const iframe = document.getElementById("iframeVideoPitch");
+      if (!banner || !iframe || !url || url.trim().length < 5) return;
+
+      let embedUrl = url.trim();
+
+      // Converter Loom
+      if (embedUrl.includes("loom.com/share/")) {
+        embedUrl = embedUrl.replace("loom.com/share/", "loom.com/embed/");
+      }
+      // Converter YouTube
+      else if (embedUrl.includes("youtu.be/")) {
+        const videoId = embedUrl.split("youtu.be/")[1]?.split("?")[0];
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      } else if (embedUrl.includes("watch?v=")) {
+        const videoId = embedUrl.split("watch?v=")[1]?.split("&")[0];
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      }
+      else if (embedUrl.includes("youtube.com/shorts/")) {
+        const videoId = embedUrl.split("youtube.com/shorts/")[1]?.split(/[?&/]/)[0];
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      }
+      // Converter Vimeo
+      else if (embedUrl.includes("vimeo.com/") && !embedUrl.includes("player.vimeo.com")) {
+        const videoId = embedUrl.split("vimeo.com/")[1]?.split("?")[0];
+        embedUrl = `https://player.vimeo.com/video/${videoId}`;
+      }
+
+      // Só embeda players conhecidos via https (bloqueia javascript: e sites arbitrários no iframe)
+      try {
+        const u = new URL(embedUrl);
+        const hostOk = ["www.youtube.com", "www.loom.com", "loom.com", "player.vimeo.com"].includes(u.hostname);
+        if (u.protocol !== "https:" || !hostOk) return;
+      } catch (e) {
+        return;
+      }
+
+      iframe.src = embedUrl;
+      banner.style.display = "block";
+    }
+
+    function toggleVideoPitch() {
+      const player = document.getElementById("playerVideoPitchWrapper");
+      const btn = document.getElementById("btnToggleVideoPitch");
+      if (!player) return;
+      const isHidden = player.style.display === "none";
+      player.style.display = isHidden ? "block" : "none";
+      if (btn) {
+        btn.innerHTML = isHidden ? "✕ Ocultar Vídeo" : "Assistir Vídeo Pitch";
+      }
+    }
+
+    function calcularROIInterativo() {
+      const slider = document.getElementById('sliderRoiFaturamento');
+      if (!slider) return;
+
+      const faturamento = Number(slider.value || 60000);
+      const fatFmt = faturamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      document.getElementById('roiFaturamentoDisplay').innerText = fatFmt;
+
+      // Estimativa média de economia fiscal com Fator R / Planejamento Tributário da Clínica: ~8.5% do faturamento anual
+      const economiaAnual = (faturamento * 12) * 0.085;
+      const econFmt = economiaAnual.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      document.getElementById('roiEconomiaAnual').innerText = econFmt;
+
+      // Estimativa de tempo poupado com BPO: ~25 a 45h/mês
+      const horasPoupadas = Math.round(20 + (faturamento / 12000));
+      document.getElementById('roiHorasPoupadas').innerText = `${horasPoupadas} horas / mês`;
+
+      // ROI sobre o investimento da proposta
+      const dados = window.dadosPropostaAtual || {};
+      const mensalidade = Number(dados.valor_total || dados.investimento_mensal || 1500);
+      const investimentoAnual = Math.max(mensalidade * 12, 1);
+      const multiplicador = (economiaAnual / investimentoAnual).toFixed(1);
+
+      document.getElementById('roiMultiplicadorDisplay').innerText = `Retorno de ${multiplicador}x sobre o investimento`;
+    }
+
+    async function solicitarReativacaoProposta() {
+      if (!token) return;
+      try {
+        const res = await fetch(`/api/propostas/${encodeURIComponent(token)}/reativar`, { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+          mostrarToastViewer("Proposta reativada com sucesso! Recarregando...");
+          setTimeout(() => window.location.reload(), 1200);
+        } else {
+          alert(data.error || "Não foi possível reativar automaticamente. Entre em contato com seu consultor.");
+        }
+      } catch (err) {
+        alert("Erro ao solicitar reativação.");
+      }
+    }
+
+    // --- 🔥 RASTREADOR DE LEITURA QUENTE (HOT LEAD ALERT BOT) ---
+    // Nome próprio: tinha o mesmo nome do rastreador de tempo abaixo, que sobrescrevia este e o alerta nunca disparava
+    let timerLeituraQuente = null;
+    function iniciarAlertaLeituraQuente() {
+      if (!token) return;
+      // Disparar alerta após 25 segundos de leitura ativa
+      timerLeituraQuente = setTimeout(async () => {
+        try {
+          await fetch(`/api/propostas/${encodeURIComponent(token)}/alerta-quente`, { method: "POST" });
+        } catch (e) {
+          // Silent fallback
+        }
+      }, 25000);
+    }
+
+    // --- ONBOARDING & ENVIO DE DOCUMENTOS (OPCIONAL) ---
+    function abrirModalDocumentosOnboarding() {
+      const m = document.getElementById('modalDocumentosOnboarding');
+      if (m) {
+        m.style.display = 'flex';
+        carregarDocumentosEnviados();
+      }
+    }
+
+    function fecharModalDocumentosOnboarding() {
+      const m = document.getElementById('modalDocumentosOnboarding');
+      if (m) m.style.display = 'none';
+    }
+
+    async function carregarDocumentosEnviados() {
+      if (!token) return;
+      try {
+        const res = await fetch(`/api/propostas/${encodeURIComponent(token)}/documentos`);
+        if (!res.ok) return;
+        const docs = await res.json();
+        const wrapper = document.getElementById('listaDocumentosEnviadosWrapper');
+        const container = document.getElementById('listaDocumentosEnviados');
+        if (!wrapper || !container) return;
+
+        if (docs.length === 0) {
+          wrapper.style.display = 'none';
+          container.innerHTML = '';
+          return;
+        }
+
+        wrapper.style.display = 'block';
+        container.innerHTML = docs.map(d => `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; background:#ffffff; border:1px solid #dcfce7; padding:6px 10px; border-radius:6px; margin-bottom:4px; font-size:11px;">
+            <span style="min-width:0; overflow-wrap:anywhere;"><strong>${esc(d.tipo_documento)}:</strong> ${esc(d.nome_original)}</span>
+            <a href="/api/propostas/${encodeURIComponent(token)}/documentos/${encodeURIComponent(d.id)}/download" target="_blank" style="color:#0284c7; font-weight:700; text-decoration:none; flex-shrink:0;">Baixar</a>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.warn("Erro ao carregar documentos:", e);
+      }
+    }
+
+    async function uploadArquivoOnboarding(tipo, inputEl) {
+      if (!inputEl.files || inputEl.files.length === 0) return;
+      const file = inputEl.files[0];
+      if (file.size > 25 * 1024 * 1024) {
+        alert("O arquivo é muito grande (máximo 25MB).");
+        return;
+      }
+
+      inputEl.disabled = true;
+      try {
+        const res = await fetch(`/api/propostas/${encodeURIComponent(token)}/documentos`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'X-Tipo-Documento': encodeURIComponent(tipo),
+            'X-Nome-Arquivo': encodeURIComponent(file.name)
+          },
+          body: file
+        });
+
+        if (res.ok) {
+          carregarDocumentosEnviados();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || "Não foi possível enviar o documento. Tente novamente.");
+        }
+      } catch (err) {
+        alert("Erro na conexão ao enviar documento.");
+      } finally {
+        inputEl.disabled = false;
+        inputEl.value = '';
+      }
+    }
+
+    // --- RASTREAMENTO DE TEMPO DE LEITURA & ENGAJAMENTO ---
+    function iniciarRastreadorTempoLeitura() {
+      if (!window.visualizacaoIdAtual || window._heartbeatIniciado) return;
+      window._heartbeatIniciado = true;
+
+      const intervaloSegundos = 15;
+      setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          enviarHeartbeat(intervaloSegundos);
+        }
+      }, intervaloSegundos * 1000);
+
+      window.addEventListener('beforeunload', () => {
+        enviarHeartbeat(5);
+      });
+    }
+
+    function enviarHeartbeat(segundos) {
+      if (!window.visualizacaoIdAtual || !token) return;
+      try {
+        fetch(`/api/propostas/${encodeURIComponent(token)}/heartbeat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visualizacao_id: window.visualizacaoIdAtual, segundos: segundos || 15 }),
+          keepalive: true
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    function salvarVCardConsultor() {
+      const data = window.dadosPropostaAtual || {};
+      const nomeEmpresa = (data.tipo_proposta || data.tipoProposta || data.empresa_proposta || data.empresaProposta || "FINORA").toUpperCase();
+      const numProp = data.numero_proposta || "";
+      // Contato do consultor (vendedor da proposta); antes o cartão saía com telefone/e-mail do próprio cliente
+      const nomeConsultor = String(data.consultor_nome || "Consultor Comercial").replace(/[\r\n;]/g, " ");
+      const email = String(data.consultor_email || "").replace(/[\r\n;]/g, "");
+      const tel = String(data.consultor_telefone || "").replace(/\D/g, "");
+
+      const vCardContent = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        `FN:${nomeConsultor} - ${nomeEmpresa}`,
+        `ORG:${nomeEmpresa} Intelligence`,
+        "TITLE:Consultor de Negócios & Planejamento Tributário",
+        ...(tel ? [`TEL;TYPE=CELL,VOICE:+55${tel}`] : []),
+        ...(email ? [`EMAIL;TYPE=WORK:${email}`] : []),
+        `NOTE:Consultor responsável pela Proposta Comercial #${numProp}`,
+        "END:VCARD"
+      ].join("\r\n");
+
+      const blob = new Blob([vCardContent], { type: "text/vcard;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Contato_${nomeEmpresa}_Proposta_${numProp}.vcf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function abrirModalPagamento() {
+      const modal = document.getElementById('modalPagamento');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function fecharModalPagamento() {
+      const modal = document.getElementById('modalPagamento');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function renderBannerValidade(proposta) {
+      const banner = document.getElementById('validityBanner');
+      if (!banner) return;
+
+      // Proposta já decidida não tem prazo: evitava "aprovada" e "expirada" ao mesmo tempo.
+      // O banner fica por causa do botão "Formas de Pagamento".
+      if (/^(aprovad|assinad|recusad)/i.test(String(proposta.status || ''))) {
+        banner.style.display = 'flex';
+        const t = document.getElementById('validityTitle');
+        const s = document.getElementById('validitySubtitle');
+        const b = document.getElementById('validityTimerBadge');
+        if (t) t.textContent = 'Condições comerciais desta proposta';
+        if (s) s.textContent = '';
+        if (b) b.style.display = 'none';
+        return;
+      }
+
+      // validade_inicia_em: reativação do cliente ou renovação do consultor (mesma regra de propostaVencida no servidor)
+      const dataBase = proposta.validade_inicia_em || proposta.criado_em || proposta.data_proposta || new Date();
+      const criacao = new Date(dataBase);
+      const DIAS_VALIDADE = 10;
+      const validade = new Date(criacao.getTime() + DIAS_VALIDADE * 24 * 60 * 60 * 1000);
+      
+      const agora = new Date();
+      const diffMs = validade.getTime() - agora.getTime();
+      const diffHoras = Math.ceil(diffMs / (1000 * 60 * 60));
+      const diffDias = Math.ceil(diffHoras / 24);
+
+      const dataFmt = validade.toLocaleDateString('pt-BR');
+
+      const elTitle = document.getElementById('validityTitle');
+      const elSubtitle = document.getElementById('validitySubtitle');
+      const elBadge = document.getElementById('validityTimerBadge');
+      const elIcon = document.getElementById('validityIcon');
+
+      banner.style.display = 'flex';
+
+      if (diffHoras <= 0) {
+        if (elIcon) elIcon.textContent = '';
+        if (elTitle) elTitle.textContent = 'Proposta Comercial Expirada';
+        if (elSubtitle) elSubtitle.textContent = `O prazo original de validade desta proposta expirou em ${dataFmt}. Entre em contato para revalidar.`;
+        if (elBadge) {
+          elBadge.textContent = 'Validade Expirada';
+          elBadge.style.background = '#a12f2a';
+        }
+      } else if (diffDias <= 2) {
+        if (elIcon) elIcon.textContent = '';
+        if (elTitle) elTitle.textContent = `Últimas ${diffHoras} horas de validade!`;
+        if (elSubtitle) elSubtitle.textContent = `(Condições especiais e valores garantidos até ${dataFmt})`;
+        if (elBadge) {
+          elBadge.textContent = `Expira em ${diffHoras}h`;
+          elBadge.style.background = '#8a5a06';
+        }
+      } else {
+        if (elIcon) elIcon.textContent = '';
+        if (elTitle) elTitle.textContent = `Proposta válida por mais ${diffDias} dias`;
+        if (elSubtitle) elSubtitle.textContent = `(Condições comerciais e valores garantidos até ${dataFmt})`;
+        if (elBadge) {
+          elBadge.textContent = `Garantia Ativa (${diffDias} dias)`;
+          elBadge.style.background = 'var(--brand-primary)';
+        }
+      }
+    }
+
+    function aprovarProposta() {
+      abrirModalAssinatura();
+    }
+
+    let canvasDesenhando = false;
+    let canvasTemTraco = false;
+
+    function abrirModalAssinatura() {
+      const modal = document.getElementById('modalAssinatura');
+      if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(inicializarCanvas, 50);
+      }
+    }
+
+    function fecharModalAssinatura() {
+      const modal = document.getElementById('modalAssinatura');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function inicializarCanvas() {
+      const canvas = document.getElementById('canvasSignature');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      function obterPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+          x: (clientX - rect.left) * scaleX,
+          y: (clientY - rect.top) * scaleY
+        };
+      }
+
+      function iniciar(e) {
+        e.preventDefault();
+        canvasDesenhando = true;
+        canvasTemTraco = true;
+        const ph = document.getElementById('canvasPlaceholderText');
+        if (ph) ph.style.display = 'none';
+        const pos = obterPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+      }
+
+      function desenhar(e) {
+        if (!canvasDesenhando) return;
+        e.preventDefault();
+        const pos = obterPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      }
+
+      function parar() {
+        canvasDesenhando = false;
+      }
+
+      canvas.onmousedown = iniciar;
+      canvas.onmousemove = desenhar;
+      canvas.onmouseup = parar;
+      canvas.onmouseleave = parar;
+
+      canvas.ontouchstart = iniciar;
+      canvas.ontouchmove = desenhar;
+      canvas.ontouchend = parar;
+    }
+
+    function limparCanvasAssinatura() {
+      const canvas = document.getElementById('canvasSignature');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvasTemTraco = false;
+      const ph = document.getElementById('canvasPlaceholderText');
+      if (ph) ph.style.display = 'block';
+    }
+
+    async function enviarAssinaturaDigital() {
+      const nome = (document.getElementById('signNome')?.value || '').trim();
+      const cpf = (document.getElementById('signCpf')?.value || '').trim();
+
+      if (!nome) {
+        alert('Por favor, informe seu Nome Completo para validação da assinatura.');
+        return;
+      }
+
+      if (!canvasTemTraco) {
+        alert('Por favor, desenhe sua rubrica ou assinatura no quadro indicado.');
+        return;
+      }
+
+      const canvas = document.getElementById('canvasSignature');
+      const assinaturaBase64 = canvas ? canvas.toDataURL('image/png') : '';
+
+      fecharModalAssinatura();
+      mostrarOverlay('Processando Assinatura...', 'Registrando sua assinatura digital e autenticando termo...');
+
+      try {
+        const res = await fetch(`/api/propostas/${token}/aprovar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nomeSignatario: nome,
+            cpfSignatario: cpf,
+            assinaturaBase64: assinaturaBase64
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          dispararConfetes();
+          mostrarOverlay('Proposta Assinada com Sucesso!', 'Sua assinatura digital foi autenticada com sucesso! Nossa equipe entrará em contato para os próximos passos.');
+          setTimeout(() => window.location.reload(), 4000);
+        } else {
+          mostrarOverlay('Erro', data.error || 'Não foi possível processar sua assinatura no momento.');
+          setTimeout(esconderOverlay, 4000);
+        }
+      } catch (err) {
+        mostrarOverlay('Erro', 'Problema de conexão com o servidor.');
+        setTimeout(esconderOverlay, 3000);
+      }
+    }
+
+    function dispararConfetes() {
+      const canvas = document.createElement("canvas");
+      canvas.style.position = "fixed";
+      canvas.style.top = "0";
+      canvas.style.left = "0";
+      canvas.style.width = "100vw";
+      canvas.style.height = "100vh";
+      canvas.style.pointerEvents = "none";
+      canvas.style.zIndex = "99999";
+      document.body.appendChild(canvas);
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const ctx = canvas.getContext("2d");
+
+      const particulas = [];
+      const cores = ["#10b981", "#0284c7", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6", "#f43f5e"];
+
+      for (let i = 0; i < 140; i++) {
+        particulas.push({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+          vx: (Math.random() - 0.5) * 18,
+          vy: (Math.random() - 0.7) * 22,
+          size: Math.random() * 8 + 4,
+          color: cores[Math.floor(Math.random() * cores.length)],
+          rot: Math.random() * 360,
+          vrot: (Math.random() - 0.5) * 12,
+          opacity: 1,
+          gravity: 0.35,
+        });
+      }
+
+      let animFrame;
+      const inicio = Date.now();
+
+      function animar() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const decorrido = Date.now() - inicio;
+
+        particulas.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.rot += p.vrot;
+          p.opacity = Math.max(0, 1 - decorrido / 3500);
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.globalAlpha = p.opacity;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.4);
+          ctx.restore();
+        });
+
+        if (decorrido < 3500) {
+          animFrame = requestAnimationFrame(animar);
+        } else {
+          cancelAnimationFrame(animFrame);
+          if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+        }
+      }
+
+      animar();
+    }
+
+    function recusarProposta() {
+      document.getElementById('motivoRecusa').value = '';
+      document.getElementById('modalRecusar').style.display = 'flex';
+    }
+
+    function fecharModalRecusar() {
+      document.getElementById('modalRecusar').style.display = 'none';
+    }
+
+    async function enviarRecusa() {
+      const observacao = document.getElementById('motivoRecusa').value || '';
+
+      if (observacao.trim().length < 5) {
+        alert('Por favor, digite uma justificativa com pelo menos 5 caracteres.');
+        return;
+      }
+
+      fecharModalRecusar();
+      mostrarOverlay('Enviando...', 'Registrando seu feedback de renegociação...');
+
+      try {
+        const res = await fetch(`/api/propostas/${token}/recusar`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ observacao: observacao.trim() })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          mostrarOverlay('Comentários Enviados!', 'Nossa equipe comercial foi notificada e entrará em contato em breve.');
+        } else {
+          mostrarOverlay('Erro', data.error || 'Não foi possível registrar seu feedback no momento.');
+          setTimeout(esconderOverlay, 3000);
+        }
+      } catch (err) {
+        mostrarOverlay('Erro', 'Problema de conexão com o servidor.');
+        setTimeout(esconderOverlay, 3000);
+      }
+    }
+
+    function mostrarOverlay(titulo, mensagem) {
+      document.getElementById('overlay-title').innerText = titulo;
+      document.getElementById('overlay-message').innerText = mensagem;
+      document.getElementById('overlay').style.display = 'flex';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') fecharModalRecusar();
+    });
+
+    function esconderOverlay() {
+      document.getElementById('overlay').style.display = 'none';
+    }
+  </script>
+
+  <!-- MODAL DE FEEDBACK/RENEGOCIAÇÃO -->
+  <div id="modalRecusar" class="modal-renegociar">
+    <div class="modal-renegociar-content">
+      <div class="modal-renegociar-header">
+        <h3>Solicitar Renegociação / Feedback</h3>
+        <button class="close-modal-btn" onclick="fecharModalRecusar()">&times;</button>
+      </div>
+      <div class="modal-renegociar-body">
+        <p>Insira abaixo suas dúvidas, sugestões de alteração ou motivo da recusa. Nossa equipe comercial receberá a notificação em tempo real.</p>
+        <textarea id="motivoRecusa" placeholder="Ex.: Gostaria de discutir uma redução do valor pontual ou alterar o escopo do serviço X..."></textarea>
+      </div>
+      <div class="modal-renegociar-footer">
+        <button class="btn-cancelar-renegociar" onclick="fecharModalRecusar()">Cancelar</button>
+        <button class="btn-recusar-confirm" onclick="enviarRecusa()">Enviar Comentários</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Estilos do Modal de Renegociação */
+    .modal-renegociar {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    }
+    .modal-renegociar-content {
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 24px;
+      width: min(500px, 90%);
+      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.25);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      position: relative;
+      animation: modalFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      text-align: left;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-renegociar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .modal-renegociar-header h3 {
+      margin: 0;
+      color: #0f172a;
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .close-modal-btn {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #94a3b8;
+      line-height: 1;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    .close-modal-btn:hover {
+      color: #ef4444;
+    }
+    .modal-renegociar-body p {
+      font-size: 13.5px;
+      color: #64748b;
+      margin: 0 0 18px;
+      line-height: 1.6;
+    }
+    .modal-renegociar-body textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #dbe3ef;
+      font-family: inherit;
+      font-size: 13.5px;
+      resize: vertical;
+      outline: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-sizing: border-box;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .modal-renegociar-body textarea:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(18, 200, 194, 0.14), 0 4px 10px rgba(15, 23, 42, 0.04);
+    }
+    .modal-renegociar-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .btn-cancelar-renegociar {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+      border-radius: 999px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+    .btn-cancelar-renegociar:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .btn-recusar-confirm {
+      background: #ef4444; /* fallback */
+      background: var(--danger, #ef4444);
+      color: white;
+      padding: 10px 22px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 16px rgba(239, 68, 68, 0.2);
+    }
+    .btn-recusar-confirm:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(239, 68, 68, 0.3);
+      filter: brightness(1.05);
+    }
+    .btn-recusar-confirm:active {
+      transform: translateY(0);
+    }
+  </style>
+  <!-- Modal Aprovação Parcial -->
+  <div id="modalAprovarParcial" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:#fff; width:90%; max-width:600px; padding:24px; border-radius:12px; max-height:90vh; overflow-y:auto; font-family:'Inter', sans-serif;">
+      <h3 style="margin-top:0; font-size:20px; font-weight:700; color:#0f172a;">Aprovar Parcialmente</h3>
+      <p style="font-size:14px; color:#64748b; margin-bottom:16px;">Selecione os serviços que deseja <strong>manter</strong>. Os serviços desmarcados serão removidos da proposta e você deve informar o motivo.</p>
+      
+      <div id="listaServicosParcial" style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+        <!-- Lista injetada via JS -->
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+        <button onclick="fecharModalAprovarParcial()" style="background:none; border:1px solid #cbd5e1; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600; color:#475569;">Cancelar</button>
+        <button onclick="enviarAprovacaoParcial()" style="background:var(--brand-primary, #1f5a52); border:none; padding:10px 16px; border-radius:4px; cursor:pointer; font-weight:600; color:#fff;">Confirmar Aprovação Parcial</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let itensParaAprovarParcial = [];
+
+    function abrirModalAprovarParcial() {
+      // `itens` é a lista já normalizada pelo servidor (cai em proposta_itens quando itens_json está vazio)
+      const itens = window.dadosPropostaAtual && window.dadosPropostaAtual.itens;
+      if (!Array.isArray(itens) || itens.length === 0) {
+        alert("Carregando dados da proposta...");
+        return;
+      }
+      try {
+        itensParaAprovarParcial = itens;
+        const container = document.getElementById("listaServicosParcial");
+        container.innerHTML = "";
+        
+        if (itens.length === 0) {
+          container.innerHTML = "<p>Nenhum serviço encontrado.</p>";
+        }
+
+        itens.forEach((item, index) => {
+          const valor = Number(item.valor || 0).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+          const div = document.createElement("div");
+          div.style.cssText = "border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;";
+          div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#1e293b; cursor:pointer;">
+                <input type="checkbox" id="chk_servico_${index}" checked onchange="toggleMotivoParcial(${index})" style="width:18px; height:18px; cursor:pointer;">
+                ${esc(item.servico)}
+              </label>
+              <span style="font-weight:700; color:#0f172a;">${valor}</span>
+            </div>
+            <div id="motivo_box_${index}" style="display:none; margin-top:8px;">
+              <label style="font-size:12px; color:#64748b;">Motivo da recusa deste serviço:</label>
+              <textarea id="motivo_texto_${index}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; font-family:'Inter',sans-serif; resize:vertical; min-height:50px;"></textarea>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+        
+        document.getElementById("modalAprovarParcial").style.display = "flex";
+      } catch (err) {
+        console.error("Erro ao montar modal de aprovação parcial:", err);
+      }
+    }
+
+    function fecharModalAprovarParcial() {
+      document.getElementById("modalAprovarParcial").style.display = "none";
+    }
+
+    function toggleMotivoParcial(index) {
+      const isChecked = document.getElementById(`chk_servico_${index}`).checked;
+      document.getElementById(`motivo_box_${index}`).style.display = isChecked ? "none" : "block";
+    }
+
+    async function enviarAprovacaoParcial() {
+      const btn = document.querySelector("#modalAprovarParcial button:last-child");
+      btn.innerHTML = "Processando...";
+      btn.disabled = true;
+
+      const itensRecusados = [];
+      const itensAprovados = [];
+
+      itensParaAprovarParcial.forEach((item, index) => {
+        const isChecked = document.getElementById(`chk_servico_${index}`).checked;
+        if (!isChecked) {
+          const motivo = document.getElementById(`motivo_texto_${index}`).value;
+          itensRecusados.push({ ...item, motivoRecusa: motivo });
+        } else {
+          itensAprovados.push(item);
+        }
+      });
+
+      if (itensAprovados.length === 0) {
+        alert("Você precisa aprovar pelo menos um serviço. Caso contrário, utilize o botão 'Negar'.");
+        btn.innerHTML = "Confirmar Aprovação Parcial";
+        btn.disabled = false;
+        return;
+      }
+
+      if (itensRecusados.length === 0) {
+        fecharModalAprovarParcial();
+        aprovarProposta();
+        return;
+      }
+
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const res = await fetch(`/api/propostas/${token}/aprovar-parcial`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ itensRecusados, itensAprovados })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          fecharModalAprovarParcial();
+          dispararConfetes();
+          mostrarOverlay('Proposta Atualizada!', 'Aprovação parcial enviada com sucesso. A proposta foi atualizada.');
+          setTimeout(() => window.location.reload(), 4000);
+        } else {
+          alert("Erro: " + (data.error || "Tente novamente."));
+          btn.innerHTML = "Confirmar Aprovação Parcial";
+          btn.disabled = false;
+        }
+      } catch(err) {
+        alert("Erro na conexão.");
+        btn.innerHTML = "Confirmar Aprovação Parcial";
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+
+</html>

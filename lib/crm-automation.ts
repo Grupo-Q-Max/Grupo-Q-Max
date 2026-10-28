@@ -50,7 +50,7 @@ import {
  * /api/crm/automation/cron for external schedulers.
  */
 
-const SITE_URL = process.env.APP_URL ?? "https://qmaxbrasil.com.br";
+const SITE_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://grupoqmax.com.br";
 const WEBHOOK_TIMEOUT_MS = 10_000;
 const MAX_ATTEMPTS = 3;
 /** RUNNING rows older than this are considered abandoned (server restarted mid-run) */

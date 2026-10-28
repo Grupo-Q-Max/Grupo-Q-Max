@@ -1,0 +1,15 @@
+{
+  "watch": [
+    "server.js",
+    "config",
+    "middleware",
+    "services"
+  ],
+  "ext": "js,json",
+  "ignore": [
+    "public/propostas_pdf/*",
+    "public/uploads/*",
+    "node_modules/*",
+    "*.pdf"
+  ]
+}

@@ -1,0 +1,2380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerador de Propostas | FINORA</title>
+    <link rel="manifest" href="/proposta/manifest.json" />
+    <meta name="theme-color" content="#10b981" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="css/qmax-ui.css" />
+    <link rel="stylesheet" href="css/proposta-v2-fix.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/proposta/sw.js').catch(() => {});
+        });
+      }
+    </script>
+
+    <style id="qmax-onboarding-v2-styles">
+        .proposal-progress { background:#fff; border:1px solid rgba(15,23,42,.08); border-radius:18px; padding:18px 20px; margin-bottom:18px; box-shadow:0 14px 36px rgba(15,23,42,.07); }
+        .proposal-progress-top { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:12px; }
+        .proposal-progress-title { font-weight:800; color:#172033; }
+        .proposal-progress-percent { font-weight:800; color:var(--accent, #14b8a6); }
+        .proposal-progress-track { height:9px; background:#edf1f5; border-radius:999px; overflow:hidden; }
+        .proposal-progress-bar { height:100%; width:20%; border-radius:inherit; background:linear-gradient(90deg, var(--accent, #14b8a6), #6ee7d8); transition:width .35s ease; }
+        .proposal-steps { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-top:14px; }
+        .proposal-step { font-size:11px; font-weight:700; color:#8b95a7; text-align:center; }
+        .proposal-step.active { color:#172033; }
+        .proposal-step.done { color:var(--accent, #14b8a6); }
+        .choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .choice-card { position:relative; display:flex; gap:10px; align-items:flex-start; padding:15px; border:1px solid #dfe5ec; border-radius:14px; cursor:pointer; transition:.2s ease; background:#fff; }
+        .choice-card:hover { transform:translateY(-1px); border-color:var(--accent, #14b8a6); }
+        .choice-card:has(input:checked) { border-color:var(--accent, #14b8a6); box-shadow:0 0 0 3px rgba(20,184,166,.12); }
+        .choice-card input { margin-top:3px; }
+        .choice-card strong { display:block; color:#172033; }
+        .choice-card small { display:block; color:#7a8495; margin-top:3px; line-height:1.35; }
+        .field-help { display:block; margin-top:6px; color:#7a8495; font-size:12px; line-height:1.45; }
+        .socios-panel { margin-top:16px; padding:18px; border:1px dashed #ccd5df; border-radius:16px; background:#f8fafc; }
+        .socios-panel-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+        .socios-panel-header h3 { margin:0; font-size:16px; color:#172033; }
+        .socio-card { background:#fff; border:1px solid #e4e9ef; border-radius:14px; padding:16px; margin-top:12px; }
+        .socio-card-title { font-weight:800; margin-bottom:12px; color:#172033; }
+        .upload-box { border:1.5px dashed #b9c5d2; border-radius:15px; padding:18px; background:#f8fafc; }
+        .upload-box input[type=file] { width:100%; }
+        .upload-file-name { margin-top:8px; font-size:12px; color:#667085; }
+        .wizard-card { 
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            transform-origin: center top;
+        }
+        .wizard-card.is-locked { 
+            opacity: 0.4; 
+            filter: grayscale(40%) blur(0.4px);
+            pointer-events: none;
+            transform: scale(0.99);
+            box-shadow: none !important;
+            border-color: #cbd5e1 !important;
+        }
+        .badge-campo-bloqueado {
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid #fde68a;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .input-locked,
+        input.input-locked,
+        select.input-locked {
+            background-color: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+            color: #64748b !important;
+            cursor: not-allowed !important;
+        }
+        .review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .review-item { background:#f8fafc; border:1px solid #e6ebf0; padding:13px 14px; border-radius:13px; }
+        .review-item span { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#8490a2; margin-bottom:4px; }
+        .review-item strong { color:#172033; word-break:break-word; }
+        @media (max-width: 760px) { .proposal-steps { grid-template-columns:1fr; text-align:left; } .proposal-step { text-align:left; display:none; } .proposal-step.active { display:block; } .choice-grid,.review-grid { grid-template-columns:1fr; } }
+        
+        /* Side Panel Smart Tooltips */
+        #smart-tooltip-panel {
+            position: fixed;
+            right: -320px;
+            top: 100px;
+            width: 280px;
+            background: #fff;
+            border-radius: 16px 0 0 16px;
+            box-shadow: -4px 4px 24px rgba(15,23,42,.12);
+            padding: 24px;
+            transition: right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+            border: 1px solid rgba(15,23,42,.08);
+            border-right: none;
+        }
+        #smart-tooltip-panel.show { right: 0; }
+        #smart-tooltip-panel h4 { margin: 0 0 8px 0; color: #0f172a; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+        #smart-tooltip-panel p { margin: 0; font-size: 13px; color: #475569; line-height: 1.5; }
+
+        /* Discount Controller Widget Styles */
+        .discount-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border: 1.5px solid #cbd5e1;
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin: 16px 0;
+            transition: all 0.3s ease;
+        }
+        .discount-card:hover {
+            border-color: #94a3b8;
+            box-shadow: 0 4px 18px rgba(15,23,42,.06);
+        }
+        .discount-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .discount-card-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .discount-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .chip-desconto {
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .chip-desconto:hover {
+            border-color: var(--primary, #0d9488);
+            color: var(--primary, #0d9488);
+            transform: translateY(-1px);
+        }
+        .chip-desconto.chip-ativo {
+            background: var(--primary, #0d9488);
+            color: #fff;
+            border-color: var(--primary, #0d9488);
+            box-shadow: 0 3px 10px color-mix(in srgb, var(--primary, #0d9488) 35%, transparent);
+        }
+        .discount-input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .discount-input-box {
+            position: relative;
+            flex: 1;
+        }
+        .discount-input-box input {
+            width: 100%;
+            height: 38px;
+            padding-right: 28px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 14px;
+        }
+        .discount-input-box span {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 800;
+            color: #94a3b8;
+            font-size: 13px;
+            pointer-events: none;
+        }
+        .badge-desconto-ok {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-top: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .badge-desconto-alerta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-top: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        /* Campos do perfil do consultório odontológico */
+        #grupoDentistasParceiros, #grupoCadeiras, #grupoTemCRO {
+            border-left: 3px solid #0e9f9a;
+            padding-left: 10px;
+        }
+        .icone-dente { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; fill: #0e9f9a; }
+    </style>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <link rel="stylesheet" href="css/tema-escritorio.css">
+</head>
+
+<body class="page-proposta theme-finora">
+    <script>
+        // Se não tiver token, chuta pro login
+        const token = localStorage.getItem('finora_token');
+        if (!token) {
+            window.location.href = '/proposta/login.html';
+        }
+
+        // Função para fazer Logout
+        function sair() {
+            localStorage.clear();
+            window.location.href = '/proposta/login.html';
+        }
+    </script>
+
+    <!-- SELETOR FUTURISTA DE EMPRESAS (PORTAL) -->
+    <div id="empresaSelectorScreen" class="portal-selector-overlay">
+        <!-- Canvas para efeito de partículas interativas -->
+        <canvas id="portalCanvas"></canvas>
+        
+        <!-- Botão de Fechar (Cancelamento) -->
+        <button id="btnFecharPortal" class="portal-close-btn" onclick="fecharPortalSeletor()" style="display: none;" title="Fechar e voltar à proposta atual">&times;</button>
+        
+        <div class="portal-bg-grid"></div>
+        <div class="portal-glow-1"></div>
+        <div class="portal-glow-2"></div>
+        
+        <div class="portal-header">
+            <span class="portal-badge">Plataforma Comercial</span>
+            <h1>Selecione o Ecossistema</h1>
+            <p>Escolha o braço do Grupo Q-MAX para o qual deseja gerar esta proposta comercial:</p>
+        </div>
+        
+        <div class="portal-cards-grid">
+            <!-- Card FINORA -->
+            <div class="portal-card brand-finora" onclick="selecionarEmpresaPortal('finora')">
+                <div class="hud-bracket top-left"></div>
+                <div class="hud-bracket top-right"></div>
+                <div class="hud-bracket bottom-left"></div>
+                <div class="hud-bracket bottom-right"></div>
+                <span class="hud-status-code">SYS.NODE_01</span>
+                
+                <div class="portal-card-emblem">F</div>
+                <div class="portal-card-title">FINORA Intelligence</div>
+                <p class="portal-card-desc">Gestão financeira estratégica, business intelligence e inteligência de negócios para clínicas odontológicas.</p>
+                <button class="portal-card-btn">Selecionar</button>
+            </div>
+            
+            <!-- Card CONTÁBIL -->
+            <div class="portal-card brand-contabil" onclick="selecionarEmpresaPortal('contabil')">
+                <div class="hud-bracket top-left"></div>
+                <div class="hud-bracket top-right"></div>
+                <div class="hud-bracket bottom-left"></div>
+                <div class="hud-bracket bottom-right"></div>
+                <span class="hud-status-code">SYS.NODE_02</span>
+                
+                <div class="portal-card-emblem">C</div>
+                <div class="portal-card-title">Q-MAX Contábil</div>
+                <p class="portal-card-desc">Contabilidade odontológica especializada de alta performance, conformidade fiscal e otimização societária.</p>
+                <button class="portal-card-btn">Selecionar</button>
+            </div>
+            
+            <!-- Card TECH -->
+            <div class="portal-card brand-tech" onclick="selecionarEmpresaPortal('tech')">
+                <div class="hud-bracket top-left"></div>
+                <div class="hud-bracket top-right"></div>
+                <div class="hud-bracket bottom-left"></div>
+                <div class="hud-bracket bottom-right"></div>
+                <span class="hud-status-code">SYS.NODE_03</span>
+                
+                <div class="portal-card-emblem">T</div>
+                <div class="portal-card-title">Q-MAX Tech</div>
+                <p class="portal-card-desc">Soluções tecnológicas, landing pages, automação de marketing e infraestrutura digital.</p>
+                <button class="portal-card-btn">Selecionar</button>
+            </div>
+            
+            <!-- Card AUDITORIA -->
+            <div class="portal-card brand-auditoria" onclick="selecionarEmpresaPortal('auditoria')">
+                <div class="hud-bracket top-left"></div>
+                <div class="hud-bracket top-right"></div>
+                <div class="hud-bracket bottom-left"></div>
+                <div class="hud-bracket bottom-right"></div>
+                <span class="hud-status-code">SYS.NODE_04</span>
+                
+                <div class="portal-card-emblem">A</div>
+                <div class="portal-card-title">Q-MAX Auditoria</div>
+                <p class="portal-card-desc">Serviços de auditoria contábil, tributária e de processos clínicos.</p>
+                <button class="portal-card-btn">Selecionar</button>
+            </div>
+
+            <!-- Card LAGERHAUS -->
+            <div class="portal-card brand-lagerhaus" onclick="selecionarEmpresaPortal('lagerhaus')">
+                <div class="hud-bracket top-left"></div>
+                <div class="hud-bracket top-right"></div>
+                <div class="hud-bracket bottom-left"></div>
+                <div class="hud-bracket bottom-right"></div>
+                <span class="hud-status-code">SYS.NODE_05</span>
+                
+                <div class="portal-card-emblem">L</div>
+                <div class="portal-card-title">LAGERHAUS</div>
+                <p class="portal-card-desc">Espaços inteligentes, coworking premium, escritórios compartilhados e galpões logísticos sob medida.</p>
+                <button class="portal-card-btn">Selecionar</button>
+            </div>
+        </div>
+        
+        <div class="portal-footer-actions">
+            <button class="btn-portal-back" onclick="window.location.href='/proposta/dashboard.html'">
+                Voltar ao painel
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let empresaJaSelecionada = false;
+
+        // Efeito de Decodificação Digital (Texto Scramble)
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
+        function scrambleText(element, originalText) {
+            if (element.dataset.animating === 'true') return;
+            element.dataset.animating = 'true';
+            
+            let iterations = 0;
+            const interval = setInterval(() => {
+                element.innerText = originalText.split('')
+                    .map((char, index) => {
+                        if (char === ' ') return ' ';
+                        if (index < iterations) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    })
+                    .join('');
+                    
+                if (iterations >= originalText.length) {
+                    clearInterval(interval);
+                    element.dataset.animating = 'false';
+                }
+                iterations += 1; // velocidade de descriptografia
+            }, 30);
+        }
+
+        // Partículas Interativas no Canvas (Fundo Cibernético)
+        function initPortalParticles() {
+            const canvas = document.getElementById('portalCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const portal = document.getElementById('empresaSelectorScreen');
+            let width, height;
+            
+            const particles = [];
+            const particleCount = 60;
+            const mouse = { x: null, y: null, radius: 120 };
+            
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            
+            window.addEventListener('resize', resize);
+            resize();
+            
+            portal.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+            
+            portal.addEventListener('mouseleave', () => {
+                mouse.x = null;
+                mouse.y = null;
+            });
+            
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.radius = Math.random() * 2 + 0.8;
+                }
+                
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                    
+                    // Atração/repulsão suave do mouse
+                    if (mouse.x !== null && mouse.y !== null) {
+                        const dx = mouse.x - this.x;
+                        const dy = mouse.y - this.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < mouse.radius) {
+                            const force = (mouse.radius - dist) / mouse.radius;
+                            this.x -= dx * force * 0.02;
+                            this.y -= dy * force * 0.02;
+                        }
+                    }
+                }
+                
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+                    ctx.fill();
+                }
+            }
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+            
+            function animate() {
+                // Verificar se o portal está invisível para economizar CPU
+                if (portal.style.display === 'none' || portal.classList.contains('hide-portal')) {
+                    requestAnimationFrame(animate);
+                    return;
+                }
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                
+                // Conectar partículas com traços sutis de rede
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 * (1 - dist/100)})`;
+                            ctx.lineWidth = 0.6;
+                            ctx.stroke();
+                        }
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        function atualizarBadgeEmpresa(empresa) {
+            const badgeText = document.getElementById('selectedCompanyText');
+            if (!badgeText) return;
+            
+            if (empresa === 'finora') {
+                badgeText.innerText = 'FINORA Intelligence';
+            } else if (empresa === 'contabil') {
+                badgeText.innerText = 'Q-MAX Contábil';
+            } else if (empresa === 'tech') {
+                badgeText.innerText = 'Q-MAX Tech';
+            } else if (empresa === 'auditoria') {
+                badgeText.innerText = 'Q-MAX Auditoria';
+            } else if (empresa === 'lagerhaus') {
+                badgeText.innerText = 'LAGERHAUS';
+            }
+        }
+
+        function selecionarEmpresaPortal(empresa) {
+            empresaJaSelecionada = true;
+            const select = document.getElementById('tipoProposta');
+            if (select) {
+                select.value = empresa;
+                atualizarBadgeEmpresa(empresa);
+                if (typeof trocarTipoProposta === 'function') {
+                    trocarTipoProposta();
+                } else if (window.aplicarTemaEmpresa) {
+                    window.aplicarTemaEmpresa(empresa);
+                }
+            }
+            
+            fecharPortalSeletor();
+        }
+
+        function mostrarSeletorEmpresa() {
+            const portal = document.getElementById('empresaSelectorScreen');
+            const btnFechar = document.getElementById('btnFecharPortal');
+            if (portal) {
+                portal.style.display = 'flex';
+                portal.offsetHeight; // Forçar reflow para animar a entrada
+                portal.classList.remove('hide-portal');
+                
+                // Mostrar botão de fechar apenas se já houver uma empresa selecionada
+                if (btnFechar) {
+                    btnFechar.style.display = empresaJaSelecionada ? 'flex' : 'none';
+                }
+            }
+        }
+
+        function fecharPortalSeletor() {
+            const portal = document.getElementById('empresaSelectorScreen');
+            if (portal) {
+                portal.classList.add('hide-portal');
+                setTimeout(() => {
+                    portal.style.display = 'none';
+                }, 500);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initPortalParticles();
+            
+            const select = document.getElementById('tipoProposta');
+            if (select) {
+                // Se já estiver pré-selecionado no select (ex: recarga da página)
+                if (select.value) {
+                    empresaJaSelecionada = true;
+                    atualizarBadgeEmpresa(select.value);
+                }
+                
+                // Escutar mudanças que ocorram programaticamente
+                select.addEventListener('change', () => {
+                    empresaJaSelecionada = true;
+                    atualizarBadgeEmpresa(select.value);
+                });
+            }
+
+            // AUTO-FILL DOS DADOS SE VIER DO CRM DE LEADS (SDR)
+            const urlParams = new URLSearchParams(window.location.search);
+            const leadId = urlParams.get('lead_id');
+            if (leadId) {
+                window.CRM_LEAD_ID = parseInt(leadId, 10);
+            }
+
+            if (urlParams.has('nomeClinica') || urlParams.has('nomeSocio') || urlParams.has('faturamento') || leadId) {
+                if (urlParams.has('faturamento')) {
+                    const fat = document.getElementById('faturamento');
+                    fat.value = Number(urlParams.get('faturamento')) || 0;
+                    fat.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                if (urlParams.has('nomeClinica')) document.getElementById('nomeClinica').value = urlParams.get('nomeClinica');
+                if (urlParams.has('nomeSocio')) document.getElementById('nomeSocio').value = urlParams.get('nomeSocio');
+                if (urlParams.has('email')) document.getElementById('email').value = urlParams.get('email');
+                if (urlParams.has('telefone')) document.getElementById('telefone').value = urlParams.get('telefone');
+
+                // Bypassar portal de seleção de empresas e definir ecossistema padrão (finora)
+                const empresaSugerida = urlParams.get('tipoProposta') || 'finora';
+                setTimeout(() => {
+                    selecionarEmpresaPortal(empresaSugerida);
+                }, 200);
+            }
+        });
+    </script>
+
+    <div class="app-layout">
+        <!-- Sidebar Master Unificada -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">Q</div>
+                    <span><span class="highlight">Q-MAX</span> Intelligence</span>
+                </div>
+                
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar" id="sidebarAvatar">Q</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebarUserName">Carregando...</div>
+                        <div class="sidebar-user-role" id="sidebarUserRole">...</div>
+                    </div>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <div class="sidebar-section-title">Comercial & CRM</div>
+                    <a href="/proposta/dashboard.html" class="sidebar-link" id="navDashboard">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        <span>Dashboard Geral</span>
+                    </a>
+                    <a href="/proposta/crm.html" class="sidebar-link" id="navCrm">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>Funil CRM Leads</span>
+                    </a>
+                    <a href="/proposta/prospeccao.html" class="sidebar-link" id="navProspeccao">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <span>Prospecção Ativa</span>
+                    </a>
+
+                    <div class="sidebar-section-title">Propostas & Fechamento</div>
+                    <a href="/proposta/index.html" class="sidebar-link active" id="navNovaProposta">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Nova Proposta</span>
+                    </a>
+
+                    <div class="sidebar-section-title sec-gestao" id="secGestaoTitle" style="display: none;">Gestão & Diretoria</div>
+                    <a href="/proposta/admin.html" class="sidebar-link" id="navAdmin" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span>Painel da Diretoria</span>
+                    </a>
+                    <a href="/proposta/crm-config.html" class="sidebar-link" id="navCrmConfig" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <span>Configurações CRM</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-status-box">
+                    <span class="status-indicator">
+                        <span id="sseStatusDot" class="sidebar-status-dot"></span>
+                        <span id="sseStatusText">Ao vivo</span>
+                    </span>
+                    <button id="btnToggleSound" onclick="toggleMuteSound()" class="sidebar-btn-mute" title="Silenciar som">Som</button>
+                </div>
+                <button onclick="localStorage.clear(); window.location.href='/proposta/login.html'" class="sidebar-btn-logout">
+                    Sair da Conta
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="container proposal-layout">
+        <section class="page-hero proposal-hero" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div>
+                <span class="eyebrow">Gerador comercial inteligente</span>
+                <h1>Nova Proposta Comercial</h1>
+                <p>Selecione a empresa, preencha os dados do cliente e acompanhe o investimento em tempo real.</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <div style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:999px; font-size:11px; font-weight:700;" title="Atalhos: Ctrl+Enter (Gerar), Ctrl+S (Salvar), Esc (Fechar), Alt+1..6 (Passos)">
+                    Atalhos: <span style="background:#e2e8f0; color:#0f172a; padding:1px 6px; border-radius:4px; font-family:monospace;">Ctrl+Enter</span> / <span style="background:#e2e8f0; color:#0f172a; padding:1px 6px; border-radius:4px; font-family:monospace;">Ctrl+S</span>
+                </div>
+                <div id="autoSaveIndicator" style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.12); color:#059669; border:1px solid rgba(16,185,129,0.3); padding:8px 14px; border-radius:999px; font-size:12px; font-weight:800; backdrop-filter:blur(8px);">
+                    <span style="width:8px; height:8px; background:#10b981; border-radius:50%; display:inline-block; box-shadow:0 0 8px #10b981;"></span>
+                    <span id="autoSaveText">Auto-save ativo</span>
+                </div>
+                <div class="hero-badge" style="margin:0;">Proposta Dinâmica</div>
+            </div>
+        </section>
+
+        <section class="proposal-progress" aria-label="Progresso do preenchimento">
+            <div class="proposal-progress-top">
+                <div>
+                    <div class="proposal-progress-title" id="wizardCurrentTitle">Dados cadastrais</div>
+                    <small class="field-help" style="margin-top:2px">Preencha os dados principais para avançar pela proposta.</small>
+                </div>
+                <div class="proposal-progress-percent" id="wizardPercent">20%</div>
+            </div>
+            <div class="proposal-progress-track"><div class="proposal-progress-bar" id="wizardProgressBar"></div></div>
+            <div class="proposal-steps">
+                <div class="proposal-step active" data-step-indicator="1">1. Cliente</div>
+                <div class="proposal-step" data-step-indicator="2">2. Endereço</div>
+                <div class="proposal-step" data-step-indicator="3">3. Sócios</div>
+                <div class="proposal-step" data-step-indicator="4">4. Operação</div>
+                <div class="proposal-step" data-step-indicator="5">5. Serviços</div>
+                <div class="proposal-step" data-step-indicator="6">6. Revisão</div>
+            </div>
+        </section>
+
+        <div class="form-wrapper">
+            <form id="propostaForm">
+
+                <section class="card wizard-card" data-wizard-step="1">
+                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <h2>1. Dados Cadastrais</h2>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn-secondary" onclick="alternarModoPitch()" style="background:linear-gradient(135deg, #f3e8ff, #faf5ff); border:1px solid #a855f7; color:#7e22ce; padding:6px 14px; font-size:12px; font-weight:800; border-radius:999px;">
+                                Modo Pitch Comercial
+                            </button>
+                            <button type="button" class="btn-secondary" onclick="ativarModoExpress()" style="background:linear-gradient(135deg, #ecfeff, #e0f2fe); border:1px solid #0284c7; color:#0369a1; padding:6px 14px; font-size:12px; font-weight:800; border-radius:999px;">
+                                Proposta Express (30s)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card-body grid-2">
+
+                        <div class="input-group">
+                            <label>Empresa Selecionada</label>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+                                <div id="selectedCompanyBadge" class="company-badge-display">
+                                    <span class="badge-dot"></span>
+                                    <span id="selectedCompanyText" style="font-weight: 800; font-size: 14px;">Carregando...</span>
+                                </div>
+                                <button type="button" onclick="mostrarSeletorEmpresa()" class="btn-template" style="padding: 8px 14px; margin: 0; border-radius: 12px; font-size: 11px; height: 38px; display: inline-flex; align-items: center; gap: 4px;">
+                                    Alterar
+                                </button>
+                            </div>
+                            <select id="tipoProposta" onchange="trocarTipoProposta()" style="display: none;">
+                                <option value="finora">FINORA</option>
+                                <option value="contabil">Contábil</option>
+                                <option value="tech">Tech</option>
+                                <option value="auditoria">Auditoria</option>
+                                <option value="lagerhaus">LAGERHAUS</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="numeroProposta">Nº da Proposta</label>
+                            <input id="numeroProposta" value="Gerado Automaticamente" disabled class="disabled-input" />
+                        </div>
+                        <div class="input-group">
+                            <label for="dataProposta">Data da Proposta</label>
+                            <input id="dataProposta" type="date" />
+                        </div>
+                        <div class="input-group span-2">
+                            <label>Tipo de Cliente</label>
+                            <div class="choice-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 4px;">
+                                <label class="choice-card">
+                                    <input type="radio" name="tipoPessoa" value="PF" onchange="togglePfPj()">
+                                    <div>
+                                        <strong>Pessoa Física (PF)</strong>
+                                        <small>Dentista autônomo, sem CNPJ.</small>
+                                    </div>
+                                </label>
+                                <label class="choice-card">
+                                    <input type="radio" name="tipoPessoa" value="PJ" checked onchange="togglePfPj()">
+                                    <div>
+                                        <strong>Pessoa Jurídica (PJ)</strong>
+                                        <small>Clínica constituída com CNPJ.</small>
+                                    </div>
+                                </label>
+                                <label class="choice-card">
+                                    <input type="radio" name="tipoPessoa" value="HIBRIDA" onchange="togglePfPj()">
+                                    <div>
+                                        <strong>Pessoa Híbrida</strong>
+                                        <small>Atuação combinada (PF + PJ).</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="input-group span-2" id="grupoCnpjEstabelecido">
+                            <label for="cnpjEstabelecido">CNPJ Estabelecido?</label>
+                            <select id="cnpjEstabelecido" onchange="togglePfPj(); if(typeof gerarProposta === 'function') gerarProposta()">
+                                <option value="Sim" selected>Sim (Possui CNPJ ativo)</option>
+                                <option value="Não">Não (Ainda não possui CNPJ / Em abertura)</option>
+                            </select>
+                            <small class="field-help">Se marcar 'Não', o preenchimento do CNPJ torna-se opcional para envio da proposta.</small>
+                        </div>
+                        <div id="bannerCnpjEmAbertura" style="display:none; grid-column: 1 / -1; background: linear-gradient(135deg, #f0fdf4, #e0f2fe); border: 1.5px solid #bae6fd; border-radius: 14px; padding: 14px 18px; margin-bottom: 6px;">
+                            <div style="display:flex; align-items:flex-start; gap:12px;">
+                                
+                                <div>
+                                    <strong style="color:#0369a1; font-size:13.5px; display:block; margin-bottom:4px;">Modo: CNPJ em Abertura / Regularização</strong>
+                                    <p style="color:#0284c7; font-size:12px; margin:0; line-height:1.45;">
+                                        O campo <strong>CNPJ permanece aberto e opcional</strong>. Se a empresa já possuir um CNPJ (mesmo inapto, baixado ou em alteração), digite-o no campo CNPJ para consultar os dados automaticamente. A proposta poderá ser concluída com o CPF do sócio caso ainda não haja CNPJ constituído.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group span-2">
+                            <label for="nomeClinica" id="labelNomeEmpresa">Nome da Clínica</label>
+                            <input
+                                id="nomeClinica"
+                                placeholder="Ex.: Clínica Sorriso Perfeito"
+                            />
+                        </div>
+                        <div class="input-group campo-pj">
+                            <label for="razaoSocial">Razão Social</label>
+                            <input id="razaoSocial" placeholder="Razão social da empresa" />
+                        </div>
+                        <div class="input-group campo-pj">
+                            <label for="cnpj">CNPJ</label>
+                            <input id="cnpj" placeholder="00.000.000/0000-00" onblur="buscarDadosCnpj()" />
+                            <small class="hint" id="hintCnpj">Digite o CNPJ para buscar os dados na Receita Federal.</small>
+                        </div>
+                        <div id="alertaHistoricoCnpj" class="span-2" style="display:none;"></div>
+                        <div class="input-group">
+                            <label for="nomeSocio" id="labelNomeResponsavel">Nome do Sócio Responsável</label>
+                            <input id="nomeSocio" placeholder="Nome completo do responsável" />
+                        </div>
+                        <div class="input-group">
+                            <label for="cpfSocio" id="labelCpfResponsavel">CPF do Sócio</label>
+                            <input id="cpfSocio" placeholder="000.000.000-00" />
+                        </div>
+                        <div class="input-group">
+                            <label for="email">E-mail (Para envio da proposta)</label>
+                            <input id="email" type="email" placeholder="contato@clinica.com.br" />
+                        </div>
+                        <div class="input-group">
+                            <label for="telefone">Telefone / WhatsApp</label>
+                            <input id="telefone" placeholder="(11) 90000-0000" />
+                        </div>
+                        <div class="input-group span-2">
+                            <label for="videoPitch">Vídeo Pitch / Apresentação do Consultor (Opcional - Loom / YouTube / Vimeo)</label>
+                            <input id="videoPitch" placeholder="Ex: https://www.loom.com/share/... ou https://youtu.be/..." />
+                            <small class="field-help">Se preenchido, o cliente poderá assistir ao vídeo explicativo direto no topo da proposta comercial.</small>
+                        </div>
+                        <div class="input-group span-2" style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:14px; padding:14px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <div>
+                                    <strong style="font-size:13px; color:#0f172a; display:block;">Mensagem de Voz do Consultor (Opcional)</strong>
+                                    <small style="color:#64748b; font-size:11.5px;">Grave um áudio de 20 a 30 segundos falando diretamente com o cliente.</small>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <button type="button" id="btnGravarAudioPitch" onclick="toggleGravacaoAudioPitch()" style="background:#ef4444; color:#fff; border:none; padding:6px 14px; border-radius:999px; font-weight:800; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                                        Gravar Áudio
+                                    </button>
+                                    <button type="button" id="btnExcluirAudioPitch" onclick="excluirAudioPitch()" style="display:none; background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:6px 12px; border-radius:999px; font-size:12px; cursor:pointer;">
+                                        Excluir
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="playerAudioPitchPreview" style="display:none; margin-top:10px;">
+                                <audio id="audioPitchPlayer" controls style="width:100%; height:36px;"></audio>
+                            </div>
+                            <input type="hidden" id="audioPitchBase64" />
+                        </div>
+                        <div class="wizard-nav-footer" style="grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e2e8f0;">
+                            <button type="button" class="btn-primary" style="width: auto; padding: 0 20px;" onclick="irParaPasso(2)">
+                                Avançar: Endereço ➔
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card wizard-card" id="secaoLocalizacao" data-wizard-step="2">
+                    <div class="card-header">
+                        <h2 id="tituloLocalizacao">2. Localização e Endereço</h2>
+                    </div>
+                    <div class="card-body grid-2">
+                        <div class="input-group">
+                            <label for="cep">CEP</label>
+                            <input id="cep" placeholder="Digite para buscar..." maxlength="9"
+                                onblur="buscarEnderecoEDistancia()" />
+                            <small class="hint">Preenche endereço e calcula distância automaticamente.</small>
+                        </div>
+                        <div class="input-group" id="grupoDistanciaKm">
+                            <label for="distanciaKm">Distância da matriz (km)</label>
+                            <input id="distanciaKm" type="number" min="0" value="0" />
+                        </div>
+                        <div class="input-group span-2" style="display: grid; grid-template-columns: 3fr 1fr; gap: 14px; margin: 0; padding: 0;">
+                            <div class="input-group" style="margin: 0;">
+                                <label for="logradouroClinica">Logradouro / Rua</label>
+                                <input id="logradouroClinica" placeholder="Rua, Av, etc." />
+                            </div>
+                            <div class="input-group" style="margin: 0;">
+                                <label for="numeroClinica">Número</label>
+                                <input id="numeroClinica" placeholder="123" />
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="complementoClinica">Complemento</label>
+                            <input id="complementoClinica" placeholder="Sala, Bloco, etc." />
+                        </div>
+                        <div class="input-group">
+                            <label for="bairroClinica">Bairro</label>
+                            <input id="bairroClinica" placeholder="Centro, etc." />
+                        </div>
+                        <div class="input-group">
+                            <label for="cidadeClinica">Cidade</label>
+                            <input id="cidadeClinica" placeholder="São Bernardo do Campo" />
+                        </div>
+                        <div class="input-group">
+                            <label for="ufClinica">Estado / UF</label>
+                            <input id="ufClinica" placeholder="SP" maxlength="2" />
+                        </div>
+                        <textarea id="enderecoClinica" style="display: none;"></textarea>
+                        <div class="wizard-nav-footer" style="grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e2e8f0;">
+                            <button type="button" class="btn-secondary" style="width: auto; padding: 0 16px;" onclick="irParaPasso(1)">
+                                Voltar: Dados
+                            </button>
+                            <button type="button" class="btn-primary" style="width: auto; padding: 0 20px;" onclick="irParaPasso(3)">
+                                Avançar: Sócios ➔
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+
+                <section class="card wizard-card" id="secaoSociosDetalhados" data-wizard-step="3">
+                    <div class="card-header">
+                        <h2>3. Quadro Societário</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label for="quantidadeSociosDetalhados">Quantidade de sócios</label>
+                                <input id="quantidadeSociosDetalhados" type="number" min="0" max="20" value="1">
+                                <small class="field-help">Os campos dos sócios serão criados automaticamente.</small>
+                            </div>
+                        </div>
+                        <div class="socios-panel">
+                            <div class="socios-panel-header">
+                                <div>
+                                    <h3>Dados dos sócios</h3>
+                                    <small class="field-help">Informe nome, CPF e participação societária.</small>
+                                </div>
+                            </div>
+                            <div id="listaSociosDetalhados"></div>
+                        </div>
+                        <div class="wizard-nav-footer" style="display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e2e8f0;">
+                            <button type="button" class="btn-secondary" style="width: auto; padding: 0 16px;" onclick="irParaPasso(2)">
+                                Voltar: Endereço
+                            </button>
+                            <button type="button" class="btn-primary" style="width: auto; padding: 0 20px;" onclick="irParaPasso(4)">
+                                Avançar: Operação ➔
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card wizard-card" id="secaoParametros" data-wizard-step="4">
+                    <div class="card-header">
+                        <h2>4. Parâmetros Operacionais</h2>
+                    </div>
+                    <div class="card-body grid-2">
+                        <div class="input-group" id="grupoFaturamento">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label for="faturamento">Faturamento Anual (R$)</label>
+                                <span id="faturamentoMensalEquivalente" style="font-size:11.5px; font-weight:800; color:#0d9488;">(~ R$ 0,00/mês)</span>
+                            </div>
+                            <input id="faturamento" type="number" min="0" value="0" oninput="atualizarEquivalenteMensal(); if(typeof gerarProposta === 'function') gerarProposta();" />
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                                <button type="button" onclick="definirFaturamentoAnual(360000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">30k/mês</button>
+                                <button type="button" onclick="definirFaturamentoAnual(720000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">60k/mês</button>
+                                <button type="button" onclick="definirFaturamentoAnual(1200000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">100k/mês</button>
+                                <button type="button" onclick="definirFaturamentoAnual(2400000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">200k/mês</button>
+                                <button type="button" onclick="definirFaturamentoAnual(4800000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">400k/mês</button>
+                            </div>
+                        </div>
+                        <div class="input-group span-2" id="grupoRegimeFiscal">
+                            <label for="regimeFiscal">Regime Fiscal</label>
+                            <select id="regimeFiscal" onchange="gerarProposta()">
+                                <option value="Simples Nacional">Simples Nacional</option>
+                                <option value="Lucro Presumido">Lucro Presumido</option>
+                                <option value="Lucro Real">Lucro Real (Análise Manual)</option>
+                            </select>
+                            <small id="lockHintRegime" class="hint" style="display:none; color:#d97706;">Bloqueado: Empresa em fase de abertura (Padrão: Simples Nacional).</small>
+                        </div>
+                        <div class="input-group" id="grupoSocios" style="display:none">
+                            <label for="socios">Número de Sócios</label>
+                            <input id="socios" type="number" min="0" value="1" onchange="gerarProposta()" />
+                        </div>
+                        <div class="input-group" id="grupoProLabore">
+                            <label for="proLabore">Possui Pró-labore?</label>
+                            <select id="proLabore" onchange="gerarProposta()">
+                                <option value="Sim">Sim</option>
+                                <option value="Não">Não</option>
+                            </select>
+                            <small class="field-help" id="helpProLabore">Informe se existe retirada mensal formal dos sócios.</small>
+                            <small id="lockHintProLabore" class="hint" style="display:none; color:#d97706;">Bloqueado: Retirada de pró-labore definida após abertura do CNPJ.</small>
+                        </div>
+                        <div class="input-group" id="grupoDentistasParceiros">
+                            <label for="dentistasParceiros"><svg class="icone-dente" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3C4.5 3 3 5 3 7.5c0 2 .8 3.5 1.5 5 .6 1.4.8 3 1.2 4.8.4 1.9 1 3.7 2.1 3.7 1.3 0 1.4-2.3 1.9-4.2.3-1.2.8-1.8 1.3-1.8s1 .6 1.3 1.8c.5 1.9.6 4.2 1.9 4.2 1.1 0 1.7-1.8 2.1-3.7.4-1.8.6-3.4 1.2-4.8.7-1.5 1.5-3 1.5-5C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>Quantidade de dentistas parceiros</label>
+                            <input id="dentistasParceiros" type="number" min="0" value="0" onchange="gerarProposta()">
+                            <small class="field-help">Considere profissionais parceiros ativos na operação.</small>
+                        </div>
+                        <div class="input-group" id="grupoFuncionarios">
+                            <label for="funcionarios">Número de Funcionários</label>
+                            <input id="funcionarios" type="number" min="0" value="0" onchange="gerarProposta()" />
+                        </div>
+                        <div class="input-group" id="grupoEstagiarios">
+                            <label for="estagiarios">Número de Estagiários</label>
+                            <input id="estagiarios" type="number" min="0" value="0" onchange="gerarProposta()" />
+                        </div>
+                        <div class="input-group" id="grupoCadeiras">
+                            <label for="cadeiras"><svg class="icone-dente" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3C4.5 3 3 5 3 7.5c0 2 .8 3.5 1.5 5 .6 1.4.8 3 1.2 4.8.4 1.9 1 3.7 2.1 3.7 1.3 0 1.4-2.3 1.9-4.2.3-1.2.8-1.8 1.3-1.8s1 .6 1.3 1.8c.5 1.9.6 4.2 1.9 4.2 1.1 0 1.7-1.8 2.1-3.7.4-1.8.6-3.4 1.2-4.8.7-1.5 1.5-3 1.5-5C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>Cadeiras odontológicas</label>
+                            <input id="cadeiras" type="number" min="0" value="2" onchange="gerarProposta()" />
+                        </div>
+                        <div class="input-group" id="grupoMetragem">
+                            <label for="metragem">Tamanho da Clínica (m²)</label>
+                            <input id="metragem" type="number" min="0" value="50" onchange="gerarProposta()" />
+                        </div>
+                        <div class="input-group" id="grupoRegimeHibrido">
+                            <label for="regimeHibrido">Regime Híbrido?</label>
+                            <select id="regimeHibrido" onchange="sincronizarRegimeHibridoComTipoPessoa(); gerarProposta()">
+                                <option value="Não">Não</option>
+                                <option value="Sim">Sim</option>
+                            </select>
+                        </div>
+                        <div class="input-group span-2" id="grupoObservacoesOperacionais">
+                            <label for="observacoesOperacionais">Observações Operacionais</label>
+                            <textarea id="observacoesOperacionais" rows="3" placeholder="Insira observações relevantes sobre a operação do cliente..."></textarea>
+                            <small class="field-help">Informações adicionais ou notas específicas para a proposta comercial.</small>
+                        </div>
+                        <div class="wizard-nav-footer" style="grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e2e8f0;">
+                            <button type="button" class="btn-secondary" style="width: auto; padding: 0 16px;" onclick="irParaPasso(3)">
+                                Voltar: Sócios
+                            </button>
+                            <button type="button" class="btn-primary" style="width: auto; padding: 0 20px;" onclick="irParaPasso(5)">
+                                Avançar: Serviços ➔
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card wizard-card" id="secaoServicos" data-wizard-step="5">
+                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <h2>5. Escopo de Serviços</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- Barra de Busca Rápida e Filtros de Serviços -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; grid-column: 1 / -1;">
+                            <div style="position:relative; flex:1; min-width:200px;">
+                                <input type="text" id="filtroBuscaServico" placeholder="Pesquisar serviço no escopo..." oninput="filtrarServicosPorTexto(this.value)" style="height:38px; border-radius:10px; font-size:13px; width:100%; border:1px solid #cbd5e1; padding:0 12px;">
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn-mini filtro-servico-btn filtro-ativo" onclick="filtrarCategoriaServicos('TODOS', this)">Todos</button>
+                                <button type="button" class="btn-mini btn-mini-light filtro-servico-btn" onclick="filtrarCategoriaServicos('Mensal', this)">Mensais</button>
+                                <button type="button" class="btn-mini btn-mini-light filtro-servico-btn" onclick="filtrarCategoriaServicos('Pontual', this)">Pontuais</button>
+                            </div>
+                        </div>
+
+                        <div class="checkbox-grid" id="listaServicosDinamicos">
+                            <small style="color:#64748b;">Carregando serviços...</small>
+                        </div>
+                        <div id="boxOutrosServicos" style="grid-column:1/-1; margin-top:18px;"> <strong
+                                style="display:block; color:#0f172a; margin-bottom:8px;">
+                                Outros serviços
+                            </strong>
+
+                            <div class="checkbox-grid">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="servicoPersonalizado"
+                                        onchange="toggleServicoEspecial(); gerarProposta()">
+                                    Proposta Personalizada
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="boxSecaoAuditoria" style="grid-column:1/-1; margin-top:18px;"> <strong
+                                style="display:block; color:#0f172a; margin-bottom:8px;">
+                                Auditoria
+                            </strong>
+
+                            <div class="checkbox-grid">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="servicoAuditoria"
+                                        onchange="toggleServicoEspecial(); gerarProposta()">
+                                    Solicitar Serviço de Auditoria
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="boxServicosEspeciais" style="display:none; margin-top:16px;">
+
+
+                            <div id="boxPersonalizado" style="display:none;">
+                                <div class="service-card-title">Proposta Personalizada</div>
+
+                                <div class="acoes-template">
+                                    <button type="button" class="btn-template" onclick="usarTemplatePersonalizado()">
+                                        Modelo Completo
+                                    </button>
+
+                                    <button type="button" class="btn-template"
+                                        onclick="limparTopicos('topicosPersonalizados')">
+                                        Limpar
+                                    </button>
+                                </div>
+
+                                <div class="input-group">
+                                    <label for="valorPersonalizado">Valor Personalizado</label>
+                                    <input id="valorPersonalizado" type="number" min="0" value="1500"
+                                        onchange="gerarProposta()">
+                                </div>
+
+                                <div class="input-group">
+                                    <label for="topicosPersonalizados">Tópicos da Proposta Personalizada</label>
+                                    <textarea id="topicosPersonalizados" style="min-height:180px;" placeholder="Diagnóstico Inicial
+- Levantamento de informações
+- Entrevistas
+
+Escopo
+- Revisão de processos
+- Planejamento
+
+Entregáveis
+- Relatório
+- Plano de ação"></textarea>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div id="boxAuditoriaContainer" style="display:none; margin-top:16px;">
+                            <div id="boxAuditoria" style="display:block;">
+                                <div class="service-card-title">Auditoria</div>
+
+                                <div class="acoes-template">
+                                    <button type="button" class="btn-template" onclick="usarTemplateAuditoria()">
+                                        Modelo Auditoria
+                                    </button>
+
+                                    <button type="button" class="btn-template"
+                                        onclick="limparTopicos('topicosAuditoria')">
+                                        Limpar
+                                    </button>
+                                </div>
+
+                                <div class="input-group">
+                                    <label for="valorAuditoria">Valor Auditoria</label>
+                                    <input id="valorAuditoria" type="number" min="0" value="2500"
+                                        onchange="gerarProposta()">
+                                </div>
+
+                                <div class="input-group">
+                                    <label for="topicosAuditoria">Tópicos da Auditoria</label>
+                                    <textarea id="topicosAuditoria" style="min-height:180px;" placeholder="Auditoria Financeira
+- Fluxo de Caixa
+- DRE
+
+Auditoria Tributária
+- Simples Nacional
+- Obrigações fiscais
+
+Conclusões
+- Relatório final
+- Recomendações"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="boxTech" style="display:none; margin-top:20px;">
+                            <div class="service-card-title">Soluções Q-MAX Tech</div>
+
+                            <div class="grid-2">
+                                <div class="input-group span-2">
+                                    <label for="planoTech">Plano Tech</label>
+                                    <select id="planoTech" onchange="atualizarPlanoTech()">
+                                        <option value="essencial">Essencial - R$ 1.497/mês</option>
+                                        <option value="performance">Performance - R$ 2.997/mês</option>
+                                        <option value="autoridade">Autoridade - R$ 5.997/mês</option>
+                                    </select>
+                                    <div id="descricaoPlanoTech" class="descricao-plano-tech"></div>
+                                </div>
+
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="techLanding" onchange="gerarProposta()">
+                                    Landing Page
+                                </label>
+
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="techMarketing" onchange="gerarProposta()">
+                                    Marketing
+                                </label>
+
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="techEmails" onchange="gerarProposta()">
+                                    E-mails Profissionais
+                                </label>
+
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="techIndicacao" onchange="gerarProposta()">
+                                    Programa de Indicação
+                                </label>
+
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="techIdentidade" onchange="gerarProposta()">
+                                    Identidade Visual
+                                </label>
+                            </div>
+                        </div>
+                        <hr class="divider">
+
+                        <div class="grid-2" id="secaoRegularizacoes">
+                            <div class="input-group" id="grupoTemCRO">
+                                <label for="temCRO"><svg class="icone-dente" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3C4.5 3 3 5 3 7.5c0 2 .8 3.5 1.5 5 .6 1.4.8 3 1.2 4.8.4 1.9 1 3.7 2.1 3.7 1.3 0 1.4-2.3 1.9-4.2.3-1.2.8-1.8 1.3-1.8s1 .6 1.3 1.8c.5 1.9.6 4.2 1.9 4.2 1.1 0 1.7-1.8 2.1-3.7.4-1.8.6-3.4 1.2-4.8.7-1.5 1.5-3 1.5-5C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>Possui regularização CRO?</label>
+                                <select id="temCRO" onchange="gerarProposta()">
+                                    <option value="Sim">Sim</option>
+                                    <option value="Não">Não</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="temAlvara">Possui Alvará de Funcionamento?</label>
+                                <select id="temAlvara" onchange="gerarProposta()">
+                                    <option value="Sim">Sim</option>
+                                    <option value="Não">Não</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="temAVCB">Possui AVCB (Bombeiros)?</label>
+                                <select id="temAVCB" onchange="gerarProposta()">
+                                    <option value="Sim">Sim</option>
+                                    <option value="Não">Não</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="temVigilancia">Possui Vigilância Sanitária?</label>
+                                <select id="temVigilancia" onchange="gerarProposta()">
+                                    <option value="Sim">Sim</option>
+                                    <option value="Não">Não</option>
+                                </select>
+                            </div>
+
+
+                    <!-- SEÇÃO CERTIFICADO DIGITAL -->
+                    <div class="input-group span-2" id="secaoCertificadoDigital" style="margin-top: 18px; display: block;">
+                        <label for="certificadoDigital" style="font-weight: 700; color: #172033;">Certificado Digital</label>
+                        <select id="certificadoDigital" onchange="toggleCertificadoDigital(); gerarProposta()" style="margin-top: 6px;">
+                            <option value="Sim">Sim (Fazer upload do arquivo .pfx/.p12)</option>
+                            <option value="Não" selected>Não Possui (Adicionar emissão na proposta)</option>
+                            <option value="Vencido">Vencido (Adicionar renovação na proposta)</option>
+                        </select>
+                        <small id="lockHintCertificado" class="hint" style="display:none; color:#d97706;">Bloqueado: Certificado digital será emitido após constituição formal do CNPJ.</small>
+                        
+                        <div id="subSecaoUploadCertificado" style="display: none; margin-top: 14px; padding: 18px; border: 1.5px dashed #b9c5d2; border-radius: 15px; background: #f8fafc;">
+                            <div class="grid-2">
+                                <div class="input-group">
+                                    <label for="arquivoCertificadoDigital" style="font-weight: 600; color: #475569;">Arquivo do Certificado (.pfx ou .p12)</label>
+                                    <input type="file" id="arquivoCertificadoDigital" accept=".pfx,.p12" style="width: 100%; margin-top: 6px;" />
+                                    <small class="hint" id="nomeArquivoCertificado" style="display: block; margin-top: 6px; color: #64748b;">Nenhum arquivo selecionado.</small>
+                                </div>
+                                <div class="input-group">
+                                    <label for="senhaCertificadoDigital" style="font-weight: 600; color: #475569;">Senha do Certificado</label>
+                                    <input type="password" id="senhaCertificadoDigital" placeholder="Digite a senha do arquivo" style="width: 100%; margin-top: 6px;" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="wizard-nav-footer" style="grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px dashed #e2e8f0;">
+                            <button type="button" class="btn-secondary" style="width: auto; padding: 0 16px;" onclick="irParaPasso(4)">
+                                Voltar: Operação
+                            </button>
+                            <button type="button" class="btn-primary" style="width: auto; padding: 0 24px; background: linear-gradient(135deg, #0d9488, #0284c7); font-weight: 800;" onclick="irParaPasso(6)">
+                                Ir para Revisão & Investimento ➔
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </form>
+        </div>
+
+        <aside class="proposal-summary" data-wizard-step="6">
+            <!-- Card Unificado: Revisão Comercial + Resumo de Investimentos -->
+            <div class="card sticky-panel" style="margin-bottom:0;">
+                <div class="card-header highlight-header" style="background: linear-gradient(135deg, #0d9488, #0284c7);">
+                    <h2>6. Revisão & Investimento</h2>
+                </div>
+                <div class="card-body" style="padding: 18px;">
+                    <!-- Badges Informativos do Perfil -->
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;" id="reviewBadgesContainer">
+                        <span id="reviewBadgeTipoPessoa" class="badge-dot" style="background:#0284c7; color:#fff; padding:4px 10px; border-radius:999px; font-weight:800; font-size:11px; display:inline-flex; align-items:center; gap:4px;">
+                            Pessoa Jurídica
+                        </span>
+                        <span id="reviewBadgeCnpjStatus" style="background:#f59e0b; color:#fff; padding:4px 10px; border-radius:999px; font-weight:800; font-size:11px; display:inline-flex; align-items:center; gap:4px;">
+                            CNPJ em Abertura
+                        </span>
+                        <span id="reviewBadgeEmpresaProposta" style="background:#6366f1; color:#fff; padding:4px 10px; border-radius:999px; font-weight:800; font-size:11px; display:inline-flex; align-items:center; gap:4px;">
+                            FINORA
+                        </span>
+                        <span id="reviewBadgeWinRate" style="background:#10b981; color:#fff; padding:4px 10px; border-radius:999px; font-weight:800; font-size:11px; display:inline-flex; align-items:center; gap:4px;" title="Probabilidade de fechamento calculada por IA">
+                            Chance: 85% High Win
+                        </span>
+                    </div>
+
+                    <!-- Dados Cadastrais Resumidos -->
+                    <div class="review-grid" style="grid-template-columns:1fr; gap:6px; font-size:12px; margin-bottom:18px;">
+                        <div class="review-item" style="padding:8px 12px;"><span>Cliente / Clínica</span><strong id="reviewCliente">Não informado</strong></div>
+                        <div class="review-item" style="padding:8px 12px;"><span>Documento Principal</span><strong id="reviewDocumento">Não informado</strong></div>
+                        <div class="review-item" style="padding:8px 12px;"><span>Sócio Responsável</span><strong id="reviewSocioResp">Não informado</strong></div>
+                        <div class="review-item" style="padding:8px 12px;"><span>Equipe & Sócios</span><strong id="reviewEquipe">1 sócio(s) • 0 func.</strong></div>
+                    </div>
+
+                    <hr style="border:0; border-top:1px dashed #e2e8f0; margin:16px 0;">
+
+                    <!-- Resumo do Investimento -->
+                    <h3 style="margin:0 0 10px; font-size:15px; color:#0f172a; font-weight:800;">Tabela de Valores</h3>
+                    <div id="alertaLucroReal"></div>
+
+                    <div class="table-responsive">
+                        <table class="styled-table" id="tabelaResumo">
+                            <thead>
+                                <tr>
+                                    <th>Serviço</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultadoTabelaBody"></tbody>
+                        </table>
+                        <div id="resumoRegrasAplicadas" style="margin-top:14px;"></div>
+                    </div>
+
+                    <!-- WIDGET DE CONTROLE DE DESCONTO COMERCIAL (EM DESTAQUE) -->
+                    <div class="discount-card" id="widgetDescontoComercial">
+                        <div class="discount-card-header">
+                            <span class="discount-card-title">
+                                Desconto Comercial
+                            </span>
+                            <button type="button" class="btn-mini btn-mini-light" style="padding: 3px 8px; font-size: 11px;" onclick="abrirModalDescontos()" title="Configurar desconto detalhado por serviço">
+                                Detalhar por Item 
+                            </button>
+                        </div>
+                        
+                        <!-- Chips de Desconto Rápido -->
+                        <div class="discount-chips" id="chipsDescontoRapido">
+                            <button type="button" class="chip-desconto chip-ativo" data-desconto="0" onclick="aplicarDescontoRapido(0)">0%</button>
+                            <button type="button" class="chip-desconto" data-desconto="5" onclick="aplicarDescontoRapido(5)">5%</button>
+                            <button type="button" class="chip-desconto" data-desconto="10" onclick="aplicarDescontoRapido(10)">10%</button>
+                            <button type="button" class="chip-desconto" data-desconto="15" onclick="aplicarDescontoRapido(15)">15%</button>
+                            <button type="button" class="chip-desconto" data-desconto="20" onclick="aplicarDescontoRapido(20)">20%</button>
+                        </div>
+
+                        <div class="discount-input-row">
+                            <div class="discount-input-box">
+                                <input type="number" id="descontoGlobalInput" min="0" max="100" step="1" value="0" placeholder="0" oninput="aplicarDescontoInputManual(this.value)">
+                                <span>%</span>
+                            </div>
+                            <button type="button" class="btn-mini" style="background:#64748b; color:#fff; height:38px; padding:0 12px; border-radius:10px;" onclick="limparDesconto()">
+                                Zerar
+                            </button>
+                        </div>
+
+                        <!-- Status Badge de Aprovação -->
+                        <div id="badgeStatusDesconto" style="display:none;"></div>
+
+                        <!-- Justificativa (Obrigatória se desconto > 0) -->
+                        <div id="boxJustificativaDesconto" style="display:none; margin-top:10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <label for="justificativaDesconto" style="font-size:11px; font-weight:700; color:#475569;">
+                                    Justificativa Comercial do Desconto:
+                                </label>
+                                <button type="button" onclick="sugerirJustificativaIA()" style="background:linear-gradient(135deg, #f3e8ff, #ede9fe); border:1px solid #c084fc; color:#7e22ce; font-size:11px; font-weight:800; border-radius:999px; padding:2px 8px; cursor:pointer;" title="Gerar justificativa com Inteligência Artificial">
+                                    Sugerir com IA
+                                </button>
+                            </div>
+                            <input type="text" id="justificativaDesconto" placeholder="Ex.: Parceria estratégica / fechamento contrato anual" style="width:100%; font-size:12px; height:34px; border-radius:8px;">
+                        </div>
+                    </div>
+
+                    <!-- Economia do Desconto em Destaque -->
+                    <div id="boxTotalDescontoEconomia" style="display:none; background: #fef2f2; border: 1px dashed #f87171; border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;">
+                        <span style="color: #991b1b; font-weight: 700; font-size: 12px; display:block;">Economia Total Concedida</span>
+                        <div id="valorEconomiaDesconto" style="color: #dc2626; font-weight: 900; font-size: 16px; margin-top: 2px;">- R$ 0,00</div>
+                    </div>
+
+                    <div class="total-box">
+                        <span>Total Mensal</span>
+                        <div id="totalMensal">R$ 0,00</div>
+                    </div>
+
+                    <div class="total-box">
+                        <span>Total Pontual</span>
+                        <div id="totalPontual">R$ 0,00</div>
+                    </div>
+
+                    <div class="total-box total-geral">
+                        <span>Total Geral</span>
+                        <div id="totalProposta">R$ 0,00</div>
+                    </div>
+
+                    <!-- CARD DE ESTIMATIVA DE ROI & LUCRO LÍQUIDO DO CLIENTE -->
+                    <div id="boxRoiEstimado" style="margin-top:14px; background:linear-gradient(135deg, #f0fdf4, #dcfce7); border:1.5px solid #86efac; border-radius:18px; padding:14px 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div style="font-size:11px; font-weight:800; color:#166534; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:6px;">
+                                Inteligência Financeira & ROI
+                            </div>
+                            <span style="font-size:10px; font-weight:800; background:#16a34a; color:#fff; padding:2px 8px; border-radius:999px;">
+                                Retorno Positivo
+                            </span>
+                        </div>
+                        
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:10px; padding:8px 10px;">
+                                <span style="font-size:10px; color:#166534; font-weight:700; display:block;">Economia Tributária</span>
+                                <strong id="roiEconomiaMensal" style="font-size:13px; color:#15803d;">+ R$ 1.500,00/mês</strong>
+                            </div>
+                            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:10px; padding:8px 10px;">
+                                <span style="font-size:10px; color:#166534; font-weight:700; display:block;">Ganho Líquido Real</span>
+                                <strong id="roiGanhoLiquido" style="font-size:13px; color:#0f766e;">+ R$ 650,00/mês</strong>
+                            </div>
+                        </div>
+
+                        <strong id="textoRoiEstimado" style="font-size:13px; color:#15803d; display:block; line-height:1.4;">
+                            ~ R$ 18.000,00 / ano em otimização fiscal
+                        </strong>
+                        <small style="font-size:11px; color:#166534; display:block; margin-top:3px;">
+                            A assessoria se paga integralmente e gera sobra líquida no caixa da clínica.
+                        </small>
+                    </div>
+
+                    <!-- WIDGET DE VALIDADE & CONDIÇÕES DE PAGAMENTO -->
+                    <div style="margin: 14px 0; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Validade & Pagamento</span>
+                            <span style="font-size: 11px; font-weight: 800; color: #0d9488; background: rgba(13,148,136,0.1); padding: 2px 8px; border-radius: 999px;">10 dias úteis</span>
+                        </div>
+                        <div style="font-size: 12px; color: #334155; line-height: 1.4;">
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                 <strong>Pix:</strong> Bônus de pontualidade no 1º mês
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">
+                                 <strong>Boleto:</strong> Cobrança mensal recorrente (Dia 10)
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">
+                                 <strong>Cartão:</strong> Em até 12x para serviços pontuais
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PAINEL DE AÇÕES COMERCIAIS ORGANIZADO -->
+                    <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Bloco 1: Ações Principais -->
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <button type="button" class="btn-primary" id="btnEnviar" style="font-size: 14px; padding: 14px 20px; font-weight: 800; border-radius: 12px;" onclick="salvarEEnviarProposta()">
+                                Salvar e Enviar Proposta
+                            </button>
+                        </div>
+
+                        <!-- Bloco 2: Inteligência & Apoio ao Fechamento -->
+                        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 10px;">
+                            <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">
+                                Inteligência de Vendas
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                <button type="button" class="btn-secondary" style="background: linear-gradient(135deg, #7e22ce, #6b21a8); color: #fff; border: none; font-weight: 800; font-size: 11px; padding: 8px 10px;" onclick="abrirModalPitchVendas()">
+                                    Roteiro Pitch
+                                </button>
+                                <button type="button" class="btn-secondary" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; font-weight: 800; font-size: 11px; padding: 8px 10px;" onclick="abrirModalObjecoes()">
+                                    Objeções
+                                </button>
+                                <button type="button" class="btn-secondary" style="background: linear-gradient(135deg, #0d9488, #0284c7); color: #fff; border: none; font-weight: 800; font-size: 11px; padding: 8px 10px;" onclick="abrirModalMatrizComparativa()">
+                                    Antes vs Depois
+                                </button>
+                                <button type="button" class="btn-secondary" style="background: #059669; color: #fff; border: none; font-weight: 800; font-size: 11px; padding: 8px 10px;" onclick="agendarFollowUpComercial()">
+                                    Follow-up 48h
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Bloco 3: Exportações & Outras Opções -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                            <button type="button" class="btn-secondary" style="background: #8b5cf6; color: #fff; border: none; font-weight: 800; font-size: 11px; padding: 8px 10px;" onclick="gerarQrCodeAssinatura()">
+                                Assinar QR Code
+                            </button>
+                            <button type="button" class="btn-secondary" style="background: #0284c7; color: #fff; border: none; font-weight: 800; font-size: 11px; padding: 8px 10px;" onclick="gerarResumoExecutivoOnePager()">
+                                Resumo 1 Pág.
+                            </button>
+                            <button type="button" class="btn-secondary" style="font-size: 11px; padding: 8px 10px;" onclick="imprimirPropostaMinimalista()">
+                                PDF Econômico
+                            </button>
+                            <button type="button" class="btn-secondary" style="font-size: 11px; padding: 8px 10px;" onclick="abrirModalDescontos()">
+                                Descontos
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-preview" id="btnPreviewPdf" onclick="abrirPreviewPdf()">
+                         Visualizar PDF
+                    </button>
+
+                    <!-- PAINEL DE CUSTOMIZAÇÃO DO PDF -->
+                    <div class="pdf-customizer-panel" id="painelCustomizador">
+                        <div class="pdf-customizer-header">
+                            
+                            <span>Personalizar PDF</span>
+                        </div>
+
+                        <div class="pdf-customizer-body">
+                            <div class="pdf-customizer-field">
+                                <label>Tema Visual</label>
+                                <div class="theme-selector">
+                                    <label class="theme-option">
+                                        <input type="radio" name="pdfTheme" value="moderno" checked onchange="gerarProposta()">
+                                        <span class="theme-swatch swatch-moderno"></span>
+                                        <span class="theme-name">Moderno</span>
+                                    </label>
+                                    <label class="theme-option">
+                                        <input type="radio" name="pdfTheme" value="classico" onchange="gerarProposta()">
+                                        <span class="theme-swatch swatch-classico"></span>
+                                        <span class="theme-name">Clássico</span>
+                                    </label>
+                                    <label class="theme-option">
+                                        <input type="radio" name="pdfTheme" value="criativo" onchange="gerarProposta()">
+                                        <span class="theme-swatch swatch-criativo"></span>
+                                        <span class="theme-name">Criativo</span>
+                                    </label>
+                                    <label class="theme-option">
+                                        <input type="radio" name="pdfTheme" value="impressao" onchange="gerarProposta()">
+                                        <span class="theme-swatch" style="background:#475569;"></span>
+                                        <span class="theme-name">Impressão (A4)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="pdf-customizer-toggles">
+                                <label class="toggle-switch-label">
+                                    <span class="toggle-label-text">Incluir Capa</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="pdfCover" onchange="gerarProposta()">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                                <label class="toggle-switch-label">
+                                    <span class="toggle-label-text">Apresentação</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="pdfShowApresentacao" checked onchange="gerarProposta()">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                                <label class="toggle-switch-label">
+                                    <span class="toggle-label-text">Condições Gerais</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="pdfShowCondicoes" checked onchange="gerarProposta()">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <div id="modalDescontos" class="modal-desconto hidden">
+        <div class="modal-content">
+            <h2>Aplicar Descontos</h2>
+            <p>Informe o percentual de desconto por serviço.</p>
+
+            <div id="listaDescontos"></div>
+
+            <div class="input-group">
+                <label>Justificativa</label>
+                <textarea id="justificativaDesconto" placeholder="Explique o motivo do desconto"></textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button type="button" class="btn-primary" onclick="confirmarDescontos()">
+                    Aplicar Descontos
+                </button>
+                <button type="button" class="btn-secondary" onclick="fecharModalDescontos()">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL DE QR CODE PARA ASSINATURA PRESENCIAL -->
+    <div id="modalQrCode" class="modal-preview-overlay hidden">
+        <div class="modal-preview-container" style="max-width: 480px; height: auto; padding: 28px; text-align: center; background: #ffffff; border-radius: 28px; color: #0f172a;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0; font-size:18px; font-weight:800; color:#0f172a;">Assinatura na Mesa de Reunião</h3>
+                <button type="button" onclick="fecharModalQrCode()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+            <p style="font-size:13px; color:#64748b; margin-bottom:20px;">Peça para o cliente apontar a câmera do celular para o QR Code abaixo para visualizar e assinar a proposta agora mesmo:</p>
+            <div id="canvasQrCode" style="display:flex; justify-content:center; padding:16px; background:#f8fafc; border-radius:18px; border:1px solid #e2e8f0; margin-bottom:20px;"></div>
+            <button type="button" class="btn-primary" onclick="fecharModalQrCode()">Concluído</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE PREVIEW DO PDF -->
+    <div id="modalPreviewPdf" class="modal-preview-overlay hidden">
+        <div class="modal-preview-container">
+            <div class="modal-preview-header">
+                <div class="modal-preview-title">
+                    
+                    <span>Pré-visualização da Proposta</span>
+                    <div class="modal-preview-theme-badge" id="previewThemeBadge">Moderno</div>
+                </div>
+                <div class="modal-preview-actions">
+                    <button type="button" class="btn-preview-confirm" onclick="confirmarEEnviar()">Aprovar e Enviar</button>
+                    <button type="button" class="modal-preview-close" onclick="fecharPreviewPdf()">✕</button>
+                </div>
+            </div>
+            <div class="modal-preview-body">
+                <div class="modal-preview-loading" id="previewLoading">
+                    <div class="preview-spinner"></div>
+                    <p>Gerando visualização do PDF...</p>
+                </div>
+                <iframe id="previewIframe" class="modal-preview-iframe" style="display:none;" title="Pré-visualização do PDF"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE COMPARTILHAMENTO -->
+    <div id="modalCompartilhar" class="modal-share-overlay hidden">
+        <div class="modal-share-container">
+            <!-- Header -->
+            <div class="modal-share-header">
+                
+                <div class="modal-share-header-text">
+                    <h2>Proposta Enviada!</h2>
+                    <p id="shareClienteNome">A proposta foi gerada com sucesso.</p>
+                </div>
+                <button class="modal-share-close" onclick="fecharModalCompartilhar()">✕</button>
+            </div>
+
+            <!-- Link da Proposta -->
+            <div class="share-link-box">
+                <div class="share-link-label">Link da Proposta</div>
+                <div class="share-link-row">
+                    <input type="text" id="shareLinkInput" class="share-link-input" readonly>
+                    <button class="share-copy-btn" id="shareCopyLinkBtn" onclick="copiarLink()">
+                        <span id="shareCopyLinkIcon"></span>
+                        <span id="shareCopyLinkText">Copiar</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canais -->
+            <div class="share-channels-label">Compartilhar via:</div>
+            <div class="share-channels-grid">
+                <button class="share-channel-btn channel-whatsapp" onclick="compartilharWhatsApp()">
+                    <div class="share-channel-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    </div>
+                    <span class="share-channel-name">WhatsApp</span>
+                </button>
+                <button class="share-channel-btn channel-sms" onclick="compartilharSMS()">
+                    
+                    <span class="share-channel-name">SMS</span>
+                </button>
+                <button class="share-channel-btn channel-email" onclick="compartilharEmail()">
+                    
+                    <span class="share-channel-name">E-mail</span>
+                </button>
+                <button class="share-channel-btn channel-copy-msg" id="btnCopyMsg" onclick="copiarMensagem()">
+                    <div class="share-channel-icon" id="copyMsgIcon"></div>
+                    <span class="share-channel-name">Copiar Mensagem</span>
+                </button>
+            </div>
+
+            <!-- Seletor de Modelo de Mensagem -->
+            <div style="margin-top: 16px; margin-bottom: 8px;">
+                <div class="share-link-label" style="margin-bottom: 6px;">Estilo da Mensagem:</div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button type="button" class="btn-mini btn-share-tpl filtro-ativo" onclick="selecionarTemplateMensagem('consultivo', this)">Consultivo</button>
+                    <button type="button" class="btn-mini btn-mini-light btn-share-tpl" onclick="selecionarTemplateMensagem('direto', this)">Direto</button>
+                    <button type="button" class="btn-mini btn-mini-light btn-share-tpl" onclick="selecionarTemplateMensagem('desconto', this)">Condição Especial</button>
+                </div>
+            </div>
+
+            <!-- Preview da Mensagem -->
+            <div class="share-message-preview" id="shareMsgPreview"></div>
+
+            <!-- Rodapé -->
+            <div class="share-footer">
+                <button class="share-btn-nova" onclick="iniciarNovaProposta()">Nova Proposta</button>
+                <button class="share-btn-fechar" onclick="fecharModalCompartilhar()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE ROTEIRO DE PITCH COMERCIAL -->
+    <div id="modalPitchVendas" class="modal-recusar-overlay" style="display:none;">
+        <div class="modal-recusar-card" style="max-width:650px; max-height:85vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                    Roteiro de Apresentação & Argumentário Comercial
+                </h3>
+                <button onclick="fecharModalPitchVendas()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+
+            <p style="color:#64748b; font-size:12px; margin:0 0 14px 0;">
+                Roteiro estratégico gerado sob medida com base nos dados do cliente para guiar sua reunião de fechamento:
+            </p>
+
+            <div style="display:grid; gap:12px;" id="conteudoPitchTrack">
+                <!-- 1. Abertura -->
+                <div style="background:#f8fafc; border-left:4px solid #0284c7; border-radius:8px; padding:12px 14px;">
+                    <div style="font-size:11px; font-weight:800; color:#0284c7; text-transform:uppercase;">1. Abertura & Validação do Cenário</div>
+                    <div id="pitchAbertura" style="font-size:13px; color:#1e293b; margin-top:4px; line-height:1.5;"></div>
+                </div>
+
+                <!-- 2. Proposta de Valor -->
+                <div style="background:#f8fafc; border-left:4px solid #0d9488; border-radius:8px; padding:12px 14px;">
+                    <div style="font-size:11px; font-weight:800; color:#0d9488; text-transform:uppercase;">2. O Que Nós Vamos Assumir (Paz de Espírito)</div>
+                    <div id="pitchValor" style="font-size:13px; color:#1e293b; margin-top:4px; line-height:1.5;"></div>
+                </div>
+
+                <!-- 3. Quebra de Objeção de Preço -->
+                <div style="background:#f0fdf4; border-left:4px solid #16a34a; border-radius:8px; padding:12px 14px;">
+                    <div style="font-size:11px; font-weight:800; color:#15803d; text-transform:uppercase;">3. Quebra de Objeção Financeira (O Pulo do Gato)</div>
+                    <div id="pitchPreco" style="font-size:13px; color:#1e293b; margin-top:4px; line-height:1.5;"></div>
+                </div>
+
+                <!-- 4. Chamada para Ação -->
+                <div style="background:#faf5ff; border-left:4px solid #9333ea; border-radius:8px; padding:12px 14px;">
+                    <div style="font-size:11px; font-weight:800; color:#7e22ce; text-transform:uppercase;">4. Fechamento Direto & Próximo Passo</div>
+                    <div id="pitchCta" style="font-size:13px; color:#1e293b; margin-top:4px; line-height:1.5;"></div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; border-top:1px solid #e2e8f0; padding-top:14px;">
+                <button type="button" class="btn-secondary" onclick="copiarRoteiroPitch()">
+                    Copiar Roteiro Completo
+                </button>
+                <button type="button" class="btn-primary" style="padding:10px 24px; font-weight:800; border-radius:999px;" onclick="fecharModalPitchVendas()">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE MATRIZ COMPARATIVA ANTES VS DEPOIS -->
+    <div id="modalMatrizComparativa" class="modal-recusar-overlay" style="display:none;">
+        <div class="modal-recusar-card" style="max-width:700px; max-height:85vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                    Matriz Comparativa: Cenário Atual vs. Nossa Gestão
+                </h3>
+                <button onclick="fecharModalMatrizComparativa()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+
+            <p style="color:#64748b; font-size:12px; margin:0 0 16px 0;">
+                Quadro comparativo de valor e proteção patrimonial para apresentar ao cliente:
+            </p>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                <!-- Cenário Sem Assessoria -->
+                <div style="background:#fef2f2; border:1.5px solid #fecaca; border-radius:14px; padding:16px;">
+                    <div style="font-size:13px; font-weight:900; color:#dc2626; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                        Sem Gestão Especializada
+                    </div>
+                    <ul style="margin:0; padding-left:18px; font-size:12px; color:#991b1b; line-height:1.6;">
+                        <li style="margin-bottom:8px;"><strong>Carga Tributária Máxima:</strong> Paga até 27,5% por falta de enquadramento societário ou Fator R.</li>
+                        <li style="margin-bottom:8px;"><strong>Vulnerabilidade Fiscal:</strong> Risco de bitributação entre o dentista (pessoa física) e a clínica.</li>
+                        <li style="margin-bottom:8px;"><strong>Alvarás e Licenças:</strong> Risco de multas e interdição por perda de prazos na Vigilância e AVCB.</li>
+                        <li style="margin-bottom:8px;"><strong>Tempo Perdido:</strong> Dentistas fora da cadeira, gastando tempo valioso resolvendo problemas fiscais e DP.</li>
+                    </ul>
+                </div>
+
+                <!-- Cenário Com Nossa Gestão -->
+                <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:14px; padding:16px;">
+                    <div style="font-size:13px; font-weight:900; color:#16a34a; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                        Com Nosso Ecossistema
+                    </div>
+                    <ul style="margin:0; padding-left:18px; font-size:12px; color:#166534; line-height:1.6;">
+                        <li style="margin-bottom:8px;"><strong>Economia Real:</strong> Alíquota reduzida a partir de 6% no Simples Nacional com Fator R.</li>
+                        <li style="margin-bottom:8px;"><strong>Blindagem Total:</strong> Segregação patrimonial e adequação contábil preventiva.</li>
+                        <li style="margin-bottom:8px;"><strong>Monitoramento Contínuo:</strong> Alertas preventivos de renovação de CRO, AVCB e alvarás.</li>
+                        <li style="margin-bottom:8px;"><strong>Foco no Core Business:</strong> Equipe focada 100% no atendimento a pacientes e faturamento.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="margin-top:16px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; color:#1e40af; font-weight:700;">Retorno sobre Investimento (ROI):</span>
+                <strong style="font-size:13px; color:#2563eb;">A assessoria se paga e gera lucro líquido mensal</strong>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:18px;">
+                <button type="button" class="btn-primary" style="padding:10px 24px; font-weight:800; border-radius:999px;" onclick="fecharModalMatrizComparativa()">
+                    Entendi, fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE QUEBRA DE OBJEÇÕES COMERCIAIS -->
+    <div id="modalObjecoes" class="modal-recusar-overlay" style="display:none;">
+        <div class="modal-recusar-card" style="max-width:680px; max-height:85vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                <h3 style="margin:0; font-size:18px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                    Central de Quebra de Objeções (1-Click)
+                </h3>
+                <button onclick="fecharModalObjecoes()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+
+            <p style="color:#64748b; font-size:12px; margin:0 0 14px 0;">
+                Clique no botão de copiar para colar a resposta ideal direto no WhatsApp ou falar com segurança na reunião:
+            </p>
+
+            <div style="display:grid; gap:12px;">
+                <!-- Objeção 1 -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <strong style="color:#0f172a; font-size:13px;">1. "Já tenho contador antigo / de confiança"</strong>
+                        <button type="button" class="btn-mini" style="background:#0284c7; color:#fff; padding:4px 8px;" onclick="copiarTextoObjecao(1)">Copiar</button>
+                    </div>
+                    <p id="txtObjecao1" style="font-size:12px; color:#475569; margin:0; line-height:1.5;">
+                        "Compreendo perfeitamente o valor dessa relação! O nosso diferencial é que somos 100% especializados em clínicas e consultórios odontológicos. Aplicamos o Fator R e a Equiparação Hospitalar na prática, gerando economias que escritórios generalistas normalmente deixam passar. Que tal fazermos um diagnóstico tributário sem compromisso para validar se sua clínica não está pagando impostos a mais?"
+                    </p>
+                </div>
+
+                <!-- Objeção 2 -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <strong style="color:#0f172a; font-size:13px;">2. "Achei o valor da mensalidade elevado"</strong>
+                        <button type="button" class="btn-mini" style="background:#0284c7; color:#fff; padding:4px 8px;" onclick="copiarTextoObjecao(2)">Copiar</button>
+                    </div>
+                    <p id="txtObjecao2" style="font-size:12px; color:#475569; margin:0; line-height:1.5;">
+                        "Entendo seu ponto! Mas veja: nossa assessoria não é um custo, é um investimento que se paga sozinho. Apenas com a redução da alíquota do Simples de 13,3% para 6% via Fator R, a economia gerada é superior ao valor dos nossos honorários. Ou seja, você terá uma assessoria de elite e ainda sobrará lucro líquido no caixa da clínica todo mês."
+                    </p>
+                </div>
+
+                <!-- Objeção 3 -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <strong style="color:#0f172a; font-size:13px;">3. "Preciso conversar e alinhar com meus sócios"</strong>
+                        <button type="button" class="btn-mini" style="background:#0284c7; color:#fff; padding:4px 8px;" onclick="copiarTextoObjecao(3)">Copiar</button>
+                    </div>
+                    <p id="txtObjecao3" style="font-size:12px; color:#475569; margin:0; line-height:1.5;">
+                        "Perfeito, o alinhamento societário é fundamental! Para facilitar a decisão de vocês, acabei de gerar um Resumo Executivo em 1 página que sintetiza todo o escopo, investimento e retorno financeiro. Posso mandar agora no seu WhatsApp para você encaminhar no grupo dos sócios?"
+                    </p>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+                <button type="button" class="btn-primary" style="padding:10px 24px; font-weight:800; border-radius:999px;" onclick="fecharModalObjecoes()">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+        </main>
+    </div>
+
+    <!-- BANNER DE RASCUNHO SALVO -->
+    <div id="bannerRascunho" class="draft-alert-banner">
+        <h4>Rascunho Encontrado</h4>
+        <p>Identificamos dados de uma proposta preenchida anteriormente neste navegador. Deseja restaurar o preenchimento?</p>
+        <div class="draft-alert-actions">
+            <button type="button" class="btn-draft-restore" onclick="restaurarRascunho()">Restaurar</button>
+            <button type="button" class="btn-draft-discard" onclick="descartarRascunho()">Descartar</button>
+        </div>
+    </div>
+
+
+    <script id="qmax-onboarding-v2-script">
+        const byId = (id) => document.getElementById(id);
+        const value = (id) => (byId(id)?.value || '').trim();
+
+        function tipoPessoaAtual() {
+            return document.querySelector('input[name="tipoPessoa"]:checked')?.value || 'PJ';
+        }
+
+        function togglePfPj() {
+            const tipo = tipoPessoaAtual();
+            const isPj = tipo === "PJ";
+            const isHibrida = tipo === "HIBRIDA";
+            const isPf = tipo === "PF";
+            
+            const elRegimeHibrido = document.getElementById('regimeHibrido');
+            if (elRegimeHibrido) {
+                if (isHibrida) {
+                    elRegimeHibrido.value = "Sim";
+                } else if (isPf) {
+                    elRegimeHibrido.value = "Não";
+                }
+            }
+
+            const grupoCnpjEst = document.getElementById('grupoCnpjEstabelecido');
+            const elCnpjEst = document.getElementById('cnpjEstabelecido');
+            const temCnpjEst = elCnpjEst ? (elCnpjEst.value === "Sim") : true;
+            const tipoProposta = (document.getElementById('tipoProposta')?.value || 'finora').toLowerCase();
+            const bannerAbertura = document.getElementById('bannerCnpjEmAbertura');
+            
+            // Exibir a pergunta "CNPJ Estabelecido?" apenas para PJ e Híbrida
+            if (grupoCnpjEst) {
+                grupoCnpjEst.style.display = (isPj || isHibrida) ? "block" : "none";
+            }
+
+            // Exibir Banner explicativo de modo abertura/regularização
+            if (bannerAbertura) {
+                bannerAbertura.style.display = ((isPj || isHibrida) && !temCnpjEst) ? "block" : "none";
+            }
+
+            const camposPj = document.querySelectorAll('.campo-pj');
+            const elCnpj = document.getElementById("cnpj");
+            const elRazao = document.getElementById("razaoSocial");
+            const elHintCnpj = document.getElementById("hintCnpj");
+
+            const grpRegime = document.getElementById('grupoRegimeFiscal');
+            const grpProLabore = document.getElementById('grupoProLabore');
+            const elRegime = document.getElementById('regimeFiscal');
+            const elProLabore = document.getElementById('proLabore');
+
+            const secaoCert = document.getElementById('secaoCertificadoDigital');
+            const elCert = document.getElementById('certificadoDigital');
+
+            const secaoReg = document.getElementById('secaoRegularizacoes');
+
+            if (isPf) {
+                // Pessoa Física: Ocultar campos de PJ
+                camposPj.forEach(c => c.style.display = "none");
+                if (grpRegime) grpRegime.style.display = "none";
+                if (grpProLabore) grpProLabore.style.display = "none";
+                if (secaoCert) secaoCert.style.display = "none";
+                if (secaoReg) secaoReg.style.display = "none";
+            } else {
+                // PJ ou Híbrida: Campos sempre VISÍVEIS e EDITÁVEIS
+                camposPj.forEach(c => c.style.display = "block");
+                if (grpRegime) grpRegime.style.display = "block";
+                if (grpProLabore) grpProLabore.style.display = "block";
+
+                const ocultarCertPorEmpresa = ["tech", "auditoria", "lagerhaus"].includes(tipoProposta);
+                if (secaoCert) secaoCert.style.display = ocultarCertPorEmpresa ? "none" : "block";
+
+                const ocultarRegPorEmpresa = ["tech", "contabil", "finora", "auditoria", "lagerhaus"].includes(tipoProposta);
+                if (secaoReg) secaoReg.style.display = ocultarRegPorEmpresa ? "none" : "grid";
+
+                if (elCnpj) {
+                    elCnpj.disabled = false;
+                    elCnpj.classList.remove("disabled-input", "input-locked");
+                    elCnpj.placeholder = temCnpjEst ? "00.000.000/0000-00" : "00.000.000/0000-00 (Opcional se em abertura)";
+                }
+                if (elRazao) {
+                    elRazao.disabled = false;
+                    elRazao.classList.remove("disabled-input", "input-locked");
+                    elRazao.placeholder = temCnpjEst ? "Razão social da empresa" : "Razão social (ou nome empresarial pretendido)";
+                }
+                if (elHintCnpj) {
+                    if (!temCnpjEst) {
+                        elHintCnpj.innerHTML = "<em>Se a empresa já tiver um CNPJ (mesmo inapto ou em regularização), digite-o para buscar os dados na Receita. Se for abertura do zero, pode deixar em branco.</em>";
+                        elHintCnpj.style.color = "#0369a1";
+                    } else {
+                        elHintCnpj.innerHTML = "Digite o CNPJ para buscar os dados na Receita Federal.";
+                        elHintCnpj.style.color = "";
+                    }
+                }
+
+                if (elRegime) {
+                    elRegime.disabled = false;
+                    elRegime.classList.remove("disabled-input", "input-locked");
+                }
+                if (elProLabore) {
+                    elProLabore.disabled = false;
+                    elProLabore.classList.remove("disabled-input", "input-locked");
+                }
+                if (elCert) {
+                    elCert.disabled = false;
+                    elCert.classList.remove("disabled-input", "input-locked");
+                }
+
+                ['temCRO', 'temAlvara', 'temAVCB', 'temVigilancia'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.disabled = false;
+                        el.classList.remove("disabled-input", "input-locked");
+                    }
+                });
+
+                // Padronização automática de campos operacionais para 0 quando em abertura (mantendo aberto para ajuste)
+                if (!temCnpjEst) {
+                    const setValPadrao = (id, val) => {
+                        const el = document.getElementById(id);
+                        if (el) el.value = val;
+                    };
+                    setValPadrao('funcionarios', '0');
+                    setValPadrao('estagiarios', '0');
+                    setValPadrao('dentistasParceiros', '0');
+                    setValPadrao('cadeiras', '0');
+                    setValPadrao('metragem', '0');
+                    setValPadrao('proLabore', 'Não');
+                    setValPadrao('regimeHibrido', 'Não');
+                } else {
+                    const elCadeiras = document.getElementById('cadeiras');
+                    if (elCadeiras && elCadeiras.value === '0') elCadeiras.value = '2';
+                    const elMetragem = document.getElementById('metragem');
+                    if (elMetragem && elMetragem.value === '0') elMetragem.value = '50';
+                }
+            }
+
+            const labelNomeEmpresa = document.getElementById("labelNomeEmpresa");
+            const campoNomeEmpresa = document.getElementById("nomeClinica");
+            const labelNomeResp = document.getElementById("labelNomeResponsavel");
+            const campoNomeResp = document.getElementById("nomeSocio");
+            const labelCpfResp = document.getElementById("labelCpfResponsavel");
+
+            if (isHibrida) {
+                if (labelNomeEmpresa) labelNomeEmpresa.innerText = "Nome da Clínica / Consultório";
+                if (campoNomeEmpresa) campoNomeEmpresa.placeholder = "Ex.: Consultório Odontológico Silva";
+                if (labelNomeResp) labelNomeResp.style.display = "block";
+                if (campoNomeResp) campoNomeResp.style.display = "block";
+                if (labelCpfResp) labelCpfResp.innerText = "CPF do Profissional / Sócio";
+            } else if (isPj) {
+                if (labelNomeEmpresa) {
+                    labelNomeEmpresa.innerText = (tipoProposta === 'finora') ? "Nome da Clínica" : "Nome da Empresa";
+                }
+                if (campoNomeEmpresa) {
+                    campoNomeEmpresa.placeholder = (tipoProposta === 'finora') ? "Ex.: Clínica Sorriso Perfeito" : "Ex.: Empresa Exemplo Ltda.";
+                }
+                if (labelNomeResp) labelNomeResp.style.display = "block";
+                if (campoNomeResp) campoNomeResp.style.display = "block";
+                if (labelCpfResp) labelCpfResp.innerText = "CPF do Sócio Responsável";
+            } else {
+                if (labelNomeEmpresa) labelNomeEmpresa.innerText = "Nome Completo (Profissional)";
+                if (campoNomeEmpresa) campoNomeEmpresa.placeholder = "Ex.: Dr. João da Silva";
+                if (labelNomeResp) labelNomeResp.style.display = "none";
+                if (campoNomeResp) {
+                    campoNomeResp.style.display = "none";
+                    campoNomeResp.value = "";
+                }
+                if (elCnpj) elCnpj.value = "";
+                if (elRazao) elRazao.value = "";
+                if (labelCpfResp) labelCpfResp.innerText = "CPF";
+            }
+
+            if (typeof renderizarSocios === 'function') renderizarSocios();
+            if (typeof atualizarRevisao === 'function') atualizarRevisao();
+
+            if (typeof carregarServicosDinamicos === 'function') {
+                carregarServicosDinamicos().then(() => {
+                    if (typeof gerarProposta === 'function') gerarProposta();
+                });
+            }
+        }
+
+        const atualizarTipoPessoa = togglePfPj;
+
+        function criarSocio(index, atual = {}) {
+            const div = document.createElement('div');
+            div.className = 'socio-card';
+            div.innerHTML = `
+                <div class="socio-card-title">Sócio ${index + 1}</div>
+                <div class="grid-2">
+                    <div class="input-group"><label>Nome completo</label><input class="socio-nome" data-index="${index}" value="${escapeHTML(atual.nome || '')}" placeholder="Nome do sócio"></div>
+                    <div class="input-group"><label>CPF</label><input class="socio-cpf" data-index="${index}" value="${escapeHTML(atual.cpf || '')}" placeholder="000.000.000-00"></div>
+                    <div class="input-group"><label>Participação (%)</label><input class="socio-participacao" data-index="${index}" type="number" min="0" max="100" step="0.01" value="${escapeHTML(atual.participacao || '')}" placeholder="Ex.: 50"></div>
+                    <div class="input-group"><label>Função / Cargo</label><input class="socio-cargo" data-index="${index}" value="${escapeHTML(atual.cargo || '')}" placeholder="Ex.: Administrador"></div>
+                </div>`;
+            return div;
+        }
+
+        function lerSocios() {
+            return [...document.querySelectorAll('.socio-card')].map((card) => ({
+                nome: card.querySelector('.socio-nome')?.value || '',
+                cpf: card.querySelector('.socio-cpf')?.value || '',
+                participacao: card.querySelector('.socio-participacao')?.value || '',
+                cargo: card.querySelector('.socio-cargo')?.value || ''
+            }));
+        }
+
+        function renderizarSocios() {
+            const quantidade = Math.max(0, Math.min(20, Number(byId('quantidadeSociosDetalhados')?.value || 0)));
+            const atuais = lerSocios();
+            const lista = byId('listaSociosDetalhados');
+            if (!lista) return;
+            lista.innerHTML = '';
+
+            const nomeResponsavel = value('nomeSocio') || (tipoPessoaAtual() === 'PF' ? value('nomeClinica') : '');
+            const cpfResponsavel = value('cpfSocio');
+
+            for (let i = 0; i < quantidade; i++) {
+                let socioDados = atuais[i] || {};
+                if (i === 0) {
+                    const nomeAtual = socioDados.nome || '';
+                    const cpfAtual = socioDados.cpf || '';
+                    
+                    if (!nomeAtual || nomeAtual === window._lastAutoNomeSocio) {
+                        socioDados.nome = nomeResponsavel;
+                        window._lastAutoNomeSocio = nomeResponsavel;
+                    }
+                    if (!cpfAtual || cpfAtual === window._lastAutoCpfSocio) {
+                        socioDados.cpf = cpfResponsavel;
+                        window._lastAutoCpfSocio = cpfResponsavel;
+                    }
+
+                    if (quantidade === 1) {
+                        if (!socioDados.participacao || socioDados.participacao === window._lastAutoParticipacao) {
+                            socioDados.participacao = '100';
+                            window._lastAutoParticipacao = '100';
+                        }
+                        if (!socioDados.cargo || socioDados.cargo === window._lastAutoCargo) {
+                            socioDados.cargo = 'Administrador';
+                            window._lastAutoCargo = 'Administrador';
+                        }
+                    }
+                }
+                lista.appendChild(criarSocio(i, socioDados));
+            }
+
+            if (byId('socios')) {
+                byId('socios').value = quantidade;
+                byId('socios').dispatchEvent(new Event('change', { bubbles:true }));
+            }
+        }
+
+        function calcularEtapa() {
+            const tipo = tipoPessoaAtual();
+            const tipoEmp = (byId('tipoProposta')?.value || 'finora').toLowerCase();
+            const ehTech = tipoEmp === 'tech';
+            const ehAuditoria = tipoEmp === 'auditoria';
+
+            let etapa = 1;
+            if (value('nomeClinica') && value('email')) {
+                etapa = 2;
+            }
+            if (etapa >= 2 && (ehTech || ehAuditoria || value('cep') || value('cidadeClinica') || value('logradouroClinica'))) {
+                etapa = 3;
+            }
+            const qtd = Number(byId('quantidadeSociosDetalhados')?.value || 0);
+            const sociosPreenchidos = qtd === 0 || [...document.querySelectorAll('.socio-nome')].filter(i => i.value.trim()).length >= qtd;
+            if (sociosPreenchidos && etapa >= 3) {
+                etapa = 4;
+            }
+            if (etapa >= 4 && (ehTech || ehAuditoria || tipo === 'PF' || value('faturamento') || value('regimeFiscal'))) {
+                etapa = 5;
+            }
+            return etapa;
+        }
+
+        function atualizarProgresso() {
+            const etapa = calcularEtapa();
+            const nomes = ['Dados cadastrais','Endereço e localização','Quadro societário','Parâmetros operacionais','Revisão final'];
+            const percentual = etapa * 20;
+            if (byId('wizardProgressBar')) byId('wizardProgressBar').style.width = `${percentual}%`;
+            if (byId('wizardPercent')) byId('wizardPercent').textContent = `${percentual}%`;
+            if (byId('wizardCurrentTitle')) byId('wizardCurrentTitle').textContent = nomes[etapa - 1];
+            document.querySelectorAll('[data-step-indicator]').forEach(el => {
+                const n = Number(el.dataset.stepIndicator);
+                el.classList.toggle('active', n === etapa);
+                el.classList.toggle('done', n < etapa);
+            });
+
+            const tipoEmp = (byId('tipoProposta')?.value || 'finora').toLowerCase();
+            const temCnpjEst = (byId('cnpjEstabelecido')?.value || 'Sim') === 'Sim';
+            const tipo = tipoPessoaAtual();
+            const ehPjOuHibrida = tipo === 'PJ' || tipo === 'HIBRIDA';
+
+            // Bloqueio dinâmico (is-locked) com esmaecimento e desabilitação de inputs para guiar o preenchimento
+            document.querySelectorAll('.wizard-card').forEach(card => {
+                const cardStep = Number(card.dataset.wizardStep || 0);
+                if (cardStep > 0) {
+                    const isLocked = cardStep > etapa;
+                    card.classList.toggle('is-locked', isLocked);
+                    
+                    // Habilitar/desabilitar inputs da seção para prevenir clique
+                    const inputs = card.querySelectorAll('input, select, textarea, button');
+                    inputs.forEach(input => {
+                        if (input.id === 'numeroProposta') {
+                            input.disabled = true;
+                            return;
+                        }
+                        if (['techLanding', 'techMarketing', 'techEmails', 'techIndicacao', 'techIdentidade'].includes(input.id)) {
+                            if (isLocked) {
+                                input.disabled = true;
+                            } else if (tipoEmp === 'tech') {
+                                input.disabled = true; // controlado pelo plano tech
+                            }
+                            return;
+                        }
+                        input.disabled = isLocked;
+                    });
+                }
+            });
+        }
+
+        function atualizarRevisao() {
+            const tipo = tipoPessoaAtual();
+            const temCnpj = (byId('cnpjEstabelecido')?.value || 'Sim') === 'Sim';
+            const emp = value('tipoProposta') || 'finora';
+            const set = (id, text) => { if (byId(id)) byId(id).textContent = text || 'Não informado'; };
+            
+            // 1. Atualizar Badges Informativos
+            const badgeTipo = byId('reviewBadgeTipoPessoa');
+            if (badgeTipo) {
+                if (tipo === 'PF') {
+                    badgeTipo.textContent = 'Pessoa Física (PF)';
+                    badgeTipo.style.background = '#0284c7';
+                } else if (tipo === 'HIBRIDA') {
+                    badgeTipo.textContent = 'Pessoa Híbrida (PF + PJ)';
+                    badgeTipo.style.background = '#8b5cf6';
+                } else {
+                    badgeTipo.textContent = 'Pessoa Jurídica (PJ)';
+                    badgeTipo.style.background = '#0d9488';
+                }
+            }
+
+            const badgeCnpj = byId('reviewBadgeCnpjStatus');
+            if (badgeCnpj) {
+                if (tipo === 'PF') {
+                    badgeCnpj.style.display = 'none';
+                } else {
+                    badgeCnpj.style.display = 'inline-flex';
+                    if (temCnpj) {
+                        badgeCnpj.textContent = 'CNPJ Ativo / Constituído';
+                        badgeCnpj.style.background = '#10b981';
+                    } else {
+                        badgeCnpj.textContent = 'CNPJ em Abertura / Sem Registro';
+                        badgeCnpj.style.background = '#f59e0b';
+                    }
+                }
+            }
+
+            const badgeEmp = byId('reviewBadgeEmpresaProposta');
+            if (badgeEmp) {
+                const empCod = String(emp || 'finora').toLowerCase();
+                const configEmpresas = {
+                    finora: { nome: 'FINORA', cor: '#663399' },
+                    contabil: { nome: 'Q-MAX Contábil', cor: '#0BD3C4' },
+                    tech: { nome: 'Q-MAX Tech', cor: '#315cff' },
+                    auditoria: { nome: 'Q-MAX Auditoria', cor: '#0284c7' },
+                    lagerhaus: { nome: 'LAGERHAUS', cor: '#475569' }
+                };
+                const itemEmp = configEmpresas[empCod] || configEmpresas.finora;
+                badgeEmp.textContent = itemEmp.nome;
+                badgeEmp.style.background = itemEmp.cor;
+            }
+
+            // 2. Preencher Dados no Grid de Revisão
+            set('reviewCliente', value('nomeClinica'));
+            
+            let docExibicao = 'Não informado';
+            if (tipo === 'PF') {
+                docExibicao = value('cpfSocio') || 'Não informado';
+            } else if (temCnpj) {
+                docExibicao = value('cnpj') || value('cpfSocio') || 'Não informado';
+            } else {
+                docExibicao = value('cpfSocio') ? `Sem CNPJ (Em Abertura) • CPF: ${value('cpfSocio')}` : 'Sem CNPJ (Em Abertura)';
+            }
+            set('reviewDocumento', docExibicao);
+            
+            set('reviewSocioResp', value('nomeSocio') || (tipo === 'PF' ? value('nomeClinica') : 'Não informado'));
+            set('reviewSocios', `${byId('quantidadeSociosDetalhados')?.value || '1'} sócio(s)`);
+            set('reviewDentistas', `${byId('dentistasParceiros')?.value || '0'} parceiro(s)`);
+            
+            const numFunc = byId('funcionarios')?.value || '0';
+            const numEstag = byId('estagiarios')?.value || '0';
+            set('reviewEquipe', `${numFunc} func. • ${numEstag} estag.`);
+            set('reviewRegimeFiscal', (tipo !== 'PF' && !temCnpj) ? 'Não aplicável (Em abertura)' : (tipo === 'PF' ? 'Pessoa Física / Carnê-Leão' : value('regimeFiscal')));
+            set('reviewContato', [value('email'), value('telefone')].filter(Boolean).join(' • '));
+
+            // 3. Renderizar Lista Discriminada de Serviços Selecionados
+            const containerLista = byId('reviewListaServicosFormatada');
+            const badgeTotalItens = byId('reviewTotalItensBadge');
+
+            if (containerLista && typeof obterItensCalculados === 'function') {
+                try {
+                    const calculados = obterItensCalculados();
+                    const itens = calculados.itens || [];
+
+                    if (badgeTotalItens) badgeTotalItens.textContent = `${itens.length} item(ns)`;
+
+                    if (!itens.length) {
+                        containerLista.innerHTML = `<small style="color:#64748b;">Nenhum serviço selecionado ainda.</small>`;
+                    } else {
+                        const moedaFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+                        containerLista.innerHTML = itens.map(item => `
+                            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                                <div>
+                                    <div style="font-size:13px; font-weight:800; color:#0f172a;">${escapeHTML(item.servico)}</div>
+                                    ${item.observacao ? `<small style="color:#64748b; font-size:11px;">${escapeHTML(item.observacao)}</small>` : ''}
+                                </div>
+                                <div style="font-size:12px; font-weight:800; color:${item.tipo === 'Mensal' ? '#0d9488' : '#6366f1'}; background:${item.tipo === 'Mensal' ? 'rgba(13,148,136,0.08)' : 'rgba(99,102,241,0.08)'}; padding:4px 8px; border-radius:8px;">
+                                    ${moedaFmt.format(item.valor)} <small style="font-size:9px; opacity:0.8;">/${item.tipo === 'Mensal' ? 'mês' : 'único'}</small>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                } catch (e) {
+                    console.warn('Erro ao atualizar lista de serviços na revisão:', e);
+                }
+            }
+
+            atualizarProgresso();
+        }
+
+        function toggleCertificadoDigital() {
+            const selectCert = document.getElementById("certificadoDigital");
+            const subSecao = document.getElementById("subSecaoUploadCertificado");
+            if (selectCert && subSecao) {
+                subSecao.style.display = selectCert.value === "Sim" ? "block" : "none";
+            }
+        }
+
+        // Configuração dos Smart Tooltips
+        const dicasCampos = {
+            "faturamento": { title: "Faturamento Anual", text: "Informe a previsão de faturamento anual ou a receita bruta declarada no último ano." },
+            "regimeFiscal": { title: "Regime Fiscal", text: "Importante para definir o modelo tributário. Caso seja Lucro Real, será necessária análise manual." },
+            "proLabore": { title: "Pró-labore", text: "Indique se os sócios realizam retirada formal, o que afeta o cálculo do INSS e IR." },
+            "dentistasParceiros": { title: "Dentistas Parceiros", text: "Contabiliza os profissionais que não são sócios nem CLTs, mas que atuam e recebem produtividade." },
+            "quantidadeSociosDetalhados": { title: "Quadro Societário", text: "Isso criará automaticamente os campos para você inserir o CPF de todos os sócios do contrato." }
+        };
+
+        function setupTooltips() {
+            const inputs = document.querySelectorAll('input, select');
+            const panel = document.getElementById('smart-tooltip-panel');
+            if (!panel) return;
+            let timeoutHover;
+
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    if(dicasCampos[input.id]) {
+                        document.getElementById('tooltip-title').innerText = dicasCampos[input.id].title;
+                        document.getElementById('tooltip-text').innerText = dicasCampos[input.id].text;
+                        panel.classList.add('show');
+                        
+                        clearTimeout(timeoutHover);
+                        timeoutHover = setTimeout(() => {
+                            panel.classList.remove('show');
+                        }, 5000);
+                    } else {
+                        panel.classList.remove('show');
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('input[name="tipoPessoa"]').forEach(r => r.addEventListener('change', togglePfPj));
+            byId('quantidadeSociosDetalhados')?.addEventListener('input', renderizarSocios);
+            byId('nomeSocio')?.addEventListener('input', renderizarSocios);
+            byId('cpfSocio')?.addEventListener('input', renderizarSocios);
+            byId('nomeClinica')?.addEventListener('input', renderizarSocios);
+
+            byId('arquivoCertificadoDigital')?.addEventListener('change', (event) => {
+                const file = event.target.files?.[0];
+                const nome = byId('nomeArquivoCertificado');
+                if (!file) { if (nome) nome.textContent = 'Nenhum arquivo selecionado.'; return; }
+                const ext = file.name.toLowerCase().split('.').pop();
+                if (!['pfx','p12'].includes(ext)) {
+                    alert('Selecione um certificado nos formatos .PFX ou .P12.');
+                    event.target.value = '';
+                    if (nome) nome.textContent = 'Nenhum arquivo selecionado.';
+                    return;
+                }
+                if (nome) nome.textContent = `Arquivo selecionado: ${file.name}`;
+                atualizarRevisao();
+            });
+
+            byId('propostaForm')?.addEventListener('input', atualizarRevisao);
+            byId('propostaForm')?.addEventListener('change', atualizarRevisao);
+            togglePfPj();
+            toggleCertificadoDigital();
+            setupTooltips();
+        });
+
+        window.obterSociosDetalhados = lerSocios;
+    </script>
+    <script src="js/dashboard-utils.js"></script>
+    <script src="js/dashboard-init.js"></script>
+    <script src="js/qmax-theme.js"></script>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const userNome = localStorage.getItem("finora_nome") || "Usuário";
+            const userRole = localStorage.getItem("finora_role") || "Vendedor";
+            
+            const nameEl = document.getElementById("sidebarUserName");
+            const roleEl = document.getElementById("sidebarUserRole");
+            const avatarEl = document.getElementById("sidebarAvatar");
+
+            if (nameEl) nameEl.innerText = userNome;
+            if (roleEl) roleEl.innerText = userRole;
+            if (avatarEl) avatarEl.innerText = userNome.charAt(0).toUpperCase();
+
+            // Destacar link ativo
+            const pathName = window.location.pathname;
+            if (pathName.includes("dashboard.html")) document.getElementById("navDashboard")?.classList.add("active");
+            if (pathName.includes("crm.html")) document.getElementById("navCrm")?.classList.add("active");
+            if (pathName.includes("index.html")) document.getElementById("navNovaProposta")?.classList.add("active");
+            if (pathName.includes("admin.html")) document.getElementById("navAdmin")?.classList.add("active");
+            if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
+            if (pathName.includes("prospeccao.html")) document.getElementById("navProspeccao")?.classList.add("active");
+
+            // Exibir links adicionais para Diretores
+            if (userRole === "Diretor") {
+                const navAdmin = document.getElementById("navAdmin");
+                const navCrmConfig = document.getElementById("navCrmConfig");
+                const secGestaoTitle = document.getElementById("secGestaoTitle");
+                if (navAdmin) navAdmin.style.display = "flex";
+                if (navCrmConfig) navCrmConfig.style.display = "flex";
+                if (secGestaoTitle) secGestaoTitle.style.display = "block";
+            }
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</body>
+
+</html>

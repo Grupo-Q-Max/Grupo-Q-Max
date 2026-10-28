@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações | Q-MAX Propostas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/qmax-ui.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 28px;
+        }
+
+        .admin-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(12px);
+        }
+
+        .admin-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+            border-color: var(--primary);
+        }
+
+        .admin-card-icon {
+            font-size: 32px;
+            margin-bottom: 18px;
+            background: color-mix(in srgb, var(--primary) 10%, #fff);
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            color: var(--primary);
+            box-shadow: 0 8px 16px color-mix(in srgb, var(--primary) 12%, transparent);
+        }
+
+        .admin-card h3 {
+            margin: 0 0 8px;
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--ink);
+        }
+
+        .admin-card p {
+            margin: 0 0 24px;
+            font-size: 13.5px;
+            color: var(--muted);
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+
+        .admin-card .btn-primary {
+            width: auto;
+            min-width: 140px;
+            border-radius: 12px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <link rel="stylesheet" href="css/tema-escritorio.css">
+</head>
+
+<body class="page-dashboard theme-finora">
+    <script>
+        const APP_BASE_PATH = "/proposta";
+
+        const token = localStorage.getItem("finora_token");
+        const role = localStorage.getItem("finora_role");
+
+        if (!token) {
+            window.location.href = "/proposta/login.html";
+        } else if (role !== "Diretor") {
+            window.location.href = "/proposta/dashboard.html";
+        }
+
+        const authHeaders = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        };
+    </script>
+
+    <div class="app-layout">
+        <!-- Sidebar Master Unificada -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">Q</div>
+                    <span><span class="highlight">Q-MAX</span> Intelligence</span>
+                </div>
+                
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar" id="sidebarAvatar">Q</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebarUserName">Carregando...</div>
+                        <div class="sidebar-user-role" id="sidebarUserRole">...</div>
+                    </div>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <div class="sidebar-section-title">Comercial & CRM</div>
+                    <a href="/proposta/dashboard.html" class="sidebar-link" id="navDashboard">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        <span>Dashboard Geral</span>
+                    </a>
+                    <a href="/proposta/crm.html" class="sidebar-link" id="navCrm">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>Funil CRM Leads</span>
+                    </a>
+                    <a href="/proposta/prospeccao.html" class="sidebar-link" id="navProspeccao">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <span>Prospecção Ativa</span>
+                    </a>
+
+                    <div class="sidebar-section-title">Propostas & Fechamento</div>
+                    <a href="/proposta/index.html" class="sidebar-link" id="navNovaProposta">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Nova Proposta</span>
+                    </a>
+
+                    <div class="sidebar-section-title sec-gestao" id="secGestaoTitle" style="display: none;">Gestão & Diretoria</div>
+                    <a href="/proposta/admin.html" class="sidebar-link" id="navAdmin" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span>Painel da Diretoria</span>
+                    </a>
+                    <a href="/proposta/crm-config.html" class="sidebar-link" id="navCrmConfig" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <span>Configurações CRM</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-status-box">
+                    <span class="status-indicator">
+                        <span id="sseStatusDot" class="sidebar-status-dot"></span>
+                        <span id="sseStatusText">Ao vivo</span>
+                    </span>
+                    <button id="btnToggleSound" onclick="toggleMuteSound()" class="sidebar-btn-mute" title="Silenciar som">Som</button>
+                </div>
+                <button onclick="localStorage.clear(); window.location.href='/proposta/login.html'" class="sidebar-btn-logout">
+                    Sair da Conta
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="dashboard-container">
+        <section class="page-hero proposal-hero">
+            <div>
+                <span class="eyebrow">Painel de Controle</span>
+                <h1>Configurações Administrativas</h1>
+                <p>Gerencie os parâmetros do sistema de propostas, incluindo precificações, tópicos do PDF e acesso de equipe.</p>
+            </div>
+            <div class="hero-badge">Acesso Diretor</div>
+        </section>
+
+        <div class="admin-grid">
+            <!-- Tabela de Preços -->
+            <div class="admin-card">
+                <div class="hud-bracket top-left"></div><div class="hud-bracket top-right"></div><div class="hud-bracket bottom-left"></div><div class="hud-bracket bottom-right"></div><span class="hud-status-code">SYS.CFG_01</span>
+                
+                <h3>Tabela de Preços</h3>
+                <p>Edite os valores base, tipos e descrições dos serviços oferecidos nas propostas.</p>
+                <button class="btn-primary" onclick="abrirModalTabelaPrecos()">Gerenciar</button>
+            </div>
+
+            <!-- Regras de Cálculo -->
+            <div class="admin-card">
+                <div class="hud-bracket top-left"></div><div class="hud-bracket top-right"></div><div class="hud-bracket bottom-left"></div><div class="hud-bracket bottom-right"></div><span class="hud-status-code">SYS.CFG_02</span>
+                
+                <h3>Regras de Cálculo</h3>
+                <p>Configure fatores multiplicadores baseados em cadeiras, faturamento, regime fiscal e distância.</p>
+                <button class="btn-primary" onclick="abrirModalRegrasGerais()">Configurar</button>
+            </div>
+
+            <!-- Configuração PDF -->
+            <div class="admin-card">
+                <div class="hud-bracket top-left"></div><div class="hud-bracket top-right"></div><div class="hud-bracket bottom-left"></div><div class="hud-bracket bottom-right"></div><span class="hud-status-code">SYS.CFG_03</span>
+                
+                <h3>Configuração do PDF</h3>
+                <p>Escolha quais tópicos descritivos aparecem no PDF exportado de acordo com cada serviço.</p>
+                <button class="btn-primary" onclick="abrirModalConfigPdf()">Mapear Tópicos</button>
+            </div>
+
+
+            <!-- Integração D4Sign -->
+            <div class="admin-card">
+                <div class="hud-bracket top-left"></div><div class="hud-bracket top-right"></div><div class="hud-bracket bottom-left"></div><div class="hud-bracket bottom-right"></div><span class="hud-status-code">SYS.CFG_04</span>
+                
+                <h3>Integração D4Sign</h3>
+                <p>Escolha o fluxo e o nível de segurança das assinaturas eletrônicas dos seus contratos.</p>
+                <button class="btn-primary" onclick="abrirModalD4Sign()">Configurar</button>
+            </div>
+
+            <!-- Controle de Usuários -->
+            <div class="admin-card">
+                <div class="hud-bracket top-left"></div><div class="hud-bracket top-right"></div><div class="hud-bracket bottom-left"></div><div class="hud-bracket bottom-right"></div><span class="hud-status-code">SYS.CFG_05</span>
+                
+                <h3>Controle de Usuários</h3>
+                <p>Cadastre novos vendedores e diretores com credenciais e roles específicas de acesso.</p>
+                <button class="btn-primary" onclick="abrirModal('modalUsuario')">Cadastrar</button>
+            </div>
+
+            <!-- Estabilidade & Monitoramento do Sistema -->
+            <div class="admin-card">
+                <div class="hud-bracket top-left"></div><div class="hud-bracket top-right"></div><div class="hud-bracket bottom-left"></div><div class="hud-bracket bottom-right"></div><span class="hud-status-code">SYS.CFG_06</span>
+                
+                <h3>Estabilidade & Monitoramento</h3>
+                <p>Acompanhe o status em tempo real do banco de dados, e-mails, D4Sign e auditoria de logs do sistema.</p>
+                <button class="btn-primary" onclick="abrirModalStatusSistema()">Monitorar Sistema</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Estabilidade & Monitoramento do Sistema -->
+    <div id="modalStatusSistema" class="modal">
+        <div class="modal-content" style="width: 860px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px;">
+            <span class="close-btn" onclick="fecharModal('modalStatusSistema')">&times;</span>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    
+                    <div>
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff;">Estabilidade & Monitoramento em Tempo Real</h3>
+                        <p style="margin: 3px 0 0; font-size: 13px; color: #94a3b8;">
+                            Diagnóstico automático de saúde dos serviços e auditoria de logs do sistema.
+                        </p>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="carregarHealthCheck(); carregarLogsSistema();" style="height: 36px; padding: 0 14px; font-size: 12px;">
+                    Recarregar Diagnóstico
+                </button>
+            </div>
+
+            <!-- Cards de Indicadores de Saúde -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px;" id="gridHealthCards">
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); padding: 14px; border-radius: 12px;">
+                    <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">MySQL Database</div>
+                    <div style="font-size: 15px; font-weight: 700; color: #10b981; margin-top: 4px;" id="healthDbStatus">Carregando...</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;" id="healthDbDetails">-</div>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); padding: 14px; border-radius: 12px;">
+                    <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">E-mail (Microsoft OAuth)</div>
+                    <div style="font-size: 15px; font-weight: 700; color: #10b981; margin-top: 4px;" id="healthEmailStatus">Carregando...</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;" id="healthEmailDetails">-</div>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); padding: 14px; border-radius: 12px;">
+                    <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">D4Sign API</div>
+                    <div style="font-size: 15px; font-weight: 700; color: #3b82f6; margin-top: 4px;" id="healthD4Status">Carregando...</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;" id="healthD4Details">-</div>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); padding: 14px; border-radius: 12px;">
+                    <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">Servidor (Uptime & RAM)</div>
+                    <div style="font-size: 15px; font-weight: 700; color: #8b5cf6; margin-top: 4px;" id="healthServerStatus">Carregando...</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;" id="healthServerDetails">-</div>
+                </div>
+            </div>
+
+            <!-- Seção de Logs & Auditoria -->
+            <div style="background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 18px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                    <h4 style="margin: 0; color: #e2e8f0; font-size: 14px; font-weight: 700;">Feed de Auditoria & Logs do Sistema</h4>
+                    <div style="display: flex; gap: 8px;">
+                        <select id="selectFiltroLevelLog" onchange="carregarLogsSistema()" style="height: 30px; font-size: 11px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 0 8px;">
+                            <option value="todos">Todos os Níveis</option>
+                            <option value="info">Apenas Informações</option>
+                            <option value="success">Apenas Sucessos</option>
+                            <option value="warn">Apenas Avisos</option>
+                            <option value="error">Apenas Erros</option>
+                        </select>
+                        <button onclick="limparLogsSistema()" style="height: 30px; padding: 0 10px; font-size: 11px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 6px; cursor: pointer;">
+                            Limpar Logs
+                        </button>
+                    </div>
+                </div>
+
+                <div id="containerLogsTerminal" style="height: 240px; overflow-y: auto; background: #020617; border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 12px; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="color: #64748b;">Carregando logs...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Central de Configuração D4Sign -->
+    <div id="modalConfigD4Sign" class="modal">
+        <div class="modal-content" style="width: 740px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px;">
+            <span class="close-btn" onclick="fecharModal('modalConfigD4Sign')">&times;</span>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    
+                    <div>
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff;">Central de Assinatura Eletrônica (D4Sign)</h3>
+                        <p style="margin: 3px 0 0; font-size: 13px; color: #94a3b8;">
+                            Personalize credenciais, fluxos, métodos de validação e experiência do cliente.
+                        </p>
+                    </div>
+                </div>
+                <div id="d4signStatusBadge" style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(100, 116, 139, 0.2); color: #94a3b8;">
+                    ● Não Testado
+                </div>
+            </div>
+
+            <!-- Abas da Central D4Sign -->
+            <div style="display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px;">
+                <button type="button" class="d4-tab-btn active" onclick="trocarAbaD4Sign('abaD4Credenciais', this)" style="padding: 8px 16px; border-radius: 8px; border: none; background: #2563eb; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    Conexão & API
+                </button>
+                <button type="button" class="d4-tab-btn" onclick="trocarAbaD4Sign('abaD4Fluxo', this)" style="padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: #94a3b8; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    Fluxo & Prazos
+                </button>
+                <button type="button" class="d4-tab-btn" onclick="trocarAbaD4Sign('abaD4Seguranca', this)" style="padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: #94a3b8; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    Autenticação & Compliance
+                </button>
+                <button type="button" class="d4-tab-btn" onclick="trocarAbaD4Sign('abaD4Experiencia', this)" style="padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: #94a3b8; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    Mensagens & Envio
+                </button>
+                <button type="button" class="d4-tab-btn" onclick="trocarAbaD4Sign('abaD4Contratada', this)" style="padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: #94a3b8; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    Contratada por Marca
+                </button>
+            </div>
+
+            <!-- Aba 1: Conexão & API -->
+            <div id="abaD4Credenciais" class="d4-tab-content">
+                <div class="input-group" style="margin-bottom: 16px;">
+                    <label for="configD4Ambiente" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Ambiente de Execução</label>
+                    <select id="configD4Ambiente" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px;">
+                        <option value="sandbox">Sandbox / Homologação (Testes sem valor jurídico)</option>
+                        <option value="live">Produção Oficial D4Sign (Contratos com validade jurídica)</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 16px;">
+                    <label for="configD4Token" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Token da API (tokenAPI)</label>
+                    <input type="text" id="configD4Token" placeholder="live_token_... ou sandbox_token_..." style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-family: monospace; font-size: 12px;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 16px;">
+                    <label for="configD4Secret" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">CryptKey / Chave Secreta (cryptKey)</label>
+                    <input type="password" id="configD4Secret" placeholder="live_crypt_... ou sandbox_crypt_..." style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-family: monospace; font-size: 12px;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label for="configD4Cofre" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">UUID do Cofre Padrão (Safe UUID)</label>
+                    <input type="text" id="configD4Cofre" placeholder="Ex: 12345678-abcd-1234-abcd-1234567890ab" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-family: monospace; font-size: 12px;">
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.5); padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                    <div>
+                        <div style="font-size: 13px; font-weight: 600; color: #fff;">Diagnóstico de Conectividade</div>
+                        <div style="font-size: 12px; color: #94a3b8;">Verifica se o token, chave e cofre estão ativos na D4Sign.</div>
+                    </div>
+                    <button type="button" class="btn-secondary" id="btnTestarD4Sign" onclick="testarConexaoD4SignUI()" style="padding: 8px 16px; font-size: 13px; border-radius: 8px; cursor: pointer;">
+                        Testar Conexão Agora
+                    </button>
+                </div>
+                <div id="d4signResultadoTeste" style="margin-top: 12px; font-size: 12px; display: none;"></div>
+            </div>
+
+            <!-- Aba 2: Fluxo & Prazos -->
+            <div id="abaD4Fluxo" class="d4-tab-content" style="display: none;">
+                <div class="input-group" style="margin-bottom: 16px;">
+                    <label for="configFluxoD4Sign" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Modelo de Workflow (Ordem de Assinatura)</label>
+                    <select id="configFluxoD4Sign" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px;">
+                        <option value="ordenado">Fluxo Ordenado Padrão (Cliente assina 1º, depois Representante Finora assina)</option>
+                        <option value="livre">Fluxo Livre / Simultâneo (Ambos recebem e assinam a qualquer momento)</option>
+                        <option value="inverso">Fluxo Inverso (Representante Finora assina antes de enviar ao Cliente)</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="input-group">
+                        <label for="configD4Expiracao" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Validade do Contrato (Dias para Expiração)</label>
+                        <select id="configD4Expiracao" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px;">
+                            <option value="7">7 dias</option>
+                            <option value="15">15 dias</option>
+                            <option value="30">30 dias (Recomendado)</option>
+                            <option value="60">60 dias</option>
+                            <option value="90">90 dias</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="configD4Lembrete" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Lembretes Automáticos de Cobrança</label>
+                        <select id="configD4Lembrete" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px;">
+                            <option value="0">Desativado (Sem lembretes adicionais)</option>
+                            <option value="1">Diariamente (A cada 24 horas)</option>
+                            <option value="2">A cada 2 dias</option>
+                            <option value="3">A cada 3 dias (Recomendado)</option>
+                            <option value="7">Semanalmente (A cada 7 dias)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba 3: Autenticação & Compliance -->
+            <div id="abaD4Seguranca" class="d4-tab-content" style="display: none;">
+                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">
+                    Selecione quais camadas de identificação e segurança jurídica serão exigidas do cliente durante o ato de assinatura:
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.5); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); cursor: pointer;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: #fff;">Token de Validação por SMS</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Envia um código OTP de 6 dígitos via SMS para o celular cadastrado do cliente.</div>
+                        </div>
+                        <input type="checkbox" id="configD4ExigirSms" style="width: 20px; height: 20px; cursor: pointer; accent-color: #2563eb;">
+                    </label>
+
+                    <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.5); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); cursor: pointer;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: #fff;">Envio via WhatsApp Oficial D4Sign</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Dispara a notificação de assinatura no WhatsApp corporativo verificado da D4Sign (Requer saldo).</div>
+                        </div>
+                        <input type="checkbox" id="configD4ExigirWhatsapp" style="width: 20px; height: 20px; cursor: pointer; accent-color: #2563eb;">
+                    </label>
+
+                    <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.5); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); cursor: pointer;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: #fff;">Selfie com Biometria Facial (Liveness)</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Exige captura de foto do rosto em tempo real com prova de vida para evitar fraudes.</div>
+                        </div>
+                        <input type="checkbox" id="configD4ExigirSelfie" style="width: 20px; height: 20px; cursor: pointer; accent-color: #2563eb;">
+                    </label>
+
+                    <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.5); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); cursor: pointer;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: #fff;">Foto de Documento Oficial (CNH / RG)</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Solicita foto frente e verso do documento de identificação do médico/sócio.</div>
+                        </div>
+                        <input type="checkbox" id="configD4ExigirDocFoto" style="width: 20px; height: 20px; cursor: pointer; accent-color: #2563eb;">
+                    </label>
+
+                    <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.5); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); cursor: pointer;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: #fff;">Certificado Digital ICP-Brasil (e-CPF)</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Exige assinatura qualificada ICP-Brasil (Token A1, A3 ou Nuvem BirdID/SafeID).</div>
+                        </div>
+                        <input type="checkbox" id="configD4ExigirIcp" style="width: 20px; height: 20px; cursor: pointer; accent-color: #2563eb;">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Aba 4: Mensagens & Envio -->
+            <div id="abaD4Experiencia" class="d4-tab-content" style="display: none;">
+                <div class="input-group" style="margin-bottom: 16px;">
+                    <label for="configD4Mensagem" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Mensagem de Envio / Instruções de Assinatura</label>
+                    <textarea id="configD4Mensagem" rows="3" style="width: 100%; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 12px; font-size: 13px; line-height: 1.5; resize: vertical;" placeholder="Mensagem padrão de instrução exibida na tela de assinatura..."></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="input-group">
+                        <label for="configD4NomeRep" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Nome do Representante Legal</label>
+                        <input type="text" id="configD4NomeRep" placeholder="Ex: Diretor Financeiro Q-MAX" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-size: 13px;">
+                    </div>
+                    <div class="input-group">
+                        <label for="configD4EmailRep" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">E-mail do Representante Legal</label>
+                        <input type="email" id="configD4EmailRep" placeholder="contato@grupoqmax.com.br" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-size: 13px;">
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 16px;">
+                    <label for="configD4UrlRetorno" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">URL de Retorno Pós-Assinatura (Redirect)</label>
+                    <input type="text" id="configD4UrlRetorno" placeholder="/proposta/sucesso.html" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-size: 13px;">
+                </div>
+            </div>
+
+            <!-- Aba 5: quem assina como CONTRATADA no contrato (D4Sign e minuta do cliente). Vazio = texto padrão atual -->
+            <div id="abaD4Contratada" class="d4-tab-content" style="display: none;">
+                <p style="font-size: 12px; color: #94a3b8; margin: 0 0 12px;">Usado no contrato enviado ao D4Sign e na minuta que o cliente vê. Campo vazio usa o padrão (escritório contábil, CNPJ 12.552.249/0001-99, CRC e representante atuais).</p>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label for="configContratadaMarca" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Marca</label>
+                    <select id="configContratadaMarca" onchange="trocarMarcaContratada(this.value)" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-size: 13px;">
+                        <option value="finora">FINORA</option>
+                        <option value="contabil">QMAX Contábil</option>
+                        <option value="tech">QMAX Tech</option>
+                        <option value="auditoria">QMAX Auditoria</option>
+                        <option value="lagerhaus">Lagerhaus</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label for="contratada_razao_social" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Razão social</label>
+                    <input type="text" id="contratada_razao_social" placeholder="Ex.: FINORA GESTÃO FINANCEIRA LTDA" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-size: 13px;">
+                </div>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label for="contratada_cnpj" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">CNPJ</label>
+                    <input type="text" id="contratada_cnpj" placeholder="00.000.000/0001-00" style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-size: 13px;">
+                </div>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label for="contratada_endereco" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Sede (endereço completo)</label>
+                    <input type="text" id="contratada_endereco" placeholder="Rua..., nº ..., Cidade/UF, CEP ..." style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-size: 13px;">
+                </div>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label for="contratada_qualificacao" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Registro profissional (opcional)</label>
+                    <input type="text" id="contratada_qualificacao" placeholder="Ex.: registrado no CRC/SP nº ..." style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-size: 13px;">
+                </div>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label for="contratada_representante" style="font-size: 13px; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 6px;">Representante legal (qualificação completa)</label>
+                    <input type="text" id="contratada_representante" placeholder="NOME, nacionalidade, profissão, CPF nº ..." style="width: 100%; height: 42px; border-radius: 10px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0 12px; font-size: 13px;">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 18px;">
+                <button type="button" class="btn-secondary" onclick="fecharModal('modalConfigD4Sign')" style="padding: 10px 20px; font-size: 13px; border-radius: 8px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-primary" onclick="salvarConfigD4Sign()" style="padding: 10px 24px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer;">
+                    Salvar Configurações
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalConfigPdf" class="modal">
+        <div class="modal-content modal-config-pdf-content"> 
+            <span class="close-btn" onclick="fecharModal('modalConfigPdf')">&times;</span>
+
+            <h3>Configuração de Serviços e Tópicos do PDF</h3>
+            <p style="font-size: 13px; color: #64748b;">
+                Marque quais tópicos devem aparecer no PDF quando determinado serviço estiver na proposta.
+            </p>
+            <button class="btn-primary" style="width:auto; margin-bottom:16px;" onclick="abrirNovoTopicoPdf()">
+                + Novo Tópico
+            </button>
+
+            <div id="formNovoTopicoPdf"
+                style="display:none; background:#f8fafc; padding:16px; border-radius:12px; margin-bottom:16px;">
+                <div class="input-group">
+                    <label for="novoTopicoTitulo">Título do tópico</label>
+                    <input type="text" id="novoTopicoTitulo" placeholder="Ex.: Consultoria Estratégica">
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novoTopicoOrdem">Ordem</label>
+                    <input type="number" id="novoTopicoOrdem" value="0">
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novoTopicoTexto">Texto do tópico</label>
+                    <textarea id="novoTopicoTexto" style="min-height:160px;"
+                        placeholder="Digite uma linha por item que aparecerá no PDF."></textarea>
+                </div>
+
+                <button class="btn-primary" style="margin-top:14px;" onclick="salvarNovoTopicoPdf()">
+                    Salvar Novo Tópico
+                </button>
+            </div>
+            <div id="listaConfigPdf"></div>
+        </div>
+    </div>
+
+    <div id="modalEditarTopico" class="modal">
+        <div class="modal-content" style="width: 700px;">
+            <span class="close-btn" onclick="fecharModal('modalEditarTopico')">&times;</span>
+
+            <h3>Editar Tópico do PDF</h3>
+            <input type="hidden" id="editTopicoId">
+
+            <div class="input-group">
+                <label for="editTopicoTitulo">Título</label>
+                <input type="text" id="editTopicoTitulo">
+            </div>
+
+            <div class="input-group" style="margin-top:10px;">
+                <label for="editTopicoOrdem">Ordem</label>
+                <input type="number" id="editTopicoOrdem">
+            </div>
+
+            <div class="input-group" style="margin-top:10px;">
+                <label for="editTopicoTexto">Texto</label>
+                <textarea id="editTopicoTexto" style="min-height:220px;"></textarea>
+            </div>
+
+            <button class="btn-primary" style="margin-top:16px;" onclick="salvarEdicaoTopico()">
+                Salvar Tópico
+            </button>
+        </div>
+    </div>
+
+    <div id="modalVisualizarTopico" class="modal">
+        <div class="modal-content" style="width: 760px;">
+            <span class="close-btn" onclick="fecharModal('modalVisualizarTopico')">&times;</span>
+            <h3 id="visualizarTopicoTitulo"></h3>
+            <div id="visualizarTopicoTexto"
+                style="white-space:pre-wrap; background:#f8fafc; border-radius:14px; padding:18px; line-height:1.6; color:#334155;">
+            </div>
+        </div>
+    </div>
+
+    <div id="modalTabelaPrecos" class="modal">
+        <div class="modal-content" style="width: 94vw; max-width: 1180px; overflow-x: hidden;"> 
+            <span class="close-btn" onclick="fecharModal('modalTabelaPrecos')">&times;</span>
+
+            <h3>Tabela de Preços</h3>
+            <p style="font-size:13px; color:#64748b;">
+                Edite os valores usados automaticamente no cálculo das propostas.
+            </p>
+            
+            <!-- Seletor de Empresa para Filtro -->
+            <div style="margin: 16px 0; display: flex; gap: 10px; flex-wrap: wrap;" id="filtrosEmpresaPreco">
+                <button class="btn-mini filtro-ativo" onclick="filtrarEmpresaTabelaPreco('FINORA', this)">FINORA</button>
+                <button class="btn-mini btn-mini-light" onclick="filtrarEmpresaTabelaPreco('CONTABIL', this)">Q-MAX Contábil</button>
+                <button class="btn-mini btn-mini-light" onclick="filtrarEmpresaTabelaPreco('TECH', this)">Q-MAX Tech</button>
+                <button class="btn-mini btn-mini-light" onclick="filtrarEmpresaTabelaPreco('AUDITORIA', this)">Q-MAX Auditoria</button>
+                <button class="btn-mini btn-mini-light" onclick="filtrarEmpresaTabelaPreco('LAGERHAUS', this)">LAGERHAUS</button>
+            </div>
+
+            <button class="btn-primary" style="width:auto; margin-bottom:16px;" onclick="abrirNovoServicoPreco()">
+                + Novo Serviço / Produto
+            </button>
+
+            <div id="formNovoServicoPreco"
+                style="display:none; background:#f8fafc; padding:16px; border-radius:12px; margin-bottom:16px;">
+                <div class="input-group">
+                    <label for="novoPrecoCodigo">Código interno</label>
+                    <input type="text" id="novoPrecoCodigo" placeholder="Ex.: consultoria_tributaria">
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novoPrecoNome">Nome do serviço</label>
+                    <input type="text" id="novoPrecoNome" placeholder="Ex.: Consultoria Tributária">
+                </div>
+                
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novoPrecoEmpresa">Empresa / Ecossistema</label>
+                    <select id="novoPrecoEmpresa">
+                        <option value="FINORA">FINORA Intelligence</option>
+                        <option value="CONTABIL">Q-MAX Contábil</option>
+                        <option value="TECH">Q-MAX Tech</option>
+                        <option value="AUDITORIA">Q-MAX Auditoria</option>
+                        <option value="LAGERHAUS">LAGERHAUS</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novoPrecoDescricao">Descrição comercial</label>
+                    <textarea id="novoPrecoDescricao"
+                        placeholder="Explique o que este produto/serviço entrega."></textarea>
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novoPrecoTipo">Tipo</label>
+                    <select id="novoPrecoTipo">
+                        <option value="Mensal">Mensal</option>
+                        <option value="Pontual">Pontual</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novoPrecoValor">Valor Padrão (Base General)</label>
+                    <input type="number" id="novoPrecoValor" step="0.01" placeholder="0.00">
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
+                    <div class="input-group">
+                        <label for="novoPrecoValorPf" style="font-size:12px;">Valor PF (R$)</label>
+                        <input type="number" id="novoPrecoValorPf" step="0.01" placeholder="Opcional (Ex: 1500)">
+                    </div>
+                    <div class="input-group">
+                        <label for="novoPrecoValorPj" style="font-size:12px;">Valor PJ (R$)</label>
+                        <input type="number" id="novoPrecoValorPj" step="0.01" placeholder="Opcional (Ex: 1800)">
+                    </div>
+                    <div class="input-group">
+                        <label for="novoPrecoValorHibrido" style="font-size:12px;">Valor Híbrido (R$)</label>
+                        <input type="number" id="novoPrecoValorHibrido" step="0.01" placeholder="Opcional (Ex: 2200)">
+                    </div>
+                </div>
+
+                <button class="btn-primary" style="margin-top:14px;" onclick="salvarNovoServicoPreco()">
+                    Salvar Novo Serviço
+                </button>
+            </div>
+
+            <div id="listaTabelaPrecos"></div>
+        </div>
+    </div>
+
+    <div id="modalRegrasPreco" class="modal">
+        <div class="modal-content" style="width: 620px;">
+            <span class="close-btn" onclick="fecharModal('modalRegrasPreco')">&times;</span>
+
+            <h3>Regras de Cálculo</h3>
+            <p id="nomeServicoRegra" style="color:#64748b; font-size:13px;"></p>
+
+            <button class="btn-primary" style="width:auto; margin-bottom:14px;" onclick="abrirFormNovaRegra()">
+                + Nova Regra
+            </button>
+
+            <div id="formNovaRegra"
+                style="display:none; background:#f8fafc; padding:14px; border-radius:12px; margin-bottom:14px;">
+                <div class="input-group">
+                    <label for="novaRegraCodigo">Código interno</label>
+                    <input type="text" id="novaRegraCodigo" placeholder="Ex.: distancia_50km">
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novaRegraNome">Nome da regra</label>
+                    <input type="text" id="novaRegraNome" placeholder="Ex.: Distância acima de 50km">
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novaRegraDescricao">Descrição</label>
+                    <textarea id="novaRegraDescricao"
+                        placeholder="Explique quando essa regra deve ser usada."></textarea>
+                </div>
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novaRegraCampoBase">Campo base</label>
+                    <select id="novaRegraCampoBase">
+                        <option value="cadeiras">Cadeiras</option>
+                        <option value="faturamento">Faturamento</option>
+                        <option value="regimeHibrido">Regime Híbrido</option>
+                        <option value="funcionarios">Funcionários</option>
+                        <option value="socios">Sócios</option>
+                        <option value="metragem">Metragem</option>
+                        <option value="distanciaKm">Distância KM</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novaRegraOperador">Operador</label>
+                    <select id="novaRegraOperador">
+                        <option value=">">Maior que</option>
+                        <option value=">=">Maior ou igual</option>
+                        <option value="<">Menor que</option>
+                        <option value="<=">Menor ou igual</option>
+                        <option value="=">Igual</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novaRegraValorComparacao">Valor de comparação</label>
+                    <input type="number" id="novaRegraValorComparacao" placeholder="Ex.: 50">
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label for="novaRegraFator">Fator multiplicador</label>
+                    <input type="number" id="novaRegraFator" step="0.01" value="1">
+                </div>
+
+                <button class="btn-primary" style="margin-top:12px;" onclick="salvarNovaRegraCalculo()">
+                    Salvar Regra
+                </button>
+            </div>
+
+            <div id="listaRegrasCalculo"></div>
+        </div>
+    </div>
+
+    <div id="modalRegrasGerais" class="modal">
+        <div class="modal-content" style="width: 96vw; max-width: 1280px;">
+            <span class="close-btn" onclick="fecharModal('modalRegrasGerais')">&times;</span>
+
+            <h3>Regras de Cálculo</h3>
+            <p style="font-size:13px; color:#64748b;">
+                Configure como cada serviço deve ser calculado.
+            </p>
+
+            <div id="listaRegrasGerais"></div>
+        </div>
+    </div>
+
+    <div id="modalUsuario" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharModal('modalUsuario')">&times;</span>
+            <h3>Cadastrar Novo Usuário</h3>
+            <div class="input-group"><label for="cadNome">Nome</label><input type="text" id="cadNome"></div>
+            <div class="input-group" style="margin-top: 10px;"><label for="cadEmail">E-mail</label><input type="email" id="cadEmail"></div>
+            <div class="input-group" style="margin-top: 10px;"><label for="cadSenha">Senha</label><input type="password" id="cadSenha"></div>
+            <div class="input-group" style="margin-top: 10px;"><label for="cadTelefone">WhatsApp (opcional)</label><input type="tel" id="cadTelefone" placeholder="(11) 99999-0000" autocomplete="tel"></div>
+            <div class="input-group" style="margin-top: 10px;"><label for="cadRole">Cargo</label>
+                <select id="cadRole">
+                    <option value="Comercial">Comercial</option>
+                    <option value="Diretor">Diretor</option>
+                </select>
+            </div>
+            <button class="btn-primary" style="margin-top: 16px;" onclick="criarUsuario()">Salvar Usuário</button>
+        </div>
+    </div>
+
+    <div id="modalPlanosTech" class="modal">
+        <div class="modal-content" style="width:95vw; max-width:1200px;">
+            <span class="close-btn" onclick="fecharModal('modalPlanosTech')">&times;</span>
+
+            <h3>Planos Q-MAX Tech</h3>
+            <button class="btn-primary" style="width:auto; margin-bottom:16px;" onclick="abrirNovoPlanoTech()">
+                + Novo Plano
+            </button>
+
+            <div id="formNovoPlanoTech"
+                style="display:none; background:#f8fafc; padding:16px; border-radius:12px; margin-bottom:16px;">
+                <div class="input-group">
+                    <label for="novoPlanoCodigo">Código</label>
+                    <input type="text" id="novoPlanoCodigo" placeholder="performance">
+                </div>
+
+                <div class="input-group">
+                    <label for="novoPlanoNome">Nome</label>
+                    <input type="text" id="novoPlanoNome" placeholder="Plano Performance">
+                </div>
+
+                <div class="input-group">
+                    <label for="novoPlanoImplantacao">Implantação</label>
+                    <input type="number" id="novoPlanoImplantacao">
+                </div>
+
+                <div class="input-group">
+                    <label for="novoPlanoMensalidade">Mensalidade</label>
+                    <input type="number" id="novoPlanoMensalidade">
+                </div>
+
+                <div class="input-group">
+                    <label for="novoPlanoServicos">Serviços inclusos (um por linha)</label>
+                    <textarea id="novoPlanoServicos" style="min-height:90px;"></textarea>
+                </div>
+
+                <button class="btn-primary" style="margin-top:12px;" onclick="salvarNovoPlanoTech()">
+                    Salvar Plano
+                </button>
+            </div>
+
+            <div id="listaPlanosTech"></div>
+        </div>
+    </div>
+
+        </main>
+    </div>
+
+    <script src="js/qmax-theme.js"></script>
+    <script src="js/dashboard-utils.js"></script>
+    <script>
+        window.carregarPropostas = window.carregarPropostas || function() {};
+    </script>
+    <script src="js/dashboard-admin.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const userNome = localStorage.getItem("finora_nome") || "Usuário";
+            const userRole = localStorage.getItem("finora_role") || "Vendedor";
+            
+            const nameEl = document.getElementById("sidebarUserName");
+            const roleEl = document.getElementById("sidebarUserRole");
+            const avatarEl = document.getElementById("sidebarAvatar");
+
+            if (nameEl) nameEl.innerText = userNome;
+            if (roleEl) roleEl.innerText = userRole;
+            if (avatarEl) avatarEl.innerText = userNome.charAt(0).toUpperCase();
+
+            // Destacar link ativo
+            const pathName = window.location.pathname;
+            if (pathName.includes("dashboard.html")) document.getElementById("navDashboard")?.classList.add("active");
+            if (pathName.includes("crm.html")) document.getElementById("navCrm")?.classList.add("active");
+            if (pathName.includes("index.html")) document.getElementById("navNovaProposta")?.classList.add("active");
+            if (pathName.includes("admin.html")) document.getElementById("navAdmin")?.classList.add("active");
+            if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
+
+            // Exibir links adicionais para Diretores
+            if (userRole === "Diretor") {
+                const navAdmin = document.getElementById("navAdmin");
+                const navCrmConfig = document.getElementById("navCrmConfig");
+                if (navAdmin) navAdmin.style.display = "flex";
+                if (navCrmConfig) navCrmConfig.style.display = "flex";
+            }
+
+            if (window.aplicarTemaEmpresa) {
+                window.aplicarTemaEmpresa("FINORA");
+            }
+
+            // Fechamento de modais
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") fecharTodosModais();
+            });
+
+            window.addEventListener("click", (event) => {
+                document.querySelectorAll(".modal").forEach((modal) => {
+                    if (event.target === modal) fecharModal(modal.id);
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

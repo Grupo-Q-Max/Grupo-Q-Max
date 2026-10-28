@@ -89,7 +89,7 @@ export default function PoliticaPrivacidadePage() {
             </ul>
             <p>
               Esta Política aplica-se indistintamente a todos os portais, sistemas web, plataformas e serviços operados sob o
-              domínio <code>qmaxbrasil.com.br</code> e suas aplicações vinculadas.
+              domínios <code>grupoqmax.com.br</code> e <code>qmaxbrasil.com.br</code> e suas aplicações vinculadas.
             </p>
           </section>
 

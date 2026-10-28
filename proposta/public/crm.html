@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDR CRM | FINORA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/qmax-ui.css">
+    <link rel="stylesheet" href="css/crm.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <link rel="stylesheet" href="css/tema-escritorio.css">
+</head>
+
+<body class="page-dashboard theme-finora">
+    <script>
+        const APP_BASE_PATH = "/proposta";
+
+        const token = localStorage.getItem("finora_token");
+        const role = localStorage.getItem("finora_role");
+
+        if (!token) {
+            window.location.href = "/proposta/login.html";
+        }
+
+        const authHeaders = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        };
+    </script>
+
+    <div class="app-layout">
+        <!-- Sidebar Master Unificada -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">Q</div>
+                    <span><span class="highlight">Q-MAX</span> Intelligence</span>
+                </div>
+                
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar" id="sidebarAvatar">Q</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebarUserName">Carregando...</div>
+                        <div class="sidebar-user-role" id="sidebarUserRole">...</div>
+                    </div>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <div class="sidebar-section-title">Comercial & Leads</div>
+                    <a href="/proposta/dashboard.html" class="sidebar-link" id="navDashboard">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        <span>Dashboard Geral</span>
+                    </a>
+                    <a href="/proposta/crm.html" class="sidebar-link active" id="navCrm">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>Funil CRM Leads</span>
+                    </a>
+                    <a href="/proposta/prospeccao.html" class="sidebar-link" id="navProspeccao">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <span>Prospecção Ativa</span>
+                    </a>
+
+                    <div class="sidebar-section-title">Propostas & Fechamento</div>
+                    <a href="/proposta/index.html" class="sidebar-link" id="navNovaProposta">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Nova Proposta</span>
+                    </a>
+
+                    <div class="sidebar-section-title sec-gestao" id="secGestaoTitle" style="display: none;">Gestão & Diretoria</div>
+                    <a href="/proposta/admin.html" class="sidebar-link" id="navAdmin" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span>Painel da Diretoria</span>
+                    </a>
+                    <a href="/proposta/crm-config.html" class="sidebar-link" id="navCrmConfig" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <span>Configurações CRM</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-status-box">
+                    <span class="status-indicator">
+                        <span id="sseStatusDot" class="sidebar-status-dot"></span>
+                        <span id="sseStatusText">Ao vivo</span>
+                    </span>
+                    <button id="btnToggleSound" onclick="toggleMuteSound()" class="sidebar-btn-mute" title="Silenciar som">Som</button>
+                </div>
+                <button onclick="localStorage.clear(); window.location.href='/proposta/login.html'" class="sidebar-btn-logout">
+                    Sair da Conta
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="dashboard-container">
+        <!-- CRM Header Bar -->
+        <div class="crm-header-bar">
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px; max-width: 500px; flex-wrap: wrap;">
+                    <select id="funilSelector" onchange="alterarFunil(this.value)" style="font-size: 24px; font-weight: 800; border: none; background: transparent; color: var(--text); padding: 0; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 20px; background-image: url('data:image/svg+xml;utf8,<svg fill=%22black%22 height=%2224%22 viewBox=%220 0 24 24%22 width=%2224%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-repeat: no-repeat; background-position-x: 100%; background-position-y: 50%; max-width: 320px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
+                        <option value="1">Carregando...</option>
+                    </select>
+                    <button class="btn-secondary" onclick="abrirModalGerenciarFunis()" style="padding: 4px 10px; font-size: 12px; border-radius: 8px;">Gerenciar</button>
+                </div>
+                <p style="color: var(--muted); font-size: 13px; margin: 4px 0 0 0;">Acompanhe o andamento dos contatos comerciais e gere propostas com 1 clique.</p>
+            </div>
+            <button class="btn-primary" onclick="abrirModalCriarLead()" style="display: flex; align-items: center; gap: 8px; border-radius: 12px; height: 42px;">
+                Novo Lead
+            </button>
+        </div>
+
+        <!-- Toggle de Visualização e Botões de Controle -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 14px; flex-wrap: wrap;">
+            <div class="view-toggles" style="display: flex; background: rgba(15, 23, 42, 0.04); padding: 4px; border-radius: 12px; border: 1px solid rgba(15, 23, 42, 0.06);">
+                <button id="btnViewKanban" class="view-toggle-btn active" onclick="window.location.href='/proposta/crm.html'" style="border: 0; padding: 8px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                    Quadro Kanban
+                </button>
+            </div>
+            
+            <button id="btnToggleMetrics" class="btn-secondary" onclick="toggleMetricsPanel()" style="border-radius: 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px;">
+                Métricas & Funil
+            </button>
+        </div>
+
+        <!-- CRM Metrics Panel & Funnel (Toggleable) -->
+        <div id="metricsPanel" class="crm-metrics-panel" style="display: none; margin-bottom: 24px;">
+            <div class="metrics-grid">
+                <!-- KPI 1 -->
+                <div class="metric-card">
+                    
+                    <div class="metric-info">
+                        <span>Em Negociação</span>
+                        <strong id="metricTotalNegociando">R$ 0,00</strong>
+                    </div>
+                </div>
+                <!-- KPI 2 -->
+                <div class="metric-card">
+                    
+                    <div class="metric-info">
+                        <span>Faturamento Ganho</span>
+                        <strong id="metricTotalGanho">R$ 0,00</strong>
+                    </div>
+                </div>
+                <!-- KPI 3 -->
+                <div class="metric-card">
+                    
+                    <div class="metric-info">
+                        <span>Taxa de Conversão</span>
+                        <strong id="metricConversionRate">0%</strong>
+                    </div>
+                </div>
+                <!-- KPI 4 -->
+                <div class="metric-card">
+                    
+                    <div class="metric-info">
+                        <span>Total de Leads</span>
+                        <strong id="metricTotalLeads">0</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Funnel and Loss Reasons Chart Section -->
+            <div class="funnel-stats-row">
+                <!-- Funnel Chart Card -->
+                <div class="funnel-card">
+                    <h3>Gráfico de Funil (Drop-off de Leads)</h3>
+                    <div class="funnel-chart-bars" id="funnelChartBars">
+                        <!-- Bars dynamically loaded -->
+                    </div>
+                </div>
+                <!-- Lost Reasons Card -->
+                <div class="loss-reasons-card">
+                    <h3>Principais Motivos de Perda</h3>
+                    <div class="loss-reasons-list" id="lossReasonsList">
+                        <!-- Reasons dynamically loaded -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard and Live Operations Activity Feed Row -->
+            <div class="dashboard-exec-row">
+                <!-- Leaderboard Card -->
+                <div class="leaderboard-card">
+                    <h3>Ranking de Performance Comercial</h3>
+                    <div class="leaderboard-list" id="leaderboardList">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+                
+                <!-- Live Operational Feed Card -->
+                <div class="activity-feed-card">
+                    <h3>Feed da Operação em Tempo Real</h3>
+                    <div class="live-activity-feed" id="liveActivityFeed">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CRM Filters -->
+        <div class="crm-filters" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) auto; gap: 12px; align-items: center;">
+            <input type="text" id="searchFilter" placeholder="Buscar por cliente ou clínica..." oninput="filtrarLeads()">
+            <select id="vendedorFilter" onchange="filtrarLeads()">
+                <option value="">Todos os Responsáveis</option>
+            </select>
+            <select id="origemFilter" onchange="filtrarLeads()">
+                <option value="">Todas as Origens</option>
+                <option value="Google">Google</option>
+                <option value="Instagram">Instagram</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="Indicação">Indicação</option>
+                <option value="Prospecção Ativa">Prospecção Ativa</option>
+                <option value="Outro">Outro</option>
+            </select>
+            <div class="csv-actions" style="display: flex; gap: 8px;">
+                <button class="btn-secondary" onclick="abrirModalScriptPitch()" title="Gerar scripts comerciais persuasivos de WhatsApp com 1 clique" style="height: 38px; font-size: 12.5px; font-weight: 800; border-radius: 10px; padding: 0 12px; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #86efac; color: #166534; cursor: pointer;">
+                    Pitch Copys WhatsApp
+                </button>
+                <button class="btn-secondary" onclick="exportarLeadsCSV()" title="Exportar leads atuais como planilha Excel/CSV" style="height: 38px; font-size: 12.5px; font-weight: 700; border-radius: 10px; padding: 0 12px; display: flex; align-items: center; gap: 6px; background: white; border: 1px solid #cbd5e1; cursor: pointer;">
+                    Exportar CSV
+                </button>
+                <button class="btn-secondary" onclick="document.getElementById('importCsvInput').click()" title="Importar leads em lote via CSV" style="height: 38px; font-size: 12.5px; font-weight: 700; border-radius: 10px; padding: 0 12px; display: flex; align-items: center; gap: 6px; background: white; border: 1px solid #cbd5e1; cursor: pointer;">
+                    Importar CSV
+                </button>
+                <input type="file" id="importCsvInput" accept=".csv" onchange="importarLeadsCSV(event)" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Kanban Board (Dinâmico estilo Bitrix) -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span style="font-size: 12px; color: var(--muted); font-weight: 500;">Dica: Clique no no cabeçalho das colunas para renomear ou excluir. Arraste os cards para mover de etapa.</span>
+            <button class="btn-secondary" onclick="abrirModalCriarColuna()" style="height: 30px; font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 0 10px; display: flex; align-items: center; gap: 4px; background: white; border: 1px solid #cbd5e1; cursor: pointer;">
+                Nova Coluna
+            </button>
+        </div>
+        <div class="kanban-board" id="kanbanBoard">
+            <!-- As colunas serão renderizadas dinamicamente via JS -->
+        </div>
+
+        <!-- Client Database Grid View (Hidden by default) -->
+        <div id="clientDatabaseView" class="client-database-container" style="display: none;">
+            <div style="background: white; border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 30px;">
+                <div class="client-grid" id="clientGrid">
+                    <!-- Clients dynamic rendering -->
+                </div>
+                <div id="noClientsMessage" style="display: none; text-align: center; color: var(--muted); padding: 40px; font-style: italic; font-size: 14px;">
+                    Nenhum cliente fechado encontrado com os filtros atuais.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL: CADASTRAR / EDITAR LEAD -->
+    <div id="modalLead" class="modal">
+        <div class="modal-content" style="width: 500px;">
+            <span class="close-btn" onclick="fecharModalLead()">&times;</span>
+            <h2 id="modalLeadTitulo">Cadastrar Novo Lead</h2>
+            <form id="leadForm" onsubmit="salvarLead(event)" style="margin-top: 16px;">
+                <input type="hidden" id="leadId">
+                
+                <div class="input-group" style="position: relative;">
+                    <label for="leadNomeCliente">Nome do Cliente (Contato)</label>
+                    <input type="text" id="leadNomeCliente" required placeholder="Ex.: Dr. Carlos Alberto" autocomplete="off" oninput="buscarSugestoesCliente(this.value)">
+                    <div id="autocompleteSugestoes" style="display:none; position:absolute; top:64px; left:0; width:100%; background:white; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index:1000; max-height:200px; overflow-y:auto; box-sizing:border-box;"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="leadNomeClinica">Nome da Empresa</label>
+                    <input type="text" id="leadNomeClinica" placeholder="Ex.: Q-MAX Contábil, Sorriso Legal">
+                </div>
+
+                <div class="input-group">
+                    <label for="leadCnpj">CNPJ da Empresa</label>
+                    <input type="text" id="leadCnpj" placeholder="Ex.: 00.000.000/0001-00">
+                </div>
+
+                <div class="input-group">
+                    <label for="leadMarca">Marca do Lead</label>
+                    <select id="leadMarca" onchange="adaptarCamposFormLead()" style="width: 100%; height: 38px; border-radius: 10px; border: 1px solid #cbd5e1; padding: 0 10px; font-weight: 700; font-size: 13px;">
+                        <option value="finora">FINORA Intelligence</option>
+                        <option value="contabil">Q-MAX Contábil</option>
+                        <option value="tech">Q-MAX Tech</option>
+                        <option value="auditoria">Q-MAX Auditoria</option>
+                        <option value="lagerhaus">LAGERHAUS (Coworking & Galpões)</option>
+                    </select>
+                </div>
+
+                <!-- Seção Odontológica (Finora) -->
+                <div id="secaoFinora" class="secao-marca-campos">
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <label for="leadCadeiras">Cadeiras Clínicas</label>
+                            <input type="number" id="leadCadeiras" min="0" placeholder="Ex.: 3">
+                        </div>
+                        <div class="input-group">
+                            <label for="leadFaturamento">Faturamento Mensal Estimado</label>
+                            <input type="number" id="leadFaturamento" min="0" step="0.01" placeholder="Ex.: 50000">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção Self Storage (Lagerhaus) -->
+                <div id="secaoLagerhaus" class="secao-marca-campos" style="display: none;">
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <label for="leadAreaM2">Área de Armazenamento (m²)</label>
+                            <input type="number" id="leadAreaM2" min="0" placeholder="Ex.: 15">
+                        </div>
+                        <div class="input-group">
+                            <label for="leadPosicoesCoworking">Número de Boxes / Unidades</label>
+                            <input type="number" id="leadPosicoesCoworking" min="0" placeholder="Ex.: 1">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="leadTipoEspaco">Tipo de Espaço / Armazenagem</label>
+                        <select id="leadTipoEspaco" style="width: 100%; height: 38px; border-radius: 10px; border: 1px solid #cbd5e1; padding: 0 10px; font-size: 13px;">
+                            <option value="Box Pequeno (Self Storage)">Box Pequeno (Self Storage)</option>
+                            <option value="Box Médio (Self Storage)">Box Médio (Self Storage)</option>
+                            <option value="Box Grande (Self Storage)">Box Grande (Self Storage)</option>
+                            <option value="Galpão Logístico / Armazém">Galpão Logístico / Armazém</option>
+                            <option value="Guarda Móveis / Volumes">Guarda Móveis / Volumes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Seção Geral (Q-MAX) -->
+                <div id="secaoQmax" class="secao-marca-campos" style="display: none;">
+                    <div class="input-group">
+                        <label for="leadFaturamentoGeral">Faturamento Mensal da Empresa</label>
+                        <input type="number" id="leadFaturamentoGeral" min="0" step="0.01" placeholder="Ex.: 120000">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="leadCargo">Cargo do Contato</label>
+                    <input type="text" id="leadCargo" placeholder="Ex.: Diretor, Gerente Financeiro, Proprietário">
+                </div>
+
+                <div class="grid-2">
+                    <div class="input-group">
+                        <label for="leadEmail">E-mail</label>
+                        <input type="email" id="leadEmail" placeholder="contato@clinica.com">
+                    </div>
+                    <div class="input-group">
+                        <label for="leadTelefone">Telefone / WhatsApp</label>
+                        <input type="text" id="leadTelefone" placeholder="(11) 99999-9999">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="input-group">
+                        <label for="leadOrigem">Origem</label>
+                        <select id="leadOrigem">
+                            <option value="Google">Google</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Indicação">Indicação</option>
+                            <option value="Prospecção Ativa">Prospecção Ativa</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="leadValorEstimado">Valor Estimado (Mensal)</label>
+                        <input type="number" id="leadValorEstimado" min="0" step="0.01" value="0">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="leadStatus">Etapa Atual</label>
+                    <select id="leadStatus">
+                        <option value="Novo">Novo</option>
+                        <option value="Em Contato">Em Contato</option>
+                        <option value="Qualificado">Qualificado</option>
+                        <option value="Reunião Agendada">Reunião Agendada</option>
+                        <option value="Proposta Enviada">Proposta Enviada</option>
+                        <option value="Ganho">Ganho</option>
+                        <option value="Perdido">Perdido</option>
+                    </select>
+                </div>
+
+                <div class="action-buttons" style="margin-top: 24px;">
+                    <button type="submit" class="btn-primary" style="width: 100%; border-radius: 12px; height: 44px;">Salvar Lead</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL GERENCIAR FUNIS -->
+    <div id="modalGerenciarFunis" class="modal">
+        <div class="modal-content" style="width: 500px; max-width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Pipelines e Funis</h2>
+                <span class="close-btn" onclick="fecharModalGerenciarFunis()" style="cursor: pointer; font-size: 24px; color: var(--muted);">&times;</span>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <h3 style="font-size: 14px; margin-bottom: 8px; color: var(--text);">Funis Existentes</h3>
+                <div id="listaFunis" style="border: 1px solid var(--border); border-radius: 8px; max-height: 200px; overflow-y: auto; background: #f8fafc; padding: 10px;">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+            <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--text);">Criar Novo Funil</h3>
+            <form onsubmit="salvarNovoFunil(event)">
+                <div class="form-group">
+                    <label for="novoFunilNome">Nome do Funil</label>
+                    <input type="text" id="novoFunilNome" class="form-input" placeholder="Ex: SDR - Triagem Inicial" required>
+                </div>
+                <div class="form-group">
+                    <label for="novoFunilDescricao">Descrição (opcional)</label>
+                    <input type="text" id="novoFunilDescricao" class="form-input" placeholder="Descreva brevemente o propósito deste pipeline">
+                </div>
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn-secondary" onclick="fecharModalGerenciarFunis()" style="padding: 10px 20px; border-radius: 12px;">Fechar</button>
+                    <button type="submit" class="btn-primary" style="padding: 10px 24px; border-radius: 12px;">Criar Funil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: DETALHES DO LEAD (LINHA DO TEMPO ESTILO BITRIX) -->
+    <div id="modalLeadDetails" class="modal">
+        <div class="modal-content modal-crm-details-content">
+            <span class="close-btn" onclick="fecharModalDetails()">&times;</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 8px;">
+                <h2 id="detailsTitle" style="margin: 0;">Nome do Cliente</h2>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btnConvertProposal" class="btn-primary btn-mini" style="background: var(--brand-primary); font-size: 13px;" onclick="converterParaProposta()">
+                        Gerar Proposta
+                    </button>
+                    <button id="btnEditDetails" class="btn-secondary btn-mini" style="font-size: 13px;" onclick="abrirEdicaoRapida()">
+                        Editar
+                    </button>
+                    <button class="btn-secondary btn-mini" style="font-size: 13px;" onclick="abrirModalTransferirLead()">
+                        Transferir
+                    </button>
+                    <button class="btn-danger btn-mini" style="font-size: 13px;" onclick="excluirLeadAtual()">
+                        Excluir
+                    </button>
+                </div>
+            </div>
+
+            <!-- Visual Contract Lifecycle Signature Tracker -->
+            <div class="signature-tracker-container">
+                <div class="tracker-step" id="step-criado">
+                    
+                    <span class="tracker-label">Lead Criado</span>
+                </div>
+                <div class="tracker-line"></div>
+                <div class="tracker-step" id="step-proposta">
+                    
+                    <span class="tracker-label">Proposta Enviada</span>
+                </div>
+                <div class="tracker-line"></div>
+                <div class="tracker-step" id="step-visualizado">
+                    
+                    <span class="tracker-label">Visualizado</span>
+                </div>
+                <div class="tracker-line"></div>
+                <div class="tracker-step" id="step-ganho">
+                    
+                    <span class="tracker-label">Contrato Fechado</span>
+                </div>
+            </div>
+
+            <!-- Modal Split Layout -->
+            <div class="modal-split-layout">
+                <!-- Info Section (Formulário Editável Estilo Bitrix) -->
+                <form id="formEdicaoLead" class="lead-details-info" onsubmit="salvarAlteracoesLead(event)" style="display: flex; flex-direction: column; gap: 14px;">
+                    <h3 style="margin-top: 0; margin-bottom: 8px;">Dados do Lead</h3>
+                    
+                    <div class="input-group">
+                        <label for="detMarca">Marca do Lead</label>
+                        <select id="detMarca" onchange="adaptarCamposFormDetails()" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px; font-weight: 700;">
+                            <option value="finora">FINORA Intelligence</option>
+                            <option value="contabil">Q-MAX Contábil</option>
+                            <option value="tech">Q-MAX Tech</option>
+                            <option value="auditoria">Q-MAX Auditoria</option>
+                            <option value="lagerhaus">LAGERHAUS (Coworking & Galpões)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="detNomeCliente">Nome do Cliente</label>
+                        <input type="text" id="detNomeCliente" required style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                    </div>
+                    <div class="input-group">
+                        <label for="detClinica">Nome da Empresa</label>
+                        <input type="text" id="detClinica" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                    </div>
+                    <div class="input-group">
+                        <label for="detCnpj">CNPJ da Empresa</label>
+                        <input type="text" id="detCnpj" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                    </div>
+                    <div class="input-group">
+                        <label for="detCargo">Cargo do Contato</label>
+                        <input type="text" id="detCargo" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                    </div>
+                    <div class="input-group">
+                        <label for="detEmail">E-mail</label>
+                        <input type="email" id="detEmail" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                    </div>
+                    <div class="input-group">
+                        <label for="detTelefone">Telefone</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="text" id="detTelefone" style="flex: 1; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                            <div style="position: relative;" id="waActionsContainer">
+                                <button type="button" class="btn-mini-light" onclick="toggleWaDropdown()" style="background: #25d366; color: white; border: 0; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(37, 211, 102, 0.25); height: 32px;">
+                                    WhatsApp
+                                </button>
+                                <div id="waDropdown" style="display: none; position: absolute; right: 0; top: 34px; background: white; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 200; width: 230px; padding: 8px 0;">
+                                    <h5 style="margin: 4px 12px 6px 12px; font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 800; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">Enviar Mensagem Comercial</h5>
+                                    <a href="#" onclick="enviarTemplateWa('apresentacao'); return false;" class="wa-dropdown-item">1º Contato / Apresentação</a>
+                                    <a href="#" onclick="enviarTemplateWa('proposta'); return false;" class="wa-dropdown-item">Envio de Proposta</a>
+                                    <a href="#" onclick="enviarTemplateWa('reuniao'); return false;" class="wa-dropdown-item">Confirmação de Reunião</a>
+                                    <a href="#" onclick="enviarTemplateWa('followup'); return false;" class="wa-dropdown-item">Cobrar Feedback / Follow-up</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Seção Odontológica (Finora) -->
+                    <div id="detSecaoFinora" class="secao-marca-campos-det">
+                        <div class="grid-2" style="gap: 10px;">
+                            <div class="input-group">
+                                <label for="detCadeiras">Cadeiras Clínicas</label>
+                                <input type="number" id="detCadeiras" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                            </div>
+                            <div class="input-group">
+                                <label for="detFaturamento">Faturamento Mensal</label>
+                                <input type="number" id="detFaturamento" step="0.01" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção Self Storage (Lagerhaus) -->
+                    <div id="detSecaoLagerhaus" class="secao-marca-campos-det" style="display: none;">
+                        <div class="grid-2" style="gap: 10px;">
+                            <div class="input-group">
+                                <label for="detAreaM2">Área de Armazenamento (m²)</label>
+                                <input type="number" id="detAreaM2" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                            </div>
+                            <div class="input-group">
+                                <label for="detPosicoesCoworking">Número de Boxes / Unidades</label>
+                                <input type="number" id="detPosicoesCoworking" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-top: 8px;">
+                            <label for="detTipoEspaco">Tipo de Espaço / Armazenagem</label>
+                            <select id="detTipoEspaco" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                                <option value="Box Pequeno (Self Storage)">Box Pequeno (Self Storage)</option>
+                                <option value="Box Médio (Self Storage)">Box Médio (Self Storage)</option>
+                                <option value="Box Grande (Self Storage)">Box Grande (Self Storage)</option>
+                                <option value="Galpão Logístico / Armazém">Galpão Logístico / Armazém</option>
+                                <option value="Guarda Móveis / Volumes">Guarda Móveis / Volumes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Seção Geral (Q-MAX) -->
+                    <div id="detSecaoQmax" class="secao-marca-campos-det" style="display: none;">
+                        <div class="input-group">
+                            <label for="detFaturamentoGeral">Faturamento Mensal da Empresa</label>
+                            <input type="number" id="detFaturamentoGeral" step="0.01" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="detOrigem">Origem</label>
+                        <select id="detOrigem" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                            <option value="Google">Google</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Indicação">Indicação</option>
+                            <option value="Prospecção Ativa">Prospecção Ativa</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="detValor">Valor Estimado</label>
+                        <input type="number" id="detValor" step="0.01" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px; font-weight: 700;">
+                    </div>
+                    <div class="input-group">
+                        <label for="detStatus">Etapa Comercial</label>
+                        <select id="detStatus" style="width: 100%; height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 8px; font-size: 13px;">
+                            <option value="Novo">Novo</option>
+                            <option value="Em Contato">Em Contato</option>
+                            <option value="Qualificado">Qualificado</option>
+                            <option value="Reunião Agendada">Reunião Agendada</option>
+                            <option value="Proposta Enviada">Proposta Enviada</option>
+                            <option value="Ganho">Ganho</option>
+                            <option value="Perdido">Perdido</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Responsável Comercial</label>
+                        <p id="detVendedorNome" style="font-weight: 700; color: #475569; margin: 0; font-size: 13.5px; background: #f1f5f9; padding: 6px 10px; border-radius: 6px; display: inline-block;">-</p>
+                    </div>
+                    <div class="input-group">
+                        <label>Proposta Vinculada</label>
+                        <p id="detProposta" style="font-weight: 700; color: var(--brand-primary); margin: 0;">-</p>
+                    </div>
+
+                    <!-- Campos Personalizados Estilo Bitrix -->
+                    <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 8px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #475569; display: flex; justify-content: space-between; align-items: center;">
+                            <span>Campos Personalizados</span>
+                            <button type="button" class="btn-mini-light" onclick="exibirPainelNovoCampo()" style="padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #f1f5f9; cursor: pointer; border: 1px solid #cbd5e1;">+ Criar Campo</button>
+                        </h4>
+
+                        <!-- Form para Criar Novo Campo (inicialmente oculto) -->
+                        <div id="painelNovoCampo" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 12px; gap: 8px; flex-direction: column;">
+                            <input type="text" id="novoCampoNome" placeholder="Nome do Campo (ex: CNPJ)" style="width: 100%; height: 28px; border-radius: 4px; border: 1px solid #cbd5e1; padding: 0 6px; font-size: 11.5px; box-sizing: border-box;">
+                            <input type="text" id="novoCampoValor" placeholder="Valor" style="width: 100%; height: 28px; border-radius: 4px; border: 1px solid #cbd5e1; padding: 0 6px; font-size: 11.5px; box-sizing: border-box;">
+                            <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                <button type="button" class="btn-mini-light" onclick="cancelarNovoCampo()" style="padding: 2px 6px; font-size: 11px; border-radius: 4px; background: white; border: 1px solid #cbd5e1; cursor: pointer;">Cancelar</button>
+                                <button type="button" class="btn-primary" onclick="adicionarCampoPersonalizado()" style="padding: 2px 8px; font-size: 11px; border-radius: 4px; background: var(--brand-primary); border: 0; color: white; cursor: pointer; font-weight: 700;">Inserir</button>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Campos Adicionais -->
+                        <div id="camposPersonalizadosLista" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Injetado dinamicamente -->
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="margin-top: 14px; border-radius: 10px; height: 38px; font-weight: 700; width: 100%; background: #10b981; color: white; cursor: pointer; border: 0; transition: all 0.2s;">
+                        Salvar Alterações
+                    </button>
+                </form>
+
+                <!-- Timeline & Activities Split Section -->
+                <div class="lead-timeline-container" style="display: flex; flex-direction: column;">
+                    <!-- Tabs Headers -->
+                    <div class="details-tab-headers" style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
+                        <button id="tabHeaderTimeline" class="details-tab-btn active" onclick="switchDetailsTab('timeline')" style="background: transparent; border: 0; padding: 6px 12px; font-weight: 700; cursor: pointer; color: var(--brand-primary); font-size: 14px; border-bottom: 2px solid var(--brand-primary); margin-bottom: -10px;">
+                            Timeline & Histórico
+                        </button>
+                        <button id="tabHeaderActivities" class="details-tab-btn" onclick="switchDetailsTab('activities')" style="background: transparent; border: 0; padding: 6px 12px; font-weight: 700; cursor: pointer; color: var(--muted); font-size: 14px; margin-bottom: -10px;">
+                            Atividades & Lembretes
+                        </button>
+                    </div>
+
+                    <!-- TAB 1: TIMELINE -->
+                    <div id="tabContentTimeline" class="details-tab-content">
+                        <!-- Timeline message feed -->
+                        <div class="timeline-list" id="timelineList" style="max-height: 280px;"></div>
+
+                        <!-- Add Comment input -->
+                        <div class="comment-input-area" style="margin-top: 12px;">
+                            <textarea id="novoComentario" placeholder="Escreva uma anotação ou log de contato..." style="height: 38px;"></textarea>
+                            <button class="btn-primary" onclick="enviarComentario()">Enviar</button>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: ACTIVITIES -->
+                    <div id="tabContentActivities" class="details-tab-content" style="display: none;">
+                        <!-- List of scheduled tasks -->
+                        <div id="activitiesList" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; margin-bottom: 14px;">
+                            <!-- Dynamic items -->
+                        </div>
+                        
+                        <!-- Form to schedule task -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 12px; color: #475569; text-transform: uppercase; font-weight: 800;">Agendar Nova Atividade</h4>
+                            <form id="formScheduleActivity" onsubmit="agendarAtividade(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div class="input-group" style="margin-bottom: 0;">
+                                    <label for="actTipo" style="font-size: 10px; display: block; margin-bottom: 4px;">Tipo</label>
+                                    <select id="actTipo" required style="width:100%; height:32px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; padding:0 6px;">
+                                        <option value="Ligar">Ligar</option>
+                                        <option value="WhatsApp">Enviar WhatsApp</option>
+                                        <option value="Reunião">Reunião Presencial/Online</option>
+                                        <option value="E-mail">Enviar E-mail</option>
+                                        <option value="Retorno">Retorno/Cobrar Cliente</option>
+                                    </select>
+                                </div>
+                                <div class="input-group" style="margin-bottom: 0;">
+                                    <label for="actDataHora" style="font-size: 10px; display: block; margin-bottom: 4px;">Data & Hora</label>
+                                    <input type="datetime-local" id="actDataHora" required style="width:100%; height:32px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; padding:0 6px;">
+                                </div>
+                                <div class="input-group" style="grid-column: span 2; margin-bottom: 0;">
+                                    <label for="actDescricao" style="font-size: 10px; display: block; margin-bottom: 4px;">Observação / Instruções</label>
+                                    <input type="text" id="actDescricao" placeholder="Ex: Ligar para confirmar o horário do orçamento..." style="width:100%; height:32px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; padding:0 8px;">
+                                </div>
+                                <button type="submit" class="btn-primary" style="grid-column: span 2; height: 32px; border-radius: 6px; font-size: 12px; margin-top: 4px;">
+                                    Confirmar Agendamento
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: JUSTIFICATIVA DE PERDA -->
+    <div id="modalLossReason" class="modal">
+        <div class="modal-content" style="width: 450px;">
+            <h2 style="color: var(--status-perdido); font-weight: 800; font-size: 20px;">Marcar Lead como Perdido</h2>
+            <p style="color: var(--muted); font-size: 13px; margin-top: 4px; line-height: 1.4;">Por favor, informe a razão pela qual este negócio não foi fechado. Isso ajuda a melhorar nosso funil comercial.</p>
+            <form id="lossReasonForm" onsubmit="salvarLeadComoPerdido(event)" style="margin-top: 16px;">
+                <input type="hidden" id="lossLeadId">
+                <input type="hidden" id="lossNewStatus" value="Perdido">
+                
+                <div class="input-group">
+                    <label for="lossReasonSelect" style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">Motivo da Perda</label>
+                    <select id="lossReasonSelect" required style="width: 100%; height: 40px; border-radius: 8px; border: 1px solid #dbe3ef; padding: 0 10px; font-family: inherit; font-size: 14px; outline: none;">
+                        <option value="">Selecione um motivo...</option>
+                        <option value="Preço alto">Preço alto / Orçamento estourado</option>
+                        <option value="Sem interesse / Sumiu">Sem interesse / Sumiu / Não responde</option>
+                        <option value="Fechou com concorrente">Fechou com concorrente</option>
+                        <option value="Serviços não atendem">Serviços não atendem</option>
+                        <option value="Falta de tempo / Postergar">Falta de tempo / Postergar início</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="margin-top: 14px;">
+                    <label for="lossDetailsTextarea" style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">Detalhamento / Observações Adicionais</label>
+                    <textarea id="lossDetailsTextarea" placeholder="Ex: Cliente achou a mensalidade muito alta e preferiu continuar com a empresa local..." style="width: 100%; height: 80px; border-radius: 10px; border: 1px solid #dbe3ef; padding: 10px; font-family: inherit; font-size: 13.5px; resize: none; outline: none; box-sizing: border-box;"></textarea>
+                </div>
+
+                <div class="action-buttons" style="margin-top: 24px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn-secondary" onclick="fecharModalLoss()" style="border-radius: 8px; height: 38px; padding: 0 16px; font-weight: 700; cursor: pointer; border: 1px solid #cbd5e1; background: white;">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="background: var(--status-perdido); border-radius: 8px; height: 38px; padding: 0 16px; font-weight: 700; color: white; border: 0; cursor: pointer;">Confirmar Perda</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR COLUNA/ESTÁGIO KANBAN -->
+    <div id="modalEditarColuna" class="modal">
+        <div class="modal-content" style="width: 400px; max-width: 90%;">
+            <span class="close-btn" onclick="fecharModalEditarColuna()">&times;</span>
+            <h3 style="margin-top:0;">Configurar Coluna do CRM</h3>
+            <p style="color:var(--muted); font-size:12.5px; margin-bottom:16px;">Altere o nome da etapa comercial ou remova a coluna.</p>
+            <form id="formEditarColuna" onsubmit="salvarEdicaoColuna(event)" style="display:flex; flex-direction:column; gap:12px;">
+                <input type="hidden" id="editColunaId">
+                <div class="input-group">
+                    <label for="editColunaNome">Nome da Etapa</label>
+                    <input type="text" id="editColunaNome" required style="width:100%; height:32px; border-radius:6px; border:1px solid #cbd5e1; padding:0 8px;">
+                </div>
+                <div class="input-group">
+                    <label for="editColunaCor">Cor Identificadora</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="color" id="editColunaCor" style="width:40px; height:32px; border:0; padding:0; background:transparent; cursor:pointer;">
+                        <span style="font-size:12px; color:#64748b;">Escolha a cor para o Kanban</span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+                    <button type="button" class="btn-secondary" onclick="deletarColunaCRM()" style="background:#fef2f2; color:#ef4444; border-color:#fca5a5; font-size:12.5px; padding:0 12px; border-radius:8px; border: 1px solid #fca5a5; cursor:pointer; height:36px;">Remover</button>
+                    <button type="submit" class="btn-primary" style="font-size:12.5px; padding:0 16px; border-radius:8px; height:36px;">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CRIAR COLUNA/ESTÁGIO KANBAN -->
+    <div id="modalCriarColuna" class="modal">
+        <div class="modal-content" style="width: 400px; max-width: 90%;">
+            <span class="close-btn" onclick="fecharModalCriarColuna()">&times;</span>
+            <h3 style="margin-top:0;">Nova Etapa Comercial</h3>
+            <p style="color:var(--muted); font-size:12.5px; margin-bottom:16px;">Crie uma nova coluna no seu quadro Kanban do CRM.</p>
+            <form id="formCriarColuna" onsubmit="salvarNovaColuna(event)" style="display:flex; flex-direction:column; gap:12px;">
+                <div class="input-group">
+                    <label for="criarColunaNome">Nome da Etapa</label>
+                    <input type="text" id="criarColunaNome" placeholder="Ex: Negociação Final" required style="width:100%; height:32px; border-radius:6px; border:1px solid #cbd5e1; padding:0 8px;">
+                </div>
+                <div class="input-group">
+                    <label for="criarColunaCor">Cor Identificadora</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="color" id="criarColunaCor" value="#3b82f6" style="width:40px; height:32px; border:0; padding:0; background:transparent; cursor:pointer;">
+                        <span style="font-size:12px; color:#64748b;">Escolha a cor para o Kanban</span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+                    <button type="button" class="btn-secondary" onclick="fecharModalCriarColuna()" style="font-size:12.5px; padding:0 12px; border-radius:8px; border: 1px solid #cbd5e1; background: white; cursor:pointer;">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="font-size:12.5px; padding:0 16px; border-radius:8px; height:36px;">Criar Coluna</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: TRANSFERIR LEAD -->
+    <div id="modalTransferirLead" class="modal">
+        <div class="modal-content" style="width: 400px; max-width: 90%;">
+            <span class="close-btn" onclick="fecharModalTransferirLead()">&times;</span>
+            <h2 style="margin-top:0; font-size: 18px;">Transferir Lead</h2>
+            <p style="font-size:13px; color:#64748b; margin-bottom: 16px;">Selecione o novo responsável por este lead.</p>
+            <form id="formTransferirLead" onsubmit="transferirLead(event)">
+                <div class="input-group">
+                    <label for="transferirNovoUsuario">Novo Responsável</label>
+                    <select id="transferirNovoUsuario" required style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-size: 14px;">
+                        <!-- preenchido via JS -->
+                    </select>
+                </div>
+                <div style="margin-top: 24px; display: flex; gap: 8px; justify-content: flex-end;">
+                    <button type="button" class="btn-secondary" onclick="fecharModalTransferirLead()" style="border-radius: 8px; height: 38px; padding: 0 16px; font-weight: 700; cursor: pointer; border: 1px solid #cbd5e1; background: white;">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="border-radius: 8px; height: 38px; padding: 0 16px; font-weight: 700; cursor: pointer;">Transferir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL GERADOR DE SCRIPTS PITCH WHATSAPP (MELHORIA CRM 1) -->
+    <div id="modalScriptPitch" class="modal" style="display:none;">
+        <div class="modal-content" style="width: 580px; padding: 24px; border-radius: 20px;">
+            <span class="close-btn" onclick="fecharModalScriptPitch()">&times;</span>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                
+                <div>
+                    <h3 style="margin:0; font-size:18px; font-weight:800;">Gerador de Pitch Comercial (WhatsApp)</h3>
+                    <p style="margin:2px 0 0 0; font-size:12px; color:var(--muted);">Selecione um script persuasivo pré-formatado para copiar e enviar ao cliente:</p>
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+                <button type="button" class="btn-secondary" onclick="carregarScriptPitch('primeiro_contato')" style="font-size:12px; font-weight:700;">1º Contato</button>
+                <button type="button" class="btn-secondary" onclick="carregarScriptPitch('followup')" style="font-size:12px; font-weight:700;">Follow-up (Resgate)</button>
+                <button type="button" class="btn-secondary" onclick="carregarScriptPitch('fechamento')" style="font-size:12px; font-weight:700;">Fechamento de Proposta</button>
+            </div>
+
+            <textarea id="txtPitchCopy" style="width:100%; min-height:160px; border-radius:12px; border:1px solid #cbd5e1; padding:12px; font-family:inherit; font-size:13px; box-sizing:border-box; color:#0f172a;" readonly></textarea>
+            
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+                <button type="button" class="btn-secondary" onclick="fecharModalScriptPitch()">Fechar</button>
+                <button type="button" class="btn-primary" onclick="copiarPitchCopy()">Copiar Texto</button>
+            </div>
+        </div>
+    </div>
+
+        </main>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER (FOR REAL-TIME ALERTS) -->
+    <div id="toastContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;"></div>
+
+    <script src="js/qmax-theme.js"></script>
+    <script src="js/crm.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const userNome = localStorage.getItem("finora_nome") || "Usuário";
+            const userRole = localStorage.getItem("finora_role") || "Vendedor";
+            
+            const nameEl = document.getElementById("sidebarUserName");
+            const roleEl = document.getElementById("sidebarUserRole");
+            const avatarEl = document.getElementById("sidebarAvatar");
+
+            if (nameEl) nameEl.innerText = userNome;
+            if (roleEl) roleEl.innerText = userRole;
+            if (avatarEl) avatarEl.innerText = userNome.charAt(0).toUpperCase();
+
+            // Destacar link ativo
+            const pathName = window.location.pathname;
+            if (pathName.includes("dashboard.html")) document.getElementById("navDashboard")?.classList.add("active");
+            if (pathName.includes("crm.html")) document.getElementById("navCrm")?.classList.add("active");
+            if (pathName.includes("index.html")) document.getElementById("navNovaProposta")?.classList.add("active");
+            if (pathName.includes("admin.html")) document.getElementById("navAdmin")?.classList.add("active");
+            if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
+            if (pathName.includes("prospeccao.html")) document.getElementById("navProspeccao")?.classList.add("active");
+
+            // Exibir links adicionais para Diretores
+            if (userRole === "Diretor") {
+                const navAdmin = document.getElementById("navAdmin");
+                const navCrmConfig = document.getElementById("navCrmConfig");
+                const secGestaoTitle = document.getElementById("secGestaoTitle");
+                if (navAdmin) navAdmin.style.display = "flex";
+                if (navCrmConfig) navCrmConfig.style.display = "flex";
+                if (secGestaoTitle) secGestaoTitle.style.display = "block";
+            }
+        });
+    </script>
+</body>
+
+</html>

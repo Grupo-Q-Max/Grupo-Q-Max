@@ -17,7 +17,7 @@ import "./qmax-brand-system.css";
 import "@/components/ui/ui.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://qmaxbrasil.com.br"),
+  metadataBase: new URL(process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://grupoqmax.com.br"),
   applicationName: "Grupo Q-Max",
   category: "business",
   creator: "Grupo Q-Max",

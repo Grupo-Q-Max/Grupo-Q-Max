@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações de CRM | QMAX</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/qmax-ui.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .config-container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+    
+    .config-header {
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .config-title h1 {
+      margin: 0 0 6px;
+      color: #0f172a;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    
+    .config-title p {
+      margin: 0;
+      color: #64748b;
+      font-size: 14.5px;
+    }
+
+    .btn-back {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 13.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .card-settings {
+      background: #ffffff;
+      border-radius: 20px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .vendors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .vendor-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      background: #f8fafc;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .vendor-card:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    .vendor-info {
+      margin-bottom: 16px;
+    }
+
+    .vendor-name {
+      font-weight: 700;
+      font-size: 15.5px;
+      color: #0f172a;
+      margin: 0 0 4px;
+    }
+
+    .vendor-email {
+      font-size: 12.5px;
+      color: #64748b;
+      margin: 0 0 8px;
+    }
+
+    .vendor-role {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #475569;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .vendor-role.comercial {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    .vendor-role.diretor {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .vendor-stats {
+      font-size: 13px;
+      color: #475569;
+      margin: 12px 0 16px;
+      padding-top: 12px;
+      border-top: 1px dashed #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .vendor-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .toggle-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    /* Switch Customizado */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #cbd5e1;
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #10b981;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 16px 20px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      color: #1e3a8a;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #64748b;
+    }
+  </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <link rel="stylesheet" href="css/tema-escritorio.css">
+</head>
+
+<body class="page-dashboard theme-finora">
+  <div class="app-layout">
+        <!-- Sidebar Master Unificada -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">Q</div>
+                    <span><span class="highlight">Q-MAX</span> Intelligence</span>
+                </div>
+                
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar" id="sidebarAvatar">Q</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebarUserName">Carregando...</div>
+                        <div class="sidebar-user-role" id="sidebarUserRole">...</div>
+                    </div>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <div class="sidebar-section-title">Comercial & Leads</div>
+                    <a href="/proposta/dashboard.html" class="sidebar-link" id="navDashboard">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        <span>Dashboard Geral</span>
+                    </a>
+                    <a href="/proposta/crm.html" class="sidebar-link" id="navCrm">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>Funil CRM Leads</span>
+                    </a>
+                    <a href="/proposta/prospeccao.html" class="sidebar-link" id="navProspeccao">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <span>Prospecção Ativa</span>
+                    </a>
+
+                    <div class="sidebar-section-title">Propostas & Fechamento</div>
+                    <a href="/proposta/index.html" class="sidebar-link" id="navNovaProposta">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Nova Proposta</span>
+                    </a>
+
+                    <div class="sidebar-section-title sec-gestao" id="secGestaoTitle" style="display: none;">Gestão & Diretoria</div>
+                    <a href="/proposta/admin.html" class="sidebar-link" id="navAdmin" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span>Painel da Diretoria</span>
+                    </a>
+                    <a href="/proposta/crm-config.html" class="sidebar-link" id="navCrmConfig" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <span>Configurações CRM</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-status-box">
+                    <span class="status-indicator">
+                        <span id="sseStatusDot" class="sidebar-status-dot"></span>
+                        <span id="sseStatusText">Ao vivo</span>
+                    </span>
+                    <button id="btnToggleSound" onclick="toggleMuteSound()" class="sidebar-btn-mute" title="Silenciar som">Som</button>
+                </div>
+                <button onclick="localStorage.clear(); window.location.href='/proposta/login.html'" class="sidebar-btn-logout">
+                    Sair da Conta
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="config-container">
+                <header class="config-header">
+                  <div class="config-title">
+                    <h1>Configurações do CRM</h1>
+                    <p>Gerencie a fila de distribuição de leads e permissões do comercial</p>
+                  </div>
+                  <a href="crm.html" class="btn-back">
+                    <span>← Voltar ao CRM</span>
+                  </a>
+                </header>
+
+    <div class="info-box">
+      <strong>Algoritmo Round-Robin Ativo:</strong> Novos leads sem vendedor atribuído são direcionados automaticamente para o vendedor ativo da fila que recebeu o lead comercial há mais tempo. Isso garante igualdade absoluta na distribuição das oportunidades.
+    </div>
+
+    <div class="card-settings">
+      <h2 class="section-title">Fila de Distribuição de Leads</h2>
+      
+      <div class="vendors-grid" id="vendors-list">
+        <div class="empty-state">Carregando usuários...</div>
+      </div>
+    </div>
+        </main>
+    </div>
+
+  <script src="js/qmax-theme.js"></script>
+  <script>
+    const token = localStorage.getItem('finora_token') || localStorage.getItem('token');
+    const role = localStorage.getItem('finora_role') || localStorage.getItem('role');
+
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const userNome = localStorage.getItem("finora_nome") || "Usuário";
+        const userRole = localStorage.getItem("finora_role") || "Vendedor";
+        
+        const nameEl = document.getElementById("sidebarUserName");
+        const roleEl = document.getElementById("sidebarUserRole");
+        const avatarEl = document.getElementById("sidebarAvatar");
+
+        if (nameEl) nameEl.innerText = userNome;
+        if (roleEl) roleEl.innerText = userRole;
+        if (avatarEl) avatarEl.innerText = userNome.charAt(0).toUpperCase();
+
+        // Destacar link ativo
+        const pathName = window.location.pathname;
+        if (pathName.includes("dashboard.html")) document.getElementById("navDashboard")?.classList.add("active");
+        if (pathName.includes("crm.html")) document.getElementById("navCrm")?.classList.add("active");
+        if (pathName.includes("index.html")) document.getElementById("navNovaProposta")?.classList.add("active");
+        if (pathName.includes("admin.html")) document.getElementById("navAdmin")?.classList.add("active");
+        if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
+
+        // Exibir links adicionais para Diretores
+        if (userRole === "Diretor") {
+            const navAdmin = document.getElementById("navAdmin");
+            const navCrmConfig = document.getElementById("navCrmConfig");
+            if (navAdmin) navAdmin.style.display = "flex";
+            if (navCrmConfig) navCrmConfig.style.display = "flex";
+        }
+    });
+
+    // Carregar lista de vendedores e configurações de fila
+    async function carregarFila() {
+      try {
+        const res = await fetch('/api/comerciais/fila', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.status === 401 || res.status === 403) {
+          alert('Acesso restrito apenas para Diretores e Sócios.');
+          window.location.href = 'crm.html';
+          return;
+        }
+
+        const dados = await res.json();
+        renderizarVendedores(dados);
+      } catch (err) {
+        console.error('Erro ao carregar fila:', err);
+      }
+    }
+
+    function renderizarVendedores(usuarios) {
+      const container = document.getElementById('vendors-list');
+      container.innerHTML = '';
+
+      if (usuarios.length === 0) {
+        container.innerHTML = '<div class="empty-state">Nenhum vendedor encontrado.</div>';
+        return;
+      }
+
+      usuarios.forEach(user => {
+        const card = document.createElement('div');
+        card.className = 'vendor-card';
+
+        const roleClass = user.role === 'Comercial' ? 'comercial' : 'diretor';
+        const roleLabel = user.role === 'Comercial' ? 'Comercial' : 'Diretor/Sócio';
+        const isChecked = user.recebe_leads ? 'checked' : '';
+
+        // Formatação de data da última distribuição
+        let ultimaDataStr = 'Nunca recebeu';
+        if (user.ultimo_lead_recebido_em) {
+          const data = new Date(user.ultimo_lead_recebido_em);
+          ultimaDataStr = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        }
+
+        card.innerHTML = `
+          <div class="vendor-info">
+            <h3 class="vendor-name">${escapeHTML(user.nome)}</h3>
+            <div class="vendor-email">${escapeHTML(user.email)}</div>
+            <span class="vendor-role ${roleClass}">${roleLabel}</span>
+          </div>
+          <div>
+            <div class="vendor-stats">
+              <span>Leads Atribuídos:</span>
+              <strong>${user.total_leads}</strong>
+            </div>
+            <div class="vendor-stats" style="margin-top: -8px; font-size: 11.5px; border-top: none;">
+              <span>Última Atribuição:</span>
+              <span style="color: #64748b;">${ultimaDataStr}</span>
+            </div>
+            <div class="vendor-control" style="gap:6px;">
+              <label class="toggle-label" for="tel-${Number(user.id)}">WhatsApp (cliente vê):</label>
+              <input id="tel-${Number(user.id)}" type="tel" value="${escapeHTML(user.telefone || '')}" placeholder="(11) 99999-0000" style="width:130px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;">
+              <button type="button" onclick="salvarTelefoneVendedor(${Number(user.id)})" style="padding:4px 8px; border:0; border-radius:6px; background:#0f172a; color:#fff; font-size:11px; cursor:pointer;">Salvar</button>
+            </div>
+            <div class="vendor-control">
+              <span class="toggle-label">Receber leads na Fila:</span>
+              <label class="switch">
+                <input type="checkbox" ${isChecked} onchange="alterarFila(${user.id}, this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    async function salvarTelefoneVendedor(userId) {
+      const telefone = document.getElementById(`tel-${userId}`).value;
+      try {
+        const res = await fetch(`/api/usuarios/${userId}/telefone`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ telefone })
+        });
+        const data = await res.json().catch(() => ({}));
+        alert(res.ok ? data.message : (data.error || 'Erro ao salvar telefone.'));
+      } catch (e) {
+        alert('Erro de conexão ao salvar telefone.');
+      }
+    }
+
+    async function alterarFila(userId, recebeLeads) {
+      try {
+        const res = await fetch(`/api/comerciais/fila/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ recebe_leads: recebeLeads })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          alert(data.error || 'Erro ao atualizar status.');
+          carregarFila();
+        }
+      } catch (err) {
+        console.error('Erro ao atualizar fila:', err);
+        carregarFila();
+      }
+    }
+
+    carregarFila();
+  </script>
+</body>
+
+</html>

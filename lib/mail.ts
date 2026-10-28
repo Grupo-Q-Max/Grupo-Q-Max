@@ -65,7 +65,7 @@ export const escapeHtml = (text: string) =>
  */
 export const appUrl = (req: Request) =>
   process.env.NODE_ENV === "production"
-    ? (process.env.APP_URL || "https://qmaxbrasil.com.br").replace(/\/+$/, "")
+    ? (process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://grupoqmax.com.br").replace(/\/+$/, "")
     : new URL(req.url).origin;
 
 export async function sendMail(to: string, subject: string, html: string) {

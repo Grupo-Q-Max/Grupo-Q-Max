@@ -115,7 +115,27 @@ if (!process.env.FECHAMENTO_URL && fs.existsSync(fechamentoDir)) {
   }
 }
 
-// 4. Iniciar Site Principal (Next.js)
+// 4. Iniciar Sistema de Propostas (se existir)
+let propostaProcess = null;
+const propostaDir = path.join(__dirname, 'proposta');
+const propostaScript = path.join(propostaDir, 'server.js');
+if (fs.existsSync(propostaScript)) {
+  const propostaPort = process.env.PORT_PROPOSTA || '3005';
+  console.log(`[RUNNER] 4/5 Iniciando Sistema de Propostas na porta ${propostaPort}...`);
+  propostaProcess = spawn('node', ['server.js'], {
+    cwd: propostaDir,
+    env: {
+      ...process.env,
+      PORT: String(propostaPort),
+    },
+    stdio: 'inherit',
+  });
+  propostaProcess.on('exit', (code) => {
+    console.error(`[RUNNER] Sistema de Propostas encerrou com código ${code}`);
+  });
+}
+
+// 5. Iniciar Site Principal (Next.js)
 const targetPort = process.env.PORT || 8080;
 console.log(`[RUNNER] Iniciando Site Principal Q-Max na porta ${targetPort}...`);
 const mainScriptCandidates = [
@@ -151,6 +171,9 @@ function cleanup() {
   }
   if (phpProcess && !phpProcess.killed) {
     try { phpProcess.kill(); } catch (e) {}
+  }
+  if (propostaProcess && !propostaProcess.killed) {
+    try { propostaProcess.kill(); } catch (e) {}
   }
 }
 

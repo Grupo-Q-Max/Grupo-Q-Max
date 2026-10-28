@@ -1,0 +1,373 @@
+/* =========================================================
+   Q-MAX — CORREÇÃO DEFINITIVA DO LAYOUT DA NOVA PROPOSTA
+   Carregado DEPOIS de styles.css e qmax-ui.css
+   ========================================================= */
+
+:root {
+  --proposal-sidebar-width: 260px;
+  --proposal-content-max: 1500px;
+  --proposal-summary-width: 390px;
+  --proposal-gap: 24px;
+  --proposal-radius: 18px;
+  --proposal-border: #dfe6ee;
+  --proposal-text: #172033;
+  --proposal-muted: #667085;
+  --proposal-bg: #f4f7f9;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; }
+body.page-proposta {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 90% 5%, rgba(20,184,166,.08), transparent 30%),
+    linear-gradient(180deg, #f7f9fc 0%, #f3f8f5 100%);
+  color: var(--proposal-text);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+/* Estrutura geral: menu lateral + conteúdo */
+.page-proposta .app-layout {
+  display: block !important;
+  width: 100% !important;
+  min-height: 100vh;
+}
+
+.page-proposta .app-layout > aside.sidebar {
+  position: fixed !important;
+  inset: 0 auto 0 0;
+  width: var(--proposal-sidebar-width, 260px) !important;
+  min-width: var(--proposal-sidebar-width, 260px) !important;
+  height: 100vh;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.page-proposta .main-content {
+  display: block !important;
+  width: calc(100% - var(--proposal-sidebar-width, 260px)) !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 100vh;
+  margin: 0 0 0 var(--proposal-sidebar-width, 260px) !important;
+  padding: 28px 30px 48px !important;
+}
+
+/* Mata as limitações antigas de largura que comprimiam tudo */
+.page-proposta .main-content > .container.proposal-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, var(--proposal-summary-width)) !important;
+  grid-template-areas:
+    "hero hero"
+    "progress progress"
+    "form summary";
+  align-items: start !important;
+  gap: 20px var(--proposal-gap) !important;
+  width: 100% !important;
+  max-width: var(--proposal-content-max) !important;
+  min-width: 0 !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+}
+
+.page-proposta .proposal-hero { grid-area: hero; }
+.page-proposta .proposal-progress { grid-area: progress; }
+.page-proposta .form-wrapper { grid-area: form; }
+.page-proposta .proposal-summary { grid-area: summary; }
+
+/* Hero */
+.page-proposta .proposal-hero {
+  width: 100%;
+  min-height: 142px;
+  margin: 0 !important;
+  padding: 28px 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 24px;
+  border: 1px solid rgba(20,184,166,.16);
+  border-radius: 22px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #edf7f5 100%) !important;
+  box-shadow: 0 16px 40px rgba(15,23,42,.08);
+}
+.page-proposta .proposal-hero h1 {
+  margin: 6px 0 8px !important;
+  font-size: clamp(26px, 2.2vw, 38px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.03em;
+}
+.page-proposta .proposal-hero p {
+  max-width: 720px;
+  margin: 0 !important;
+  color: var(--proposal-muted);
+  font-size: 14px !important;
+  line-height: 1.6;
+}
+.page-proposta .eyebrow {
+  font-size: 11px !important;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.page-proposta .hero-badge {
+  flex: 0 0 auto;
+  padding: 10px 16px !important;
+  border-radius: 999px !important;
+  white-space: nowrap;
+}
+
+/* Progresso */
+.page-proposta .proposal-progress {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 20px 24px !important;
+  border-radius: var(--proposal-radius) !important;
+}
+.page-proposta .proposal-progress-title { font-size: 15px !important; }
+.page-proposta .proposal-progress-percent { font-size: 16px !important; }
+.page-proposta .proposal-step { font-size: 12px !important; }
+
+/* Formulário */
+.page-proposta .form-wrapper {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.page-proposta #propostaForm {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+}
+
+.page-proposta #propostaForm > .card,
+.page-proposta .proposal-summary > .card {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 0 18px !important;
+  overflow: visible;
+  border: 1px solid var(--proposal-border) !important;
+  border-radius: var(--proposal-radius) !important;
+  background: #fff !important;
+  box-shadow: 0 10px 28px rgba(15,23,42,.055) !important;
+}
+
+.page-proposta .card-header {
+  min-height: 58px;
+  padding: 17px 22px !important;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e8edf2 !important;
+  border-radius: var(--proposal-radius) var(--proposal-radius) 0 0;
+}
+.page-proposta .card-header h2 {
+  margin: 0 !important;
+  font-size: 16px !important;
+  line-height: 1.3;
+  color: var(--proposal-text);
+}
+.page-proposta .card-body { padding: 22px !important; }
+
+/* Grids internos */
+.page-proposta .grid-2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px 20px !important;
+  width: 100%;
+}
+.page-proposta .grid-1 {
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) !important;
+  gap: 18px !important;
+  width: 100%;
+}
+.page-proposta .span-2 { grid-column: 1 / -1 !important; }
+
+.page-proposta .input-group {
+  min-width: 0;
+  width: 100%;
+  margin: 0 !important;
+}
+.page-proposta .input-group label {
+  display: block;
+  margin: 0 0 7px !important;
+  color: #344054;
+  font-size: 11px !important;
+  line-height: 1.35;
+  font-weight: 800 !important;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+.page-proposta input:not([type="radio"]):not([type="checkbox"]),
+.page-proposta select,
+.page-proposta textarea {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 44px !important;
+  padding: 10px 12px !important;
+  border: 1px solid #cfd8e3 !important;
+  border-radius: 10px !important;
+  background: #fff;
+  color: #1d2939;
+  font-size: 13px !important;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.page-proposta textarea { min-height: 110px !important; resize: vertical; }
+.page-proposta input:focus,
+.page-proposta select:focus,
+.page-proposta textarea:focus {
+  border-color: var(--accent, #14b8a6) !important;
+  box-shadow: 0 0 0 3px rgba(20,184,166,.12) !important;
+}
+.page-proposta input:disabled,
+.page-proposta .disabled-input {
+  background: #f3f5f7 !important;
+  color: #667085 !important;
+}
+.page-proposta .hint,
+.page-proposta .field-help {
+  margin-top: 6px !important;
+  color: #778195 !important;
+  font-size: 11px !important;
+  line-height: 1.45;
+}
+
+/* Cards de seleção PF/PJ */
+.page-proposta .choice-grid { gap: 14px !important; }
+.page-proposta .choice-card {
+  min-height: 92px;
+  padding: 16px !important;
+  border-radius: 14px !important;
+}
+.page-proposta .choice-card strong { font-size: 13px !important; }
+.page-proposta .choice-card small { font-size: 11px !important; }
+
+/* Quadro societário */
+.page-proposta .socios-panel {
+  padding: 20px !important;
+  border-radius: 16px !important;
+  background: #f8fafc !important;
+}
+.page-proposta .socio-card {
+  padding: 18px !important;
+  border-radius: 14px !important;
+}
+.page-proposta .socio-card .grid-2 { gap: 16px !important; }
+
+/* Resumo lateral — classe exclusiva, sem colisão com o menu */
+.page-proposta .proposal-summary {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: auto !important;
+  inset: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  overflow: visible !important;
+  z-index: 1 !important;
+}
+.page-proposta .proposal-summary {
+  position: sticky !important;
+  top: 20px !important;
+  align-self: start !important;
+  z-index: 20 !important;
+}
+.page-proposta .proposal-summary .sticky-panel {
+  position: relative !important;
+  top: auto !important;
+  max-height: calc(100vh - 40px) !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12) !important;
+}
+.page-proposta .proposal-summary .card-body { padding: 20px !important; }
+.page-proposta .styled-table { width: 100% !important; font-size: 12px !important; }
+.page-proposta .total-box {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 14px;
+  padding: 13px 0 !important;
+}
+.page-proposta .total-box > div { white-space: nowrap; }
+.page-proposta .action-buttons {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+}
+.page-proposta button {
+  min-height: 42px;
+  font-size: 12px !important;
+}
+
+/* Evita elementos internos estourando a coluna */
+.page-proposta img,
+.page-proposta table,
+.page-proposta iframe { max-width: 100%; }
+.page-proposta .table-responsive { width: 100%; overflow-x: auto; }
+
+/* Notebook / telas médias */
+@media (max-width: 1280px) {
+  :root { --proposal-sidebar-width: 230px; --proposal-summary-width: 340px; --proposal-gap: 18px; }
+  .page-proposta .main-content { padding: 24px 22px 42px !important; }
+  .page-proposta .main-content > .container.proposal-layout {
+    grid-template-columns: minmax(0,1fr) minmax(310px,var(--proposal-summary-width)) !important;
+  }
+}
+
+/* Tablet: resumo desce, menu lateral some para não esmagar formulário */
+@media (max-width: 1050px) {
+  .page-proposta .app-layout > aside.sidebar { display: none !important; }
+  .page-proposta .main-content {
+    width: 100% !important;
+    margin-left: 0 !important;
+    padding: 22px 18px 42px !important;
+  }
+  .page-proposta .main-content > .container.proposal-layout {
+    grid-template-columns: minmax(0,1fr) !important;
+    grid-template-areas: "hero" "progress" "form" "summary" !important;
+    max-width: 920px !important;
+  }
+  .page-proposta .proposal-summary .sticky-panel {
+    position: relative !important;
+    top: auto !important;
+    max-height: none !important;
+  }
+}
+
+/* Celular */
+@media (max-width: 700px) {
+  body.page-proposta { font-size: 13px; }
+  .page-proposta .main-content { padding: 14px 12px 32px !important; }
+  .page-proposta .proposal-hero {
+    min-height: auto;
+    padding: 22px 18px !important;
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
+  .page-proposta .proposal-hero h1 { font-size: 27px !important; }
+  .page-proposta .hero-badge { align-self: flex-start; }
+  .page-proposta .proposal-progress { padding: 17px !important; }
+  .page-proposta .proposal-progress-top { align-items: flex-start; }
+  .page-proposta .card-header { padding: 15px 17px !important; }
+  .page-proposta .card-body { padding: 17px !important; }
+  .page-proposta .grid-2,
+  .page-proposta .choice-grid,
+  .page-proposta .review-grid {
+    grid-template-columns: minmax(0,1fr) !important;
+    gap: 15px !important;
+  }
+  .page-proposta .span-2 { grid-column: auto !important; }
+  .page-proposta .socios-panel { padding: 14px !important; }
+  .page-proposta .socio-card { padding: 14px !important; }
+  .page-proposta .proposal-steps { grid-template-columns: 1fr !important; }
+}

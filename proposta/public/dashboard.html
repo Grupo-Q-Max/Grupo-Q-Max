@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | FINORA</title>
+    <link rel="manifest" href="/proposta/manifest.json">
+    <meta name="theme-color" content="#10b981">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/qmax-ui.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        .quick-filter-bar {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 14px;
+            align-items: center;
+            margin: 22px 0;
+            padding: 14px;
+            background: white;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 22px;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+        }
+
+        @media (max-width: 900px) {
+            .quick-filter-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .quick-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .quick-search input {
+            width: 100%;
+            height: 42px;
+            border-radius: 14px;
+            border: 1px solid #dbe3ef;
+            padding: 0 14px;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .quick-search input:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 4px rgba(18, 200, 194, 0.14);
+        }
+
+        .ranking-list {
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .ranking-item {
+            display: grid;
+            grid-template-columns: 1.5fr repeat(4, 1fr);
+            gap: 12px;
+            align-items: center;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            background: #f8fafc;
+        }
+
+        /* 5 colunas estouravam a largura no celular */
+        @media (max-width: 760px) {
+            .ranking-item { grid-template-columns: 1fr 1fr; }
+            .ranking-vendedor { grid-column: 1 / -1; }
+        }
+
+        .ranking-vendedor strong {
+            display: block;
+            font-size: 15px;
+            color: #0f172a;
+        }
+
+        .ranking-posicao {
+            color: #12c8c2;
+            font-weight: 800;
+            margin-right: 6px;
+        }
+
+        .ranking-metrica span {
+            display: block;
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .ranking-metrica strong {
+            font-size: 15px;
+            color: #0f172a;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-Aguardando-Aprovação {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+
+        .status-Pendente {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-Aprovada {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            color: #999;
+        }
+
+        .auth-diretor-box {
+            background-color: #fffbeb;
+            border: 1px solid #fcd34d;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .auth-diretor-box h4 {
+            margin: 0 0 8px 0;
+            color: #b45309;
+            font-size: 13px;
+        }
+
+        .resumo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 16px;
+            margin-bottom: 24px;
+        }
+
+        .resumo-grid > div {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .resumo-grid > div > span:not(.hud-status-code) {
+            display: block;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .resumo-grid > div > strong {
+            display: block;
+            margin-top: 6px;
+            color: #12c8c2;
+            font-size: 22px;
+        }
+
+        .detalhes-proposta {
+            margin-top: 16px;
+        }
+
+        .btn-mini-light {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .proposta-acoes-compactas {
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        .acoes-proposta {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .ultima-observacao {
+            margin-top: 8px;
+            background: #f8fafc;
+            border-left: 3px solid #12c8c2;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #475569;
+            max-width: 280px;
+            min-height: 34px;
+        }
+
+        .modal-config-pdf-content {
+            width: 96vw !important;
+            max-width: 1280px;
+            height: 88vh;
+            padding: 28px;
+        }
+
+        .config-pdf-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            height: calc(88vh - 150px);
+        }
+
+        .config-servicos-lista,
+        .config-topicos-painel {
+            max-height: 100%;
+            overflow-y: auto;
+        }
+
+        .config-servicos-lista {
+            background: #f8fafc;
+            border-radius: 18px;
+            padding: 18px;
+        }
+
+        .servico-config-btn {
+            width: 100%;
+            background: white;
+            border: 1px solid #dbe3ef;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 800;
+        }
+
+        .servico-config-btn.ativo {
+            background: #ecfeff;
+            border-color: #12c8c2;
+            box-shadow: 0 0 0 2px rgba(18, 200, 194, 0.15);
+        }
+
+        .config-topicos-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(260px, 1fr));
+            gap: 14px;
+        }
+
+        .topico-config-card {
+            border: 1px solid #dbe3ef;
+            border-radius: 16px;
+            padding: 16px;
+            background: white;
+        }
+
+        .topico-config-card.ativo {
+            border-color: #12c8c2;
+            background: #ecfeff;
+        }
+
+        .topico-card-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .topico-titulo {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .topico-desc {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .topico-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .btn-config {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+        }
+
+        .btn-config-primary {
+            background: #12c8c2;
+            color: white;
+        }
+
+        .btn-config-light {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .servico-regra-btn {
+            width: 100%;
+            background: white;
+            border: 1px solid #dbe3ef;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 10px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .servico-regra-btn strong {
+            display: block;
+            color: #0f172a;
+            font-size: 14px;
+        }
+
+        .servico-regra-btn small {
+            display: block;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .servico-regra-btn.ativo {
+            background: #ecfeff;
+            border-color: #12c8c2;
+            box-shadow: 0 0 0 2px rgba(18, 200, 194, 0.15);
+        }
+
+        .filtro-ativo {
+            background: #12c8c2 !important;
+            color: white !important;
+            border-color: #12c8c2 !important;
+        }
+
+        .empresa-switch-card {
+            margin: 24px 0;
+            padding: 18px;
+            background: white;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 22px;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+        }
+
+        .empresa-switch-card span {
+            display: block;
+            margin-bottom: 12px;
+            font-size: 12px;
+            font-weight: 900;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .empresa-switch {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .empresa-switch button {
+            border: 0;
+            border-radius: 16px;
+            padding: 18px;
+            cursor: pointer;
+            font-weight: 900;
+            font-size: 15px;
+            color: white;
+            background: var(--brand-primary);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+        }
+
+        .empresa-switch button:hover {
+            transform: translateY(-1px);
+        }
+
+        .empresa-switch button:nth-child(1) {
+            background: linear-gradient(135deg, #663399, #006666);
+        }
+
+        .empresa-switch button:nth-child(2) {
+            background: linear-gradient(135deg, #0BD3C4, #06a89d);
+        }
+
+        .empresa-switch button:nth-child(3) {
+            background: linear-gradient(135deg, #070E8C, #0B15D9);
+        }
+
+        .empresa-switch button:nth-child(4) {
+            background: linear-gradient(135deg, #d4af37, #aa7c11);
+        }
+
+        html,
+        body {
+            min-height: 100vh;
+            height: auto;
+        }
+
+        body {
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .page-dashboard {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(102, 51, 153, 0.16), transparent 34%),
+                radial-gradient(circle at top right, rgba(11, 211, 196, 0.18), transparent 32%),
+                linear-gradient(180deg, #f7fbff 0%, #f8fff9 100%);
+        }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <link rel="stylesheet" href="css/tema-escritorio.css">
+</head>
+
+<body class="page-dashboard theme-finora">
+    <script>
+        const APP_BASE_PATH = "/proposta";
+
+        const token = localStorage.getItem("finora_token");
+        const role = localStorage.getItem("finora_role");
+
+        if (!token) {
+            window.location.href = "/proposta/login.html";
+        }
+
+        const authHeaders = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        };
+    </script>
+    <div class="app-layout">
+        <!-- Sidebar Master Unificada -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">Q</div>
+                    <span><span class="highlight">Q-MAX</span> Intelligence</span>
+                </div>
+                
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar" id="sidebarAvatar">Q</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebarUserName">Carregando...</div>
+                        <div class="sidebar-user-role" id="sidebarUserRole">...</div>
+                    </div>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <div class="sidebar-section-title">Comercial & CRM</div>
+                    <a href="/proposta/dashboard.html" class="sidebar-link active" id="navDashboard">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        <span>Dashboard Geral</span>
+                    </a>
+                    <a href="/proposta/crm.html" class="sidebar-link" id="navCrm">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>Funil CRM Leads</span>
+                    </a>
+                    <a href="/proposta/prospeccao.html" class="sidebar-link" id="navProspeccao">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <span>Prospecção Ativa</span>
+                    </a>
+
+                    <div class="sidebar-section-title">Propostas & Fechamento</div>
+                    <a href="/proposta/index.html" class="sidebar-link" id="navNovaProposta">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Nova Proposta</span>
+                    </a>
+
+                    <div class="sidebar-section-title sec-gestao" id="secGestaoTitle" style="display: none;">Gestão & Diretoria</div>
+                    <a href="/proposta/admin.html" class="sidebar-link" id="navAdmin" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span>Painel da Diretoria</span>
+                    </a>
+                    <a href="/proposta/crm-config.html" class="sidebar-link" id="navCrmConfig" style="display: none;">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <span>Configurações CRM</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-status-box">
+                    <span class="status-indicator">
+                        <span id="sseStatusDot" class="sidebar-status-dot"></span>
+                        <span id="sseStatusText">Ao vivo</span>
+                    </span>
+                    <button id="btnToggleSound" onclick="toggleMuteSound()" class="sidebar-btn-mute" title="Silenciar som">Som</button>
+                </div>
+                <button onclick="localStorage.clear(); window.location.href='/proposta/login.html'" class="sidebar-btn-logout">
+                    Sair da Conta
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="dashboard-container">
+        <div class="header-actions">
+            <h2>Controle de Propostas Comerciais</h2>
+        </div>
+
+        <!-- Meta mensal da equipe -->
+        <div class="meta-mes">
+          <div class="meta-mes-topo">
+            <div>
+              <strong>Meta do mês</strong>
+              <small>R$ 50.000,00 em novos contratos fechados</small>
+            </div>
+            <div class="meta-mes-valor">
+              <strong id="arenaMrrRealizado">R$ 0,00</strong>
+              <span id="arenaPercentualMeta">0%</span>
+            </div>
+          </div>
+          <div class="meta-mes-barra"><div id="arenaBarraProgresso"></div></div>
+        </div>
+
+        <div class="resumo-grid" id="cardsMetricasDashboard">
+            <div>
+
+                <span>Total de propostas</span>
+                <strong id="metricTotalPropostas">0</strong>
+            </div>
+
+            <div>
+
+                <span>Visualizadas</span>
+                <strong id="metricVisualizadas">0</strong>
+            </div>
+
+            <div>
+
+                <span>Aprovadas</span>
+                <strong id="metricAprovadas">0</strong>
+            </div>
+
+            <div>
+
+                <span>Conversão</span>
+                <strong id="metricConversao">0%</strong>
+            </div>
+
+            <div class="metric-card">
+
+                <span>Valor enviado</span>
+                <strong id="valorEnviadoDashboard">R$ 0,00</strong>
+            </div>
+
+            <div class="metric-card">
+
+                <span>Valor aprovado</span>
+                <strong id="valorAprovadoDashboard">R$ 0,00</strong>
+            </div>
+
+            <div class="metric-card">
+
+                <span>Ticket médio</span>
+                <strong id="ticketMedioDashboard">R$ 0,00</strong>
+            </div>
+
+            <div class="metric-card">
+
+                <span>Valor em Pipeline</span>
+                <strong id="valorPipelineDashboard">R$ 0,00</strong>
+            </div>
+
+            <div class="metric-card" style="background: rgba(16, 185, 129, 0.04); border-color: rgba(16, 185, 129, 0.2);">
+
+                <span>Assinadas (D4Sign)</span>
+                <strong id="metricD4SignAssinadas" style="color: #10b981;">0</strong>
+            </div>
+
+            <div class="metric-card" style="background: rgba(245, 158, 11, 0.04); border-color: rgba(245, 158, 11, 0.2);">
+
+                <span>Pendentes Assinatura</span>
+                <strong id="metricD4SignPendentes" style="color: #f59e0b;">0</strong>
+            </div>
+        </div>
+        <div class="card ranking-card" id="cardRankingVendedores" style="margin-top: 24px; display: none;">
+            <div class="card-header">
+                <h2>Ranking de Vendedores</h2>
+            </div>
+
+            <div class="ranking-list" id="rankingVendedoresBody"></div>
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+                 <h2>Funil Comercial</h2>
+            </div>
+
+            <div class="visual-funnel-container" id="funilComercial">
+                <!-- Estágio 1: Criadas -->
+                <div class="funnel-stage stage-criadas" onclick="cliqueEstagioFunil('criadas', this)" title="Filtrar por todas as propostas criadas (Clique para ativar/desativar)">
+
+                    
+                    <span class="stage-title">1. Propostas Criadas</span>
+                    <strong id="funilCriadas" class="stage-value">0</strong>
+                </div>
+
+                <!-- Conversão 1 -->
+                <div class="funnel-divider">
+                    <div class="funnel-divider-line"></div>
+                    <div class="funnel-stat-box">
+                        <span class="funnel-stat-rate" id="funilTaxaVisualizacao" onclick="cliqueTaxaFunil('visualizaram', this)" title="Filtrar por propostas já visualizadas (Clique para ativar/desativar)">0% visualizaram</span>
+                        <span class="funnel-stat-loss" id="funilPerdaVisualizacao" onclick="cliqueTaxaFunil('pendentes', this)" title="Filtrar por propostas não visualizadas (Clique para ativar/desativar)">0% pendentes</span>
+                    </div>
+                </div>
+
+                <!-- Estágio 2: Visualizadas -->
+                <div class="funnel-stage stage-visualizadas" onclick="cliqueEstagioFunil('visualizadas', this)" title="Filtrar por propostas visualizadas (Clique para ativar/desativar)">
+
+                    
+                    <span class="stage-title">2. Propostas Visualizadas</span>
+                    <strong id="funilVisualizadas" class="stage-value">0</strong>
+                </div>
+
+                <!-- Conversão 2 -->
+                <div class="funnel-divider">
+                    <div class="funnel-divider-line"></div>
+                    <div class="funnel-stat-box">
+                        <span class="funnel-stat-rate" id="funilConversaoVisualizacao" onclick="cliqueTaxaFunil('conversao', this)" title="Filtrar por propostas convertidas/fechadas (Clique para ativar/desativar)">0% de conversão</span>
+                        <span class="funnel-stat-loss" id="funilPerdaFechamento" onclick="cliqueTaxaFunil('em_aberto', this)" title="Filtrar por propostas pendentes (Clique para ativar/desativar)">0% em aberto</span>
+                    </div>
+                </div>
+
+                <!-- Estágio 3: Aprovadas -->
+                <div class="funnel-stage stage-aprovadas" onclick="cliqueEstagioFunil('aprovadas', this)" title="Filtrar por propostas fechadas (Clique para ativar/desativar)">
+
+                    
+                    <span class="stage-title">3. Propostas Fechadas</span>
+                    <strong id="funilAprovadas" class="stage-value">0</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="cardGraficoDesempenho" style="margin-top: 24px; position: relative;">
+
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <h2 id="chartTitleText">Análise de Desempenho (Faturamento Mensal)</h2>
+                <div class="chart-filter" style="display: flex; gap: 8px; align-items: center;">
+                    <span style="font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;">Agrupamento:</span>
+                    <select id="filtroAgrupamentoGrafico" onchange="alterarAgrupamentoGrafico()" style="font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: #fff; cursor: pointer; color: #1e293b; transition: all 0.2s;">
+                        <option value="diario">Diário</option>
+                        <option value="mensal" selected>Mensal</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                </div>
+            </div>
+            <div style="height: 320px; padding: 20px; position: relative;">
+                <canvas id="graficoPropostas"></canvas>
+            </div>
+        </div>
+
+        <div class="analytics-sub-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 24px;">
+            <!-- CARD TICKET MÉDIO POR EMPRESA -->
+            <div class="card" id="cardTicketPorEmpresa" style="position: relative;">
+
+                <div class="card-header">
+                    <h2>Ticket Médio por Empresa</h2>
+                </div>
+                <div class="ticket-empresa-list" style="padding: 20px; display: grid; gap: 14px;">
+                    <div class="ticket-empresa-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 12px; background: rgba(102, 51, 153, 0.08); border-left: 4px solid #663399;">
+                        <span style="font-weight: 700; color: #1e293b;">FINORA</span>
+                        <strong id="ticketFinora" style="color: #663399; font-size: 16px;">R$ 0,00</strong>
+                    </div>
+                    <div class="ticket-empresa-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 12px; background: rgba(18, 200, 194, 0.08); border-left: 4px solid #12c8c2;">
+                        <span style="font-weight: 700; color: #1e293b;">Q-MAX Contábil</span>
+                        <strong id="ticketContabil" style="color: #0f766e; font-size: 16px;">R$ 0,00</strong>
+                    </div>
+                    <div class="ticket-empresa-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 12px; background: rgba(49, 92, 255, 0.08); border-left: 4px solid #315cff;">
+                        <span style="font-weight: 700; color: #1e293b;">Q-MAX Tech</span>
+                        <strong id="ticketTech" style="color: #315cff; font-size: 16px;">R$ 0,00</strong>
+                    </div>
+                    <div class="ticket-empresa-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 12px; background: rgba(212, 175, 55, 0.08); border-left: 4px solid #d4af37;">
+                        <span style="font-weight: 700; color: #1e293b;">Q-MAX Auditoria</span>
+                        <strong id="ticketAuditoria" style="color: #8a6418; font-size: 16px;">R$ 0,00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD SERVIÇOS MAIS VENDIDOS -->
+            <div class="card" id="cardServicosMaisVendidos" style="position: relative;">
+
+                <div class="card-header">
+                    <h2>Serviços Mais Vendidos</h2>
+                </div>
+                <div class="servicos-ranking-list" id="servicosRankingBody" style="padding: 20px; display: grid; gap: 12px; max-height: 250px; overflow-y: auto;">
+                    <div style="color: #64748b; text-align: center; font-size: 13px; padding-top: 20px;">Nenhum serviço registrado.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="empresa-switch-card">
+            <span>Selecionar empresa</span>
+
+            <div class="empresa-switch">
+                <button type="button" onclick="selecionarEmpresaDashboard('FINORA')">
+                    FINORA
+                </button>
+
+                <button type="button" onclick="selecionarEmpresaDashboard('CONTABIL')">
+                    Q-MAX Contábil
+                </button>
+
+                <button type="button" onclick="selecionarEmpresaDashboard('TECH')">
+                    Q-MAX Tech
+                </button>
+
+                <button type="button" onclick="selecionarEmpresaDashboard('AUDITORIA')">
+                    Q-MAX Auditoria
+                </button>
+            </div>
+            <input type="hidden" id="filtroEmpresa" value="FINORA">
+            <input type="hidden" id="filtroStatus" value="">
+        </div>
+
+        <div class="card" id="blocoSolicitacoes" style="display: none; border-color: #fcd34d; position: relative;">
+
+            <div class="card-header" style="background: #fffbeb;">
+                <h2 style="color: #b45309; display: flex; align-items: center; gap: 8px;">Solicitações de Desconto Pendentes</h2>
+            </div>
+            <table class="styled-table" id="tabelaSolicitacoes">
+                <thead>
+                    <tr>
+                        <th>Proposta Original</th>
+                        <th>Vendedor</th>
+                        <th>Desconto Solicitado</th>
+                        <th>Justificativa</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="quick-filter-bar">
+            <div id="filtrosRapidosDashboard" class="quick-filters">
+                <button class="btn-mini btn-mini-light" onclick="filtroRapidoDashboard('', this)">Todos</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroRapidoDashboard('Pendente', this)">Pendentes</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroTermometroDashboard('quente', this)"><span class="termo termo-quente"></span>Quentes</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroTermometroDashboard('medio', this)"><span class="termo termo-medio"></span>Médios</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroTermometroDashboard('frio', this)"><span class="termo termo-frio"></span>Frios</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroObservacaoDashboard('com_observacao', this)">Com observação</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroDescontoDashboard('com_desconto', this)">Com desconto</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroVisualizacaoDashboard('visualizadas', this)">Visualizadas</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroRapidoDashboard('Aprovada', this)">Aprovadas</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroVisualizacaoDashboard('nao_visualizadas', this)">Sem visualização</button>
+            </div>
+
+            <div class="quick-search">
+                <input id="filtroBusca" placeholder="Buscar clínica, e-mail ou nº da proposta"
+                    oninput="aplicarFiltrosDashboard()" />
+            </div>
+        </div>
+        <div class="card" id="cardFinora" style="margin-top: 24px;">
+            <div class="card-header">
+                <h2>FINORA - Propostas</h2>
+            </div>
+            <table class="styled-table tabela-propostas" id="tabelaFinora">
+                <thead>
+                    <tr>
+                        <th>Proposta / Data</th>
+                        <th>Clínica</th>
+                        <th>Invest. Mensal</th>
+                        <th>Invest. Pontual</th>
+                        <th>Status</th>
+                        <th>Visualizações</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="card" id="cardQmax" style="margin-top: 24px;">
+            <div class="card-header">
+                <h2>Q-MAX - Propostas</h2>
+            </div>
+            <table class="styled-table tabela-propostas" id="tabelaQmax">
+                <thead>
+                    <tr>
+                        <th>Proposta / Data</th>
+                        <th>Clínica</th>
+                        <th>Invest. Mensal</th>
+                        <th>Invest. Pontual</th>
+                        <th>Status</th>
+                        <th>Visualizações</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="card" id="cardTech" style="margin-top: 24px;">
+            <div class="card-header">
+                <h2>TECH - Propostas</h2>
+            </div>
+
+            <table class="styled-table tabela-propostas" id="tabelaTech">
+                <thead>
+                    <tr>
+                        <th>Proposta / Data</th>
+                        <th>Clínica</th>
+                        <th>Invest. Mensal</th>
+                        <th>Invest. Pontual</th>
+                        <th>Status</th>
+                        <th>Visualizações</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="card" id="cardAuditoria" style="margin-top: 24px;">
+            <div class="card-header">
+                <h2>AUDITORIA - Propostas</h2>
+            </div>
+
+            <table class="styled-table tabela-propostas" id="tabelaAuditoria">
+                <thead>
+                    <tr>
+                        <th>Proposta / Data</th>
+                        <th>Clínica</th>
+                        <th>Invest. Mensal</th>
+                        <th>Invest. Pontual</th>
+                        <th>Status</th>
+                        <th>Visualizações</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+            </div> <!-- .dashboard-container -->
+        </main>
+    </div> <!-- .app-layout -->
+
+    <div id="modalDesconto" class="modal">
+        <div class="modal-content" style="width: 760px; max-width:92%;">
+            <span class="close-btn" onclick="fecharModal('modalDesconto')">&times;</span>
+            <h3>Gerar nova proposta com desconto</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+                Informe o desconto por item. Se algum desconto passar de 20%, a proposta será enviada para aprovação da diretoria.
+            </p>
+
+            <input type="hidden" id="descPropostaId">
+            <div id="listaItensDescontoDashboard"></div>
+
+            <div class="input-group" style="margin-top: 12px;">
+                <label for="descJustificativa">Justificativa</label>
+                <textarea id="descJustificativa" placeholder="Motivo do desconto"></textarea>
+            </div>
+
+            <div class="auth-diretor-box" id="caixaAuthDiretor">
+                <h4>Requer Aprovação da Diretoria</h4>
+                <p style="font-size: 11px; color: #92400e; margin-bottom: 8px;">
+                    Existe desconto acima de 20%. A proposta será enviada para aprovação antes de ir ao cliente.
+                </p>
+            </div>
+
+            <button class="btn-primary" style="margin-top: 16px;" id="btnConfirmaDesconto" onclick="enviarDescontoItensDashboard()">
+                Gerar nova proposta
+            </button>
+        </div>
+    </div>
+
+    <div id="modalObservacoes" class="modal">
+        <div class="modal-content" style="width: 620px; max-width:92%;">
+            <span class="close-btn" onclick="fecharModal('modalObservacoes')">&times;</span>
+            <h3>Observações da Proposta</h3>
+            <p style="font-size: 13px; color: #64748b;">
+                Use este campo para registrar o andamento diário da negociação.
+            </p>
+            <input type="hidden" id="obsPropostaId">
+            <div class="input-group">
+                <label for="novaObservacao">Nova observação</label>
+                <textarea id="novaObservacao" placeholder="Ex.: 10/06 - Cliente recebeu a proposta e pediu retorno amanhã."></textarea>
+            </div>
+            <button class="btn-primary" style="margin-top: 12px;" onclick="salvarObservacao()">
+                Salvar Observação
+            </button>
+            <hr style="margin: 20px 0;">
+            <h4>Histórico</h4>
+            <div id="listaObservacoes"></div>
+        </div>
+    </div>
+
+    <div id="modalLinhaTempo" class="modal">
+        <div class="modal-content" style="width: 720px; max-width: 90%;">
+            <span class="close-btn" onclick="fecharModal('modalLinhaTempo')">&times;</span>
+            <h3>Linha do Tempo da Negociação</h3>
+            <p style="font-size: 13.5px; color: var(--muted); margin-bottom: 20px;">
+                Histórico cronológico de propostas, renegociações e decisões para esta clínica.
+            </p>
+            <div id="timelineContainer" class="timeline-container">
+                <!-- Injetado dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <div id="modalVisualizacoes" class="modal">
+        <div class="modal-content" style="width: 580px; max-width: 90%;">
+            <span class="close-btn" onclick="fecharModal('modalVisualizacoes')">&times;</span>
+            <h3>Histórico de Visualizações Detalhado</h3>
+            <p style="font-size: 13.5px; color: var(--muted); margin-bottom: 20px;">
+                Rastreamento em tempo real de acessos, dispositivos e localizações do cliente.
+            </p>
+            <div id="visualizacoesContainer" class="visualizacoes-timeline">
+                <!-- Injetado dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE AUDITORIA COMPLETA D4SIGN & ASSINATURA DIGITAL -->
+    <div id="modalAuditoriaD4Sign" class="modal">
+        <div class="modal-content" style="width: 740px; max-width: 92%; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" onclick="fecharModal('modalAuditoriaD4Sign')">&times;</span>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                <h3 style="margin: 0; font-size: 18px; color: #0f172a;">Auditoria & Certificado Digital de Assinatura</h3>
+            </div>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">
+                Registro completo de autenticidade, protocolo D4Sign, integridade e trilha de auditoria.
+            </p>
+            <div id="conteudoAuditoriaD4Sign">
+                <!-- Injetado dinamicamente via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE DOCUMENTOS RECEBIDOS -->
+    <div id="modalDocumentosDashboard" class="modal">
+        <div class="modal-content" style="width: 640px; max-width: 92%; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" onclick="fecharModal('modalDocumentosDashboard')">&times;</span>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                <h3 style="margin: 0; font-size: 18px; color: #0f172a;" id="tituloModalDocumentos">Documentos de Implantação Recebidos</h3>
+            </div>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">
+                Arquivos anexados pelo cliente para início dos serviços contábeis e BPO financeiro.
+            </p>
+            <div id="conteudoDocumentosDashboard">
+                <!-- Injetado dinamicamente via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RAIO-X DE ENGAJAMENTO DA PROPOSTA -->
+    <div id="modalRaioXEngajamento" class="modal">
+        <div class="modal-content" style="width: 600px; max-width: 92%; background:#0f172a; color:#f8fafc; border:1.5px solid rgba(255,255,255,0.15); border-radius:22px; padding:26px;">
+            <span class="close-btn" onclick="fecharModal('modalRaioXEngajamento')" style="color:#94a3b8;">&times;</span>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                <h3 style="margin: 0; font-size: 18px; color: #ffffff;">Raio-X de Atenção do Cliente (<span id="raioXNumeroProposta">#--</span>)</h3>
+            </div>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 18px;">
+                Mapeamento de engajamento, tempo em tela e mapa de calor de leitura.
+            </p>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+                <div style="background:rgba(255,255,255,0.05); padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
+                    <span style="font-size:11px; color:#94a3b8; text-transform:uppercase; font-weight:700;">Tempo Total na Proposta</span>
+                    <strong id="raioXTempoLeitura" style="color:#38bdf8; font-size:20px; display:block; margin-top:4px;">1m 45s</strong>
+                </div>
+                <div style="background:rgba(255,255,255,0.05); padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
+                    <span style="font-size:11px; color:#94a3b8; text-transform:uppercase; font-weight:700;">Aberturas do Link</span>
+                    <strong id="raioXTotalAberturas" style="color:#34d399; font-size:20px; display:block; margin-top:4px;">3 vezes</strong>
+                </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.15); border-radius:16px; padding:18px; margin-bottom:20px;">
+                <strong style="font-size:13px; color:#cbd5e1; display:block; margin-bottom:10px;">Seções com Maior Atenção do Médico:</strong>
+                <div style="display:flex; flex-direction:column; gap:10px; font-size:12.5px;">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Tabela de Investimento & Fator R</span><strong style="color:#34d399;">Altíssimo Interesse (80%)</strong></div>
+                        <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:999px;"><div style="width:80%; height:100%; background:#10b981; border-radius:inherit;"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Simulador Interativo de ROI & Economia</span><strong style="color:#38bdf8;">Médio Interesse (55%)</strong></div>
+                        <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:999px;"><div style="width:55%; height:100%; background:#0284c7; border-radius:inherit;"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Transição Descomplicada & BPO</span><strong style="color:#94a3b8;">Normal (35%)</strong></div>
+                        <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:999px;"><div style="width:35%; height:100%; background:#64748b; border-radius:inherit;"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end;">
+                <button type="button" class="btn-primary" style="padding:10px 24px; font-weight:800; border-radius:999px;" onclick="fecharModal('modalRaioXEngajamento')">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script links stay here -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+
+    <script src="js/qmax-theme.js"></script>
+    <script src="js/dashboard-utils.js"></script>
+    <script src="js/dashboard-metricas.js"></script>
+    <script src="js/dashboard-ranking.js"></script>
+    <script src="js/dashboard-propostas.js"></script>
+    <script src="js/dashboard-admin.js"></script>
+    <script src="js/dashboard-init.js"></script>
+
+    <script>
+        window.dispararCelebracaoContrato = function() {
+            if (typeof confetti === "function") {
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+        };
+
+        window.abrirRaioXProposta = function(numProp, visualizacoes = 1, segundos = 60) {
+            const numEl = document.getElementById("raioXNumeroProposta");
+            const tempoEl = document.getElementById("raioXTempoLeitura");
+            const aberturasEl = document.getElementById("raioXTotalAberturas");
+
+            if (numEl) numEl.innerText = `#${numProp}`;
+            if (aberturasEl) aberturasEl.innerText = `${visualizacoes} vezes`;
+            if (tempoEl) {
+                const mins = Math.floor(segundos / 60);
+                const secs = segundos % 60;
+                tempoEl.innerText = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+            }
+
+            const modal = document.getElementById("modalRaioXEngajamento");
+            if (modal) modal.style.display = "block";
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const userNome = localStorage.getItem("finora_nome") || "Usuário";
+            const userRole = localStorage.getItem("finora_role") || "Vendedor";
+            
+            const nameEl = document.getElementById("sidebarUserName");
+            const roleEl = document.getElementById("sidebarUserRole");
+            const avatarEl = document.getElementById("sidebarAvatar");
+
+            if (nameEl) nameEl.innerText = userNome;
+            if (roleEl) roleEl.innerText = userRole;
+            if (avatarEl) avatarEl.innerText = userNome.charAt(0).toUpperCase();
+
+            // Destacar link ativo
+            const pathName = window.location.pathname;
+            if (pathName.includes("dashboard.html")) document.getElementById("navDashboard")?.classList.add("active");
+            if (pathName.includes("crm.html")) document.getElementById("navCrm")?.classList.add("active");
+            if (pathName.includes("index.html")) document.getElementById("navNovaProposta")?.classList.add("active");
+            if (pathName.includes("admin.html")) document.getElementById("navAdmin")?.classList.add("active");
+            if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
+            if (pathName.includes("prospeccao.html")) document.getElementById("navProspeccao")?.classList.add("active");
+
+            // Exibir links adicionais para Diretores
+            if (userRole === "Diretor") {
+                const navAdmin = document.getElementById("navAdmin");
+                const navCrmConfig = document.getElementById("navCrmConfig");
+                const secGestaoTitle = document.getElementById("secGestaoTitle");
+                if (navAdmin) navAdmin.style.display = "flex";
+                if (navCrmConfig) navCrmConfig.style.display = "flex";
+                if (secGestaoTitle) secGestaoTitle.style.display = "block";
+            }
+
+            // Atualizar Meta da Arena Comercial (Ex: Meta R$ 50k MRR)
+            setTimeout(() => {
+                const valAprovadoText = document.getElementById("valorAprovadoDashboard")?.innerText || "R$ 0,00";
+                const numAprovado = Number(valAprovadoText.replace(/\D/g, "")) / 100 || 0;
+                const metaMensal = 50000;
+                const percentual = Math.min(Math.round((numAprovado / metaMensal) * 100), 100);
+
+                const arenaRealizado = document.getElementById("arenaMrrRealizado");
+                const arenaPct = document.getElementById("arenaPercentualMeta");
+                const arenaBarra = document.getElementById("arenaBarraProgresso");
+
+                if (arenaRealizado) arenaRealizado.innerText = numAprovado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+                if (arenaPct) arenaPct.innerText = `${percentual}%`;
+                if (arenaBarra) arenaBarra.style.width = `${Math.max(percentual, 4)}%`;
+            }, 1000);
+        });
+    </script>
+</body>
+
+</html>

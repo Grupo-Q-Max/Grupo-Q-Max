@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://grupoqmax.com.br").replace(/\/+$/, "");
+
   return {
     rules: {
       userAgent: "*",
@@ -16,8 +18,9 @@ export default function robots(): MetadataRoute.Robots {
         "/fechamento",
         "/controle-fechamento",
         "/controle_fechamento",
+        "/proposta",
       ],
     },
-    sitemap: "https://qmaxbrasil.com.br/sitemap.xml",
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

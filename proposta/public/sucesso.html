@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assinatura Concluída com Sucesso | QMAX</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/qmax-ui.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body.page-sucesso {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    .sucesso-container {
+      background: #ffffff;
+      padding: 48px 32px;
+      border-radius: 24px;
+      width: min(480px, 100%);
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      text-align: center;
+    }
+    .sucesso-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+      display: inline-block;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    .sucesso-container h1 {
+      font-size: 24px;
+      color: #0f172a;
+      font-weight: 800;
+      margin: 0 0 12px;
+      letter-spacing: -0.02em;
+    }
+    .sucesso-container p {
+      font-size: 15px;
+      color: #64748b;
+      line-height: 1.6;
+      margin: 0 0 32px;
+    }
+    .btn-voltar {
+      display: inline-block;
+      background: #1e293b;
+      color: #ffffff;
+      padding: 12px 32px;
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.1);
+    }
+    .btn-voltar:hover {
+      background: #0f172a;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 20px rgba(15, 23, 42, 0.15);
+    }
+  </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <link rel="stylesheet" href="css/tema-escritorio.css">
+</head>
+<body class="page-sucesso">
+  <div class="sucesso-container">
+    <div class="sucesso-icon" aria-hidden="true">✓</div>
+    <h1>Proposta Assinada com Sucesso!</h1>
+    <p>Agradecemos a confiança. Sua assinatura foi registrada na D4Sign. Nossa equipe comercial já foi notificada e entrará em contato em breve para dar início ao projeto.</p>
+    <a href="https://grupoqmax.com.br" class="btn-voltar">Ir para o site oficial</a>
+  </div>
+</body>
+</html>
