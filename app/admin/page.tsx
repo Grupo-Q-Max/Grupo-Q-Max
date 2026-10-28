@@ -1511,6 +1511,11 @@ export default function AdminPage() {
   const [auth, setAuth] = useState(false);
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
+  // "forgot": asks for the e-mail; "reset": new password from the e-mailed link (?reset=token)
+  const [loginMode, setLoginMode] = useState<"login" | "forgot" | "reset">("login");
+  const [resetToken, setResetToken] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [loginMsg, setLoginMsg] = useState("");
   const [tab, setTab] = useState<Tab>("dashboard");
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [teamCount, setTeamCount] = useState(0);
@@ -1529,6 +1534,59 @@ export default function AdminPage() {
         .catch(() => {});
     }
   }, [auth, tab]);
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get("reset");
+    if (!token) return;
+    setResetToken(token);
+    setLoginMode("reset");
+    // Keeps the token out of the history and of links copied from the address bar
+    window.history.replaceState(null, "", "/admin");
+  }, []);
+
+  function switchLoginMode(mode: "login" | "forgot") {
+    setLoginMode(mode);
+    setLoginMsg("");
+    setPwError(false);
+  }
+
+  async function requestReset() {
+    try {
+      const res = await fetch("/api/login/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailInput }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setLoginMsg(
+        res.ok
+          ? "Se este e-mail tiver acesso ao admin, você vai receber um link para criar a senha."
+          : data.error ?? "Não foi possível enviar o e-mail."
+      );
+    } catch {
+      setLoginMsg("Não foi possível enviar o e-mail.");
+    }
+  }
+
+  async function saveNewPassword() {
+    try {
+      const res = await fetch("/api/login/reset", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: resetToken, password: pwInput }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setPwInput("");
+        setAuth(true);
+        showToast("Senha criada. Use-a nos próximos acessos.");
+      } else {
+        setLoginMsg(data.error ?? "Não foi possível salvar a senha.");
+      }
+    } catch {
+      setLoginMsg("Não foi possível salvar a senha.");
+    }
+  }
 
   async function login() {
     try {
@@ -1559,21 +1617,67 @@ export default function AdminPage() {
           </div>
           <h1>Área Administrativa</h1>
           <p>Acesso restrito — Grupo Q-Max</p>
-          <div className="qadmin-login__form">
-            <input
-              type="password"
-              placeholder="Senha de acesso"
-              value={pwInput}
-              onChange={(e) => setPwInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && login()}
-              className={pwError ? "error" : ""}
-              autoFocus
-            />
-            {pwError && <span className="qadmin-login__error">Senha incorreta.</span>}
-            <button className="qadmin-btn qadmin-btn--primary" onClick={login}>
-              Entrar
-            </button>
-          </div>
+          {loginMode === "login" && (
+            <div className="qadmin-login__form">
+              <input
+                type="password"
+                placeholder="Senha de acesso"
+                value={pwInput}
+                onChange={(e) => setPwInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && login()}
+                className={pwError ? "error" : ""}
+                autoFocus
+              />
+              {pwError && <span className="qadmin-login__error">Senha incorreta.</span>}
+              <button className="qadmin-btn qadmin-btn--primary" onClick={login}>
+                Entrar
+              </button>
+              <button type="button" className="qadmin-login__link" onClick={() => switchLoginMode("forgot")}>
+                Esqueci a senha / criar senha
+              </button>
+            </div>
+          )}
+          {loginMode === "forgot" && (
+            <div className="qadmin-login__form">
+              <input
+                type="email"
+                placeholder="Seu e-mail"
+                aria-label="E-mail"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && requestReset()}
+                autoFocus
+              />
+              {loginMsg && <span className="qadmin-login__info">{loginMsg}</span>}
+              <button className="qadmin-btn qadmin-btn--primary" onClick={requestReset}>
+                Enviar link por e-mail
+              </button>
+              <button type="button" className="qadmin-login__link" onClick={() => switchLoginMode("login")}>
+                Voltar para o login
+              </button>
+            </div>
+          )}
+          {loginMode === "reset" && (
+            <div className="qadmin-login__form">
+              <input
+                type="password"
+                placeholder="Nova senha (mín. 8 caracteres)"
+                aria-label="Nova senha"
+                value={pwInput}
+                onChange={(e) => setPwInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveNewPassword()}
+                autoComplete="new-password"
+                autoFocus
+              />
+              {loginMsg && <span className="qadmin-login__error">{loginMsg}</span>}
+              <button className="qadmin-btn qadmin-btn--primary" onClick={saveNewPassword}>
+                Salvar senha e entrar
+              </button>
+              <button type="button" className="qadmin-login__link" onClick={() => switchLoginMode("forgot")}>
+                Pedir um novo link
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );

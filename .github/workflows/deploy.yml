@@ -29,6 +29,8 @@ jobs:
       # Signs the CRM session and /admin cookies (lib/auth.ts); /admin password when none was saved from /admin
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      # E-mails that may get a link to create the /admin password, comma-separated
+      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       # Integração QXBACK (lib/crm-qxback.ts); secret vazio = variável fora do .env
       QXBACK_TOKEN: ${{ secrets.QXBACK_TOKEN }}
       QXBACK_STAGES: ${{ secrets.QXBACK_STAGES }}
@@ -137,7 +139,7 @@ jobs:
           echo "MICROSOFT_ALLOWED_DOMAINS=${MICROSOFT_ALLOWED_DOMAINS}" >> deploy/.env
           echo "DISABLE_WHATSAPP='true'" >> deploy/.env
           # Aspas simples: QXBACK_STAGES/QXBACK_FIELDS são JSON; secret vazio = variável fora do .env (node --env-file)
-          for name in AUTH_SECRET ADMIN_PASSWORD QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET \
+          for name in AUTH_SECRET ADMIN_PASSWORD ADMIN_EMAILS QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET \
             QXSIGN_TOKEN QXSIGN_STAGES QXSIGN_WEBHOOK_URL QXSIGN_WEBHOOK_SECRET \
             EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN \
             FECHAMENTO_URL; do

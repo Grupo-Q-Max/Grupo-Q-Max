@@ -104,6 +104,7 @@ steps:
     echo "DISABLE_WHATSAPP='true'" >> deploy/.env
     if defined "${AUTH_SECRET}"; then echo "AUTH_SECRET=${AUTH_SECRET}" >> deploy/.env; fi
     if defined "${ADMIN_PASSWORD}"; then echo "ADMIN_PASSWORD=${ADMIN_PASSWORD}" >> deploy/.env; fi
+    if defined "${ADMIN_EMAILS}"; then echo "ADMIN_EMAILS=${ADMIN_EMAILS}" >> deploy/.env; fi
     # Eventos (Finora Experience) and Fechamento secrets from the CI-CD credenciais group
     for name in EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN FECHAMENTO_URL; do
       if defined "${!name}"; then echo "${name}='${!name}'" >> deploy/.env; fi
@@ -240,6 +241,7 @@ steps:
     DATABASE_URL: $(DATABASE_URL)
     AUTH_SECRET: $(AUTH_SECRET)
     ADMIN_PASSWORD: $(ADMIN_PASSWORD)
+    ADMIN_EMAILS: $(ADMIN_EMAILS)
     EVENTOS_DATABASE_URL: $(EVENTOS_DATABASE_URL)
     EVENTOS_JWT_SECRET: $(EVENTOS_JWT_SECRET)
     EVENTOS_CPF_HASH_SECRET: $(EVENTOS_CPF_HASH_SECRET)
