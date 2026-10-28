@@ -41,6 +41,8 @@ const nextConfig: NextConfig = {
       { source: "/crm/access", destination: "/crm/settings/access", permanent: true },
       { source: "/eventos", destination: "/finora-experience", permanent: false },
       { source: "/eventos/:path*", destination: "/finora-experience/:path*", permanent: false },
+      { source: "/proposta", destination: "/proposta/login.html", permanent: false },
+      { source: "/proposta/", destination: "/proposta/login.html", permanent: false },
     ];
   },
 
@@ -56,16 +58,25 @@ const nextConfig: NextConfig = {
       },
       // Sistema de Propostas (Finora / Q-Max)
       {
-        source: "/proposta",
-        destination: `${propostaUrl}/proposta/login.html`,
-      },
-      {
-        source: "/proposta/",
-        destination: `${propostaUrl}/proposta/login.html`,
-      },
-      {
         source: "/proposta/:path*",
         destination: `${propostaUrl}/proposta/:path*`,
+      },
+      // Fallback para assets de propostas solicitados sem prefixo /proposta
+      {
+        source: "/styles.css",
+        destination: `${propostaUrl}/proposta/styles.css`,
+      },
+      {
+        source: "/css/:filename*",
+        destination: `${propostaUrl}/proposta/css/:filename*`,
+      },
+      {
+        source: "/js/:filename*",
+        destination: `${propostaUrl}/proposta/js/:filename*`,
+      },
+      {
+        source: "/script.js",
+        destination: `${propostaUrl}/proposta/script.js`,
       },
       {
         source: "/api/propostas/:path*",
