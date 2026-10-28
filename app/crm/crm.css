@@ -202,7 +202,7 @@
 }
 
 .crm-space__empty {
-  margin: 0;
+  display: block;
   padding: 4px 10px 8px;
   color: #5a5560;
   font-size: 12px;

@@ -84,7 +84,7 @@ function SpaceList({ spaces, onNavigate }: { spaces: SidebarSpace[]; onNavigate:
           onDrop={canMove ? (e) => { e.preventDefault(); drop(space.id); } : undefined}
         >
           <summary className="crm-space__name">{space.name}</summary>
-          {space.pipelines.length === 0 && <p className="crm-space__empty">Arraste pipelines para cá</p>}
+          {space.pipelines.length === 0 && <span className="crm-space__empty">Arraste pipelines para cá</span>}
           {space.pipelines.map((p) => (
             <Link
               key={p.id}
