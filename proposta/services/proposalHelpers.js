@@ -15,9 +15,40 @@ function lerJson(valor, padrao = []) {
   return typeof valor === "string" ? JSON.parse(valor) : valor;
 }
 
+function extrairBaseUrl(req) {
+  if (req) {
+    if (typeof req === "string" && /^https?:\/\//i.test(req)) {
+      return req.replace(/\/$/, "");
+    }
+
+    const origin = req.headers?.origin || (typeof req.get === "function" ? req.get("origin") : null);
+    if (origin && typeof origin === "string" && /^https?:\/\//i.test(origin)) {
+      return origin.replace(/\/$/, "");
+    }
+
+    const referer = req.headers?.referer || (typeof req.get === "function" ? req.get("referer") : null);
+    if (referer && typeof referer === "string") {
+      try {
+        const u = new URL(referer);
+        return `${u.protocol}//${u.host}`;
+      } catch {}
+    }
+
+    const forwardedHost = req.headers?.["x-forwarded-host"] || (typeof req.get === "function" ? req.get("x-forwarded-host") : null);
+    const host = forwardedHost || req.headers?.host || (typeof req.get === "function" ? req.get("host") : null);
+    if (host && typeof host === "string" && !host.includes("127.0.0.1:3005") && !host.includes("localhost:3005")) {
+      const proto = req.headers?.["x-forwarded-proto"] || (typeof req.get === "function" ? req.get("x-forwarded-proto") : null) || (req.secure ? "https" : "http");
+      return `${proto}://${host}`.replace(/\/$/, "");
+    }
+  }
+
+  return (process.env.BASE_URL || `http://localhost:${process.env.PORT || 3005}`).replace(/\/$/, "");
+}
+
 // Link curto público da proposta: o proxy de produção só encaminha /proposta e /api
-function linkCurto(token) {
-  return `${BASE_URL}${APP_BASE_PATH}/p/${token}`;
+function linkCurto(token, req) {
+  const base = extrairBaseUrl(req);
+  return `${base}${APP_BASE_PATH}/p/${token}`;
 }
 
 function temDescontoAcimaDe20(itens) {
@@ -238,6 +269,7 @@ module.exports = {
   gerarMidiaESenharProposta,
   lerJson,
   linkCurto,
+  extrairBaseUrl,
   proximoNumeroProposta,
   ehUuidD4Sign,
   DIAS_VALIDADE,

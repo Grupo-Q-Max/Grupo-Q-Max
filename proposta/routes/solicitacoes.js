@@ -12,6 +12,7 @@ const {
   criarPropostaFilhaComDesconto,
   gerarMidiaESenharProposta,
   linkCurto,
+  extrairBaseUrl,
   lerJson
 } = require("../services/proposalHelpers");
 const { gerarPDFProposta } = require("../services/pdfService");
@@ -235,7 +236,8 @@ router.post(
           const pdfPath = path.join(pdfFolder, `${proposta.token_acesso}.pdf`);
           fs.writeFileSync(pdfPath, pdfBuffer);
 
-          const linkAcesso = linkCurto(proposta.token_acesso);
+          const linkAcesso = linkCurto(proposta.token_acesso, req);
+          dadosNovaProposta.baseUrl = extrairBaseUrl(req);
 
           // Apenas enviar e-mail tradicional com link de acesso para visualização.
           // O contrato D4Sign será gerado na aprovação do cliente.

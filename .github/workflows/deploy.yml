@@ -196,7 +196,7 @@ jobs:
             echo "DB_NAME=proposta" >> deploy/proposta/.env
             echo "DB_PORT=3306" >> deploy/proposta/.env
             echo "DB_SSL=true" >> deploy/proposta/.env
-            echo "BASE_URL=${BASE_URL:-https://grupoqmax.com.br}" >> deploy/proposta/.env
+            echo "BASE_URL=${BASE_URL:-https://qmaxbrasil.com.br}" >> deploy/proposta/.env
             echo "APP_BASE_PATH=/proposta" >> deploy/proposta/.env
             echo "JWT_SECRET='Finora@QMax_2026_SecureKey!'" >> deploy/proposta/.env
             echo "EMAIL_USER='envio@qmax.com.br'" >> deploy/proposta/.env

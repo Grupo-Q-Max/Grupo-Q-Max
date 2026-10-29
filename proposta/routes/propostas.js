@@ -25,6 +25,7 @@ const {
   criarPropostaFilhaComDesconto,
   gerarMidiaESenharProposta,
   linkCurto,
+  extrairBaseUrl,
   lerJson,
   proximoNumeroProposta,
   ehUuidD4Sign,
@@ -434,7 +435,8 @@ const proLaboreNormalizado = normalizarProLabore(
 
     await connection.commit();
 
-    const linkAcesso = linkCurto(tokenAcesso);
+    const linkAcesso = linkCurto(tokenAcesso, req);
+    dados.baseUrl = extrairBaseUrl(req);
 
     // Proposta já gravada: falha de PDF/e-mail vira aviso, não 500 (o retry criaria proposta duplicada)
     let emailEnviado = false;
@@ -1086,7 +1088,7 @@ router.get("/api/propostas/:token/link-assinatura", async (req, res, next) => {
     }
 
     // Fallback: se não houver UUID ou falhar, retorna o PDF local da proposta
-    const pdfUrl = `${BASE_URL}/api/propostas/${encodeURIComponent(token)}/pdf`;
+    const pdfUrl = `${extrairBaseUrl(req)}/api/propostas/${encodeURIComponent(token)}/pdf`;
     res.json({ url: pdfUrl });
   } catch (error) {
     next(error);
@@ -1570,7 +1572,7 @@ router.post("/api/propostas/:id/reenviar", verificarToken, donoProposta, async (
       tipoProposta: proposta.tipo_proposta || "finora",
     };
 
-    const linkAcesso = linkCurto(proposta.token_acesso);
+    const linkAcesso = linkCurto(proposta.token_acesso, req);
     if (!(await emailService.enviarEmailLink(dadosEmail, linkAcesso))) {
       return res.status(502).json({ error: "Não foi possível enviar o e-mail para o cliente. Tente novamente ou envie o link manualmente." });
     }
@@ -2142,7 +2144,8 @@ router.post("/api/propostas/:id/desconto-itens", verificarToken, donoProposta, a
       justificativaDesconto: justificativaDesconto || "",
     };
 
-    const linkAcesso = linkCurto(novoToken);
+    const linkAcesso = linkCurto(novoToken, req);
+    dadosNovaProposta.baseUrl = extrairBaseUrl(req);
 
     // Já gravada: falha de PDF/e-mail vira aviso, não 500 (o retry criaria outra proposta-filha)
     let emailEnviado = false;

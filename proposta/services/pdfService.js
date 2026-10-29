@@ -336,7 +336,7 @@ function gerarPDFProposta(dados) {
 
         // Mesmo rodapé de validação das outras marcas (o PDF da Tech saía só com o nome da marca)
         const tokenTech = dados.token_acesso || dados.tokenAcesso || "";
-        const hostTech = String(process.env.BASE_URL || "").replace(/^https?:\/\//, "").replace(/\/$/, "");
+        const hostTech = String(dados.baseUrl || process.env.BASE_URL || "").replace(/^https?:\/\//, "").replace(/\/$/, "");
         doc
           .font("Helvetica-Bold")
           .fontSize(7.5)
@@ -982,7 +982,7 @@ function gerarPDFProposta(dados) {
       // Link de validação só existe com o token real; prévia (sem proposta salva) não imprime link falso
       const tokenAutenticacao = dados.token_acesso || dados.tokenAcesso || "";
       const shortHash = String(tokenAutenticacao).substring(0, 16);
-      const hostValidacao = String(process.env.BASE_URL || "").replace(/^https?:\/\//, "").replace(/\/$/, "");
+      const hostValidacao = String(dados.baseUrl || process.env.BASE_URL || "").replace(/^https?:\/\//, "").replace(/\/$/, "");
 
       doc
         .font("Helvetica-Bold")

@@ -1278,6 +1278,13 @@ carregarRegrasPrecificacao();
 let _shareData = {};
 
 function abrirModalCompartilhar({ aguardandoAprovacao, nomeClinica, link, telefone, email, emailEnviado = true }) {
+  // Garante que o link de compartilhamento use dinamicamente o domínio atual do navegador
+  if (link && typeof link === "string" && window.location?.origin) {
+    try {
+      const parsed = new URL(link);
+      link = `${window.location.origin}${parsed.pathname}${parsed.search}`;
+    } catch {}
+  }
   _shareData = { aguardandoAprovacao, nomeClinica, link, telefone, email };
 
   const modal = document.getElementById("modalCompartilhar");
