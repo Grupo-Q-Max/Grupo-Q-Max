@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
@@ -8,7 +8,7 @@ function logMessage($message)
     $formattedMessage = '[' . date('Y-m-d H:i:s') . '] ' . $message . PHP_EOL;
     file_put_contents($logFile, $formattedMessage, FILE_APPEND);
 }
-// Carregar variáveis de ambiente se disponíveis (.env na raiz do projeto)
+// Carregar variÃ¡veis de ambiente se disponÃ­veis (.env na raiz do projeto)
 $envFile = __DIR__ . '/../../.env';
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -27,28 +27,13 @@ if (file_exists($envFile)) {
     }
 }
 
-$dbHost = getenv('DB_HOST') ?: 'webbd01-app-server.mysql.database.azure.com';
-if ($dbHost === '74.249.25.198') {
-    $dbHost = 'webbd01-app-server.mysql.database.azure.com';
-}
-$dbUsername = getenv('DB_USER') ?: 'eventos';
-if ($dbUsername === 'controle_fechamento') {
-    $dbUsername = 'eventos';
-}
+$dbHost = getenv('DB_HOST') ?: '74.249.25.198';
+$dbUsername = getenv('DB_USER') ?: 'controle_fechamento';
 $dbUser = $dbUsername;
-$dbPassword = getenv('DB_PASS') ?: 'U2a6M2slUs-^';
-if ($dbPassword === 'By!U-Hr/8lOPa(y*') {
-    $dbPassword = 'U2a6M2slUs-^';
-}
+$dbPassword = getenv('DB_PASS') ?: 'By!U-Hr/8lOPa(y*';
 $dbPass = $dbPassword;
-$dbName = getenv('DB_NAME') ?: 'eventos';
-if ($dbName === 'controle_fechamento') {
-    $dbName = 'eventos';
-}
-$dbPort = (int)(getenv('DB_PORT') ?: 3306);
-if ($dbPort === 33306) {
-    $dbPort = 3306;
-}
+$dbName = getenv('DB_NAME') ?: 'controle_fechamento';
+$dbPort = (int)(getenv('DB_PORT') ?: 33306);
 
 $conexao = mysqli_init();
 if ($dbHost && (strpos($dbHost, 'azure.com') !== false || getenv('DB_SSL') === 'true')) {
@@ -80,7 +65,7 @@ if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['log_id'])) {
             session_destroy();
 
             session_start();
-            $_SESSION['mensagem_login'] = 'Sua sessão anterior foi encerrada. Por favor, faça login novamente.';
+            $_SESSION['mensagem_login'] = 'Sua sessÃ£o anterior foi encerrada. Por favor, faÃ§a login novamente.';
 
             header("Location: index.php");
             exit();
@@ -199,7 +184,7 @@ function verificarDadosCompletosENotificar($conexao, $id_empresa, $id_mes)
         $nome_mes = [
             1 => 'Janeiro',
             2 => 'Fevereiro',
-            3 => 'Março',
+            3 => 'MarÃ§o',
             4 => 'Abril',
             5 => 'Maio',
             6 => 'Junho',
@@ -223,7 +208,7 @@ function verificarDadosCompletosENotificar($conexao, $id_empresa, $id_mes)
 
         if ($result->num_rows > 0) {
             $contador = $result->fetch_assoc();
-            $mensagem = "Todos os dados fiscais e de DP foram preenchidos para a empresa {$empresa} no mês de {$nome_mes}/{$mes_info['ano']}";
+            $mensagem = "Todos os dados fiscais e de DP foram preenchidos para a empresa {$empresa} no mÃªs de {$nome_mes}/{$mes_info['ano']}";
 
             $stmt = $conexao->prepare("
                     INSERT INTO notificacoes 
@@ -296,16 +281,16 @@ function atribuirResponsavel($conexao, $id_empresa, $id_usuario, $id_mes)
 }
 function replicarResponsaveisParaNovoMes($conexao, $id_mes_anterior, $id_mes_novo)
 {
-    logMessage("--- Iniciando replicação de responsáveis ---");
-    logMessage("Mês Anterior ID: $id_mes_anterior | Novo Mês ID: $id_mes_novo");
+    logMessage("--- Iniciando replicaÃ§Ã£o de responsÃ¡veis ---");
+    logMessage("MÃªs Anterior ID: $id_mes_anterior | Novo MÃªs ID: $id_mes_novo");
 
-    // A transação agora é controlada pela função principal (criarNovoMesSeNecessario)
+    // A transaÃ§Ã£o agora Ã© controlada pela funÃ§Ã£o principal (criarNovoMesSeNecessario)
 
     try {
         $stmt_delete = $conexao->prepare("DELETE FROM responsaveis_empresa WHERE id_mes = ?");
         $stmt_delete->bind_param('i', $id_mes_novo);
         $stmt_delete->execute();
-        logMessage("Registros de responsáveis existentes para o novo mês foram limpos.");
+        logMessage("Registros de responsÃ¡veis existentes para o novo mÃªs foram limpos.");
 
         $count_query = "
             SELECT COUNT(re.id) as total
@@ -317,14 +302,14 @@ function replicarResponsaveisParaNovoMes($conexao, $id_mes_anterior, $id_mes_nov
         $stmt_count->bind_param('i', $id_mes_anterior);
         $stmt_count->execute();
         $total_encontrado = $stmt_count->get_result()->fetch_assoc()['total'];
-        logMessage("Total de responsáveis encontrados no mês anterior: $total_encontrado");
+        logMessage("Total de responsÃ¡veis encontrados no mÃªs anterior: $total_encontrado");
 
         if ($total_encontrado == 0) {
-            logMessage("Nenhum responsável encontrado para replicar. Processo concluído sem inserções.");
+            logMessage("Nenhum responsÃ¡vel encontrado para replicar. Processo concluÃ­do sem inserÃ§Ãµes.");
             return true;
         }
 
-        // Query principal com a correção GROUP BY
+        // Query principal com a correÃ§Ã£o GROUP BY
         $query = "
             INSERT INTO responsaveis_empresa 
                 (id_empresa, id_usuario, id_mes, responsavel_atual, tipo_tarefa, data_atribuicao)
@@ -345,7 +330,7 @@ function replicarResponsaveisParaNovoMes($conexao, $id_mes_anterior, $id_mes_nov
                 re.id_mes = ? 
                 AND empresa_antiga.cnpj IS NOT NULL 
                 AND empresa_antiga.cnpj != ''
-            -- ADIÇÃO DA LINHA ABAIXO PARA EVITAR DUPLICATAS --
+            -- ADIÃ‡ÃƒO DA LINHA ABAIXO PARA EVITAR DUPLICATAS --
             GROUP BY nova_empresa.id, re.id_usuario, re.responsavel_atual, re.tipo_tarefa
         ";
 
@@ -353,23 +338,23 @@ function replicarResponsaveisParaNovoMes($conexao, $id_mes_anterior, $id_mes_nov
         $stmt_insert->bind_param('iii', $id_mes_novo, $id_mes_novo, $id_mes_anterior);
 
         if (!$stmt_insert->execute()) {
-            throw new Exception("Falha ao executar a query de inserção de responsáveis: " . $stmt_insert->error);
+            throw new Exception("Falha ao executar a query de inserÃ§Ã£o de responsÃ¡veis: " . $stmt_insert->error);
         }
 
         $linhas_afetadas = $stmt_insert->affected_rows;
-        logMessage("Replicação de responsáveis executada. Linhas inseridas: $linhas_afetadas");
+        logMessage("ReplicaÃ§Ã£o de responsÃ¡veis executada. Linhas inseridas: $linhas_afetadas");
 
         if ($linhas_afetadas < $total_encontrado) {
-            logMessage("AVISO: O número de responsáveis inseridos ($linhas_afetadas) é menor que o total encontrado ($total_encontrado). Isso pode ser devido a CNPJs duplicados no mês anterior, o que é esperado com a nova cláusula GROUP BY.");
+            logMessage("AVISO: O nÃºmero de responsÃ¡veis inseridos ($linhas_afetadas) Ã© menor que o total encontrado ($total_encontrado). Isso pode ser devido a CNPJs duplicados no mÃªs anterior, o que Ã© esperado com a nova clÃ¡usula GROUP BY.");
         }
 
-        logMessage("--- Replicação de responsáveis concluída com sucesso (dentro da transação). ---");
+        logMessage("--- ReplicaÃ§Ã£o de responsÃ¡veis concluÃ­da com sucesso (dentro da transaÃ§Ã£o). ---");
         return true;
     } catch (Exception $e) {
-        logMessage("ERRO CRÍTICO ao replicar responsáveis: " . $e->getMessage());
-        error_log('Erro ao replicar responsáveis: ' . $e->getMessage());
-        // Não faz rollback/commit aqui, deixa a função principal fazer isso.
-        throw $e; // Re-lança a exceção para que a função principal possa capturá-la e fazer o rollback.
+        logMessage("ERRO CRÃTICO ao replicar responsÃ¡veis: " . $e->getMessage());
+        error_log('Erro ao replicar responsÃ¡veis: ' . $e->getMessage());
+        // NÃ£o faz rollback/commit aqui, deixa a funÃ§Ã£o principal fazer isso.
+        throw $e; // Re-lanÃ§a a exceÃ§Ã£o para que a funÃ§Ã£o principal possa capturÃ¡-la e fazer o rollback.
     }
 }
 function obterNomeUsuario($conexao, $id_usuario)
@@ -382,11 +367,11 @@ function obterNomeUsuario($conexao, $id_usuario)
 }
 function replicarParcelamentosParaNovoMes($conexao, $id_mes_anterior, $id_novo_mes)
 {
-    logMessage("--- Iniciando replicação de parcelamentos ---");
-    logMessage("Mês Anterior ID: $id_mes_anterior | Novo Mês ID: $id_novo_mes");
+    logMessage("--- Iniciando replicaÃ§Ã£o de parcelamentos ---");
+    logMessage("MÃªs Anterior ID: $id_mes_anterior | Novo MÃªs ID: $id_novo_mes");
 
     try {
-        // Query para encontrar e replicar os parcelamentos elegíveis, incluindo todas as colunas
+        // Query para encontrar e replicar os parcelamentos elegÃ­veis, incluindo todas as colunas
         $query = "
               INSERT INTO parcelamentos (
                   codigo_empresa, nome_empresa, cnpj_empresa, parcelamento,
@@ -398,37 +383,37 @@ function replicarParcelamentosParaNovoMes($conexao, $id_mes_anterior, $id_novo_m
               SELECT
                   p.codigo_empresa, p.nome_empresa, p.cnpj_empresa, p.parcelamento,
                   p.qtde_parcelas, p.data_efetivacao, p.data_final, p.valor,
-                  p.envio, p.observacoes, p.id_usuario, p.status, ?, -- Parâmetro 1: id_novo_mes
+                  p.envio, p.observacoes, p.id_usuario, p.status, ?, -- ParÃ¢metro 1: id_novo_mes
                   p.ano, p.janeiro, p.fevereiro, p.marco, p.abril, p.maio, p.junho,
                   p.julho, p.agosto, p.setembro, p.outubro, p.novembro, p.dezembro
               FROM
                   parcelamentos p
               WHERE
-                  p.id_mes = ?               -- Parâmetro 2: id_mes_anterior
-                  AND p.status = 'ativo'       -- Apenas os que ainda estão ativos
-                  AND p.data_final >= CURDATE()  -- Apenas se a data final ainda não passou
+                  p.id_mes = ?               -- ParÃ¢metro 2: id_mes_anterior
+                  AND p.status = 'ativo'       -- Apenas os que ainda estÃ£o ativos
+                  AND p.data_final >= CURDATE()  -- Apenas se a data final ainda nÃ£o passou
           ";
 
         $stmt = $conexao->prepare($query);
         if ($stmt === false) {
-            throw new Exception("Falha na preparação da query de replicar parcelamentos: " . $conexao->error);
+            throw new Exception("Falha na preparaÃ§Ã£o da query de replicar parcelamentos: " . $conexao->error);
         }
 
         $stmt->bind_param('ii', $id_novo_mes, $id_mes_anterior);
 
         if (!$stmt->execute()) {
-            throw new Exception("Falha ao executar a replicação de parcelamentos: " . $stmt->error);
+            throw new Exception("Falha ao executar a replicaÃ§Ã£o de parcelamentos: " . $stmt->error);
         }
 
         $linhas_afetadas = $stmt->affected_rows;
-        logMessage("Replicação de parcelamentos executada. Novas tarefas de parcelamento criadas: $linhas_afetadas");
-        logMessage("--- Replicação de parcelamentos concluída com sucesso. ---");
+        logMessage("ReplicaÃ§Ã£o de parcelamentos executada. Novas tarefas de parcelamento criadas: $linhas_afetadas");
+        logMessage("--- ReplicaÃ§Ã£o de parcelamentos concluÃ­da com sucesso. ---");
 
         return true;
     } catch (Exception $e) {
-        logMessage("ERRO CRÍTICO ao replicar parcelamentos: " . $e->getMessage());
+        logMessage("ERRO CRÃTICO ao replicar parcelamentos: " . $e->getMessage());
         error_log("Erro ao replicar parcelamentos: " . $e->getMessage());
-        // Re-lança a exceção para que a transação principal faça o rollback
+        // Re-lanÃ§a a exceÃ§Ã£o para que a transaÃ§Ã£o principal faÃ§a o rollback
         throw $e;
     }
 }
@@ -464,13 +449,13 @@ function obterMesAtualAberto($conexao)
 }
 function criarNovoMesSeNecessario($conexao)
 {
-    logMessage("Iniciando verificação de necessidade de criar novo mês...");
+    logMessage("Iniciando verificaÃ§Ã£o de necessidade de criar novo mÃªs...");
     date_default_timezone_set('America/Sao_Paulo');
-    logMessage("Fuso horário definido para America/Sao_Paulo.");
+    logMessage("Fuso horÃ¡rio definido para America/Sao_Paulo.");
     $mes_sistema = (int)date('n');
     $ano_sistema = (int)date('Y');
 
-    // Busca o último mês que está com status 'aberto' no banco de dados
+    // Busca o Ãºltimo mÃªs que estÃ¡ com status 'aberto' no banco de dados
     $stmt_aberto = $conexao->prepare("SELECT id, mes, ano FROM controle_meses WHERE status = 'aberto' ORDER BY ano DESC, mes DESC LIMIT 1");
     $stmt_aberto->execute();
     $result_aberto = $stmt_aberto->get_result();
@@ -483,21 +468,21 @@ function criarNovoMesSeNecessario($conexao)
         $ano_db = (int)$mes_aberto_db['ano'];
 
         if ($mes_db === $mes_sistema && $ano_db === $ano_sistema) {
-            logMessage("O mês aberto no banco ($mes_db/$ano_db) já é o mês atual do sistema. Nenhuma ação necessária.");
+            logMessage("O mÃªs aberto no banco ($mes_db/$ano_db) jÃ¡ Ã© o mÃªs atual do sistema. Nenhuma aÃ§Ã£o necessÃ¡ria.");
             return false;
         }
-        logMessage("Detectada mudança de mês. Mês no DB: $mes_db/$ano_db. Mês do Sistema: $mes_sistema/$ano_sistema.");
+        logMessage("Detectada mudanÃ§a de mÃªs. MÃªs no DB: $mes_db/$ano_db. MÃªs do Sistema: $mes_sistema/$ano_sistema.");
     } else {
-        logMessage("Nenhum mês 'aberto' encontrado. Procurando último mês fechado como base.");
+        logMessage("Nenhum mÃªs 'aberto' encontrado. Procurando Ãºltimo mÃªs fechado como base.");
         $stmt_fechado = $conexao->prepare("SELECT id FROM controle_meses ORDER BY ano DESC, mes DESC LIMIT 1");
         $stmt_fechado->execute();
         $result_fechado = $stmt_fechado->get_result();
         if ($result_fechado->num_rows === 0) {
-            logMessage("ERRO: Nenhum mês encontrado no banco de dados para iniciar a replicação.");
+            logMessage("ERRO: Nenhum mÃªs encontrado no banco de dados para iniciar a replicaÃ§Ã£o.");
             return false;
         }
         $id_mes_anterior = (int)$result_fechado->fetch_assoc()['id'];
-        logMessage("Usando o último mês fechado (ID: $id_mes_anterior) como base para a replicação.");
+        logMessage("Usando o Ãºltimo mÃªs fechado (ID: $id_mes_anterior) como base para a replicaÃ§Ã£o.");
     }
 
     $stmt_check_existe = $conexao->prepare("SELECT id FROM controle_meses WHERE mes = ? AND ano = ?");
@@ -506,25 +491,25 @@ function criarNovoMesSeNecessario($conexao)
     if ($stmt_check_existe->get_result()->num_rows > 0) {
         $conexao->query("UPDATE controle_meses SET status = 'fechado' WHERE status = 'aberto'");
         $conexao->query("UPDATE controle_meses SET status = 'aberto' WHERE mes = $mes_sistema AND ano = $ano_sistema");
-        error_log("Aviso: A entrada para o mês $mes_sistema/$ano_sistema já existia. Nenhuma replicação foi feita, apenas o status foi ajustado.");
+        error_log("Aviso: A entrada para o mÃªs $mes_sistema/$ano_sistema jÃ¡ existia. Nenhuma replicaÃ§Ã£o foi feita, apenas o status foi ajustado.");
         return false;
     }
-    logMessage("Iniciando transação para criar o novo mês $mes_sistema/$ano_sistema.");
+    logMessage("Iniciando transaÃ§Ã£o para criar o novo mÃªs $mes_sistema/$ano_sistema.");
     $conexao->begin_transaction();
 
     try {
         $conexao->query("UPDATE controle_meses SET status = 'fechado', data_fechamento = NOW() WHERE status = 'aberto'");
-        logMessage("Mês anterior (ID: $id_mes_anterior) foi fechado.");
+        logMessage("MÃªs anterior (ID: $id_mes_anterior) foi fechado.");
 
         $stmt = $conexao->prepare("INSERT INTO controle_meses (mes, ano, status) VALUES (?, ?, 'aberto')");
         $stmt->bind_param('ii', $mes_sistema, $ano_sistema);
         $stmt->execute();
         $id_novo_mes = $conexao->insert_id;
-        logMessage("Novo mês (ID: $id_novo_mes) criado com sucesso.");
+        logMessage("Novo mÃªs (ID: $id_novo_mes) criado com sucesso.");
 
 
         // ==========================================================
-        // QUERY DE REPLICAÇÃO ATUALIZADA (COPIA DADOS DE CONFIGURAÇÃO)
+        // QUERY DE REPLICAÃ‡ÃƒO ATUALIZADA (COPIA DADOS DE CONFIGURAÃ‡ÃƒO)
         // ==========================================================
         $query_empresas = "INSERT INTO controle_fechamento (
             -- Bloco 1: Dados Fixos
@@ -534,7 +519,7 @@ function criarNovoMesSeNecessario($conexao)
             data_contrato, data_obrigacao, data_saida, observacoes,
             observacoes_dp, observacoes_fiscal, observacoes_contabil, observacoes_cushman,
             
-            -- Bloco 2: Contábil
+            -- Bloco 2: ContÃ¡bil
             janeiro, fevereiro, marco, abril, maio, junho, 
             julho, agosto, setembro, outubro, novembro, dezembro,
             balancete, distribuicao_dirf, defs, dasn, ecd, ecf,
@@ -575,7 +560,7 @@ function criarNovoMesSeNecessario($conexao)
             julho, agosto, setembro, outubro, novembro, dezembro,
             balancete, distribuicao_dirf, defs, dasn, ecd, ecf,
 
-            -- Bloco 3 (Limpa se não for N/A)
+            -- Bloco 3 (Limpa se nÃ£o for N/A)
             CASE WHEN TRIM(UPPER(impostos)) IN ('N/A', 'N/TEM') THEN impostos ELSE NULL END,
             CASE WHEN TRIM(UPPER(iss)) IN ('N/A', 'N/TEM') THEN iss ELSE NULL END,
             CASE WHEN TRIM(UPPER(mit)) IN ('N/A', 'N/TEM') THEN mit ELSE NULL END,
@@ -586,18 +571,18 @@ function criarNovoMesSeNecessario($conexao)
             
             -- Bloco 4
             setores_permitidos, 
-            CASE WHEN TRIM(UPPER(certificado_cliente)) = 'SIM' THEN 'Sim' ELSE 'Não' END, 
+            CASE WHEN TRIM(UPPER(certificado_cliente)) = 'SIM' THEN 'Sim' ELSE 'NÃ£o' END, 
             CASE WHEN TRIM(tipo_certificado) = '' THEN NULL ELSE tipo_certificado END, 
             senha_certificado, data_emissao_certificado, data_vencimento_certificado,
             data_procuracao_target,
             qtde_funcionarios,
-            ?, -- Parâmetro 1: id_novo_mes
+            ?, -- ParÃ¢metro 1: id_novo_mes
             
             -- Bloco 5
             'Pendente', 
             
             -- Bloco 6: DP 
-            -- [!] AQUI ESTÁ A MÁGICA: REPLICAÇÃO DIRETA (SEM CASE WHEN)
+            -- [!] AQUI ESTÃ A MÃGICA: REPLICAÃ‡ÃƒO DIRETA (SEM CASE WHEN)
             adto,             -- Replica o valor exato
             folha_pagamento,  -- Replica o valor exato
             tipo_folha,       -- Replica o valor exato
@@ -621,7 +606,7 @@ function criarNovoMesSeNecessario($conexao)
             data_calculo_folha13, 
             data_envio_folha13,
             
-            -- Bloco 7: Cushman (Limpa se não for N/A)
+            -- Bloco 7: Cushman (Limpa se nÃ£o for N/A)
             CASE WHEN TRIM(UPPER(iss_cushman)) IN ('N/A', 'N/TEM') THEN iss_cushman ELSE NULL END,
             CASE WHEN TRIM(UPPER(devec_cushman)) IN ('N/A', 'N/TEM') THEN devec_cushman ELSE NULL END,
             CASE WHEN TRIM(UPPER(sped_fiscal_cushman)) IN ('N/A', 'N/TEM') THEN sped_fiscal_cushman ELSE NULL END,
@@ -629,16 +614,16 @@ function criarNovoMesSeNecessario($conexao)
             CASE WHEN TRIM(UPPER(esocial_cushman)) IN ('N/A', 'N/TEM') THEN esocial_cushman ELSE NULL END
             
         FROM controle_fechamento
-        WHERE id_mes = ? -- Parâmetro 2: id_mes_anterior
+        WHERE id_mes = ? -- ParÃ¢metro 2: id_mes_anterior
           AND (data_saida IS NULL OR data_saida > CURDATE())
         ";
         $stmt_empresas = $conexao->prepare($query_empresas);
         $stmt_empresas->bind_param('ii', $id_novo_mes, $id_mes_anterior);
         $stmt_empresas->execute();
-        logMessage("Empresas replicadas para o novo mês. Linhas afetadas: " . $stmt_empresas->affected_rows);
+        logMessage("Empresas replicadas para o novo mÃªs. Linhas afetadas: " . $stmt_empresas->affected_rows);
 
         if (!replicarResponsaveisParaNovoMes($conexao, $id_mes_anterior, $id_novo_mes)) {
-            throw new Exception("A sub-rotina de replicar responsáveis falhou.");
+            throw new Exception("A sub-rotina de replicar responsÃ¡veis falhou.");
         }
 
         if (!replicarParcelamentosParaNovoMes($conexao, $id_mes_anterior, $id_novo_mes)) {
@@ -646,12 +631,12 @@ function criarNovoMesSeNecessario($conexao)
         }
 
         $conexao->commit();
-        logMessage("SUCESSO: Transação de criação de novo mês foi commitada.");
+        logMessage("SUCESSO: TransaÃ§Ã£o de criaÃ§Ã£o de novo mÃªs foi commitada.");
         return $id_novo_mes;
     } catch (Exception $e) {
         $conexao->rollback();
-        logMessage("ERRO CRÍTICO na transação de criar novo mês. Rollback executado. Erro: " . $e->getMessage());
-        error_log('Erro ao criar novo mês: ' . $e->getMessage());
+        logMessage("ERRO CRÃTICO na transaÃ§Ã£o de criar novo mÃªs. Rollback executado. Erro: " . $e->getMessage());
+        error_log('Erro ao criar novo mÃªs: ' . $e->getMessage());
         return false;
     }
 }
@@ -663,19 +648,19 @@ if (php_sapi_name() !== 'cli') {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trocar_responsavel'])) {
         session_start();
         if ($_SESSION['tipo_conta'] !== 'admin') {
-            die("Acesso não autorizado");
+            die("Acesso nÃ£o autorizado");
         }
 
         $id_empresa = $_POST['id_empresa'];
         $id_usuario = $_POST['id_usuario'];
         $id_mes = obterMesAtualAberto($conexao);
         if (!$id_mes) {
-            throw new Exception("Não há um mês aberto no sistema. Por favor, abra um mês antes de cadastrar empresas.");
+            throw new Exception("NÃ£o hÃ¡ um mÃªs aberto no sistema. Por favor, abra um mÃªs antes de cadastrar empresas.");
         }
         if (atribuirResponsavel($conexao, $id_empresa, $id_usuario, $id_mes)) {
-            $_SESSION['mensagem'] = 'Responsável atualizado com sucesso!';
+            $_SESSION['mensagem'] = 'ResponsÃ¡vel atualizado com sucesso!';
         } else {
-            $_SESSION['mensagem'] = 'Erro ao atualizar responsável';
+            $_SESSION['mensagem'] = 'Erro ao atualizar responsÃ¡vel';
         }
 
         header("Location: editar_empresa.php?id=$id_empresa");
@@ -865,7 +850,7 @@ function calcularProgressoContabil($conexao, $id_mes)
 
             for ($mes_numero = 1; $mes_numero <= 12; $mes_numero++) {
                 $mes_coluna = $campos_contabil[$mes_numero - 1];
-                $ano_tabela = date('Y'); // Assumindo que a tabela é do ano atual
+                $ano_tabela = date('Y'); // Assumindo que a tabela Ã© do ano atual
 
                 if (
                     !($data_obrigacao && ($ano_tabela < $ano_obrigacao || ($ano_tabela == $ano_obrigacao && $mes_numero < $mes_obrigacao))) &&
@@ -903,7 +888,7 @@ if (false) {
 
     session_start();
     if (!isset($_SESSION['usuario_id']) || $_SESSION['tipo_conta'] !== 'fiscal') {
-        echo json_encode(['success' => false, 'message' => 'Acesso não autorizado']);
+        echo json_encode(['success' => false, 'message' => 'Acesso nÃ£o autorizado']);
         exit();
     }
 
@@ -912,7 +897,7 @@ if (false) {
     $valor = filter_input(INPUT_POST, 'valor');
 
     if (!$id || !$coluna) {
-        echo json_encode(['success' => false, 'message' => 'Dados inválidos']);
+        echo json_encode(['success' => false, 'message' => 'Dados invÃ¡lidos']);
         exit();
     }
 
@@ -926,7 +911,7 @@ if (false) {
     ];
 
     if (!in_array($coluna, $colunasPermitidas)) {
-        echo json_encode(['success' => false, 'message' => 'Coluna não permitida para edição']);
+        echo json_encode(['success' => false, 'message' => 'Coluna nÃ£o permitida para ediÃ§Ã£o']);
         exit();
     }
 
@@ -954,11 +939,11 @@ if (false) {
         $stmt->close();
 
         if ($result['count'] == 0) {
-            echo json_encode(['success' => false, 'message' => 'Você não tem permissão para editar esta empresa']);
+            echo json_encode(['success' => false, 'message' => 'VocÃª nÃ£o tem permissÃ£o para editar esta empresa']);
             exit();
         }
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'Erro ao verificar permissões']);
+        echo json_encode(['success' => false, 'message' => 'Erro ao verificar permissÃµes']);
         exit();
     }
 
@@ -978,7 +963,7 @@ if (false) {
         $stmt->close();
 
         if (!$id_mes) {
-            echo json_encode(['success' => false, 'message' => 'Mês não encontrado para a empresa']);
+            echo json_encode(['success' => false, 'message' => 'MÃªs nÃ£o encontrado para a empresa']);
             exit();
         }
 
@@ -995,7 +980,7 @@ if (false) {
         $idsMesesEditaveis = array_column($mesesValidos, 'id');
 
         if (!in_array($id_mes, $idsMesesEditaveis)) {
-            echo json_encode(['success' => false, 'message' => 'Este mês não é mais editável']);
+            echo json_encode(['success' => false, 'message' => 'Este mÃªs nÃ£o Ã© mais editÃ¡vel']);
             exit();
         }
 
@@ -1003,7 +988,7 @@ if (false) {
         $stmt = $conexao->prepare($query);
 
         if ($stmt === false) {
-            throw new Exception("Erro na preparação da query: " . $conexao->error);
+            throw new Exception("Erro na preparaÃ§Ã£o da query: " . $conexao->error);
         }
 
         $valorFinal = ($valor === '') ? NULL : $valor;
@@ -1073,7 +1058,7 @@ if (false) {
         } else {
             echo json_encode([
                 'success' => true,
-                'message' => 'Valor idêntico ao atual'
+                'message' => 'Valor idÃªntico ao atual'
             ]);
         }
     } catch (Exception $e) {

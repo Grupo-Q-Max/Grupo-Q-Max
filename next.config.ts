@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     const eventosUrl = process.env.EVENTOS_URL || "http://127.0.0.1:3001";
     const propostaUrl = (process.env.PROPOSTA_URL || "http://127.0.0.1:3005").replace(/\/$/, "");
-    const fechamentoUrl = (process.env.FECHAMENTO_URL || "https://grupoqmax.com.br/controle_fechamento").replace(/\/$/, "");
+    const fechamentoUrl = (process.env.FECHAMENTO_URL || "http://127.0.0.1:8002").replace(/\/$/, "");
     const quizUrl = (process.env.QUIZ_URL || "http://127.0.0.1:8003").replace(/\/$/, "");
     return [
       {

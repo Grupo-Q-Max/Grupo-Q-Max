@@ -106,7 +106,7 @@ jobs:
           echo "1. Copiando standalone..."
           cp -R .qmax-next/standalone/. deploy/
           # Remover pastas rastreadas duplicadas para reduzir o tamanho do ZIP
-          rm -rf deploy/eventos deploy/Grupo-Q-Max deploy/controle_fechamento deploy/backup-* deploy/tests
+          rm -rf deploy/eventos deploy/Grupo-Q-Max deploy/backup-* deploy/tests
 
           echo ""
           echo "2. Copiando PUBLIC..."
@@ -164,8 +164,8 @@ jobs:
           if [ -z "${FINORA_ADMIN_SESSION_TOKEN}" ]; then
             echo "FINORA_ADMIN_SESSION_TOKEN='66b34419aded34f57ad0b5a70375e8c9174bc3c1a10ee72b61272e7a2ee406df'" >> deploy/.env
           fi
-          if [ -z "${FECHAMENTO_URL}" ]; then
-            echo "FECHAMENTO_URL='https://grupoqmax.com.br/controle_fechamento'" >> deploy/.env
+          if [ -z "${FECHAMENTO_URL}" ] || [[ "${FECHAMENTO_URL}" == *"grupoqmax.com.br/controle_fechamento"* ]]; then
+            echo "FECHAMENTO_URL='http://127.0.0.1:8002'" >> deploy/.env
           fi
 
           echo ""
@@ -238,6 +238,21 @@ jobs:
             echo "MS_CLIENT_SECRET=${MS_CLIENT_SECRET:-L398Q~U8lz5AToj1Z6Ol5CIPdBQB75Hl_19gJaKp}" >> deploy/qmax-quiz/.env
             echo "ALLOWED_DOMAIN=grupoqmax.com.br" >> deploy/qmax-quiz/.env
             echo "ADMIN_EMAILS=${QUIZ_ADMIN_EMAILS:-rodrigo@grupoqmax.com.br, sofia.esteves@grupoqmax.com.br, laura@grupoqmax.com.br, isabela.bardy@grupoqmax.com.br}" >> deploy/qmax-quiz/.env
+          fi
+
+          if [ -d "controle_fechamento" ]; then
+            echo "Configurando Controle de Fechamento..."
+            mkdir -p deploy/controle_fechamento
+            cp -R controle_fechamento/. deploy/controle_fechamento/
+            rm -rf deploy/controle_fechamento/.git deploy/controle_fechamento/*.sql deploy/controle_fechamento/*.zip deploy/controle_fechamento/.git_backup
+
+            echo "Criando .env do Controle de Fechamento..."
+            echo "DB_HOST=${FECHAMENTO_DB_HOST:-74.249.25.198}" > deploy/controle_fechamento/.env
+            echo "DB_PORT=${FECHAMENTO_DB_PORT:-33306}" >> deploy/controle_fechamento/.env
+            echo "DB_NAME=${FECHAMENTO_DB_NAME:-controle_fechamento}" >> deploy/controle_fechamento/.env
+            echo "DB_USER=${FECHAMENTO_DB_USER:-controle_fechamento}" >> deploy/controle_fechamento/.env
+            echo "DB_PASS=${FECHAMENTO_DB_PASS:-By!U-Hr/8lOPa(y*}" >> deploy/controle_fechamento/.env
+            echo "DB_SSL=false" >> deploy/controle_fechamento/.env
           fi
 
           echo "Configurando Eventos Web..."

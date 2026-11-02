@@ -1,4 +1,4 @@
-const { spawn } = require('child_process');
+﻿const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -6,15 +6,15 @@ console.log('[RUNNER] ==========================================');
 console.log('[RUNNER] INICIANDO ECOSSISTEMA GRUPO Q-MAX + EVENTOS');
 console.log('[RUNNER] ==========================================');
 
-// Segredos vêm do .env gerado no deploy (GitHub secrets). Carregado aqui também, para funcionar
+// Segredos vÃªm do .env gerado no deploy (GitHub secrets). Carregado aqui tambÃ©m, para funcionar
 // mesmo quando o App Service inicia com "node runner.js" sem --env-file; não sobrescreve o ambiente.
 try {
   process.loadEnvFile(path.join(__dirname, '.env'));
 } catch {
-  // Sem .env (ex.: dev local): usa só o ambiente
+  // Sem .env (ex.: dev local): usa sÃ³ o ambiente
 }
 
-// Variáveis de ambiente para a API de Eventos
+// VariÃ¡veis de ambiente para a API de Eventos
 const rawEventosDb = process.env.EVENTOS_DATABASE_URL || process.env.DATABASE_URL_EVENTOS;
 const eventosDbUrl = (!rawEventosDb || rawEventosDb.includes('74.249.25.198'))
   ? 'mysql://eventos:U2a6M2slUs-^@webbd01-app-server.mysql.database.azure.com:3306/eventos?sslaccept=strict'
@@ -31,7 +31,7 @@ const apiEnv = {
   DISABLE_WHATSAPP: process.env.DISABLE_WHATSAPP || 'true',
 };
 
-// Variáveis de ambiente para o Web de Eventos
+// VariÃ¡veis de ambiente para o Web de Eventos
 const webEnv = {
   ...process.env,
   PORT: '3001',
@@ -143,10 +143,12 @@ if (phpBin) {
 // Iniciar PHP para Controle de Fechamento (se diretório existir e php estiver disponível)
 let phpProcess = null;
 const fechamentoDir = path.join(__dirname, 'controle_fechamento');
-if (!process.env.FECHAMENTO_URL && fs.existsSync(fechamentoDir) && phpBin) {
+const isFechamentoLocal = !process.env.FECHAMENTO_URL || process.env.FECHAMENTO_URL.includes('127.0.0.1') || process.env.FECHAMENTO_URL.includes('localhost');
+if (isFechamentoLocal && fs.existsSync(fechamentoDir) && phpBin) {
   try {
-    console.log('[RUNNER] Iniciar PHP Controle de Fechamento na porta 8002...');
-    phpProcess = spawn(phpBin, ['-S', '127.0.0.1:8002', '-t', fechamentoDir], {
+    const fechamentoPort = process.env.PORT_FECHAMENTO || '8002';
+    console.log(`[RUNNER] Iniciar PHP Controle de Fechamento (${phpBin}) na porta ${fechamentoPort}...`);
+    phpProcess = spawn(phpBin, ['-S', `127.0.0.1:${fechamentoPort}`, '-t', fechamentoDir], {
       cwd: fechamentoDir,
       env: process.env,
       stdio: 'inherit',
@@ -178,7 +180,7 @@ if (fs.existsSync(quizDir) && phpBin) {
     console.error('[RUNNER] Erro ao iniciar PHP Quiz:', e.message);
   }
 } else if (fs.existsSync(quizDir)) {
-  console.error('[RUNNER] ERRO CRÍTICO: Q-Max Quiz não pode ser iniciado porque nenhum binário PHP está disponível.');
+  console.error('[RUNNER] ERRO CRÃTICO: Q-Max Quiz não pode ser iniciado porque nenhum binário PHP está disponível.');
 }
 
 // 4. Iniciar Sistema de Propostas (se existir)
@@ -224,7 +226,7 @@ if (mainScript) {
     process.exit(code || 0);
   });
 } else {
-  console.error('[RUNNER] ERRO CRÍTICO: server.js principal não encontrado em nenhuma das opções.');
+  console.error('[RUNNER] ERRO CRÃTICO: server.js principal não encontrado em nenhuma das opções.');
 }
 
 function cleanup() {
