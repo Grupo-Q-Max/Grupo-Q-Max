@@ -20,7 +20,7 @@ try {
  $tenant=rawurlencode((string)env('MS_TENANT_ID'));
  $tokens=post_form('https://login.microsoftonline.com/'.$tenant.'/oauth2/v2.0/token',[
   'client_id'=>env('MS_CLIENT_ID'),'client_secret'=>env('MS_CLIENT_SECRET'),'grant_type'=>'authorization_code',
-  'code'=>$_GET['code']??'','redirect_uri'=>url('auth/callback.php'),'scope'=>'openid profile email User.Read'
+  'code'=>$_GET['code']??'','redirect_uri'=>url('auth/callback.php', true),'scope'=>'openid profile email User.Read'
  ]);
  $profile=graph_me($tokens['access_token']);
  $email=strtolower(trim((string)($profile['mail']??$profile['userPrincipalName']??'')));
@@ -31,4 +31,3 @@ try {
  $stmt=db()->prepare('SELECT id,name,email,role FROM users WHERE microsoft_oid=?'); $stmt->execute([$profile['id']]);
  session_regenerate_id(true); $_SESSION['user']=$stmt->fetch(); redirect('index.php');
 } catch(Throwable $e) { http_response_code(500); exit('Não foi possível concluir o login. Revise as configurações do Microsoft Entra ID.'); }
-

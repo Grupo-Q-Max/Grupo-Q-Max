@@ -4,7 +4,7 @@ declare(strict_types=1);
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_set_cookie_params([
         'httponly' => true,
-        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https'),
         'samesite' => 'Lax',
         'path' => '/',
     ]);
@@ -52,24 +52,40 @@ function db(): PDO {
     return $pdo;
 }
 
-function url(string $path = ''): string {
+function url(string $path = '', bool $absolute = false): string {
     $path = ltrim($path, '/');
-    $baseUrl = env('APP_URL', 'https://grupoqmax.com.br/quiz');
-    $basePath = parse_url($baseUrl, PHP_URL_PATH) ?: '';
-    $basePath = trim($basePath, '/');
+    $subpath = $path === '' ? '/quiz' : '/quiz/' . $path;
 
-    if (!empty($_SERVER['HTTP_HOST'])) {
-        $host = $_SERVER['HTTP_HOST'];
-        if (str_contains($host, 'localhost') || str_contains($host, '127.0.0.1')) {
-            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $prefix = $basePath !== '' ? '/' . $basePath : '';
-            return $scheme . '://' . $host . $prefix . '/' . $path;
-        }
+    if (!$absolute) {
+        return $subpath;
     }
-    if (!$baseUrl) return '/' . ($basePath ? $basePath . '/' : '') . $path;
-    return rtrim($baseUrl, '/') . '/' . $path;
+
+    $baseUrl = env('APP_URL');
+    if ($baseUrl && !str_contains($baseUrl, '127.0.0.1') && !str_contains($baseUrl, 'localhost')) {
+        $scheme = parse_url($baseUrl, PHP_URL_SCHEME) ?: 'https';
+        $host = parse_url($baseUrl, PHP_URL_HOST) ?: 'grupoqmax.com.br';
+        return $scheme . '://' . $host . $subpath;
+    }
+
+    $forwardedHost = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? null;
+    $forwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'https';
+    if ($forwardedHost && !str_contains($forwardedHost, '127.0.0.1') && !str_contains($forwardedHost, 'localhost')) {
+        return $forwardedProto . '://' . $forwardedHost . $subpath;
+    }
+
+    return 'https://grupoqmax.com.br' . $subpath;
 }
-function redirect(string $path): never { header('Location: ' . (str_starts_with($path, 'http') ? $path : url($path))); exit; }
+
+function redirect(string $path): never {
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        header('Location: ' . $path);
+    } else {
+        $path = ltrim($path, '/');
+        header('Location: /quiz/' . $path);
+    }
+    exit;
+}
+
 function e(?string $value): string { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
 function csrf_token(): string { return $_SESSION['csrf'] ??= bin2hex(random_bytes(32)); }
 function verify_csrf(): void {
@@ -79,4 +95,3 @@ function verify_csrf(): void {
 }
 function flash(string $type, string $message): void { $_SESSION['flash'] = compact('type','message'); }
 function pull_flash(): ?array { $f = $_SESSION['flash'] ?? null; unset($_SESSION['flash']); return $f; }
-
