@@ -54,7 +54,7 @@ function db(): PDO {
 
 function url(string $path = ''): string {
     $path = ltrim($path, '/');
-    $baseUrl = env('APP_URL', 'https://grupoqmax.com.br/qmax-quiz');
+    $baseUrl = env('APP_URL', 'https://grupoqmax.com.br/quiz');
     $basePath = parse_url($baseUrl, PHP_URL_PATH) ?: '';
     $basePath = trim($basePath, '/');
 

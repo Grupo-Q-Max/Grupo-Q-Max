@@ -169,6 +169,13 @@ jobs:
           fi
 
           echo ""
+                    echo "Baixando PHP standalone para Linux x86_64..."
+          mkdir -p deploy/bin
+          curl -fsSL -L https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-cli-linux-x86_64.tar.gz | tar -xz -C deploy/bin
+          chmod +x deploy/bin/php
+          echo "Testando PHP standalone:"
+          deploy/bin/php -v
+
           echo "3.3. Copiando Runner e empacotando Eventos..."
           cp runner.js deploy/runner.js
 
@@ -219,7 +226,7 @@ jobs:
             rm -rf deploy/qmax-quiz/.git deploy/qmax-quiz/*.sql deploy/qmax-quiz/*.zip deploy/qmax-quiz/.git_backup
 
             echo "Criando .env do Q-Max Quiz..."
-            echo "APP_URL=${APP_URL:-https://grupoqmax.com.br/qmax-quiz}" > deploy/qmax-quiz/.env
+            echo "APP_URL=${APP_URL:-https://grupoqmax.com.br/quiz}" > deploy/qmax-quiz/.env
             echo "APP_ENV=production" >> deploy/qmax-quiz/.env
             echo "DB_HOST=${QUIZ_DB_HOST:-webbd01-app-server.mysql.database.azure.com}" >> deploy/qmax-quiz/.env
             echo "DB_PORT=${QUIZ_DB_PORT:-3306}" >> deploy/qmax-quiz/.env
@@ -285,6 +292,7 @@ jobs:
           unzip -l site.zip | grep "eventos-web/apps/web/server.js"
           unzip -l site.zip | grep "proposta/server.js"
           unzip -l site.zip | grep "qmax-quiz/index.php"
+          unzip -l site.zip | grep "bin/php"
 
           echo ""
           echo "PACOTE VALIDADO COM SUCESSO."

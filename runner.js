@@ -92,51 +92,93 @@ if (webScript) {
   console.warn('[RUNNER] Aviso: Web de Eventos não encontrada.');
 }
 
-// 3. Iniciar PHP para Controle de Fechamento (se diretório existir e php estiver disponível)
+// 3. Resolver binário PHP (standalone em bin/php ou do sistema)
+function resolvePhpBinary() {
+  const { spawnSync } = require('child_process');
+  const candidates = [
+    path.join(__dirname, 'bin/php'),
+    path.join(__dirname, 'bin/php.exe'),
+    'php',
+  ];
+  for (const candidate of candidates) {
+    try {
+      if (candidate.includes(path.sep)) {
+        if (fs.existsSync(candidate)) {
+          const res = spawnSync(candidate, ['-v'], { stdio: 'ignore' });
+          if (res.status === 0) return candidate;
+        }
+      } else {
+        const res = spawnSync(candidate, ['-v'], { stdio: 'ignore' });
+        if (res.status === 0) return candidate;
+      }
+    } catch {}
+  }
+
+  // Fallback se não encontrado: tentar instalar via apt-get se estiver no contêiner Linux
+  if (process.platform === 'linux') {
+    try {
+      console.log('[RUNNER] PHP não encontrado. Tentando instalar via apt-get...');
+      const { execSync } = require('child_process');
+      execSync('apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq php-cli php-mysql php-curl php-mbstring', { stdio: 'ignore' });
+      const testPhp = spawnSync('php', ['-v'], { stdio: 'ignore' });
+      if (testPhp.status === 0) {
+        console.log('[RUNNER] PHP instalado via apt-get com sucesso!');
+        return 'php';
+      }
+    } catch (e) {
+      console.warn('[RUNNER] Aviso ao tentar instalar via apt-get:', e.message);
+    }
+  }
+
+  return null;
+}
+
+const phpBin = resolvePhpBinary();
+if (phpBin) {
+  console.log('[RUNNER] Binário PHP detectado: ' + phpBin);
+} else {
+  console.warn('[RUNNER] Aviso: Nenhum binário PHP detectado no ambiente.');
+}
+
+// Iniciar PHP para Controle de Fechamento (se diretório existir e php estiver disponível)
 let phpProcess = null;
 const fechamentoDir = path.join(__dirname, 'controle_fechamento');
-if (!process.env.FECHAMENTO_URL && fs.existsSync(fechamentoDir)) {
+if (!process.env.FECHAMENTO_URL && fs.existsSync(fechamentoDir) && phpBin) {
   try {
-    const { spawnSync } = require('child_process');
-    const hasPhp = spawnSync('php', ['-v'], { stdio: 'ignore' }).status === 0;
-    if (hasPhp) {
-      console.log('[RUNNER] Iniciar PHP Controle de Fechamento na porta 8002...');
-      phpProcess = spawn('php', ['-S', '127.0.0.1:8002', '-t', fechamentoDir], {
-        cwd: fechamentoDir,
-        env: process.env,
-        stdio: 'inherit',
-      });
-      phpProcess.on('exit', (code) => {
-        console.error(`[RUNNER] PHP Controle de Fechamento encerrou com código ${code}`);
-      });
-    }
+    console.log('[RUNNER] Iniciar PHP Controle de Fechamento na porta 8002...');
+    phpProcess = spawn(phpBin, ['-S', '127.0.0.1:8002', '-t', fechamentoDir], {
+      cwd: fechamentoDir,
+      env: process.env,
+      stdio: 'inherit',
+    });
+    phpProcess.on('exit', (code) => {
+      console.error(`[RUNNER] PHP Controle de Fechamento encerrou com código ${code}`);
+    });
   } catch (e) {
-    // PHP não instalado no ambiente
+    console.error('[RUNNER] Erro ao iniciar PHP Fechamento:', e.message);
   }
 }
 
 // 3b. Iniciar PHP para Q-Max Quiz (se diretório existir e php estiver disponível)
 let quizPhpProcess = null;
 const quizDir = path.join(__dirname, 'qmax-quiz');
-if (fs.existsSync(quizDir)) {
+if (fs.existsSync(quizDir) && phpBin) {
   try {
-    const { spawnSync } = require('child_process');
-    const hasPhp = spawnSync('php', ['-v'], { stdio: 'ignore' }).status === 0;
-    if (hasPhp) {
-      const quizPort = process.env.PORT_QUIZ || '8003';
-      console.log(`[RUNNER] Iniciar PHP Q-Max Quiz na porta ${quizPort}...`);
-      quizPhpProcess = spawn('php', ['-S', `127.0.0.1:${quizPort}`, '-t', quizDir], {
-        cwd: quizDir,
-        env: process.env,
-        stdio: 'inherit',
-      });
-      quizPhpProcess.on('exit', (code) => {
-        console.error(`[RUNNER] PHP Q-Max Quiz encerrou com código ${code}`);
-      });
-    }
+    const quizPort = process.env.PORT_QUIZ || '8003';
+    console.log(`[RUNNER] Iniciar PHP Q-Max Quiz (${phpBin}) na porta ${quizPort}...`);
+    quizPhpProcess = spawn(phpBin, ['-S', `127.0.0.1:${quizPort}`, '-t', quizDir], {
+      cwd: quizDir,
+      env: process.env,
+      stdio: 'inherit',
+    });
+    quizPhpProcess.on('exit', (code) => {
+      console.error(`[RUNNER] PHP Q-Max Quiz encerrou com código ${code}`);
+    });
   } catch (e) {
-    // PHP não instalado no ambiente
+    console.error('[RUNNER] Erro ao iniciar PHP Quiz:', e.message);
   }
+} else if (fs.existsSync(quizDir)) {
+  console.error('[RUNNER] ERRO CRÍTICO: Q-Max Quiz não pode ser iniciado porque nenhum binário PHP está disponível.');
 }
 
 // 4. Iniciar Sistema de Propostas (se existir)

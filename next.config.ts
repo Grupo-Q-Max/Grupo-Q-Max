@@ -43,6 +43,8 @@ const nextConfig: NextConfig = {
       { source: "/eventos/:path*", destination: "/finora-experience/:path*", permanent: false },
       { source: "/proposta", destination: "/proposta/login.html", permanent: false },
       { source: "/proposta/", destination: "/proposta/login.html", permanent: false },
+      { source: "/qmax-quiz", destination: "/quiz", permanent: false },
+      { source: "/qmax-quiz/:path*", destination: "/quiz/:path*", permanent: false },
     ];
   },
 
