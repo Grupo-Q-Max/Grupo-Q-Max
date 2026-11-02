@@ -196,7 +196,7 @@ jobs:
             echo "DB_NAME=proposta" >> deploy/proposta/.env
             echo "DB_PORT=3306" >> deploy/proposta/.env
             echo "DB_SSL=true" >> deploy/proposta/.env
-            echo "BASE_URL=${BASE_URL:-https://qmaxbrasil.com.br}" >> deploy/proposta/.env
+            echo "BASE_URL=${BASE_URL:-https://grupoqmax.com.br}" >> deploy/proposta/.env
             echo "APP_BASE_PATH=/proposta" >> deploy/proposta/.env
             echo "JWT_SECRET='Finora@QMax_2026_SecureKey!'" >> deploy/proposta/.env
             echo "EMAIL_USER='envio@qmax.com.br'" >> deploy/proposta/.env
@@ -210,6 +210,27 @@ jobs:
             echo "D4SIGN_UUID_COFRE='d447cb15-9fc3-4da2-9367-eb630dfd800a'" >> deploy/proposta/.env
             echo "EMAIL_REPRESENTANTE_QMAX='contato@grupoqmax.com.br'" >> deploy/proposta/.env
             echo "CERTIFICADO_ENCRYPTION_KEY='RB0dT344lLMfQJfCYu36+wK5WZVuSpF9KzYEob4/hyUPX2+s/gpxXY1J8J+2gAbQ'" >> deploy/proposta/.env
+          fi
+
+                    if [ -d "qmax-quiz" ]; then
+            echo "Configurando Q-Max Quiz..."
+            mkdir -p deploy/qmax-quiz
+            cp -R qmax-quiz/. deploy/qmax-quiz/
+            rm -rf deploy/qmax-quiz/.git deploy/qmax-quiz/*.sql deploy/qmax-quiz/*.zip deploy/qmax-quiz/.git_backup
+
+            echo "Criando .env do Q-Max Quiz..."
+            echo "APP_URL=${APP_URL:-https://grupoqmax.com.br/qmax-quiz}" > deploy/qmax-quiz/.env
+            echo "APP_ENV=production" >> deploy/qmax-quiz/.env
+            echo "DB_HOST=${QUIZ_DB_HOST:-webbd01-app-server.mysql.database.azure.com}" >> deploy/qmax-quiz/.env
+            echo "DB_PORT=${QUIZ_DB_PORT:-3306}" >> deploy/qmax-quiz/.env
+            echo "DB_NAME=${QUIZ_DB_NAME:-quiz}" >> deploy/qmax-quiz/.env
+            echo "DB_USER=${QUIZ_DB_USER:-quiz}" >> deploy/qmax-quiz/.env
+            echo "DB_PASS=${QUIZ_DB_PASS:-%Ct7ulLhP=39}" >> deploy/qmax-quiz/.env
+            echo "MS_TENANT_ID=${MS_TENANT_ID:-common}" >> deploy/qmax-quiz/.env
+            echo "MS_CLIENT_ID=${MS_CLIENT_ID:-365625d9-2647-489d-b319-48b960f9edab}" >> deploy/qmax-quiz/.env
+            echo "MS_CLIENT_SECRET=${MS_CLIENT_SECRET:-L398Q~U8lz5AToj1Z6Ol5CIPdBQB75Hl_19gJaKp}" >> deploy/qmax-quiz/.env
+            echo "ALLOWED_DOMAIN=grupoqmax.com.br" >> deploy/qmax-quiz/.env
+            echo "ADMIN_EMAILS=${QUIZ_ADMIN_EMAILS:-rodrigo@grupoqmax.com.br, sofia.esteves@grupoqmax.com.br, laura@grupoqmax.com.br, isabela.bardy@grupoqmax.com.br}" >> deploy/qmax-quiz/.env
           fi
 
           echo "Configurando Eventos Web..."
@@ -263,6 +284,7 @@ jobs:
           unzip -l site.zip | grep "eventos-api/dist/src/main.js"
           unzip -l site.zip | grep "eventos-web/apps/web/server.js"
           unzip -l site.zip | grep "proposta/server.js"
+          unzip -l site.zip | grep "qmax-quiz/index.php"
 
           echo ""
           echo "PACOTE VALIDADO COM SUCESSO."

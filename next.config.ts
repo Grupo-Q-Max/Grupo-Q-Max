@@ -50,11 +50,37 @@ const nextConfig: NextConfig = {
     const eventosUrl = process.env.EVENTOS_URL || "http://127.0.0.1:3001";
     const propostaUrl = (process.env.PROPOSTA_URL || "http://127.0.0.1:3005").replace(/\/$/, "");
     const fechamentoUrl = (process.env.FECHAMENTO_URL || "https://grupoqmax.com.br/controle_fechamento").replace(/\/$/, "");
+    const quizUrl = (process.env.QUIZ_URL || "http://127.0.0.1:8003").replace(/\/$/, "");
     return [
       {
         source: "/team/:filename*",
         destination: "/api/files/:filename*",
       
+      },
+      // Sistema Q-Max Quiz
+      {
+        source: "/qmax-quiz",
+        destination: `${quizUrl}/index.php`,
+      },
+      {
+        source: "/qmax-quiz/",
+        destination: `${quizUrl}/index.php`,
+      },
+      {
+        source: "/qmax-quiz/:path*",
+        destination: `${quizUrl}/:path*`,
+      },
+      {
+        source: "/quiz",
+        destination: `${quizUrl}/index.php`,
+      },
+      {
+        source: "/quiz/",
+        destination: `${quizUrl}/index.php`,
+      },
+      {
+        source: "/quiz/:path*",
+        destination: `${quizUrl}/:path*`,
       },
       // Sistema de Propostas (Finora / Q-Max)
       {

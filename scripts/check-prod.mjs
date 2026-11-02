@@ -1,6 +1,6 @@
 async function main() {
   // Check team API
-  const r1 = await fetch('https://qmaxbrasil.com.br/api/team');
+  const r1 = await fetch('https://grupoqmax.com.br/api/team');
   console.log('=== /api/team ===');
   console.log('Status:', r1.status);
   console.log('Headers:', Object.fromEntries(r1.headers.entries()));
@@ -8,7 +8,7 @@ async function main() {
   console.log('Body:', t1.substring(0, 2000));
 
   // Check CRM page
-  const r2 = await fetch('https://qmaxbrasil.com.br/crm');
+  const r2 = await fetch('https://grupoqmax.com.br/crm');
   console.log('\n=== /crm ===');
   console.log('Status:', r2.status);
   const t2 = await r2.text();

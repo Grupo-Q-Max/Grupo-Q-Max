@@ -46,6 +46,7 @@ azure-pipelines.backup-*.yml
 /seed_socios.*
 Grupo-Q-Max/
 *.sql
+!qmax_quiz.sql
 *.git_backup
 
 # Azure App Service settings export (secrets)

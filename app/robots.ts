@@ -19,6 +19,8 @@ export default function robots(): MetadataRoute.Robots {
         "/controle-fechamento",
         "/controle_fechamento",
         "/proposta",
+        "/qmax-quiz",
+        "/quiz",
       ],
     },
     sitemap: `${baseUrl}/sitemap.xml`,

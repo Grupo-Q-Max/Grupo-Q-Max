@@ -54,7 +54,7 @@ if (apiScript) {
   const apiCwd = apiScript.includes('eventos-api')
     ? path.join(__dirname, 'eventos-api')
     : path.dirname(path.dirname(path.dirname(apiScript)));
-  console.log(`[RUNNER] 1/3 Iniciando API de Eventos na porta 3334 (cwd: ${apiCwd})...`);
+  console.log(`[RUNNER] 1/4 Iniciando API de Eventos na porta 3334 (cwd: ${apiCwd})...`);
   apiProcess = spawn('node', [apiScript], {
     cwd: apiCwd,
     env: apiEnv,
@@ -79,7 +79,7 @@ if (webScript) {
   const webCwd = webScript.includes('eventos-web')
     ? path.join(__dirname, 'eventos-web')
     : path.resolve(path.dirname(webScript), '..');
-  console.log(`[RUNNER] 2/3 Iniciando Web de Eventos na porta 3001 (cwd: ${webCwd})...`);
+  console.log(`[RUNNER] 2/4 Iniciando Web de Eventos na porta 3001 (cwd: ${webCwd})...`);
   webProcess = spawn('node', ['apps/web/server.js'], {
     cwd: webCwd,
     env: webEnv,
@@ -100,7 +100,7 @@ if (!process.env.FECHAMENTO_URL && fs.existsSync(fechamentoDir)) {
     const { spawnSync } = require('child_process');
     const hasPhp = spawnSync('php', ['-v'], { stdio: 'ignore' }).status === 0;
     if (hasPhp) {
-      console.log('[RUNNER] 3/4 Iniciando PHP Controle de Fechamento na porta 8002...');
+      console.log('[RUNNER] Iniciar PHP Controle de Fechamento na porta 8002...');
       phpProcess = spawn('php', ['-S', '127.0.0.1:8002', '-t', fechamentoDir], {
         cwd: fechamentoDir,
         env: process.env,
@@ -115,13 +115,37 @@ if (!process.env.FECHAMENTO_URL && fs.existsSync(fechamentoDir)) {
   }
 }
 
+// 3b. Iniciar PHP para Q-Max Quiz (se diretório existir e php estiver disponível)
+let quizPhpProcess = null;
+const quizDir = path.join(__dirname, 'qmax-quiz');
+if (fs.existsSync(quizDir)) {
+  try {
+    const { spawnSync } = require('child_process');
+    const hasPhp = spawnSync('php', ['-v'], { stdio: 'ignore' }).status === 0;
+    if (hasPhp) {
+      const quizPort = process.env.PORT_QUIZ || '8003';
+      console.log(`[RUNNER] Iniciar PHP Q-Max Quiz na porta ${quizPort}...`);
+      quizPhpProcess = spawn('php', ['-S', `127.0.0.1:${quizPort}`, '-t', quizDir], {
+        cwd: quizDir,
+        env: process.env,
+        stdio: 'inherit',
+      });
+      quizPhpProcess.on('exit', (code) => {
+        console.error(`[RUNNER] PHP Q-Max Quiz encerrou com código ${code}`);
+      });
+    }
+  } catch (e) {
+    // PHP não instalado no ambiente
+  }
+}
+
 // 4. Iniciar Sistema de Propostas (se existir)
 let propostaProcess = null;
 const propostaDir = path.join(__dirname, 'proposta');
 const propostaScript = path.join(propostaDir, 'server.js');
 if (fs.existsSync(propostaScript)) {
   const propostaPort = process.env.PORT_PROPOSTA || '3005';
-  console.log(`[RUNNER] 4/5 Iniciando Sistema de Propostas na porta ${propostaPort}...`);
+  console.log(`[RUNNER] 3/4 Iniciando Sistema de Propostas na porta ${propostaPort}...`);
   propostaProcess = spawn('node', ['server.js'], {
     cwd: propostaDir,
     env: {
@@ -137,7 +161,7 @@ if (fs.existsSync(propostaScript)) {
 
 // 5. Iniciar Site Principal (Next.js)
 const targetPort = process.env.PORT || 8080;
-console.log(`[RUNNER] Iniciando Site Principal Q-Max na porta ${targetPort}...`);
+console.log(`[RUNNER] 4/4 Iniciando Site Principal Q-Max na porta ${targetPort}...`);
 const mainScriptCandidates = [
   path.join(__dirname, 'server.js'),
   path.join(__dirname, '.qmax-next/standalone/server.js'),
@@ -171,6 +195,9 @@ function cleanup() {
   }
   if (phpProcess && !phpProcess.killed) {
     try { phpProcess.kill(); } catch (e) {}
+  }
+  if (quizPhpProcess && !quizPhpProcess.killed) {
+    try { quizPhpProcess.kill(); } catch (e) {}
   }
   if (propostaProcess && !propostaProcess.killed) {
     try { propostaProcess.kill(); } catch (e) {}
