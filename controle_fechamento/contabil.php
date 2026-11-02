@@ -13,7 +13,7 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 
 $permissoes_permitidas = ['contabil', 'lider_contabil', 'admin'];
-if (!in_array($_SESSION['tipo_conta'], $permissoes_permitidas)) {
+if (!isset($_SESSION['tipo_conta']) || !in_array($_SESSION['tipo_conta'], $permissoes_permitidas)) {
     $_SESSION['mensagem'] = 'Acesso restrito à área Contábil.';
     header('Location: index.php');
     exit();

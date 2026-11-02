@@ -236,7 +236,7 @@ jobs:
             echo "MS_TENANT_ID=${MS_TENANT_ID:-common}" >> deploy/qmax-quiz/.env
             echo "MS_CLIENT_ID=${MS_CLIENT_ID:-365625d9-2647-489d-b319-48b960f9edab}" >> deploy/qmax-quiz/.env
             echo "MS_CLIENT_SECRET=${MS_CLIENT_SECRET:-L398Q~U8lz5AToj1Z6Ol5CIPdBQB75Hl_19gJaKp}" >> deploy/qmax-quiz/.env
-            echo "ALLOWED_DOMAIN=grupoqmax.com.br" >> deploy/qmax-quiz/.env
+            echo "ALLOWED_DOMAIN=*" >> deploy/qmax-quiz/.env
             echo "ADMIN_EMAILS=${QUIZ_ADMIN_EMAILS:-rodrigo@grupoqmax.com.br, sofia.esteves@grupoqmax.com.br, laura@grupoqmax.com.br, isabela.bardy@grupoqmax.com.br}" >> deploy/qmax-quiz/.env
           fi
 

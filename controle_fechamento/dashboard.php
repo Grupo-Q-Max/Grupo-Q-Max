@@ -19,7 +19,7 @@ $meses_pt = [
 
 $cargos_permitidos = ['admin', 'lider_dp', 'lider_fiscal', 'lider_contabil'];
 
-if (!in_array($_SESSION['tipo_conta'], $cargos_permitidos)) {
+if (!isset($_SESSION['tipo_conta']) || !in_array($_SESSION['tipo_conta'], $cargos_permitidos)) {
     header('Location: index.php');
     exit();
 }
