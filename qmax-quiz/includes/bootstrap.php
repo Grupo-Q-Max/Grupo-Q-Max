@@ -44,6 +44,9 @@ function db(): PDO {
         PDO::ATTR_EMULATE_PREPARES => false,
     ];
     if (str_contains($host, 'azure.com') || env('DB_SSL') === 'true') {
+        if (defined('PDO::MYSQL_ATTR_SSL_CA')) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = true;
+        }
         if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
             $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
         }

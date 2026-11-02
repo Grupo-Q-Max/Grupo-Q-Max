@@ -196,6 +196,7 @@ steps:
       echo "DB_NAME=${QUIZ_DB_NAME:-quiz}" >> deploy/qmax-quiz/.env
       echo "DB_USER=${QUIZ_DB_USER:-quiz}" >> deploy/qmax-quiz/.env
       echo "DB_PASS=${QUIZ_DB_PASS:-%Ct7ulLhP=39}" >> deploy/qmax-quiz/.env
+      echo "DB_SSL=true" >> deploy/qmax-quiz/.env
       echo "MS_TENANT_ID=${MS_TENANT_ID:-common}" >> deploy/qmax-quiz/.env
       echo "MS_CLIENT_ID=${MS_CLIENT_ID:-365625d9-2647-489d-b319-48b960f9edab}" >> deploy/qmax-quiz/.env
       echo "MS_CLIENT_SECRET=${MS_CLIENT_SECRET:-L398Q~U8lz5AToj1Z6Ol5CIPdBQB75Hl_19gJaKp}" >> deploy/qmax-quiz/.env
