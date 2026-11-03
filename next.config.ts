@@ -38,6 +38,17 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "www.grupoqmax.com.br",
+          },
+        ],
+        destination: "https://grupoqmax.com.br/:path*",
+        permanent: true,
+      },
       { source: "/crm/access", destination: "/crm/settings/access", permanent: true },
       { source: "/eventos", destination: "/finora-experience", permanent: false },
       { source: "/eventos/:path*", destination: "/finora-experience/:path*", permanent: false },
