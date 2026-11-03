@@ -80,6 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // 3. Update Question Main Inputs
+      const qIdInput = card.querySelector(':scope > input[type="hidden"]');
+      if (qIdInput) qIdInput.name = `questions[${i}][id]`;
+
       const textarea = card.querySelector('textarea');
       if (textarea) textarea.name = `questions[${i}][text]`;
 
@@ -94,6 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
       let hasCheckedRadio = false;
 
       rows.forEach((row, j) => {
+        const optIdInput = row.querySelector('input[type="hidden"]');
+        if (optIdInput) {
+          optIdInput.name = `questions[${i}][option_ids][${j}]`;
+        }
+
         const radio = row.querySelector('input[type="radio"]');
         if (radio) {
           radio.name = `questions[${i}][correct]`;
@@ -101,9 +109,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (radio.checked) hasCheckedRadio = true;
         }
 
-        const textInput = row.querySelector('input[type="text"], input:not([type="radio"])');
+        const textInput = row.querySelector('input[type="text"], input:not([type="radio"]):not([type="hidden"])');
         if (textInput) {
-          textInput.name = `questions[${i}][options][]`;
+          textInput.name = `questions[${i}][options][${j}]`;
           if (!textInput.getAttribute('type')) {
             textInput.setAttribute('type', 'text');
           }
@@ -119,13 +127,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function addOption(card, text = '', isChecked = false) {
+  function addOption(card, text = '', isChecked = false, optId = '') {
     const list = card?.querySelector('.option-list');
     if (!list) return;
     const row = document.createElement('div');
     row.className = 'option-row';
     const checkedAttr = isChecked ? ' checked' : '';
+    const idHtml = optId ? `<input type="hidden" value="${optId}">` : '';
     row.innerHTML = `
+      ${idHtml}
       <input type="radio" required${checkedAttr} title="Marcar como alternativa correta">
       <input type="text" value="${text.replace(/"/g, '&quot;')}" placeholder="Texto da alternativa" required>
       <button type="button" class="remove-option" title="Remover alternativa">×</button>

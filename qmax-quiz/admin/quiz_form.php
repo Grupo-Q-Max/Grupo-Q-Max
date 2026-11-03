@@ -20,10 +20,7 @@ if ($id) {
     
     $c = db()->prepare('SELECT COUNT(*) FROM attempts WHERE quiz_id = ? AND submitted_at IS NOT NULL');
     $c->execute([$id]);
-    if ((int)$c->fetchColumn() > 0) {
-        flash('error', 'Este quiz já recebeu respostas e está bloqueado para edição para preservar o histórico. Se desejar, crie um novo quiz.');
-        redirect('admin/');
-    }
+    $submittedAttemptsCount = (int)$c->fetchColumn();
     
     $s = db()->prepare('SELECT * FROM questions WHERE quiz_id = ? ORDER BY position');
     $s->execute([$id]);
@@ -55,6 +52,20 @@ require dirname(__DIR__) . '/includes/header.php';
 <form class="editor" action="<?= e(url('admin/save_quiz.php')) ?>" method="post" id="quizEditor">
     <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
     <input type="hidden" name="id" value="<?= e((string)$quiz['id']) ?>">
+
+    <?php if (!empty($submittedAttemptsCount)): ?>
+        <section class="form-card" style="border-left: 4px solid var(--accent, #00B4D8); background: rgba(0, 180, 216, 0.08);">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+                <span style="font-size:1.3rem;line-height:1;">ℹ️</span>
+                <div>
+                    <strong style="color:var(--text-primary,#fff);">Quiz com respostas registradas (<?= $submittedAttemptsCount ?> participante(s))</strong>
+                    <p style="margin:4px 0 0;font-size:0.9rem;color:var(--text-secondary,#a0aec0);line-height:1.4;">
+                        A edição está liberada. Ao salvar alterações nas alternativas corretas ou na pontuação, o aproveitamento e as porcentagens de acerto de todos os colaboradores serão recalculados automaticamente.
+                    </p>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <section class="form-card">
         <h2>Informações Gerais</h2>
@@ -100,6 +111,7 @@ require dirname(__DIR__) . '/includes/header.php';
     <div id="questionsBuilder">
         <?php foreach ($questions as $i => $q): ?>
         <section class="question-builder">
+            <input type="hidden" name="questions[<?= $i ?>][id]" value="<?= (int)$q['id'] ?>">
             <div class="builder-head">
                 <div class="builder-head-left">
                     <span class="drag-handle" title="Arrastar para reordenar" aria-label="Arrastar pergunta">
@@ -142,8 +154,9 @@ require dirname(__DIR__) . '/includes/header.php';
             <div class="option-list">
                 <?php foreach ($q['options'] as $j => $o): ?>
                 <div class="option-row">
+                    <input type="hidden" name="questions[<?= $i ?>][option_ids][<?= $j ?>]" value="<?= (int)$o['id'] ?>">
                     <input type="radio" name="questions[<?= $i ?>][correct]" value="<?= $j ?>" <?= $o['is_correct'] ? 'checked' : '' ?> required title="Marcar como alternativa correta">
-                    <input type="text" name="questions[<?= $i ?>][options][]" value="<?= e($o['option_text']) ?>" placeholder="Texto da alternativa" required>
+                    <input type="text" name="questions[<?= $i ?>][options][<?= $j ?>]" value="<?= e($o['option_text']) ?>" placeholder="Texto da alternativa" required>
                     <button type="button" class="remove-option" title="Remover alternativa">×</button>
                 </div>
                 <?php endforeach; ?>
