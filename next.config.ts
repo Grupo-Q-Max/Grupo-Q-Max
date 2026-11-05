@@ -56,6 +56,13 @@ const nextConfig: NextConfig = {
       { source: "/proposta/", destination: "/proposta/login.html", permanent: false },
       { source: "/qmax-quiz", destination: "/quiz", permanent: false },
       { source: "/qmax-quiz/:path*", destination: "/quiz/:path*", permanent: false },
+      // Redirecionamento do Controle de Fechamento para o novo subdomínio
+      { source: "/controle_fechamento", destination: "https://fechamento.grupoqmax.com.br/", permanent: false },
+      { source: "/controle_fechamento/:path*", destination: "https://fechamento.grupoqmax.com.br/:path*", permanent: false },
+      { source: "/controle-fechamento", destination: "https://fechamento.grupoqmax.com.br/", permanent: false },
+      { source: "/controle-fechamento/:path*", destination: "https://fechamento.grupoqmax.com.br/:path*", permanent: false },
+      { source: "/fechamento", destination: "https://fechamento.grupoqmax.com.br/", permanent: false },
+      { source: "/fechamento/:path*", destination: "https://fechamento.grupoqmax.com.br/:path*", permanent: false },
     ];
   },
 
