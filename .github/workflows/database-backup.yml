@@ -1,0 +1,56 @@
+name: Backup Automático dos Bancos para OneDrive
+
+on:
+  schedule:
+    # Executa a cada 6 horas: 00:00, 06:00, 12:00, 18:00 UTC
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      retention_days:
+        description: 'Dias de retenção no OneDrive (padrão 7 dias)'
+        required: false
+        default: '7'
+
+permissions:
+  contents: read
+
+jobs:
+  backup-databases:
+    name: Backup e Sincronização OneDrive
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      NODE_VERSION: '22.x'
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      EVENTOS_DATABASE_URL: ${{ secrets.EVENTOS_DATABASE_URL }}
+      PROPOSTA_DB_HOST: 'webbd01-app-server.mysql.database.azure.com'
+      PROPOSTA_DB_USER: 'proposta'
+      PROPOSTA_DB_PASS: '0_6]},3]4Nt}'
+      PROPOSTA_DB_NAME: 'proposta'
+      QUIZ_DB_HOST: 'webbd01-app-server.mysql.database.azure.com'
+      QUIZ_DB_USER: 'quiz'
+      QUIZ_DB_PASS: '%Ct7ulLhP=39'
+      QUIZ_DB_NAME: 'quiz'
+      MICROSOFT_TENANT_ID: ${{ secrets.MICROSOFT_TENANT_ID || 'e3a65ea4-591b-4eab-acf5-059083274f98' }}
+      MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID || '365625d9-2647-489d-b319-48b960f9edab' }}
+      MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET || secrets.MS_CLIENT_SECRET || 'L398Q~U8lz5AToj1Z6Ol5CIPdBQB75Hl_19gJaKp' }}
+      ONEDRIVE_USER_EMAIL: ${{ secrets.ONEDRIVE_USER_EMAIL || 'rodrigo@grupoqmax.com.br' }}
+      BACKUP_RETENTION_DAYS: ${{ github.event.inputs.retention_days || '7' }}
+
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Instalar MySQL Client & Ferramentas
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y default-mysql-client gzip
+
+      - name: Executar Backup e Envio ao OneDrive
+        run: node scripts/db-backup-onedrive.mjs
