@@ -39,7 +39,7 @@ import "./integracao.css";
 export const metadata: Metadata = {
   title: "Integração",
   description:
-    "Guia de integração para novos colaboradores: o Grupo Q-Max, suas empresas, produtos e ferramentas internas (CRM e Controle de Fechamento).",
+    "Guia de integração para novos colaboradores: o Grupo Q-Max, suas empresas, produtos e ferramentas internas (CRM).",
   alternates: {
     canonical: "/integracao",
   },
@@ -51,7 +51,6 @@ const sections = [
   { id: "grupo-empresas", label: "Empresas do grupo" },
   { id: "grupo-produtos", label: "Produtos" },
   { id: "crm", label: "CRM interno" },
-  { id: "fechamento", label: "Controle de fechamento" },
   { id: "primeira-semana", label: "Primeira semana" },
   { id: "duvidas", label: "Dúvidas e contatos" },
 ];
@@ -193,74 +192,8 @@ const crmFeatures = [
   },
 ];
 
-const closingUrl = "https://grupoqmax.com.br/controle-fechamento-2/login";
-
-const closingSteps = [
-  {
-    title: "Abertura da competência",
-    text: "No início do mês, a competência é aberta: o sistema cria um fechamento para cada empresa ativa, com os setores dela, e herda os responsáveis do mês anterior.",
-  },
-  {
-    title: "Sincronização com o GOB",
-    text: "Todo dia às 06:00 o sistema busca no GOB Core as obrigações transmitidas (eSocial, DCTFWeb, PGDAS-D, SPED, GIA etc.) e preenche data e recibo sozinho.",
-  },
-  {
-    title: "Preenchimento pelo setor",
-    text: "Cada setor abre o seu grid, filtra as empresas sob sua responsabilidade e atualiza o status de cada coluna, com observações e anexos quando precisar.",
-  },
-  {
-    title: "Progresso automático",
-    text: "Os cards de progresso recalculam a cada alteração. Quando todas as colunas de um setor terminam, o setor está fechado; quando todos os setores terminam, a empresa está fechada.",
-  },
-  {
-    title: "Acompanhamento",
-    text: "Líderes acompanham pelos painéis, pelos alertas e pelo modo TV do escritório. Toda alteração fica registrada no log de auditoria.",
-  },
-];
-
-const closingModules = [
-  {
-    icon: Table2,
-    title: "Grids por setor",
-    text: "Fiscal, Contábil, DP, BPO Financeiro e Cushman & Wakefield têm layouts próprios, com as obrigações do setor (PGDAS, ICMS, Folha, FGTS Digital, Balancete, Conciliação...) e as colunas do GOB.",
-  },
-  {
-    icon: RefreshCw,
-    title: "Automação GOB Core",
-    text: "Obrigações transmitidas entram automaticamente. O painel /administracao/gob mostra o progresso da sincronização e permite rodar de novo um mês específico.",
-  },
-  {
-    icon: Receipt,
-    title: "Parcelamentos",
-    text: "Acordos PGFN/RFB por empresa, fila de parcelas do mês, baixa e estorno, comprovante por parcela e alerta de cancelamento com 3 parcelas em aberto.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Certificados e alertas",
-    text: "Certificados digitais A1 a vencer e SLAs em risco aparecem nos alertas — bom momento para oferecer a renovação pelo QXSIGN.",
-  },
-  {
-    icon: History,
-    title: "Auditoria",
-    text: "Toda alteração registra quem mudou, empresa, setor, campo, data e o valor antes e depois. Consulte em /administracao/logs.",
-  },
-  {
-    icon: Tv,
-    title: "Modo TV",
-    text: "Painel em tela cheia para as TVs do escritório, com relógio e progresso do fechamento girando a cada 10 segundos.",
-  },
-];
-
-const closingRules = [
-  "Administradores, sócios e líderes editam todas as empresas; os demais só editam as empresas e fechamentos atribuídos a eles.",
-  "Colunas do GOB são preenchidas automaticamente; se algo parecer errado, confira a transmissão no GOB antes de editar o grid.",
-  "ISS e Carnê-Leão são preenchidos manualmente pelo operador.",
-  "Reabrir ou sincronizar uma competência só cria o que falta: o que já foi preenchido é preservado.",
-];
-
 const firstWeek = [
   "Entrar no CRM com a conta Microsoft e conferir quais pipelines você enxerga.",
-  "Acessar o Controle de Fechamento e localizar, no grid do seu setor, as empresas sob sua responsabilidade.",
   "Ler as páginas de cada empresa do grupo no site e anotar os serviços principais.",
   "Criar uma conta no QXBACK e acompanhar com o time uma indicação do início ao fim.",
   "Abrir um card de teste em um pipeline de tarefas, mover entre etapas e usar a busca (Ctrl+K).",
@@ -280,10 +213,6 @@ const faqs = [
   {
     question: "Não vejo um pipeline que meu colega vê.",
     answer: "A visibilidade é por pessoa ou grupo. Peça ao administrador do CRM para liberar o pipeline para você.",
-  },
-  {
-    question: "Não consigo editar uma empresa no Controle de Fechamento.",
-    answer: "Você só edita empresas e fechamentos atribuídos a você. Peça ao líder do seu setor para te designar como responsável.",
   },
   {
     question: "Para qual empresa do grupo direciono um lead?",
@@ -528,73 +457,7 @@ export default function IntegracaoPage() {
         </section>
       </ScrollReveal>
 
-      <ScrollReveal animation="fade-up">
-        <section id="fechamento" className="onb-section">
-          <div className="container">
-            <header className="onb-section__head">
-              <span className="eyebrow">
-                <ClipboardCheck size={13} />
-                CONTROLE DE FECHAMENTO
-              </span>
-              <h2>O fechamento do mês, empresa por empresa.</h2>
-              <p>
-                O Controle de Fechamento (QMAX OS) é onde os setores Fiscal, Contábil, DP e BPO
-                acompanham, todo mês, as obrigações de cada empresa cliente. Ele substitui as
-                planilhas de controle e já recebe do GOB Core o que foi transmitido.
-              </p>
-            </header>
-
-            <article className="onb-card onb-product">
-              <div className="onb-product__head">
-                <div>
-                  <small className="onb-company__eyebrow">Como funciona</small>
-                  <h3>Ciclo mensal</h3>
-                </div>
-                <a href={closingUrl} target="_blank" rel="noopener noreferrer" className="onb-link">
-                  Abrir o Controle de Fechamento
-                  <ArrowUpRight size={15} />
-                </a>
-              </div>
-
-              <ol className="onb-steps">
-                {closingSteps.map((step, index) => (
-                  <li key={step.title}>
-                    <span className="onb-steps__number">{String(index + 1).padStart(2, "0")}</span>
-                    <h4>{step.title}</h4>
-                    <p>{step.text}</p>
-                  </li>
-                ))}
-              </ol>
-
-              <div className="onb-rules">
-                <small>
-                  <KeyRound size={12} /> REGRAS IMPORTANTES
-                </small>
-                <ul className="onb-list">
-                  {closingRules.map((rule) => (
-                    <li key={rule}>{rule}</li>
-                  ))}
-                </ul>
-              </div>
-            </article>
-
-            <div className="onb-grid onb-grid--3">
-              {closingModules.map((module) => {
-                const Icon = module.icon;
-                return (
-                  <article key={module.title} className="onb-card">
-                    <div className="onb-card__icon">
-                      <Icon size={22} />
-                    </div>
-                    <h3>{module.title}</h3>
-                    <p>{module.text}</p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      </ScrollReveal>
+      
 
       <ScrollReveal animation="fade-up">
         <section id="primeira-semana" className="onb-section onb-section--alt">

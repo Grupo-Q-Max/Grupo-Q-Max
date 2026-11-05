@@ -62,7 +62,6 @@ const nextConfig: NextConfig = {
   async rewrites() {
     const eventosUrl = process.env.EVENTOS_URL || "http://127.0.0.1:3001";
     const propostaUrl = (process.env.PROPOSTA_URL || "http://127.0.0.1:3005").replace(/\/$/, "");
-    const fechamentoUrl = (process.env.FECHAMENTO_URL || "http://127.0.0.1:8002").replace(/\/$/, "");
     const quizUrl = (process.env.QUIZ_URL || "http://127.0.0.1:8003").replace(/\/$/, "");
     return [
       {
@@ -175,7 +174,8 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/api/notifications/stream",
-        destination: `${propostaUrl}/api/notifications/stream`,},
+        destination: `${propostaUrl}/api/notifications/stream`,
+      },
       {
         source: "/finora-experience",
         destination: `${eventosUrl}/finora-experience`,
@@ -183,70 +183,6 @@ const nextConfig: NextConfig = {
       {
         source: "/finora-experience/:path*",
         destination: `${eventosUrl}/finora-experience/:path*`,
-      },
-      {
-        source: "/fechamento",
-        destination: `${fechamentoUrl}/index.php`,
-      },
-      {
-        source: "/fechamento/",
-        destination: `${fechamentoUrl}/index.php`,
-      },
-      {
-        source: "/fechamento/:path*",
-        destination: `${fechamentoUrl}/:path*`,
-      },
-      {
-        source: "/controle-fechamento",
-        destination: `${fechamentoUrl}/index.php`,
-      },
-      {
-        source: "/controle-fechamento/",
-        destination: `${fechamentoUrl}/index.php`,
-      },
-      {
-        source: "/controle-fechamento/:path*",
-        destination: `${fechamentoUrl}/:path*`,
-      },
-      {
-        source: "/controle_fechamento",
-        destination: `${fechamentoUrl}/index.php`,
-      },
-      {
-        source: "/controle_fechamento/",
-        destination: `${fechamentoUrl}/index.php`,
-      },
-      {
-        source: "/controle_fechamento/:path*",
-        destination: `${fechamentoUrl}/:path*`,
-      },
-      {
-        source: "/assets/:path*",
-        destination: `${fechamentoUrl}/assets/:path*`,
-      },
-      {
-        source: "/partes/:path*",
-        destination: `${fechamentoUrl}/partes/:path*`,
-      },
-      {
-        source: "/Documentos/:path*",
-        destination: `${fechamentoUrl}/Documentos/:path*`,
-      },
-      {
-        source: "/scripts_globais.js",
-        destination: `${fechamentoUrl}/scripts_globais.js`,
-      },
-      {
-        source: "/password_modal.js",
-        destination: `${fechamentoUrl}/password_modal.js`,
-      },
-      {
-        source: "/notifications.js",
-        destination: `${fechamentoUrl}/notifications.js`,
-      },
-      {
-        source: "/:file.php",
-        destination: `${fechamentoUrl}/:file.php`,
       },
     ];
   },
