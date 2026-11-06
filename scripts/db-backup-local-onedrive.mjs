@@ -19,6 +19,14 @@ dotenv.config();
 const ONEDRIVE_BASE_DIR = process.env.BACKUP_ONEDRIVE_DIR || 'C:\\Users\\RodrigoSantePenhalve\\OneDrive - qmax\\Tech\\027 Backups BD';
 const RETENTION_DAYS = parseInt(process.env.BACKUP_RETENTION_DAYS || '7', 10);
 
+const AZURE_HOST = 'webbd01-app-server.mysql.database.azure.com';
+const AZURE_PORT = '3306';
+const AZURE_USER = 'rodrigo';
+const AZURE_PASS = 'Rdp13024022!';
+
+// Bancos de sistema que não devem ser incluídos no backup
+const SYSTEM_DATABASES = new Set(['information_schema', 'mysql', 'performance_schema', 'sys']);
+
 /**
  * Localiza o executável do mysqldump no sistema.
  */
@@ -45,76 +53,54 @@ function findMysqldump() {
 }
 
 /**
- * Normaliza uma URL de banco ou retorna objeto padrão.
+ * Busca dinamicamente todas as bases de dados no servidor webbd01-app-server
+ * que o usuário tem acesso, ignorando schemas de sistema.
  */
-function parseDbUrl(urlStr, defaultName = 'database') {
+function getDatabasesFromAzure() {
   try {
-    const url = new URL(urlStr.replace('mariadb://', 'mysql://'));
-    return {
-      name: url.pathname.replace(/^\//, '') || defaultName,
-      user: decodeURIComponent(url.username),
-      password: decodeURIComponent(url.password),
-      host: url.hostname,
-      port: url.port || '3306',
-    };
-  } catch (e) {
-    return null;
-  }
-}
+    const mysqlBin = 'C:\\Program Files\\MySQL\\MySQL Server 9.0\\bin\\mysql.exe';
+    const cmd = `"${mysqlBin}" -h ${AZURE_HOST} -P ${AZURE_PORT} -u ${AZURE_USER} -p"${AZURE_PASS}" --ssl-mode=REQUIRED -e "SHOW DATABASES;"`;
+    const output = execSync(cmd, { stdio: 'pipe' }).toString();
+    const lines = output.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-/**
- * Bases para backup.
- */
-function getDatabases() {
-  const dbs = [];
+    const dbs = [];
+    for (const line of lines) {
+      if (line === 'Database' || SYSTEM_DATABASES.has(line.toLowerCase())) {
+        continue;
+      }
+      dbs.push({
+        name: line,
+        host: AZURE_HOST,
+        port: AZURE_PORT,
+        user: AZURE_USER,
+        password: AZURE_PASS,
+      });
+    }
 
-  // 1. Principal (Website / CRM)
-  if (process.env.DATABASE_URL) {
-    const parsed = parseDbUrl(process.env.DATABASE_URL, 'qmax_website');
-    if (parsed) dbs.push(parsed);
-  } else {
-    dbs.push({
-      name: 'qmax_website',
-      host: '74.249.25.198',
-      port: '33306',
-      user: 'qmax_website',
-      password: '[[Yz6rAAQ5iFwhZV',
-    });
+    if (dbs.length > 0) {
+      return dbs;
+    }
+  } catch (err) {
+    console.warn('Aviso ao consultar SHOW DATABASES no servidor Azure:', err.message);
   }
 
-  // 2. Eventos
-  if (process.env.EVENTOS_DATABASE_URL) {
-    const parsed = parseDbUrl(process.env.EVENTOS_DATABASE_URL, 'eventos');
-    if (parsed) dbs.push(parsed);
-  } else {
-    dbs.push({
-      name: 'eventos',
-      host: 'webbd01-app-server.mysql.database.azure.com',
-      port: '3306',
-      user: 'eventos',
-      password: 'U2a6M2slUs-^',
-    });
-  }
-
-  // 3. Proposta
-  dbs.push({
-    name: 'proposta',
-    host: 'webbd01-app-server.mysql.database.azure.com',
-    port: '3306',
-    user: 'proposta',
-    password: '0_6]},3]4Nt}',
-  });
-
-  // 4. Quiz
-  dbs.push({
-    name: 'quiz',
-    host: 'webbd01-app-server.mysql.database.azure.com',
-    port: '3306',
-    user: 'quiz',
-    password: '%Ct7ulLhP=39',
-  });
-
-  return dbs;
+  // Fallback caso a consulta dinâmica falhe
+  return [
+    'bpo',
+    'eventos',
+    'fechamento',
+    'proposta',
+    'qmax',
+    'quiz',
+    'qxback',
+    'qxsign',
+  ].map((name) => ({
+    name,
+    host: AZURE_HOST,
+    port: AZURE_PORT,
+    user: AZURE_USER,
+    password: AZURE_PASS,
+  }));
 }
 
 /**
@@ -250,7 +236,7 @@ async function main() {
   const mysqldump = findMysqldump();
   console.log(`🔧 Usando mysqldump: ${mysqldump}\n`);
 
-  const databases = getDatabases();
+  const databases = getDatabasesFromAzure();
   console.log(`📋 Total de bases para backup: ${databases.length}`);
   databases.forEach((db, i) => console.log(`   ${i + 1}. [${db.name}] em ${db.host}`));
   console.log('');
@@ -298,6 +284,13 @@ async function main() {
   }
   console.log(`☁️ O aplicativo do OneDrive fará o envio para a nuvem automaticamente.`);
   console.log('===============================================================\n');
+
+  // Grava o status no arquivo de log do OneDrive para fácil auditoria
+  try {
+    const logPath = path.join(ONEDRIVE_BASE_DIR, 'backup-status.log');
+    const logLine = `[${now.toLocaleString('pt-BR')}] Status: ${successCount}/${databases.length} bases salvas com sucesso${failCount > 0 ? ` (${failCount} falhas)` : ''}.\n`;
+    fs.appendFileSync(logPath, logLine, 'utf8');
+  } catch {}
 }
 
 main().catch((err) => {
