@@ -134,11 +134,11 @@ function dumpAndCompress(mysqldumpPath, db, destFilePath) {
     };
 
     const args = [
-      '--single-transaction',
       '--quick',
       '--skip-lock-tables',
-      '--routines',
-      '--triggers',
+      '--no-tablespaces',
+      '--set-gtid-purged=OFF',
+      '--column-statistics=0',
       '-h', db.host,
       '-P', db.port,
       '-u', db.user,
@@ -147,6 +147,8 @@ function dumpAndCompress(mysqldumpPath, db, destFilePath) {
 
     if (db.host.includes('azure.com')) {
       args.push('--ssl-mode=REQUIRED');
+    } else {
+      args.push('--single-transaction');
     }
 
     args.push(db.name);
