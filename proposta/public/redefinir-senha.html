@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinir senha | Q-MAX Propostas</title>
+    <link rel="icon" type="image/png" href="assets/icon-32.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/qmax-ui.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <link rel="stylesheet" href="css/tema-escritorio.css">
+</head>
+
+<body class="page-login theme-finora">
+    <main class="login-shell">
+        <section class="card login-card glass-card">
+            <div class="logo-container">
+                <div class="login-mark">Q</div>
+                <h2>Redefinir senha</h2>
+                <p id="instrucao">Informe seu e-mail. Enviaremos um link para criar uma senha nova.</p>
+            </div>
+
+            <div class="card-body" style="padding: 0;">
+                <form id="pedirForm">
+                    <div class="input-group">
+                        <label for="email">E-mail Institucional</label>
+                        <input type="email" id="email" placeholder="seuemail@grupoqmax.com.br" autocomplete="username" required>
+                    </div>
+                    <button type="submit" class="btn-primary btn-login" style="margin-top: 24px;">Enviar link</button>
+                </form>
+
+                <form id="novaSenhaForm" hidden>
+                    <div class="input-group">
+                        <label for="senha">Nova senha</label>
+                        <input type="password" id="senha" minlength="6" autocomplete="new-password" required>
+                    </div>
+                    <div class="input-group" style="margin-top: 16px;">
+                        <label for="confirmacao">Repita a nova senha</label>
+                        <input type="password" id="confirmacao" minlength="6" autocomplete="new-password" required>
+                    </div>
+                    <button type="submit" class="btn-primary btn-login" style="margin-top: 24px;">Salvar nova senha</button>
+                </form>
+                <div id="mensagem" role="alert"></div>
+                <p style="margin-top: 16px; text-align: center;"><a href="login.html">Voltar ao login</a></p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Token no fragmento (#): não vai para log do servidor nem para o Referer
+        const token = location.hash.slice(1);
+        const mensagem = document.getElementById('mensagem');
+
+        async function enviar(form, url, corpo) {
+            const btn = form.querySelector('button');
+            btn.disabled = true;
+            mensagem.textContent = '';
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(corpo)
+                });
+                const data = await res.json();
+                mensagem.textContent = data.message || data.error;
+                return res.ok;
+            } catch {
+                mensagem.textContent = 'Erro de conexão com o servidor.';
+                return false;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        if (token) {
+            document.getElementById('pedirForm').hidden = true;
+            document.getElementById('novaSenhaForm').hidden = false;
+            document.getElementById('instrucao').textContent = 'Escolha a nova senha (mínimo 6 caracteres).';
+        }
+
+        document.getElementById('pedirForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            enviar(e.target, '/api/auth/esqueci-senha', { email: document.getElementById('email').value });
+        });
+
+        document.getElementById('novaSenhaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const senha = document.getElementById('senha').value;
+            if (senha !== document.getElementById('confirmacao').value) {
+                mensagem.textContent = 'As senhas não conferem.';
+                return;
+            }
+            if (await enviar(e.target, '/api/auth/redefinir-senha', { token, senha })) {
+                history.replaceState(null, '', location.pathname);
+                setTimeout(() => { location.href = 'login.html'; }, 1500);
+            }
+        });
+    </script>
+    <script src="js/qmax-theme.js"></script>
+</body>
+
+</html>

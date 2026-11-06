@@ -40,22 +40,29 @@ app.use(
   }),
 );
 
-app.get(["/", APP_BASE_PATH, `${APP_BASE_PATH}/`], (req, res) => {
-  res.redirect(`${APP_BASE_PATH}/login.html`);
-});
-
 app.use(
   APP_BASE_PATH,
   express.static(publicPath, {
     maxAge: process.env.NODE_ENV === "production" ? "1d" : 0,
     etag: true,
-    redirect: false,
     // HTML/JS/CSS sem versão no nome: revalidar sempre (ETag) para não rodar motor de preço antigo após deploy
     setHeaders: (res, filePath) => {
       if (/\.(html|js|css)$/.test(filePath)) res.setHeader("Cache-Control", "no-cache");
     },
   })
 );
+
+app.get("/", (req, res) => {
+  res.redirect(`${APP_BASE_PATH}/login.html`);
+});
+
+app.get(APP_BASE_PATH, (req, res) => {
+  res.redirect(`${APP_BASE_PATH}/login.html`);
+});
+
+app.get(`${APP_BASE_PATH}/`, (req, res) => {
+  res.redirect(`${APP_BASE_PATH}/login.html`);
+});
 
 app.use(compression());
 
@@ -86,7 +93,7 @@ app.use(
   }),
 );
 
-app.get(["/api/health", `${APP_BASE_PATH}/api/health`], (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({
     success: true,
     message: "Servidor online",
@@ -101,7 +108,7 @@ if (!fs.existsSync(pdfFolder)) {
 }
 
 // SSE Stream para notificações em tempo real
-app.get(["/api/notifications/stream", `${APP_BASE_PATH}/api/notifications/stream`], verificarTokenSSE, (req, res) => {
+app.get("/api/notifications/stream", verificarTokenSSE, (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
@@ -201,4 +208,9 @@ app.listen(PORT, () => {
   } catch (error) {
     console.error("Erro ao inicializar motor de follow-up:", error.message);
   }
+
+  // Assinado/cancelado no D4Sign sem webhook (segredo ausente, evento perdido): consulta a cada 30 minutos
+  const d4signService = require("./services/d4signService");
+  d4signService.verificarAssinaturasPendentes();
+  setInterval(() => d4signService.verificarAssinaturasPendentes(), 30 * 60 * 1000);
 });

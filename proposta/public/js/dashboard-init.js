@@ -324,6 +324,20 @@ function inicializarStreamNotificacoes() {
     }
   });
 
+  eventSource.addEventListener("contrato_nao_assinado", (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      exibirToastNotificacao(
+        "SYS.NTF_D4SG",
+        "Contrato Não Assinado",
+        `Proposta #${escapeHTML(data.numeroProposta)} (<strong>${escapeHTML(data.nomeClinica)}</strong>): ${escapeHTML(data.motivo)}`
+      );
+      if (typeof carregarPropostas === "function") carregarPropostas();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
   eventSource.onerror = (err) => {
     console.warn("Erro na conexão SSE. Tentando reconectar...", err);
     if (eventSource.readyState === EventSource.CLOSED) {

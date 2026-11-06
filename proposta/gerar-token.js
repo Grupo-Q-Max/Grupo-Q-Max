@@ -4,12 +4,13 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const port = 3001;
+// Precisa bater com um redirect URI do app "Sites oAuth 2" no Entra (cadastrado: http://localhost:3000/callback.php)
+const port = 3000;
 
 const CLIENT_ID = process.env.OAUTH_CLIENT_ID;
 const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
 const TENANT_ID = process.env.OAUTH_TENANT_ID;
-const REDIRECT_URI = `http://localhost:${port}/callback`;
+const REDIRECT_URI = `http://localhost:${port}/callback.php`;
 
 const SCOPES = "offline_access https://outlook.office.com/SMTP.Send";
 
@@ -24,7 +25,7 @@ app.get('/login', (req, res) => {
     res.redirect(authUrl);
 });
 
-app.get('/callback', async (req, res) => {
+app.get('/callback.php', async (req, res) => {
     const code = req.query.code;
     
     if (!code) {

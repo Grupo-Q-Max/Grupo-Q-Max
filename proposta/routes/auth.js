@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const db = require("../config/db");
 const rateLimit = require("express-rate-limit");
 const { verificarToken, verificarRole } = require("../middleware/auth");
+const { enviarEmailRedefinirSenha } = require("../services/emailService");
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -74,6 +75,61 @@ function normalizarTelefone(valor) {
 
 // Rota de login
 router.post("/api/auth/login", loginLimiter, loginHandler);
+
+const recuperacaoLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  skip: () => process.env.NODE_ENV === "test",
+  message: { error: "Muitas tentativas. Tente novamente em 15 minutos." },
+});
+
+// Token de redefinição assinado com JWT_SECRET + hash atual: vale 1h e morre quando a senha muda (uso único, sem tabela)
+const segredoRedefinicao = (usuario) => process.env.JWT_SECRET + usuario.senha_hash;
+
+router.post("/api/auth/esqueci-senha", recuperacaoLimiter, async (req, res, next) => {
+  try {
+    const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    if (!email) return res.status(400).json({ error: "Informe o e-mail." });
+
+    const [usuario] = await db.executarQuery("SELECT * FROM usuarios WHERE email = ? AND ativo = 1", [email]);
+    if (usuario) {
+      const token = jwt.sign({ id: usuario.id, tipo: "redefinir-senha" }, segredoRedefinicao(usuario), { expiresIn: "1h" });
+      const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3005}`;
+      const link = `${baseUrl}${process.env.APP_BASE_PATH || "/proposta"}/redefinir-senha.html#${token}`;
+      // Sem await: o tempo de resposta não revela se o e-mail tem conta
+      enviarEmailRedefinirSenha(usuario.nome, usuario.email, link).catch((error) =>
+        console.error("[Auth] Falha ao enviar e-mail de redefinição:", error.message),
+      );
+    }
+    res.json({ success: true, message: "Se o e-mail tiver conta ativa, enviamos um link para redefinir a senha." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/api/auth/redefinir-senha", recuperacaoLimiter, async (req, res, next) => {
+  try {
+    const { token, senha } = req.body;
+    if (typeof token !== "string" || typeof senha !== "string" || senha.length < 6 || senha.length > 200) {
+      return res.status(400).json({ error: "A senha precisa ter pelo menos 6 caracteres." });
+    }
+    const invalido = () => res.status(400).json({ error: "Link inválido ou expirado. Peça um novo." });
+
+    const id = jwt.decode(token)?.id;
+    const [usuario] = id ? await db.executarQuery("SELECT * FROM usuarios WHERE id = ? AND ativo = 1", [id]) : [];
+    if (!usuario) return invalido();
+    try {
+      if (jwt.verify(token, segredoRedefinicao(usuario)).tipo !== "redefinir-senha") return invalido();
+    } catch {
+      return invalido();
+    }
+
+    await db.executarQuery("UPDATE usuarios SET senha_hash = ? WHERE id = ?", [await bcrypt.hash(senha, 10), usuario.id]);
+    res.json({ success: true, message: "Senha alterada. Faça login com a nova senha." });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.post(
   "/api/usuarios",

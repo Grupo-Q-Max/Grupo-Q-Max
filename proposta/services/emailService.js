@@ -3,6 +3,7 @@ const https = require("https");
 const dotenv = require("dotenv");
 
 dotenv.config();
+const db = require("../config/db");
 
 // Nome de cliente, justificativa etc. vêm de formulário: escapar antes de pôr no HTML do e-mail
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c]));
@@ -12,17 +13,73 @@ const transporter = nodemailer.createTransport({
   host: "smtp.office365.com",
   port: 587,
   secure: false,
-  auth: {
-    type: "OAuth2",
-    user: process.env.EMAIL_USER,
-    clientId: process.env.OAUTH_CLIENT_ID,
-    clientSecret: process.env.OAUTH_CLIENT_SECRET,
-    refreshToken: process.env.OAUTH_REFRESH_TOKEN,
-    accessUrl: `https://login.microsoftonline.com/${process.env.OAUTH_TENANT_ID}/oauth2/v2.0/token`,
-  },
+  auth: { type: "OAuth2", user: process.env.EMAIL_USER },
   // STARTTLS com os padrões do Node (TLS 1.2+); "SSLv3" era obsoleto
   requireTLS: true,
 });
+
+// A Microsoft devolve um refresh token novo a cada uso e o antigo morre 90 dias depois de emitido.
+// O nodemailer reusava sempre o do .env: o envio parou em 28/10 (AADSTS700082). O mais novo fica no banco.
+const CHAVE_REFRESH_TOKEN = "oauth_refresh_token";
+let acessoOutlook = null; // { token, expiraEm }
+
+async function pedirTokenMicrosoft(refreshToken) {
+  const res = await fetch(`https://login.microsoftonline.com/${process.env.OAUTH_TENANT_ID}/oauth2/v2.0/token`, {
+    method: "POST",
+    body: new URLSearchParams({
+      client_id: process.env.OAUTH_CLIENT_ID,
+      client_secret: process.env.OAUTH_CLIENT_SECRET,
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      scope: "offline_access https://outlook.office.com/SMTP.Send",
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  const dados = await res.json().catch(() => ({}));
+  if (!res.ok || !dados.access_token) {
+    throw new Error(`OAuth Microsoft: ${String(dados.error_description || `HTTP ${res.status}`).split("\r\n")[0]}`);
+  }
+  return dados;
+}
+
+async function accessTokenOutlook() {
+  if (acessoOutlook && acessoOutlook.expiraEm > Date.now() + 60000) return acessoOutlook.token;
+  const salvo = await db
+    .executarQuery("SELECT valor FROM configuracoes_sistema WHERE chave = ? LIMIT 1", [CHAVE_REFRESH_TOKEN])
+    .catch(() => []);
+  // Salvo no banco primeiro; o do .env serve para o primeiro uso e para quando um token novo é gerado (gerar-token.js)
+  const candidatos = [...new Set([salvo[0]?.valor, process.env.OAUTH_REFRESH_TOKEN].filter(Boolean))];
+  let erro = new Error("OAUTH_REFRESH_TOKEN não configurado.");
+  for (const refreshToken of candidatos) {
+    try {
+      const dados = await pedirTokenMicrosoft(refreshToken);
+      if (dados.refresh_token) {
+        await db
+          .executarQuery(
+            "INSERT INTO configuracoes_sistema (chave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor = VALUES(valor), atualizado_em = NOW()",
+            [CHAVE_REFRESH_TOKEN, dados.refresh_token],
+          )
+          .catch((e) => console.warn("[EmailService] Refresh token novo não foi salvo:", e.message));
+      }
+      acessoOutlook = { token: dados.access_token, expiraEm: Date.now() + Number(dados.expires_in || 3600) * 1000 };
+      return acessoOutlook.token;
+    } catch (e) {
+      erro = e;
+    }
+  }
+  throw erro;
+}
+
+transporter.set("oauth2_provision_cb", (user, renovar, callback) => {
+  if (renovar) acessoOutlook = null;
+  accessTokenOutlook().then((token) => callback(null, token), callback);
+});
+
+// "a@x,b@y" (formato do nodemailer) virava um único destinatário inválido na Resend (422) e o aviso não saía
+function destinatariosResend(to) {
+  const lista = Array.isArray(to) ? to : String(to || "").split(",");
+  return lista.map((e) => String(e).trim()).filter(Boolean);
+}
 
 /**
  * Envia e-mail via API HTTP da Resend (Zero dependências, 100% seguro)
@@ -32,7 +89,7 @@ async function enviarViaResend(mailOptions) {
   const fromEmail = process.env.EMAIL_FROM || mailOptions.from || "FINORA <noreply@grupoqmax.com.br>";
   const payload = {
     from: fromEmail,
-    to: Array.isArray(mailOptions.to) ? mailOptions.to : [mailOptions.to],
+    to: destinatariosResend(mailOptions.to),
     subject: mailOptions.subject,
     html: mailOptions.html,
     ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {})
@@ -475,7 +532,46 @@ async function notificarFalhaContrato(dadosProposta, motivo) {
   });
 }
 
+/**
+ * Aviso ao vendedor: o contrato no D4Sign foi cancelado/expirou ou o e-mail de assinatura não chegou ao cliente
+ */
+async function notificarContratoNaoAssinado(vendedorEmail, dadosProposta, motivo) {
+  const marca = obterMarcaEmail(dadosProposta);
+
+  return await dispararEmail({
+    from: `${marca.nome} Sistema <${process.env.EMAIL_USER || "sistema@finora.com.br"}>`,
+    to: vendedorEmail,
+    subject: `⚠️ CONTRATO NÃO ASSINADO: ${dadosProposta.nome_clinica} (Nº ${dadosProposta.numero_proposta})`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fde68a; padding: 24px; border-radius: 10px; background: #ffffff;">
+        <h2 style="color: #b45309; margin-top: 0;">Contrato não assinado no D4Sign</h2>
+        <p>Proposta Nº ${esc(dadosProposta.numero_proposta)} de <strong>${esc(dadosProposta.nome_clinica)}</strong>: ${esc(motivo)}</p>
+        <p style="font-size: 13px; color: #64748b;">Fale com o cliente. Um novo contrato é gerado quando ele abrir o link de assinatura da proposta.</p>
+      </div>
+    `,
+  });
+}
+
+async function enviarEmailRedefinirSenha(nome, email, link) {
+  return await dispararEmail({
+    from: `Q-MAX Propostas <${process.env.EMAIL_USER || "comercial@finora.com.br"}>`,
+    to: email,
+    subject: "Q-MAX Propostas - Redefinir senha",
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 32px;">
+        <p>Olá, ${esc(nome)}.</p>
+        <p>Recebemos um pedido para redefinir sua senha. O link vale por 1 hora e só pode ser usado uma vez.</p>
+        <p style="margin: 28px 0;"><a href="${esc(link)}" style="background:#663399;color:#fff;padding:14px 28px;border-radius:999px;text-decoration:none;font-weight:bold;">Redefinir senha</a></p>
+        <p style="font-size: 12px; color: #94a3b8;">Não pediu? Ignore este e-mail; sua senha continua a mesma.</p>
+      </div>
+    `,
+  });
+}
+
 module.exports = {
+  enviarEmailRedefinirSenha,
+  destinatariosResend,
+  notificarContratoNaoAssinado,
   enviarEmailLink,
   notificarHugo,
   notificarFalhaContrato,

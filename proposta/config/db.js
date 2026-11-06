@@ -35,9 +35,7 @@ const db = mysql.createPool({
   timezone: FUSO_BANCO,
 
   // Azure MySQL exige TLS
-  ssl: (process.env.DB_SSL === "true" || (process.env.DB_HOST && process.env.DB_HOST.includes("azure.com")))
-    ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === "true" }
-    : undefined,
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: true } : undefined,
 });
 
 // Cada conexão nova do pool grava e lê no fuso de Brasília (NOW(), CURDATE(), DATE_SUB...)

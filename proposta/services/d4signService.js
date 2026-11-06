@@ -5,8 +5,12 @@ const { URL } = require("url");
 const crypto = require("crypto");
 const db = require("../config/db");
 const emailService = require("./emailService");
+const notificationService = require("./notificationService");
+const teamsService = require("./teamsService");
+const { ehUuidD4Sign } = require("./proposalHelpers");
 
 const isPlaceholder = (val) => !val || val.startsWith("seu_") || val.includes("placeholder");
+const normalizarEmail = (email) => String(email || "").trim().toLowerCase();
 
 // Em teste, D4SIGN_EMAIL_INTERNO_TESTE troca os signatários internos por plus-addresses (usuario+apelido@dominio)
 function emailInterno(email, apelido) {
@@ -77,7 +81,7 @@ async function obterConfiguracoesD4Sign() {
 /**
  * Realiza requisições HTTPS/HTTP nativas à API da D4Sign com suporte a JSON.
  */
-function rawRequest(apiUrl, method, pathWithQuery, body = null) {
+function rawRequest(apiUrl, method, pathWithQuery, body = null, timeoutMs = 20000) {
   return new Promise((resolve, reject) => {
     const urlString = `${apiUrl}${pathWithQuery}`;
     const parsed = new URL(urlString);
@@ -117,7 +121,7 @@ function rawRequest(apiUrl, method, pathWithQuery, body = null) {
 
     req.on("error", reject);
     // Sem timeout, API parada segurava a requisição do cliente (aprovar/assinar) indefinidamente
-    req.setTimeout(20000, () => req.destroy(new Error("Timeout de 20s na chamada externa")));
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`Timeout de ${timeoutMs / 1000}s na chamada externa`)));
 
     if (body) {
       req.write(JSON.stringify(body));
@@ -192,7 +196,7 @@ async function enviarDocumento(pdfBuffer, docName) {
 
     req.on("error", reject);
     // Sem timeout, API parada segurava a requisição do cliente (aprovar/assinar) indefinidamente
-    req.setTimeout(20000, () => req.destroy(new Error("Timeout de 20s na chamada externa")));
+    req.setTimeout(60000, () => req.destroy(new Error("Timeout de 60s no upload para a D4Sign")));
     form.pipe(req);
   });
 }
@@ -329,22 +333,49 @@ async function enviarParaAssinatura(uuidDocumento) {
   }
 
   const authQuery = `tokenAPI=${encodeURIComponent(config.apiToken)}&cryptKey=${encodeURIComponent(config.apiSecret)}`;
-  const res = await rawRequest(
-    config.apiUrl,
-    "POST",
-    `/documents/${uuidDocumento}/sendtosigner?${authQuery}`,
-    payload
-  );
-
-  if (res.statusCode >= 400) {
-    throw new Error(`Erro ao disparar envio para assinatura: ${res.data?.message || JSON.stringify(res.data)}`);
+  let erro;
+  try {
+    // Conta live levou mais de 20s para responder (validação de 28/10), mesmo tendo enviado: 60s aqui
+    const res = await rawRequest(
+      config.apiUrl,
+      "POST",
+      `/documents/${uuidDocumento}/sendtosigner?${authQuery}`,
+      payload,
+      60000
+    );
+    if (res.statusCode < 400) return;
+    erro = new Error(`Erro ao disparar envio para assinatura: ${res.data?.message || JSON.stringify(res.data)}`);
+  } catch (e) {
+    erro = e;
   }
+
+  // Timeout ou 5xx nem sempre é falha: a D4Sign às vezes envia e só responde depois (ou responde 500)
+  if ((await statusIdDocumento(uuidDocumento).catch(() => null)) === "3") {
+    console.warn(`[D4Sign] sendtosigner respondeu com erro (${erro.message}), mas o documento já está "Aguardando Assinaturas". Seguindo.`);
+    return;
+  }
+  throw erro;
+}
+
+// statusId do documento na D4Sign (string) ou null se a consulta falhar
+async function statusIdDocumento(uuidDocumento) {
+  const config = await obterConfiguracoesD4Sign();
+  const authQuery = `tokenAPI=${encodeURIComponent(config.apiToken)}&cryptKey=${encodeURIComponent(config.apiSecret)}`;
+  const res = await rawRequest(config.apiUrl, "GET", `/documents/${uuidDocumento}?${authQuery}`);
+  const doc = Array.isArray(res.data) ? res.data[0] : res.data;
+  if (res.statusCode >= 400 || !doc || doc.statusId == null) {
+    console.warn(`[D4Sign] Status do documento ${uuidDocumento} indisponível (HTTP ${res.statusCode}).`);
+    return null;
+  }
+  return String(doc.statusId);
 }
 
 /**
  * Fluxo completo automatizado de assinatura de contrato para a proposta.
  */
 async function iniciarAssinaturaProposta(proposta, pdfBuffer) {
+  let uuidDocumento;
+  let enviadoAosSignatarios = false;
   try {
     const config = await obterConfiguracoesD4Sign();
     const docName = `Proposta #${proposta.numero_proposta} - ${proposta.nome_clinica}`;
@@ -352,15 +383,17 @@ async function iniciarAssinaturaProposta(proposta, pdfBuffer) {
     console.log(`[D4Sign] Iniciando processo para Proposta #${proposta.numero_proposta} (Modo: ${config.ambiente})...`);
 
     // 1. Enviar PDF
-    const uuidDocumento = await enviarDocumento(pdfBuffer, docName);
+    uuidDocumento = await enviarDocumento(pdfBuffer, docName);
     console.log(`[D4Sign] Documento enviado. UUID: ${uuidDocumento}`);
 
     await db.execute("UPDATE propostas SET ip_assinatura = ? WHERE id = ?", [uuidDocumento, proposta.id]);
 
     // 2. Adicionar Signatários
+    // E-mail com maiúscula/espaço não batia com o devolvido pela D4Sign: o documento ficava criado sem envio ao cliente
+    const emailCliente = normalizarEmail(proposta.email);
     const signatarios = [
       {
-        email: proposta.email,
+        email: emailCliente,
         nome: proposta.nome_socio || proposta.nome_clinica,
         telefone: proposta.telefone || "",
         act: 1, // Assinar como parte
@@ -376,9 +409,9 @@ async function iniciarAssinaturaProposta(proposta, pdfBuffer) {
 
     if (Array.isArray(sociosDetalhados)) {
       sociosDetalhados.forEach((socio) => {
-        if (socio.email && socio.email !== proposta.email) {
+        if (socio.email && normalizarEmail(socio.email) !== emailCliente) {
           signatarios.push({
-            email: socio.email,
+            email: normalizarEmail(socio.email),
             nome: socio.nome || "Sócio",
             telefone: socio.telefone || "",
             act: 1,
@@ -411,20 +444,24 @@ async function iniciarAssinaturaProposta(proposta, pdfBuffer) {
     const signatariosCadastrados = await cadastrarSignatarios(uuidDocumento, signatarios);
     console.log(`[D4Sign] ${signatarios.length} signatários cadastrados no documento.`);
 
-    // 3. Registrar webhook
-    await registrarWebhook(uuidDocumento);
+    // 3. Registrar webhook. Falha aqui não pode impedir o envio ao cliente: verificarAssinaturasPendentes consulta o status
+    try {
+      await registrarWebhook(uuidDocumento);
+    } catch (webhookErr) {
+      console.error(`[D4Sign] ${webhookErr.message}. Seguindo; o status será consultado pelo job.`);
+    }
 
     // 4. Disparar o envio para assinatura na D4Sign (email oficial deles)
     await enviarParaAssinatura(uuidDocumento);
+    enviadoAosSignatarios = true;
 
     // 5. Obter link de assinatura oficial e disparar e-mail personalizado da Q-MAX / Finora
-    const clientEmail = (proposta.email || "").trim().toLowerCase();
     const signatarioCliente = Array.isArray(signatariosCadastrados)
-      ? signatariosCadastrados.find((s) => (s.email || "").trim().toLowerCase() === clientEmail)
+      ? signatariosCadastrados.find((s) => normalizarEmail(s.email) === emailCliente)
       : null;
 
     const keySigner = signatarioCliente?.key_signer || null;
-    let linkAssinatura = await obterLinkAssinatura(uuidDocumento, proposta.email, keySigner);
+    let linkAssinatura = await obterLinkAssinatura(uuidDocumento, emailCliente, keySigner);
 
     if (linkAssinatura) {
       console.log(`[D4Sign] Link obtido com sucesso: ${linkAssinatura}. Disparando e-mail de assinatura...`);
@@ -452,8 +489,25 @@ async function iniciarAssinaturaProposta(proposta, pdfBuffer) {
     return uuidDocumento;
   } catch (error) {
     console.error(`[D4Sign] Falha no fluxo automatizado para proposta ${proposta.id}:`, error.message);
+    // Documento criado mas não enviado ficava "Aguardando Signatários" para sempre: o UUID gravado impedia
+    // o link de assinatura de gerar outro e o job nunca via finalizado/cancelado. Libera e cancela o órfão.
+    if (uuidDocumento && !enviadoAosSignatarios) {
+      await db
+        .execute("UPDATE propostas SET ip_assinatura = NULL WHERE id = ? AND ip_assinatura = ?", [proposta.id, uuidDocumento])
+        .catch((e) => console.error("[D4Sign] Falha ao liberar documento não enviado:", e.message));
+      cancelarDocumento(uuidDocumento).catch((e) => console.warn(`[D4Sign] Documento ${uuidDocumento} não cancelado:`, e.message));
+    }
     throw error;
   }
+}
+
+async function cancelarDocumento(uuidDocumento) {
+  const config = await obterConfiguracoesD4Sign();
+  if (isPlaceholder(config.apiToken) || isPlaceholder(config.apiSecret)) return;
+  const authQuery = `tokenAPI=${encodeURIComponent(config.apiToken)}&cryptKey=${encodeURIComponent(config.apiSecret)}`;
+  // Conta live levou 18s para responder o cancel (28/10)
+  const res = await rawRequest(config.apiUrl, "POST", `/documents/${uuidDocumento}/cancel?${authQuery}`, { comment: "Envio ao cliente falhou; novo contrato será gerado." }, 60000);
+  if (res.statusCode >= 400) throw new Error(`HTTP ${res.statusCode}`);
 }
 
 /**
@@ -619,6 +673,198 @@ async function testarConexaoD4Sign(customConfig = {}) {
   }
 }
 
+// Registro no histórico que marca o "documento finalizado" do D4Sign como já tratado (idempotência de webhook e job)
+const MARCA_ASSINATURA_D4SIGN = "Contrato assinado por todos no D4Sign.";
+// Recusada ou em análise interna não vira "Aprovada" por assinatura (mesmas chaves de MENSAGEM_BLOQUEIO_APROVACAO)
+const STATUS_SEM_ASSINATURA = ["Recusada", "Aguardando Aprovação"];
+
+/**
+ * Consulta o status do documento na D4Sign: "finalizado" (4), "cancelado" (6, inclui prazo expirado) ou "aguardando".
+ * null em mock ou falha de comunicação.
+ */
+async function consultarStatusDocumento(uuidDocumento) {
+  const config = await obterConfiguracoesD4Sign();
+  if (isPlaceholder(config.apiToken) || isPlaceholder(config.apiSecret)) return null;
+
+  const statusId = await statusIdDocumento(uuidDocumento);
+  if (statusId === null) return null;
+  if (statusId === "4") return "finalizado";
+  if (statusId === "6") return "cancelado";
+  return "aguardando";
+}
+
+async function avisarVendedorContrato(proposta, motivo) {
+  notificationService.enviarNotificacao("contrato_nao_assinado", {
+    id: proposta.id,
+    numeroProposta: proposta.numero_proposta,
+    nomeClinica: proposta.nome_clinica,
+    criadoPor: proposta.criado_por,
+    motivo,
+  }, [proposta.criado_por]);
+
+  const vendedores = await db.executarQuery("SELECT email FROM usuarios WHERE id = ? LIMIT 1", [proposta.criado_por || 1]);
+  if (vendedores[0]?.email && !(await emailService.notificarContratoNaoAssinado(vendedores[0].email, proposta, motivo))) {
+    console.warn(`[D4Sign] Aviso de contrato não assinado (proposta #${proposta.numero_proposta}) não entregue por e-mail.`);
+  }
+}
+
+/**
+ * Trata o retorno da D4Sign para um documento (webhook ou job de consulta).
+ * evento: "finalizado" (todos assinaram), "cancelado" (cancelado/expirado) ou "nao_entregue" (e-mail ao signatário falhou).
+ */
+async function processarDocumentoD4Sign(uuid, evento, mensagem = "") {
+
+  const propostas = await db.executarQuery(
+    "SELECT id, numero_proposta, status, token_acesso, nome_clinica, nome_socio, email, valor_total, criado_por, tipo_proposta FROM propostas WHERE ip_assinatura = ? LIMIT 1",
+    [uuid]
+  );
+  if (propostas.length === 0) return;
+  const proposta = propostas[0];
+
+  if (evento === "nao_entregue") {
+    await avisarVendedorContrato(proposta, `o e-mail de assinatura não foi entregue ao signatário (${mensagem || "sem detalhe"}).`);
+    return;
+  }
+
+  if (evento === "cancelado") {
+    // UUID liberado: o próximo acesso ao link de assinatura gera contrato novo. Status da proposta não muda.
+    const [atualizacao] = await db.execute("UPDATE propostas SET ip_assinatura = NULL WHERE id = ? AND ip_assinatura = ?", [proposta.id, uuid]);
+    if (atualizacao.affectedRows === 0) return;
+    await db.execute(
+      "INSERT INTO proposta_observacoes (proposta_id, usuario_id, observacao) VALUES (?, ?, ?)",
+      [proposta.id, proposta.criado_por || 1, `Contrato cancelado ou expirado no D4Sign (documento ${uuid}).`],
+    );
+    console.log(`[D4Sign] Contrato da proposta #${proposta.numero_proposta} cancelado/expirado. Vendedor avisado.`);
+    await avisarVendedorContrato(proposta, "o contrato foi cancelado ou o prazo de assinatura expirou no D4Sign.");
+    return;
+  }
+
+  if (evento !== "finalizado") return;
+
+  if (STATUS_SEM_ASSINATURA.includes(proposta.status)) {
+    console.warn(`[D4Sign] Proposta #${proposta.numero_proposta} está '${proposta.status}'. Assinatura ignorada.`);
+    return;
+  }
+  const jaProcessada = await db.executarQuery(
+    "SELECT 1 FROM proposta_observacoes WHERE proposta_id = ? AND observacao = ? LIMIT 1",
+    [proposta.id, MARCA_ASSINATURA_D4SIGN],
+  );
+  if (jaProcessada.length > 0) {
+    // D4Sign reenvia o evento quando não recebe resposta a tempo: sem esta trava, cliente e equipe recebiam os e-mails de novo
+    console.log(`[D4Sign] Assinatura da proposta #${proposta.numero_proposta} já processada. Reenvio ignorado.`);
+    return;
+  }
+
+  console.log(`[D4Sign] Proposta #${proposta.numero_proposta} assinada por todos. Atualizando status para 'Aprovada'`);
+  await db.execute("UPDATE propostas SET status = 'Aprovada', data_decisao = NOW() WHERE id = ?", [proposta.id]);
+  await db.execute(
+    "INSERT INTO proposta_observacoes (proposta_id, usuario_id, observacao) VALUES (?, ?, ?)",
+    [proposta.id, proposta.criado_por || 1, MARCA_ASSINATURA_D4SIGN],
+  );
+
+  notificationService.enviarNotificacao("aprovada", {
+    id: proposta.id,
+    numeroProposta: proposta.numero_proposta,
+    nomeClinica: proposta.nome_clinica,
+    tipoProposta: proposta.tipo_proposta,
+    criadoPor: proposta.criado_por
+  }, [proposta.criado_por]);
+
+  teamsService.enviarNotificacaoTeams("aprovada", {
+    id: proposta.id,
+    numeroProposta: proposta.numero_proposta,
+    nomeClinica: proposta.nome_clinica,
+    tipoProposta: proposta.tipo_proposta
+  }).catch(() => {});
+
+  try {
+    // Automação CRM: move o Lead correspondente para 'Ganho'
+    const leads = await db.executarQuery(
+      "SELECT id, nome_cliente, criado_por, vendedor_id FROM leads WHERE proposta_id = ? LIMIT 1",
+      [proposta.id]
+    );
+
+    if (leads.length > 0) {
+      const lead = leads[0];
+      console.log(`[D4Sign] Lead CRM correspondente encontrado: ID ${lead.id} (${lead.nome_cliente}). Atualizando para 'Ganho'...`);
+      await db.execute("UPDATE leads SET status = 'Ganho', atualizado_em = NOW() WHERE id = ?", [lead.id]);
+      await db.execute(
+        "INSERT INTO lead_comentarios (lead_id, usuario_id, comentario, tipo, criado_em) VALUES (?, ?, ?, 'historico', NOW())",
+        [lead.id, proposta.criado_por || 1, "Contrato assinado eletronicamente via D4Sign. Oportunidade fechada como GANHA de forma automática pelo sistema! 🎉"]
+      );
+      notificationService.enviarNotificacao("lead_atualizado", {
+        id: lead.id,
+        nomeCliente: lead.nome_cliente,
+        status: "Ganho"
+      }, [lead.criado_por, lead.vendedor_id]);
+    }
+
+    // E-mails de assinatura concluída saem sempre (antes só saíam quando havia lead no CRM)
+    const dadosEmail = {
+      email: proposta.email,
+      nomeSocio: proposta.nome_socio,
+      numeroProposta: proposta.numero_proposta,
+      nomeClinica: proposta.nome_clinica,
+      tipoProposta: proposta.tipo_proposta,
+      valor_total: proposta.valor_total,
+    };
+
+    // 1. Cliente
+    if (!(await emailService.enviarEmailAssinaturaConcluidaCliente(dadosEmail))) {
+      console.error("[D4Sign] E-mail de contrato assinado NÃO enviado ao cliente.");
+    }
+
+    // 2. Vendedor responsável
+    const vendedores = await db.executarQuery("SELECT email, nome FROM usuarios WHERE id = ? LIMIT 1", [proposta.criado_por || 1]);
+    if (vendedores[0]?.email && !(await emailService.enviarEmailAssinaturaConcluidaComercial(dadosEmail, vendedores[0].email, vendedores[0].nome))) {
+      console.error("[D4Sign] E-mail de contrato assinado NÃO enviado ao comercial.");
+    }
+
+    // 3. Diretores
+    const diretores = await db.executarQuery("SELECT email FROM usuarios WHERE role = 'Diretor'");
+    const adminEmails = diretores.map((d) => d.email).filter(Boolean);
+    if (adminEmails.length > 0 && !(await emailService.enviarEmailAssinaturaConcluidaDiretores(dadosEmail, adminEmails))) {
+      console.error("[D4Sign] E-mail de contrato assinado NÃO enviado aos diretores.");
+    }
+  } catch (posErr) {
+    console.error("[D4Sign] Erro no pós-assinatura (CRM/e-mails):", posErr.message);
+  }
+}
+
+/**
+ * Reserva do webhook (segredo ausente, D4Sign sem acesso ao servidor, evento perdido):
+ * consulta os contratos abertos e trata os finalizados e cancelados.
+ * ponytail: 1 chamada por documento a cada 30 min; fila/lote se passar de centenas de contratos abertos.
+ */
+let verificandoAssinaturas = false;
+async function verificarAssinaturasPendentes() {
+  if (verificandoAssinaturas) return;
+  verificandoAssinaturas = true;
+  try {
+    const abertas = await db.executarQuery(
+      `SELECT p.ip_assinatura FROM propostas p
+       WHERE p.status = 'Aprovada' AND p.ip_assinatura IS NOT NULL
+         AND p.data_decisao >= DATE_SUB(NOW(), INTERVAL 60 DAY)
+         AND NOT EXISTS (SELECT 1 FROM proposta_observacoes o WHERE o.proposta_id = p.id AND o.observacao = ?)
+       ORDER BY p.data_decisao DESC LIMIT 50`,
+      [MARCA_ASSINATURA_D4SIGN]
+    );
+    for (const { ip_assinatura: uuid } of abertas) {
+      if (!ehUuidD4Sign(uuid)) continue;
+      try {
+        const status = await consultarStatusDocumento(uuid);
+        if (status === "finalizado" || status === "cancelado") await processarDocumentoD4Sign(uuid, status);
+      } catch (err) {
+        console.error(`[D4Sign] Erro ao verificar documento ${uuid}:`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error("[D4Sign] Erro na verificação de assinaturas pendentes:", err.message);
+  } finally {
+    verificandoAssinaturas = false;
+  }
+}
+
 // Aceita o segredo atual e o legado (cryptKey) para não quebrar documentos registrados antes da troca
 async function segredoWebhookValido(recebido) {
   if (!recebido) return false;
@@ -634,6 +880,10 @@ async function segredoWebhookValido(recebido) {
 }
 
 module.exports = {
+  MARCA_ASSINATURA_D4SIGN,
+  consultarStatusDocumento,
+  processarDocumentoD4Sign,
+  verificarAssinaturasPendentes,
   segredoWebhookValido,
   obterConfiguracoesD4Sign,
   enviarDocumento,

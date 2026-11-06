@@ -3,6 +3,7 @@ const router = express.Router();
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { Readable } = require("stream");
 const db = require("../config/db");
 
 const { verificarToken, donoProposta, donoDocumento } = require("../middleware/auth");
@@ -25,7 +26,6 @@ const {
   criarPropostaFilhaComDesconto,
   gerarMidiaESenharProposta,
   linkCurto,
-  extrairBaseUrl,
   lerJson,
   proximoNumeroProposta,
   ehUuidD4Sign,
@@ -67,9 +67,6 @@ function nomeSeguroCertificado(nomeOriginal) {
 
 // Status em que o link público do cliente não aceita aprovação
 const AVISO_EMAIL_NAO_ENVIADO = "Atenção: o e-mail para o cliente NÃO foi enviado. Envie o link manualmente.";
-
-// Registro no histórico que marca o "documento finalizado" do D4Sign como já tratado (idempotência do webhook)
-const MARCA_ASSINATURA_D4SIGN = "Contrato assinado por todos no D4Sign.";
 
 const MENSAGEM_PROPOSTA_VENCIDA =
   "O prazo de validade desta proposta (10 dias) terminou. Use \"Reativar condição\" nesta página ou fale com seu consultor.";
@@ -435,8 +432,7 @@ const proLaboreNormalizado = normalizarProLabore(
 
     await connection.commit();
 
-    const linkAcesso = linkCurto(tokenAcesso, req);
-    dados.baseUrl = extrairBaseUrl(req);
+    const linkAcesso = linkCurto(tokenAcesso);
 
     // Proposta já gravada: falha de PDF/e-mail vira aviso, não 500 (o retry criaria proposta duplicada)
     let emailEnviado = false;
@@ -1088,7 +1084,7 @@ router.get("/api/propostas/:token/link-assinatura", async (req, res, next) => {
     }
 
     // Fallback: se não houver UUID ou falhar, retorna o PDF local da proposta
-    const pdfUrl = `${extrairBaseUrl(req)}/api/propostas/${encodeURIComponent(token)}/pdf`;
+    const pdfUrl = `${BASE_URL}/api/propostas/${encodeURIComponent(token)}/pdf`;
     res.json({ url: pdfUrl });
   } catch (error) {
     next(error);
@@ -1572,7 +1568,7 @@ router.post("/api/propostas/:id/reenviar", verificarToken, donoProposta, async (
       tipoProposta: proposta.tipo_proposta || "finora",
     };
 
-    const linkAcesso = linkCurto(proposta.token_acesso, req);
+    const linkAcesso = linkCurto(proposta.token_acesso);
     if (!(await emailService.enviarEmailLink(dadosEmail, linkAcesso))) {
       return res.status(502).json({ error: "Não foi possível enviar o e-mail para o cliente. Tente novamente ou envie o link manualmente." });
     }
@@ -1698,7 +1694,6 @@ router.get("/api/propostas/:token/estudo-tributario-pdf", async (req, res, next)
 });
 
 // --- D4SIGN WEBHOOK ---
-// A D4Sign envia o webhook como form-data (urlencoded), não JSON.
 // Campos: uuid, type_post (1=Finalizado, 2=E-mail não entregue, 3=Cancelado, 4=Assinado), message
 router.post("/api/d4sign/webhook", express.urlencoded({ extended: true }), async (req, res, next) => {
   try {
@@ -1707,162 +1702,22 @@ router.post("/api/d4sign/webhook", express.urlencoded({ extended: true }), async
       return res.status(401).json({ error: "Acesso não autorizado." });
     }
 
-    const { uuid, type_post, message } = req.body;
+    // Produção recebeu o webhook da D4Sign com uuid/type_post undefined (27/10): ela manda multipart/form-data,
+    // que express.json/urlencoded ignoram. O Response do Node lê multipart sem dependência.
+    const tipoConteudo = req.get("content-type") || "";
+    if (/^multipart\/form-data/i.test(tipoConteudo)) {
+      req.body = Object.fromEntries(await new Response(Readable.toWeb(req), { headers: { "content-type": tipoConteudo } }).formData());
+    }
+
+    const { uuid, type_post, message } = req.body || {};
     console.log(`[D4Sign Webhook] Recebido evento para documento ${uuid}. type_post: ${type_post}, message: ${message}`);
+    if (!uuid) console.warn(`[D4Sign Webhook] Evento sem uuid (Content-Type: ${tipoConteudo || "nenhum"}).`);
 
-    // type_post "1" = Documento finalizado (todos assinaram)
-    // type_post "4" = Um signatário assinou: não fecha a proposta (faltam os outros) e não dispara avisos por signatário
-    if (String(type_post) === "1") {
-      const propostas = await db.executarQuery(
-        "SELECT id, numero_proposta, status, token_acesso, nome_clinica, nome_socio, email, valor_total, criado_por, tipo_proposta FROM propostas WHERE ip_assinatura = ? LIMIT 1",
-        [uuid]
-      );
-
-      // Recusada ou em análise interna não vira "Aprovada" por assinatura
-      if (propostas.length > 0 && MENSAGEM_BLOQUEIO_APROVACAO[propostas[0].status]) {
-        console.warn(`[D4Sign Webhook] Proposta #${propostas[0].numero_proposta} está '${propostas[0].status}'. Assinatura ignorada.`);
-      } else if (
-        propostas.length > 0 &&
-        (await db.executarQuery(
-          "SELECT 1 FROM proposta_observacoes WHERE proposta_id = ? AND observacao = ? LIMIT 1",
-          [propostas[0].id, MARCA_ASSINATURA_D4SIGN],
-        )).length > 0
-      ) {
-        // D4Sign reenvia o evento quando não recebe resposta a tempo: sem esta trava, cliente e equipe recebiam os e-mails de novo
-        console.log(`[D4Sign Webhook] Assinatura da proposta #${propostas[0].numero_proposta} já processada. Reenvio ignorado.`);
-      } else if (propostas.length > 0) {
-        const proposta = propostas[0];
-        console.log(`[D4Sign Webhook] Proposta #${proposta.numero_proposta} correspondente encontrada. Atualizando status para 'Aprovada'`);
-
-        await db.execute("UPDATE propostas SET status = 'Aprovada', data_decisao = NOW() WHERE id = ?", [proposta.id]);
-        await db.execute(
-          "INSERT INTO proposta_observacoes (proposta_id, usuario_id, observacao) VALUES (?, ?, ?)",
-          [proposta.id, proposta.criado_por || 1, MARCA_ASSINATURA_D4SIGN],
-        );
-
-        notificationService.enviarNotificacao("aprovada", {
-          id: proposta.id,
-          numeroProposta: proposta.numero_proposta,
-          nomeClinica: proposta.nome_clinica,
-          tipoProposta: proposta.tipo_proposta,
-          criadoPor: proposta.criado_por
-        }, [proposta.criado_por]);
-
-        teamsService.enviarNotificacaoTeams("aprovada", {
-          id: proposta.id,
-          numeroProposta: proposta.numero_proposta,
-          nomeClinica: proposta.nome_clinica,
-          tipoProposta: proposta.tipo_proposta
-        }).catch(() => {});
-
-        // Automação CRM: Se for finalizado (todos assinaram), move o Lead correspondente no CRM para 'Ganho'
-        if (String(type_post) === "1") {
-          try {
-            const leads = await db.executarQuery(
-              "SELECT id, nome_cliente, criado_por, vendedor_id FROM leads WHERE proposta_id = ? LIMIT 1",
-              [proposta.id]
-            );
-
-            if (leads.length > 0) {
-              const lead = leads[0];
-              console.log(`[D4Sign Webhook] Lead CRM correspondente encontrado: ID ${lead.id} (${lead.nome_cliente}). Atualizando para 'Ganho'...`);
-
-              // Atualizar status do lead para Ganho
-              await db.execute(
-                "UPDATE leads SET status = 'Ganho', atualizado_em = NOW() WHERE id = ?",
-                [lead.id]
-              );
-
-              // Registrar na linha do tempo do lead
-              await db.execute(
-                "INSERT INTO lead_comentarios (lead_id, usuario_id, comentario, tipo, criado_em) VALUES (?, ?, ?, 'historico', NOW())",
-                [lead.id, proposta.criado_por || 1, "Contrato assinado eletronicamente via D4Sign. Oportunidade fechada como GANHA de forma automática pelo sistema! 🎉"]
-              );
-
-              // Enviar SSE de atualização de lead
-              notificationService.enviarNotificacao("lead_atualizado", {
-                id: lead.id,
-                nomeCliente: lead.nome_cliente,
-                status: "Ganho"
-              }, [lead.criado_por, lead.vendedor_id]);
-            }
-
-            // E-mails de assinatura concluída saem sempre (antes só saíam quando havia lead no CRM)
-
-              // 1. Enviar e-mail de congratulações ao cliente
-              try {
-                await emailService.enviarEmailAssinaturaConcluidaCliente({
-                  email: proposta.email,
-                  nomeSocio: proposta.nome_socio,
-                  numeroProposta: proposta.numero_proposta,
-                  nomeClinica: proposta.nome_clinica,
-                  tipoProposta: proposta.tipo_proposta
-                });
-              } catch (mailErr) {
-                console.error("[D4Sign Webhook] Erro ao enviar e-mail ao cliente:", mailErr.message);
-              }
-
-              // 2. Buscar o e-mail do vendedor comercial responsável pelo lead
-              let vendedorEmail = null;
-              let vendedorNome = null;
-              try {
-                const vendedores = await db.executarQuery(
-                  "SELECT email, nome FROM usuarios WHERE id = ? LIMIT 1",
-                  [proposta.criado_por || 1]
-                );
-                if (vendedores.length > 0) {
-                  vendedorEmail = vendedores[0].email;
-                  vendedorNome = vendedores[0].nome;
-                }
-              } catch (vendErr) {
-                console.error("[D4Sign Webhook] Erro ao buscar vendedor responsável:", vendErr.message);
-              }
-
-              if (vendedorEmail) {
-                try {
-                  await emailService.enviarEmailAssinaturaConcluidaComercial(
-                    {
-                      nomeClinica: proposta.nome_clinica,
-                      numeroProposta: proposta.numero_proposta,
-                      nomeSocio: proposta.nome_socio,
-                      email: proposta.email,
-                      tipoProposta: proposta.tipo_proposta
-                    },
-                    vendedorEmail,
-                    vendedorNome
-                  );
-                } catch (mailErr) {
-                  console.error("[D4Sign Webhook] Erro ao enviar e-mail ao comercial:", mailErr.message);
-                }
-              }
-
-              // 3. Notificar os diretores
-              try {
-                const diretores = await db.executarQuery(
-                  "SELECT email FROM usuarios WHERE role = 'Diretor'"
-                );
-                const adminEmails = diretores.map(d => d.email).filter(Boolean);
-                if (adminEmails.length > 0) {
-                  await emailService.enviarEmailAssinaturaConcluidaDiretores(
-                    {
-                      nomeClinica: proposta.nome_clinica,
-                      numeroProposta: proposta.numero_proposta,
-                      nomeSocio: proposta.nome_socio,
-                      email: proposta.email,
-                      tipoProposta: proposta.tipo_proposta,
-                      valor_total: proposta.valor_total
-                    },
-                    adminEmails
-                  );
-                }
-              } catch (dirErr) {
-                console.error("[D4Sign Webhook] Erro ao notificar diretores:", dirErr.message);
-              }
-          } catch (crmErr) {
-            console.error("[D4Sign Webhook] Erro no pós-assinatura (CRM/e-mails):", crmErr.message);
-          }
-        }
-      }
+    // type_post "1" = finalizado (todos assinaram), "3" = cancelado (inclui prazo expirado),
+    // "2" = e-mail não entregue ao signatário. "4" = um signatário assinou: não fecha a proposta e não dispara avisos.
+    const eventos = { 1: "finalizado", 2: "nao_entregue", 3: "cancelado" };
+    if (uuid && eventos[String(type_post)]) {
+      await d4signService.processarDocumentoD4Sign(uuid, eventos[String(type_post)], message);
     }
     return res.status(200).send("Webhook recebido com sucesso.");
   } catch (error) {
@@ -2144,8 +1999,7 @@ router.post("/api/propostas/:id/desconto-itens", verificarToken, donoProposta, a
       justificativaDesconto: justificativaDesconto || "",
     };
 
-    const linkAcesso = linkCurto(novoToken, req);
-    dadosNovaProposta.baseUrl = extrairBaseUrl(req);
+    const linkAcesso = linkCurto(novoToken);
 
     // Já gravada: falha de PDF/e-mail vira aviso, não 500 (o retry criaria outra proposta-filha)
     let emailEnviado = false;

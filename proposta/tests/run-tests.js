@@ -526,6 +526,26 @@ async function runAllTests() {
     if (solsRebaixado.status !== 403) throw new Error(`Diretor rebaixado ainda acessou /api/solicitacoes (status ${solsRebaixado.status})`);
     console.log("✔ Perfil rebaixado vale na hora (403).");
 
+    // 14c2. Esqueci a senha: resposta igual com ou sem conta; token de uso único troca a senha
+    const postJson = (url, corpo) => fetch(`${BASE_URL}${url}`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo)
+    });
+    const esqueciInexistente = await postJson("/api/auth/esqueci-senha", { email: "ninguem@teste.local" });
+    if (esqueciInexistente.status !== 200) throw new Error(`esqueci-senha de e-mail inexistente deveria dar 200, deu ${esqueciInexistente.status}`);
+    const [[com2]] = await db.query("SELECT senha_hash FROM usuarios WHERE id = ?", [resCom2.insertId]);
+    const tokenReset = require("jsonwebtoken").sign(
+      { id: resCom2.insertId, tipo: "redefinir-senha" }, process.env.JWT_SECRET + com2.senha_hash, { expiresIn: "1h" }
+    );
+    const resetOk = await postJson("/api/auth/redefinir-senha", { token: tokenReset, senha: "novasenha123" });
+    if (!resetOk.ok) throw new Error(`redefinir-senha falhou: ${await resetOk.text()}`);
+    const loginNova = await postJson("/api/auth/login", { email: "test_com2@teste.local", senha: "novasenha123" });
+    if (!loginNova.ok) throw new Error("Login com a senha redefinida falhou.");
+    const resetDeNovo = await postJson("/api/auth/redefinir-senha", { token: tokenReset, senha: "outrasenha123" });
+    if (resetDeNovo.status !== 400) throw new Error(`Token de redefinição reutilizado deveria dar 400, deu ${resetDeNovo.status}`);
+    const resetComLogin = await postJson("/api/auth/redefinir-senha", { token: tokenDiretor, senha: "outrasenha123" });
+    if (resetComLogin.status !== 400) throw new Error(`Token de login não pode redefinir senha (deu ${resetComLogin.status})`);
+    console.log("✔ Esqueci a senha: resposta neutra, token troca a senha uma vez só.");
+
     // 14d. Segredo D4Sign mascarado no GET e preservado quando a tela devolve a máscara
     const [[cfgOriginal]] = await db.query("SELECT COUNT(*) AS n, MAX(valor) AS valor FROM configuracoes_sistema WHERE chave = 'd4sign_token'");
     try {
@@ -620,6 +640,33 @@ async function runAllTests() {
     );
     if (Number(marcas.n) !== 1) throw new Error(`Assinatura processada ${marcas.n} vez(es); esperado 1.`);
     console.log("✔ Reenvio do webhook D4Sign ignorado (processado uma vez).");
+
+    // 16c. Webhook D4Sign cancelado/expirado: libera novo contrato, registra no histórico, status não muda
+    const uuidCancelado = "66666666-7777-8888-9999-000000000000";
+    await db.execute("UPDATE propostas SET ip_assinatura = ? WHERE id = ?", [uuidCancelado, propWebhook.id]);
+    for (let i = 0; i < 2; i++) {
+      // multipart/form-data, como a D4Sign manda em produção
+      const corpo = new FormData();
+      corpo.append("uuid", uuidCancelado);
+      corpo.append("type_post", "3");
+      const r = await fetch(urlWebhookD4, { method: "POST", body: corpo });
+      if (!r.ok) throw new Error(`Webhook D4Sign (cancelado) falhou (${r.status})`);
+    }
+    const [[propCancelada]] = await db.execute("SELECT status, ip_assinatura FROM propostas WHERE id = ?", [propWebhook.id]);
+    const [[obsCancelada]] = await db.execute(
+      "SELECT COUNT(*) AS n FROM proposta_observacoes WHERE proposta_id = ? AND observacao LIKE 'Contrato cancelado ou expirado no D4Sign%'",
+      [propWebhook.id]
+    );
+    if (propCancelada.ip_assinatura !== null) throw new Error("Contrato cancelado não liberou o UUID para novo envio.");
+    if (propCancelada.status !== "Aprovada") throw new Error(`Cancelamento mudou o status para ${propCancelada.status}.`);
+    if (Number(obsCancelada.n) !== 1) throw new Error(`Cancelamento registrado ${obsCancelada.n} vez(es); esperado 1.`);
+    console.log("✔ Webhook D4Sign cancelado: UUID liberado, histórico uma vez, status mantido.");
+
+    // 16d. Resend recebe cada destinatário separado (antes "a,b" virava um e-mail inválido e o aviso não saía)
+    const { destinatariosResend } = require("../services/emailService");
+    const dest = destinatariosResend("hugo@x.com, thiago@x.com");
+    if (dest.length !== 2 || dest[1] !== "thiago@x.com") throw new Error(`Destinatários Resend: ${JSON.stringify(dest)}`);
+    console.log("✔ Resend recebe a lista de destinatários separada.");
 
     // --- Fase 6 ---
     // 17a. Validade de 10 dias no servidor: vencida dá 409; consultor renova e o cliente volta a poder aprovar

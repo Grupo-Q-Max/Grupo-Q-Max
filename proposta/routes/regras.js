@@ -575,7 +575,7 @@ router.post(
 );
 
 // Credenciais D4Sign nunca voltam ao navegador inteiras: a tela mostra a máscara e só grava valor novo
-const CHAVES_SECRETAS = ["d4sign_token", "d4sign_secret"];
+const CHAVES_SECRETAS = ["d4sign_token", "d4sign_secret", "oauth_refresh_token"];
 const MASCARA_SEGREDO = "••••";
 const mascarar = (valor) => (valor ? `${MASCARA_SEGREDO}${String(valor).slice(-4)}` : "");
 const ehMascara = (valor) => typeof valor === "string" && valor.startsWith(MASCARA_SEGREDO);
