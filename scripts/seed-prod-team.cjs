@@ -46,32 +46,8 @@ const SOCIOS = [
   },
 ];
 
-/**
- * Backfill (2026-10-19): members still flagged with the legacy TeamMember.showOnSite become partners, copying
- * the site profile that lived on TeamMember. Clearing the flag in the same transaction makes it run once per
- * member, so a partner removed in the admin isn't recreated on the next deploy.
- */
-async function backfillPartners() {
-  const pending = await prisma.teamMember.findMany({
-    where: { showOnSite: true },
-    select: { id: true, name: true, accentColor: true, linkedin: true, bio: true },
-  });
-  for (const m of pending) {
-    await prisma.$transaction([
-      prisma.teamPartner.upsert({
-        where: { memberId: m.id },
-        create: { memberId: m.id, accentColor: m.accentColor, linkedin: m.linkedin, bio: m.bio },
-        update: {},
-      }),
-      prisma.teamMember.update({ where: { id: m.id }, data: { showOnSite: false } }),
-    ]);
-    console.log(`✓ Sócio migrado: ${m.name}`);
-  }
-}
-
 async function main() {
   try {
-    await backfillPartners();
     for (const { member, partner } of SOCIOS) {
       const existing = await prisma.teamMember.findFirst({ where: { name: member.name } });
       const saved = existing
