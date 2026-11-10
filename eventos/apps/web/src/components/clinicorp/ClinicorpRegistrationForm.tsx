@@ -360,12 +360,14 @@ function RegistrationForm({
         <StickyActions>
           {!hasDrawn ? (
             <>
-              <Link
-                href={`/${route}/roleta?pin=${registeredParticipation.id}${registeredParticipation.vipCode ? `&vip=${registeredParticipation.vipCode}` : ""}`}
-                className={primaryButton}
-              >
-                {isVip ? "Acessar Roleta VIP 🌟" : "Ir para a Roleta"}
-              </Link>
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-accent/40 bg-accent/15 px-4 py-3.5 text-center shadow-[0_0_20px_rgba(var(--accent-rgb),0.2)] animate-pulse-glow">
+                <span className="font-display text-base font-extrabold text-white flex items-center justify-center gap-2">
+                  📍 Mostre esta tela no estande Finora
+                </span>
+                <span className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Apresente seu código para a nossa equipe liberar seu giro no tablet da roleta!
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={onReset}
@@ -373,6 +375,12 @@ function RegistrationForm({
               >
                 Cadastrar Outro Participante
               </button>
+              <Link
+                href={`/${route}/roleta?pin=${registeredParticipation.id}${registeredParticipation.vipCode ? `&vip=${registeredParticipation.vipCode}` : ""}`}
+                className="text-[12px] font-mono text-center text-slate-400 hover:text-accent transition-colors pt-0.5"
+              >
+                Acesso equipe Finora: abrir roleta
+              </Link>
             </>
           ) : (
             <button
