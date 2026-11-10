@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, ConflictException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { notifyLive } from '../live/live';
+import { sendMeetingInvite } from './meeting-mail.helper';
 
 @Injectable()
 export class MeetingsService {
@@ -139,6 +140,24 @@ export class MeetingsService {
           reminder1h,
         );
       }
+
+      // 4. Dispara convite de calendário oficial do Outlook (.ics) para o chefe Hugo
+      sendMeetingInvite({
+        meetingId: meeting.id,
+        scheduledAt,
+        participant: {
+          fullName: meeting.participants.full_name,
+          email: meeting.participants.email,
+          phone: meeting.participants.phone,
+          clinicName: meeting.participants.clinic_name,
+          croNumber: meeting.participants.cro_number,
+          croState: meeting.participants.cro_state,
+          chairsCount: meeting.participants.chairs_count,
+        },
+        bossEmail: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
+      }).catch((err) => {
+        console.warn('[MeetingsService] Falha ao enviar convite por e-mail:', err.message);
+      });
 
       notifyLive(eventId);
       return meeting;
