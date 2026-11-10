@@ -940,6 +940,14 @@ export class ParticipantsService {
             reason: true,
           },
         },
+
+        vip_codes: {
+          select: {
+            id: true,
+            code: true,
+            redeemed_at: true,
+          },
+        },
       },
 
       take: 500,
@@ -1184,6 +1192,7 @@ export class ParticipantsService {
       where: { event_id: eventId },
       include: {
         participants: true,
+        vip_codes: true,
         draws: {
           include: {
             prizes: true,
@@ -1196,6 +1205,8 @@ export class ParticipantsService {
     const headers = [
       'ID Participação',
       'Nome Completo',
+      'VIP / Mentorado',
+      'Código VIP Utilizado',
       'WhatsApp / Telefone',
       'Link WhatsApp Direto',
       'E-mail',
@@ -1221,6 +1232,7 @@ export class ParticipantsService {
       const part = p.participants;
       const draw = p.draws;
       const prize = draw?.prizes;
+      const isVip = Boolean(p.vip_codes);
       const cleanPhone = (part.phone || '').replace(/\D/g, '');
       const waLink = cleanPhone ? `https://wa.me/55${cleanPhone.replace(/^55/, '')}` : '-';
       const chairsDesc =
@@ -1235,6 +1247,8 @@ export class ParticipantsService {
       return [
         escapeCsv(p.id),
         escapeCsv(part.full_name),
+        escapeCsv(isVip ? 'SIM (VIP / Mentorado)' : 'NÃO'),
+        escapeCsv(p.vip_codes?.code || '-'),
         escapeCsv(part.phone),
         escapeCsv(waLink),
         escapeCsv(part.email),
@@ -1273,6 +1287,7 @@ export class ParticipantsService {
       include: {
         events: true,
         participants: true,
+        vip_codes: true,
         draws: {
           include: {
             prizes: true,
@@ -1288,6 +1303,8 @@ export class ParticipantsService {
       'Nome Completo',
       'Primeiro Nome',
       'Sobrenome',
+      'VIP / Mentorado',
+      'Código VIP',
       'Email',
       'WhatsApp / Celular',
       'Link WhatsApp Direto',
@@ -1315,6 +1332,7 @@ export class ParticipantsService {
       const part = p.participants;
       const draw = p.draws;
       const prize = draw?.prizes;
+      const isVip = Boolean(p.vip_codes);
       const names = (part.full_name || '').trim().split(' ');
       const firstName = names[0] || '';
       const lastName = names.slice(1).join(' ') || '';
@@ -1328,6 +1346,8 @@ export class ParticipantsService {
           ? 'clinica_medio_porte'
           : 'clinica_pequeno_porte';
 
+      const vipTag = isVip ? 'vip_mentorado' : 'geral';
+
       const chairsDesc =
         part.chairs_count === 6
           ? '6 ou mais (Grande Porte / VIP)'
@@ -1340,6 +1360,7 @@ export class ParticipantsService {
       const tags = [
         'lead_estande',
         `evento_${p.events.slug || 'finora'}`,
+        vipTag,
         chairsTag,
         prize
           ? `ganhou_${prize.name.toLowerCase().replace(/\s+/g, '_')}`
@@ -1351,6 +1372,8 @@ export class ParticipantsService {
         escapeCsv(part.full_name),
         escapeCsv(firstName),
         escapeCsv(lastName),
+        escapeCsv(isVip ? 'SIM' : 'NÃO'),
+        escapeCsv(p.vip_codes?.code || '-'),
         escapeCsv(part.email),
         escapeCsv(part.phone),
         escapeCsv(waLink),

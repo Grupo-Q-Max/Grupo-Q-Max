@@ -80,6 +80,12 @@ type Participant = {
     chairs_count: number | null;
   };
 
+  vip_codes?: {
+    id: number;
+    code: string;
+    redeemed_at?: string | null;
+  } | null;
+
   draws: Draw[];
   fraud_checks: FraudCheck[];
 };
@@ -91,6 +97,7 @@ type Props = {
 
 type Filter =
   | "ALL"
+  | "VIP_MENTOR"
   | "VIP_CHAIRS"
   | "SPUN"
   | "PENDING_SPIN"
@@ -266,6 +273,7 @@ export default function ParticipantsManager({
   const counts = useMemo(() => {
     return {
       all: participations.length,
+      vipMentor: participations.filter((item) => Boolean(item.vip_codes)).length,
       vipChairs: participations.filter(
         (item) => (item.participants?.chairs_count || 0) >= 6,
       ).length,
@@ -283,6 +291,10 @@ export default function ParticipantsManager({
 
     return participations.filter((item) => {
       const participant = item.participants;
+
+      if (filter === "VIP_MENTOR" && !item.vip_codes) {
+        return false;
+      }
 
       if (filter === "VIP_CHAIRS" && (participant?.chairs_count || 0) < 6) {
         return false;
@@ -325,6 +337,7 @@ export default function ParticipantsManager({
         participant.city,
         participant.state,
         participant.cpf_last_digits,
+        item.vip_codes?.code,
       ]
         .filter(Boolean)
         .join(" ")
@@ -341,6 +354,8 @@ export default function ParticipantsManager({
     const headers = [
       "PIN",
       "Nome Completo",
+      "VIP / Mentorado",
+      "Código VIP",
       "Telefone (WhatsApp)",
       "Link WhatsApp Direto",
       "E-mail",
@@ -368,6 +383,7 @@ export default function ParticipantsManager({
 
     const rows = listToExport.map((item) => {
       const p = item.participants;
+      const isVip = Boolean(item.vip_codes);
       const draw = Array.isArray(item.draws) && item.draws.length > 0
         ? item.draws[0]
         : (item.draws && typeof item.draws === 'object' ? (item.draws as any) : null);
@@ -382,11 +398,15 @@ export default function ParticipantsManager({
       const intlPhone = cleanPhone ? (cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`) : "";
       const waLink = intlPhone ? `https://wa.me/${intlPhone}` : "";
       const isBigClinic = (p.chairs_count || 0) >= 6;
-      const leadClassification = isBigClinic ? "VIP (6+ Cadeiras)" : "Padrão";
+      const leadClassification = isVip
+        ? `VIP Mentorado (${isBigClinic ? "6+ Cad." : "Geral"})`
+        : (isBigClinic ? "VIP (6+ Cadeiras)" : "Padrão");
 
       return [
         escapeCsvField(`#${String(item.id).padStart(4, '0')}`),
         escapeCsvField(p.full_name),
+        escapeCsvField(isVip ? "SIM (VIP / Mentorado)" : "NÃO"),
+        escapeCsvField(item.vip_codes?.code || "-"),
         escapeCsvField(p.phone),
         escapeCsvField(waLink),
         escapeCsvField(p.email),
@@ -518,6 +538,22 @@ export default function ParticipantsManager({
           >
             Todos
             <span>{counts.all}</span>
+          </button>
+
+          <button
+            type="button"
+            className={
+              filter === "VIP_MENTOR"
+                ? "border-amber-500! bg-gradient-to-r from-amber-500 to-yellow-500! text-white! font-black! shadow-sm [&>span]:bg-white! [&>span]:text-amber-950!"
+                : "border-amber-400/80 bg-amber-100/70 text-amber-950 hover:bg-amber-200/70 font-bold [&>span]:bg-amber-300/80 [&>span]:text-amber-950"
+            }
+            onClick={() =>
+              setFilter("VIP_MENTOR")
+            }
+            title="Filtrar participantes VIPs que resgataram código de mentorado"
+          >
+            👑 VIPs / Mentorados
+            <span>{counts.vipMentor}</span>
           </button>
 
           <button
@@ -702,6 +738,8 @@ export default function ParticipantsManager({
                 prize?.name,
               );
               const isVipLead = (participant.chairs_count || 0) >= 6;
+              const isVipMentor = Boolean(item.vip_codes);
+              const isAnyVip = isVipLead || isVipMentor;
 
               return (
                 <button
@@ -713,15 +751,15 @@ export default function ParticipantsManager({
                   }
                 >
                   <div className={`grid size-10 place-items-center rounded-xl relative ${
-                    isVipLead
+                    isAnyVip
                       ? "bg-amber-100 text-amber-800 ring-2 ring-amber-400"
                       : "bg-[#E6F0FF] text-finora-600"
                   }`}>
                     <UserRound
                       size={18}
                     />
-                    {isVipLead && (
-                      <span className="absolute -top-1 -right-1 text-[11px]" title="Clínica VIP (6+ cadeiras)">👑</span>
+                    {isAnyVip && (
+                      <span className="absolute -top-1 -right-1 text-[11px]" title={isVipMentor ? `Mentorado VIP (${item.vip_codes?.code})` : "Clínica VIP (6+ cadeiras)"}>👑</span>
                     )}
                   </div>
 
@@ -732,9 +770,14 @@ export default function ParticipantsManager({
                           participant.full_name
                         }
                       </strong>
+                      {isVipMentor && (
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-200 to-yellow-300 border border-amber-400 text-[10px] font-black text-amber-950 shadow-2xs tracking-wide">
+                          👑 VIP · {item.vip_codes?.code}
+                        </span>
+                      )}
                       {isVipLead && (
                         <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-100 border border-amber-300 text-[10px] font-extrabold text-amber-900 tracking-tight">
-                          👑 {participant.chairs_count} cad.
+                          {participant.chairs_count} cad.
                         </span>
                       )}
                     </div>
@@ -878,6 +921,24 @@ export default function ParticipantsManager({
             </header>
 
             <div className="flex flex-col gap-3 p-4">
+              {/* Card Destaque VIP Mentorado */}
+              {selected.vip_codes && (
+                <div className="flex items-center justify-between rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100/60 p-3.5 shadow-sm">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl">👑</span>
+                    <div className="flex flex-col">
+                      <strong className="text-xs font-black text-amber-950 uppercase tracking-wide">Participante VIP · Mentorado</strong>
+                      <span className="text-[12px] text-amber-900 font-mono mt-0.5">
+                        Código ativado: <strong className="text-amber-950 underline font-black">{selected.vip_codes.code}</strong>
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-amber-400 text-amber-950 font-black text-[10px] uppercase tracking-wider shadow-2xs">
+                    Pool VIP
+                  </span>
+                </div>
+              )}
+
               {/* 1-Clique WhatsApp Comercial */}
               {(() => {
                 const prizeName = selected.draws?.[0]?.prizes?.name;
