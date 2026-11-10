@@ -1,8 +1,8 @@
 {
   "name": "Finora Experience",
   "short_name": "Finora",
-  "description": "Experiência Interativa de Premiação e Roleta para Estande no Clinicorp",
-  "start_url": "/finora-experience/clinicorp/cadastro",
+  "description": "Experiência Interativa de Premiação e Roleta para Estande no Invictus",
+  "start_url": "/finora-experience/invictus/cadastro",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#0f172a",

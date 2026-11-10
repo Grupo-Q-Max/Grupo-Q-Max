@@ -23,8 +23,8 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Finora Experience",
-  description: "Experiência Finora no Clinicorp.",
+  title: "Finora Experience | Invictus",
+  description: "Experiência Finora no Invictus.",
   manifest: "/finora-experience/manifest.json",
   icons: {
     icon: "/finora-experience/icon.svg",

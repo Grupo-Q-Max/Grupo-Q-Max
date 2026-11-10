@@ -4,6 +4,8 @@ import path from "node:path";
 const nextConfig: NextConfig = {
   output: "standalone",
   basePath: '/finora-experience',
+  compress: true,
+  poweredByHeader: false,
   turbopack: {
     root: path.resolve(process.cwd(), "../.."),
   },
@@ -29,6 +31,28 @@ const nextConfig: NextConfig = {
         source: '/api/v1/:path*',
         destination: 'http://127.0.0.1:3334/api/v1/:path*'
       }
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: '/:all*(svg|jpg|png|webp|ico|woff2)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
     ];
   },
 };
