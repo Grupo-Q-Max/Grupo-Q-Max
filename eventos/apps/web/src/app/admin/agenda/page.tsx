@@ -10,7 +10,10 @@ type Props = {
 export default async function AdminAgendaPage({ searchParams }: Props) {
   const params = await searchParams;
   const events = await getEvents();
-  const eventId = params.event ? parseInt(params.event, 10) : 2;
+  const requestedEventId = Number(params.event);
+  const eventId = events.some((event: { id: number }) => event.id === requestedEventId)
+    ? requestedEventId
+    : (events.find((e: { slug: string; id: number }) => e.slug === "invictus")?.id || events[0]?.id || 3);
 
   return (
     <div className="adminShell">
