@@ -4,7 +4,7 @@
    FINORA EXPERIENCE — REDESIGN TOKENS
    Palco (ink): quiosque, telão, roleta, cofre, sorteio.
    Papel (paper): celular e admin.
-   Destaque por evento: data-event="clinicorp|sucesso-odonto".
+   Destaque por evento: data-event="clinicorp|invictus".
    ============================================================ */
 
 @theme {
@@ -54,10 +54,6 @@
   --event-accent-ink: #0E7490;
 }
 
-[data-event="sucesso-odonto"] {
-  --event-accent: #F5B301;
-  --event-accent-ink: #8A5D00;
-}
 
 /* Provisório: trocar pela cor oficial do Invictus. */
 [data-event="invictus"] {

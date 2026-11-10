@@ -15,7 +15,6 @@ export type EventRecord = {
 // Endereços antigos (QRs impressos, links já enviados) de antes da rota única.
 const LEGACY_ROUTES: Record<string, string> = {
   clinicorp: "clinicorp",
-  "sucesso-odonto": "sucesso",
   invictus: "invictus",
 };
 

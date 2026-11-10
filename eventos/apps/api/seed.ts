@@ -26,11 +26,22 @@ const adapter = new PrismaMariaDb({
 });
 const p = new PrismaClient({ adapter });
 async function main() {
-  const e = await p.events.findFirst({ where: { slug: 'sucesso-odonto' } });
-  if (e) { console.log('Exists', e); return; }
+  const e = await p.events.findFirst({ where: { slug: 'invictus' } });
+  if (e) {
+    console.log('Invictus já existe:', e.name, e.slug);
+    return;
+  }
   const created = await p.events.create({
-    data: { name: 'Sucesso Odonto', slug: 'sucesso-odonto', status: 'ACTIVE', participation_enabled: true }
+    data: {
+      name: 'Finora Experience - Invictus',
+      slug: 'invictus',
+      status: 'ACTIVE',
+      participation_enabled: true,
+      accent_color: '#E5484D',
+      accent_ink_color: '#B4232A',
+      experience: 'ROLETA',
+    }
   });
-  console.log('Created', created);
+  console.log('Invictus criado com sucesso:', created);
 }
 main();

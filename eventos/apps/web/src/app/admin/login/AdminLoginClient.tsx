@@ -56,7 +56,7 @@ export default function AdminLoginClient() {
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-bold text-white">Multi-Eventos</span>
-                <span className="text-xs text-ink-text-2">Invictus, Clinicorp e Sucesso Odonto com perfis customizados.</span>
+                <span className="text-xs text-ink-text-2">Invictus e Clinicorp com perfis customizados e isolados.</span>
               </div>
             </div>
 

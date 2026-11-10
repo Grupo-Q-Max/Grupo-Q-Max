@@ -104,7 +104,7 @@ export default function WhatsappAutomations({ eventId }: Props) {
               value={data.whatsapp_message || ""}
               onChange={(e) => setData({ ...data, whatsapp_message: e.target.value })}
               className="bg-surface border border-line p-3 rounded-xl text-text outline-none focus:border-finora-600 focus:ring-1 focus:ring-finora-600 resize-none min-h-[100px]"
-              placeholder="Ex: Olá {nome}! Bem-vindo ao estande Sucesso Odonto!"
+              placeholder="Ex: Olá {nome}! Bem-vindo ao estande Invictus!"
             />
           </label>
 
