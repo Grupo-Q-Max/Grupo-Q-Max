@@ -22,6 +22,7 @@ const adapter = new PrismaMariaDb({
   user: config.user,
   password: config.password,
   database: config.database,
+  ssl: { rejectUnauthorized: false },
   connectionLimit: 10,
 });
 const p = new PrismaClient({ adapter });
@@ -29,6 +30,7 @@ async function main() {
   const e = await p.events.findFirst({ where: { slug: 'invictus' } });
   if (e) {
     console.log('Invictus já existe:', e.name, e.slug);
+    await p.$disconnect();
     return;
   }
   const created = await p.events.create({
@@ -43,5 +45,6 @@ async function main() {
     }
   });
   console.log('Invictus criado com sucesso:', created);
+  await p.$disconnect();
 }
 main();
