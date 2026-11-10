@@ -1,12 +1,12 @@
 // Sem FINORA_ADMIN_API_KEY as chamadas admin falham (401) em vez de usar chave fixa.
 const ADMIN_KEY = process.env.FINORA_ADMIN_API_KEY ?? "";
 
+// Só endereços internos: estas chamadas levam x-finora-admin-key.
 function getServerApiUrls(): string[] {
   const list: string[] = [];
   if (process.env.FINORA_INTERNAL_API_URL) list.push(process.env.FINORA_INTERNAL_API_URL);
   list.push("http://127.0.0.1:3334/api/v1");
   list.push("http://localhost:3334/api/v1");
-  if (process.env.NEXT_PUBLIC_API_URL) list.push(process.env.NEXT_PUBLIC_API_URL);
   return list;
 }
 

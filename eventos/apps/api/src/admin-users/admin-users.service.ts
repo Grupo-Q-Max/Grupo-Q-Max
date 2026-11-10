@@ -44,10 +44,12 @@ export class AdminUsersService {
       if (!legacySalt) {
         return false;
       }
-      const calculatedHash = crypto
-        .scryptSync(password, legacySalt, 64)
-        .toString('hex');
-      return calculatedHash === storedHash;
+      const calculatedBuffer = crypto.scryptSync(password, legacySalt, 64);
+      const storedBuffer = Buffer.from(storedHash, 'hex');
+      return (
+        storedBuffer.length === calculatedBuffer.length &&
+        crypto.timingSafeEqual(storedBuffer, calculatedBuffer)
+      );
     } catch {
       return false;
     }

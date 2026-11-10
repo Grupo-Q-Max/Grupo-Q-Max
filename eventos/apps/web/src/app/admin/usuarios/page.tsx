@@ -1,10 +1,9 @@
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminUsersManagement from "@/components/admin/AdminUsersManagement";
 
+// Só endereço interno: a chamada leva x-finora-admin-key.
 const API_URL =
-  process.env.FINORA_INTERNAL_API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  (typeof window !== "undefined" ? "/finora-experience/api/v1" : "http://localhost:3334/api/v1");
+  process.env.FINORA_INTERNAL_API_URL || "http://127.0.0.1:3334/api/v1";
 
 const ADMIN_KEY = process.env.FINORA_ADMIN_API_KEY ?? "";
 

@@ -290,16 +290,18 @@ export class ParticipantsService {
       );
     }
 
+    const cpfHash = hashCpf(cpf);
+
+    // Fallback estável por pessoa sem expor o CPF (coluna email não é criptografada).
+    const fallbackEmail = `${cpfHash.slice(0, 16)}@visitante.finora.com.br`;
+
     const email =
-      dto.email && dto.email.trim()
-        ? normalizeEmail(dto.email) || `${cpf}@visitante.finora.com.br`
-        : `${cpf}@visitante.finora.com.br`;
+      (dto.email && dto.email.trim() && normalizeEmail(dto.email)) ||
+      fallbackEmail;
 
     const croState = dto.croState ? normalizeState(dto.croState) : null;
 
     const state = dto.state ? normalizeState(dto.state) : null;
-
-    const cpfHash = hashCpf(cpf);
 
     const cpfEncrypted = encryptCpf(cpf);
 

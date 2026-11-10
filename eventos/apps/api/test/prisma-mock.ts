@@ -9,6 +9,7 @@ export const createPrismaMock = () => ({
   },
   prizes: {
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
     findMany: jest.fn().mockResolvedValue([]),
     create: jest.fn(),
     update: jest.fn(),

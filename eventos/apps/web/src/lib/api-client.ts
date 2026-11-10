@@ -19,50 +19,13 @@ export function getAdminProxyUrl(): string {
   return '/api/admin-proxy';
 }
 
-export function getAdminProxyCandidateUrls(endpoint: string = ''): string[] {
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  if (typeof window !== 'undefined') {
-    const urls: string[] = [];
-    const basePath = '/finora-experience';
-    if (window.location.pathname.startsWith(basePath)) {
-      urls.push(`${basePath}/api/admin-proxy${cleanEndpoint}`);
-      urls.push(`/api/admin-proxy${cleanEndpoint}`);
-    } else {
-      urls.push(`/api/admin-proxy${cleanEndpoint}`);
-      urls.push(`${basePath}/api/admin-proxy${cleanEndpoint}`);
-    }
-    return Array.from(new Set(urls));
-  }
-  return [`/api/admin-proxy${cleanEndpoint}`];
-}
-
-export async function fetchAdminProxy(
+// Uma tentativa só: repetir POST/DELETE em outra URL pode duplicar a operação.
+export function fetchAdminProxy(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  const urls = getAdminProxyCandidateUrls(endpoint);
-  let lastResponse: Response | null = null;
-  let lastError: unknown = null;
-
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, options);
-      if (res.ok) {
-        return res;
-      }
-      lastResponse = res;
-      if (res.status !== 404) {
-        return res;
-      }
-    } catch (err) {
-      lastError = err;
-    }
-  }
-
-  if (lastResponse) {
-    return lastResponse;
-  }
-  throw lastError || new Error(`Falha ao conectar à API admin (${endpoint})`);
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return fetch(`${getAdminProxyUrl()}${cleanEndpoint}`, options);
 }
 
 type FetchOptions = RequestInit & {

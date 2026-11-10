@@ -25,33 +25,19 @@ export class PrizeQueueService {
   ) {}
 
   private async ensureEvent(eventId: number) {
-    let event = await this.prisma.events.findUnique({
+    const event = await this.prisma.events.findUnique({
       where: { id: eventId },
     });
 
     if (!event) {
-      event = await this.prisma.events.findFirst({
-        orderBy: { id: 'asc' },
-      });
-    }
-
-    if (!event) {
-      event = await this.prisma.events.create({
-        data: {
-          id: eventId,
-          name: 'Finora Experience - Clinicorp',
-          slug: 'finora-experience-clinicorp',
-          status: 'ACTIVE',
-          participation_enabled: true,
-        },
-      });
+      throw new NotFoundException('Evento não encontrado.');
     }
 
     return event;
   }
 
   private async ensurePrize(eventId: number, prizeId: number) {
-    let prize = await this.prisma.prizes.findFirst({
+    const prize = await this.prisma.prizes.findFirst({
       where: {
         id: prizeId,
         event_id: eventId,
@@ -59,29 +45,11 @@ export class PrizeQueueService {
     });
 
     if (!prize) {
-      prize = await this.prisma.prizes.findUnique({
-        where: { id: prizeId },
-      });
+      throw new NotFoundException('Prêmio não encontrado neste evento.');
     }
 
-    if (!prize) {
-      throw new NotFoundException('Prêmio não encontrado.');
-    }
-
-    if (!prize.active) {
-      await this.prisma.prizes.update({
-        where: { id: prize.id },
-        data: { active: true },
-      });
-      prize.active = true;
-    }
-
-    if (prize.available_stock <= 0) {
-      await this.prisma.prizes.update({
-        where: { id: prize.id },
-        data: { available_stock: 10, initial_stock: 10 },
-      });
-      prize.available_stock = 10;
+    if (!prize.active || prize.available_stock <= 0) {
+      throw new BadRequestException('Prêmio inativo ou sem estoque.');
     }
 
     return prize;
@@ -541,7 +509,7 @@ export class PrizeQueueService {
   ) {
     const event = await this.ensureEvent(eventId);
 
-    let activePrizes = await this.prisma.prizes.findMany({
+    const activePrizes = await this.prisma.prizes.findMany({
       where: {
         event_id: event.id,
         active: true,
@@ -549,29 +517,6 @@ export class PrizeQueueService {
       },
       orderBy: { id: 'asc' },
     });
-
-    if (activePrizes.length === 0) {
-      activePrizes = await this.prisma.prizes.findMany({
-        where: { active: true },
-        orderBy: { id: 'asc' },
-      });
-    }
-
-    if (activePrizes.length === 0) {
-      const anyPrizes = await this.prisma.prizes.findMany({
-        orderBy: { id: 'asc' },
-      });
-      if (anyPrizes.length > 0) {
-        await this.prisma.prizes.updateMany({
-          where: { id: { in: anyPrizes.map((p) => p.id) } },
-          data: { active: true, available_stock: 100 },
-        });
-        activePrizes = await this.prisma.prizes.findMany({
-          where: { active: true },
-          orderBy: { id: 'asc' },
-        });
-      }
-    }
 
     if (activePrizes.length === 0) {
       throw new BadRequestException(

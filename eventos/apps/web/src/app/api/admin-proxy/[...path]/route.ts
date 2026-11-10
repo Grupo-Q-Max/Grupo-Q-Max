@@ -52,6 +52,14 @@ async function forward(
     path,
   } = await context.params;
 
+  // fetch normaliza "." e "..": o caminho checado abaixo precisa ser o mesmo que chega na API.
+  if (path.some((part) => part === "." || part === "..")) {
+    return NextResponse.json(
+      { message: "Caminho inválido." },
+      { status: 400 },
+    );
+  }
+
   const relativePath =
     path
       .map(
@@ -70,21 +78,7 @@ async function forward(
     );
   }
 
-  const search =
-    request.nextUrl.search;
-
-  const candidateBases: string[] = [];
-  if (process.env.FINORA_INTERNAL_API_URL) {
-    const envUrl = process.env.FINORA_INTERNAL_API_URL.replace(/\/+$/, "");
-    candidateBases.push(envUrl.endsWith("/api/v1") ? envUrl : `${envUrl}/api/v1`);
-  }
-  candidateBases.push(API_URL);
-  candidateBases.push("http://127.0.0.1:3334/api/v1");
-  candidateBases.push("http://localhost:3334/api/v1");
-
-  const targets = Array.from(new Set(candidateBases)).map(
-    (base) => `${base}/${relativePath}${search}`
-  );
+  const target = `${API_URL}/${relativePath}${request.nextUrl.search}`;
 
   const headers = new Headers();
   headers.set("x-finora-admin-key", adminKey);
@@ -114,53 +108,32 @@ async function forward(
     }
   }
 
-  let lastResponse: Response | null = null;
-
-  for (const target of targets) {
-    try {
-      const response = await fetch(target, {
-        method: request.method,
-        headers,
-        body,
-        cache: "no-store",
-      });
-
-      lastResponse = response;
-      if (response.ok || response.status !== 404) {
-        const responseBody = await response.arrayBuffer();
-        const outgoingHeaders = new Headers();
-        const responseType = response.headers.get("content-type");
-        if (responseType) {
-          outgoingHeaders.set("content-type", responseType);
-        }
-
-        return new NextResponse(responseBody, {
-          status: response.status,
-          headers: outgoingHeaders,
-        });
-      }
-    } catch {
-      // Tenta a próxima URL candidata
-    }
-  }
-
-  if (lastResponse) {
-    const responseBody = await lastResponse.arrayBuffer();
-    const outgoingHeaders = new Headers();
-    const responseType = lastResponse.headers.get("content-type");
-    if (responseType) {
-      outgoingHeaders.set("content-type", responseType);
-    }
-    return new NextResponse(responseBody, {
-      status: lastResponse.status,
-      headers: outgoingHeaders,
+  // Uma tentativa só: repetir POST/DELETE em outra URL pode duplicar a operação.
+  let response: Response;
+  try {
+    response = await fetch(target, {
+      method: request.method,
+      headers,
+      body,
+      cache: "no-store",
     });
+  } catch {
+    return NextResponse.json(
+      { message: "Não foi possível conectar à API administrativa." },
+      { status: 502 }
+    );
   }
 
-  return NextResponse.json(
-    { message: "Não foi possível conectar à API administrativa." },
-    { status: 502 }
-  );
+  const outgoingHeaders = new Headers();
+  const responseType = response.headers.get("content-type");
+  if (responseType) {
+    outgoingHeaders.set("content-type", responseType);
+  }
+
+  return new NextResponse(await response.arrayBuffer(), {
+    status: response.status,
+    headers: outgoingHeaders,
+  });
 }
 
 export function GET(

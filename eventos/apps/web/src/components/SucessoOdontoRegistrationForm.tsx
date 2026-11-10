@@ -162,7 +162,7 @@ function RegistrationForm({
         fullName: fullName.trim(),
         cpf: cleanCpf,
         phone: cleanPhone,
-        email: email.trim() || `${cleanCpf}@visitante.finora.com.br`,
+        email: email.trim() || undefined,
         clinicName: clinicName.trim() || undefined,
         croNumber: cro.trim() || undefined,
         croState: croState.trim() || "SP",
