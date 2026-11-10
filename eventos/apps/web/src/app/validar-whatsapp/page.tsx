@@ -91,7 +91,7 @@ function ValidationLogic() {
       {status === "error" && (
         <div className="flex flex-col gap-3 px-5 pt-7">
           <h1 className="font-display text-[30px] font-extrabold leading-[1.08] tracking-[-0.03em]">Não deu para validar</h1>
-          <p className="text-[17px] leading-[1.45] text-[#36404F]">{errorMsg}</p>
+          <p className="text-[17px] leading-[1.45] text-slate-300">{errorMsg}</p>
           <p className="text-[15px] text-text-2">Procure a equipe Finora no estande para ajudar com seu cadastro.</p>
         </div>
       )}

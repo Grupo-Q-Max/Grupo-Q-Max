@@ -193,20 +193,6 @@ export default function ClinicorpKioskGuard({ event }: { event: string }) {
 
   return (
     <>
-      {!online && (
-        <div className="clinicorpOfflineBanner">
-          <WifiOff size={15} />
-
-          <strong>
-            Sem conexão com a internet
-          </strong>
-
-          <span>
-            Os cadastros ficam salvos neste aparelho e são enviados quando a conexão voltar.
-          </span>
-        </div>
-      )}
-
       {!isRoletaOrTelao && (
         <div className="clinicorpKioskTools">
         {pending > 0 && (

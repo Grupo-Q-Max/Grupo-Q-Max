@@ -274,7 +274,7 @@ function RegistrationForm({
               : (isVip ? "Seu Bilhete Dourado de Mentorado" : "Cadastro Concluído com Sucesso!")
           }
         >
-          <p className="text-[17px] leading-[1.45] text-[#36404F]">
+          <p className="text-[17px] leading-[1.45] text-slate-300">
             {isAlready ? (
               hasDrawn ? (
                 <>
@@ -480,14 +480,14 @@ function RegistrationForm({
       <StickyActions>
         <button type="submit" disabled={loading || (cpf.length === 14 && !isCpfValid)} className={primaryButton}>
           {loading ? (
-            <><LoaderCircle size={20} className="animate-spin" /> Enviando…</>
+            <><LoaderCircle size={20} className="animate-spin" /> Liberando giro…</>
           ) : vipCode.trim() ? (
-            "👑 Receber link no WhatsApp"
+            "👑 Liberar Giro VIP na Roleta 🌟"
           ) : (
-            "Receber link no WhatsApp"
+            "Liberar Meu Giro na Roleta 🎯"
           )}
         </button>
-        <span className="text-center text-[13px] text-text-2">Giro liberado imediatamente no estande.</span>
+        <span className="text-center text-[13px] text-slate-400">Giro liberado imediatamente no estande · Sem fila e sem espera</span>
       </StickyActions>
     </form>
   );

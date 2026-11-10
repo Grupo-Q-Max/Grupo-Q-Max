@@ -5,9 +5,9 @@ import { PaperHeading, StickyActions, primaryButton } from "@/components/form/Pa
 export default function OfflineSaved({ name, onNew }: { name: string; onNew: () => void }) {
   return (
     <>
-      <PaperHeading eyebrow="Sem internet no momento" title="Cadastro salvo neste aparelho">
-        <p className="text-[17px] leading-[1.45] text-[#36404F]">
-          Tudo certo, {name.split(" ")[0]}. Assim que a internet voltar, enviamos seu cadastro e o link de confirmação chega no seu WhatsApp.
+      <PaperHeading eyebrow="Modo Estande Conectado" title="Cadastro Salvo com Sucesso!">
+        <p className="text-[17px] leading-[1.45] text-slate-300">
+          Tudo certo, {name.split(" ")[0]}! Seu cadastro está garantido neste aparelho e seu giro já está liberado. Dirija-se ao balcão para girar a roleta.
         </p>
       </PaperHeading>
       <div className="px-5">

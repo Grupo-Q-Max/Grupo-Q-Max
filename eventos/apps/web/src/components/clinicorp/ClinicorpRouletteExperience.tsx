@@ -564,7 +564,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
               required
               value={operatorUsername}
               onChange={(e) => setOperatorUsername(e.target.value)}
-              className="h-14 rounded-field bg-white px-4 text-lg font-medium text-text outline-none focus:shadow-[0_0_0_4px_var(--event-accent)]"
+              className="h-14 rounded-field border border-ink-line bg-ink-900/90 px-4 text-lg font-medium text-white outline-none focus:border-accent focus:shadow-[0_0_20px_rgba(var(--accent-rgb),0.35)] transition-all"
             />
           </label>
           <label className="flex flex-col gap-2 text-[15px] font-semibold text-ink-text-2">
@@ -574,7 +574,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
               required
               value={operatorPassword}
               onChange={(e) => setOperatorPassword(e.target.value)}
-              className="h-14 rounded-field bg-white px-4 text-lg font-medium text-text outline-none focus:shadow-[0_0_0_4px_var(--event-accent)]"
+              className="h-14 rounded-field border border-ink-line bg-ink-900/90 px-4 text-lg font-medium text-white outline-none focus:border-accent focus:shadow-[0_0_20px_rgba(var(--accent-rgb),0.35)] transition-all"
             />
           </label>
           {operatorLoginError && (

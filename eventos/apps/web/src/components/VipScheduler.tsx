@@ -68,7 +68,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
         <h1 className="font-display text-[34px] font-extrabold leading-[1.05] tracking-[-0.03em]">
           Te esperamos no estande
         </h1>
-        <p className="text-[17px] text-[#36404F]">
+        <p className="text-[17px] text-slate-300">
           {format(parseISO(slot), "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}. Você recebe um lembrete no WhatsApp.
         </p>
       </div>
