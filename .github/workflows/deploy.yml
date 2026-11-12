@@ -398,6 +398,19 @@ jobs:
               Authorization = "Basic $base64"
           }
 
+          Write-Host "Configurando Kudu Settings para desativar Oryx build na nuvem..."
+          try {
+              $kuduSettingsUrl = "$kuduBase/api/settings"
+              $settingsPayload = @{
+                  SCM_DO_BUILD_DURING_DEPLOYMENT = "false"
+                  ENABLE_ORYX_BUILD = "false"
+              } | ConvertTo-Json
+              Invoke-RestMethod -Uri $kuduSettingsUrl -Method Post -Headers $headers -Body $settingsPayload -ContentType "application/json" -TimeoutSec 30
+              Write-Host "Kudu settings atualizadas com sucesso: SCM_DO_BUILD_DURING_DEPLOYMENT=false e ENABLE_ORYX_BUILD=false"
+          } catch {
+              Write-Host "Aviso ao atualizar Kudu settings: $($_.Exception.Message)"
+          }
+
           # Async: O endpoint oficial do Kudu para deploy assincrono via ZIP e /api/zipdeploy?isAsync=true.
           # Ele aceita o upload do ZIP e retorna HTTP 202 imediatamente com o header Location para acompanhamento,
           # evitando qualquer timeout (504 GatewayTimeout) do proxy do Azure App Service.
