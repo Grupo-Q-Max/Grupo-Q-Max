@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Archive, ArchiveRestore, BookmarkPlus, Check, Copy, Link2, Mail, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, BookmarkPlus, Check, Copy, Link2, Mail, MessageSquare, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
 import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
 import { DealAttachments } from "./DealAttachments";
@@ -454,8 +454,22 @@ function ContactActions({ deal }: { deal: DealDetails }) {
   const contact = deal.contacts.find((c) => c.phone || c.email);
   const phone = contact?.phone || deal.company?.phone;
   const email = contact?.email || deal.company?.email;
+
+  const cleanPhone = phone ? phone.replace(/\D/g, "") : "";
+  const intlPhone = cleanPhone ? (cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`) : "";
+  const waUrl = intlPhone ? `https://wa.me/${intlPhone}` : null;
+
   return (
     <>
+      <a
+        className={`deal-icon-btn deal-icon-btn--boxed ${waUrl ? "text-emerald-500 hover:text-emerald-400" : "is-disabled"}`}
+        href={waUrl || undefined}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={waUrl ? `Chamar no WhatsApp (${phone})` : "Nenhum WhatsApp cadastrado"}
+      >
+        <MessageSquare size={16} />
+      </a>
       <a
         className={`deal-icon-btn deal-icon-btn--boxed ${phone ? "" : "is-disabled"}`}
         href={phone ? `tel:${phone}` : undefined}

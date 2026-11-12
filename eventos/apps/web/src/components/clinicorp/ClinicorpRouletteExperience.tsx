@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, CircleAlert, Crown, LoaderCircle, LogOut, Maximize, Minimize, Play, Search, Sparkles, UserRound, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowRight, Check, CircleAlert, Crown, LoaderCircle, LogOut, Maximize, Minimize, Play, Search, Sparkles, Target, UserRound, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { playChimeSound, playSlowdownSound, playTickSound, playWinFanfare, speakWinner, triggerHaptic } from "@/lib/audio";
@@ -856,6 +856,17 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
           </span>
           <span className="truncate text-[15px] text-ink-text-2">
             {operatorUser?.name || "Operador"} · {event?.label}
+          </span>
+        </div>
+
+        <div className="hidden lg:flex items-center gap-3 rounded-full border border-ink-line/80 bg-ink-800/80 px-4 py-1.5 shadow-inner">
+          <Target size={15} className="text-accent" />
+          <span className="font-mono text-xs font-bold text-slate-200">
+            Aguardando Giro: <span className="text-accent font-extrabold">{pendingList.length}</span>
+          </span>
+          <span className="h-3 w-px bg-ink-line" />
+          <span className="font-mono text-xs text-slate-300">
+            Prêmios no Pool: <span className="text-white font-bold">{prizes.length}</span>
           </span>
         </div>
         <div className="flex gap-2">

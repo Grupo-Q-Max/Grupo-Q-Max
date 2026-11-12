@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarCheck, CheckCircle2, LoaderCircle } from "lucide-react";
+import { CalendarCheck, CheckCircle2, LoaderCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { StepBar } from "@/components/brand/Brand";
 import { Alert, Check, Field, PaperHeading, Segmented, StickyActions, primaryButton } from "@/components/form/Paper";
@@ -86,19 +86,47 @@ function createDeviceId() {
   return generated;
 }
 
+type ClinicPrefill = {
+  clinicName?: string;
+  chairsCount?: number | null;
+  croState?: string;
+};
+
 // "Novo cadastro" depois de salvar offline: remonta o formulário zerado (sem navegar, a rede pode estar fora).
 export default function ClinicorpRegistrationForm(props: Props) {
   const [round, setRound] = useState(0);
-  return <RegistrationForm key={round} {...props} onReset={() => setRound((r) => r + 1)} />;
+  const [prefill, setPrefill] = useState<ClinicPrefill | null>(null);
+
+  return (
+    <RegistrationForm
+      key={round}
+      {...props}
+      initialPrefill={prefill}
+      onReset={() => {
+        setPrefill(null);
+        setRound((r) => r + 1);
+      }}
+      onResetWithClinic={(data) => {
+        setPrefill(data);
+        setRound((r) => r + 1);
+      }}
+    />
+  );
 }
 
 function RegistrationForm({
   onReset,
+  onResetWithClinic,
+  initialPrefill,
   eventId,
   eventName: _eventName,
   initialVipCode = "",
   route = "invictus",
-}: Props & { onReset: () => void }) {
+}: Props & {
+  onReset: () => void;
+  onResetWithClinic: (data: ClinicPrefill) => void;
+  initialPrefill?: ClinicPrefill | null;
+}) {
   const router = useRouter();
 
   const [deviceId, setDeviceId] = useState("");
@@ -106,10 +134,10 @@ function RegistrationForm({
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [clinicName, setClinicName] = useState("");
+  const [clinicName, setClinicName] = useState(initialPrefill?.clinicName || "");
   const [cro, setCro] = useState("");
-  const [croState, setCroState] = useState("SP");
-  const [chairsCount, setChairsCount] = useState<number | null>(null);
+  const [croState, setCroState] = useState(initialPrefill?.croState || "SP");
+  const [chairsCount, setChairsCount] = useState<number | null>(initialPrefill?.chairsCount ?? null);
   const [vipCode, setVipCode] = useState(initialVipCode.toUpperCase());
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [acceptMarketing, setAcceptMarketing] = useState(true);
@@ -368,10 +396,20 @@ function RegistrationForm({
                   Apresente seu código para a nossa equipe liberar seu giro no tablet da roleta!
                 </span>
               </div>
+              {clinicName && (
+                <button
+                  type="button"
+                  onClick={() => onResetWithClinic({ clinicName, chairsCount, croState })}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-button bg-accent/15 border border-accent/40 py-2.5 text-[14px] font-bold text-accent hover:bg-accent/25 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                >
+                  <Users size={16} />
+                  Cadastrar Colega da Clínica {clinicName}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onReset}
-                className="inline-flex w-full items-center justify-center rounded-button py-2.5 text-[14px] font-medium text-text-2 hover:text-text transition-colors"
+                className="inline-flex w-full items-center justify-center rounded-button py-2 text-[13px] font-medium text-text-2 hover:text-text transition-colors"
               >
                 Cadastrar Outro Participante
               </button>
@@ -408,6 +446,15 @@ function RegistrationForm({
 
       <div className="flex flex-1 flex-col gap-4.5 px-5 pt-2 pb-6">
         {error && <Alert>{error}</Alert>}
+
+        {initialPrefill?.clinicName && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-accent/40 bg-accent/15 px-3.5 py-2.5 text-xs text-slate-200 animate-pop-burst">
+            <Users size={16} className="text-accent flex-none" />
+            <span>
+              Cadastrando colega de <strong>{initialPrefill.clinicName}</strong>. Dados da clínica pré-preenchidos!
+            </span>
+          </div>
+        )}
 
         <Field id="c-nome" label="Nome completo" autoComplete="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
         <Field
