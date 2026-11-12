@@ -225,6 +225,10 @@ export async function POST(req: NextRequest) {
           `🕒 Data Cadastro: ${lead.registeredAt || new Date().toISOString()}`,
         ].join("\n"),
         customData: {
+          phone: phone || null,
+          email: email || null,
+          participantName: name || null,
+          clinicName: clinic || null,
           eventSlug,
           eventId: event.id,
           participationId,

@@ -8,6 +8,7 @@ import { DealTimeline } from "./DealTimeline";
 import { DealAttachments } from "./DealAttachments";
 import { offerParentDone } from "./DealTaskTools";
 import { formatMoney, pickDraft, type DealDetails, type DealDraft, type TeamMember } from "./types";
+import { formatWhatsAppUrl } from "@/lib/crm-whatsapp";
 import { formatDateOnly } from "./ui";
 import { useCan } from "../CrmAccess";
 import { sendStageMove } from "../stageEntry";
@@ -455,9 +456,12 @@ function ContactActions({ deal }: { deal: DealDetails }) {
   const phone = contact?.phone || deal.company?.phone;
   const email = contact?.email || deal.company?.email;
 
-  const cleanPhone = phone ? phone.replace(/\D/g, "") : "";
-  const intlPhone = cleanPhone ? (cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`) : "";
-  const waUrl = intlPhone ? `https://wa.me/${intlPhone}` : null;
+  const waUrl = formatWhatsAppUrl(
+    phone,
+    contact?.name || deal.company?.name || deal.title,
+    (deal as any).source,
+    (deal as any).customData
+  );
 
   return (
     <>
