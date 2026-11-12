@@ -227,7 +227,8 @@ jobs:
             mkdir -p deploy/proposta
             cp -R proposta/. deploy/proposta/
             rm -rf deploy/proposta/.git deploy/proposta/*.docx deploy/proposta/*.docx.txt deploy/proposta/*.zip deploy/proposta/storage/propostas_pdf/* deploy/proposta/.git_backup deploy/proposta/*.sql
-            # node_modules ja foi copiado com proposta/
+            # node_modules ja foi copiado com proposta, podar dependencias dev
+            (cd deploy/proposta && npm prune --omit=dev 2>/dev/null || true)
 
             echo "Criando .env da Proposta..."
             echo "PORT=3005" > deploy/proposta/.env
@@ -313,16 +314,21 @@ jobs:
 
           echo ""
           echo "6.1. Otimizando tamanho do pacote para acelerar descompactacao na Azure..."
-          find deploy -type f -name "*.map" -delete 2>/dev/null || true
-          find deploy -type f -name "*.md" ! -name "README.md" -delete 2>/dev/null || true
-          find deploy -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
-          find deploy -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
-          find deploy -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
-          find deploy -type d -name ".github" -exec rm -rf {} + 2>/dev/null || true
+          echo "Arquivos no deploy ANTES da limpeza: $(find deploy -type f | wc -l)"
+          # Deletar arquivos TypeScript de definicao (.d.ts) e source maps (.map) que nunca rodam em Node.js
+          find deploy -type f \( -name "*.d.ts" -o -name "*.d.ts.map" -o -name "*.map" -o -name "*.flow" -o -name "*.tsbuildinfo" \) -delete 2>/dev/null || true
+          # Deletar markdown e documentacoes soltas
+          find deploy -type f \( -name "*.md" -o -name "*.markdown" \) ! -name "README.md" -delete 2>/dev/null || true
+          # Deletar testes soltos em pacotes
+          find deploy -type f \( -name "*.test.js" -o -name "*.spec.js" -o -name "*.test.mjs" -o -name "*.spec.mjs" \) -delete 2>/dev/null || true
+          # Deletar diretorios pesados de docs, testes e exemplos dentro de dependencias
+          find deploy -type d \( -name "__tests__" -o -name "test" -o -name "tests" -o -name "docs" -o -name "examples" -o -name "example" -o -name ".github" \) -prune -exec rm -rf {} + 2>/dev/null || true
+          echo "Arquivos no deploy APOS a limpeza: $(find deploy -type f | wc -l)"
 
           echo ""
           echo "6.2. Desativando build redundante do Oryx/Kudu na Azure..."
-          printf "[config]\nSCM_DO_BUILD_DURING_DEPLOYMENT = false\n" > deploy/.deployment
+          # Especificar command faz o Kudu pular 100% o Oryx (npm install remoto demorado)
+          printf "[config]\nSCM_DO_BUILD_DURING_DEPLOYMENT = false\ncommand = echo 'Pacote pre-construido pronto para execucao.'\n" > deploy/.deployment
 
           echo ""
           echo "7. Criando ZIP..."
@@ -445,11 +451,26 @@ jobs:
 
           $deadline = (Get-Date).AddMinutes(30)
           $deployment = $null
+          $seenLogs = @{}
           do {
               Start-Sleep -Seconds 10
               try {
                   $deployment = Invoke-RestMethod -Uri $statusUrl -Headers $headers -TimeoutSec 60
                   Write-Host "Deploy: status=$($deployment.status) ($($deployment.status_text)) complete=$($deployment.complete)"
+                  
+                  if ($deployment.id) {
+                      try {
+                          $logUrl = "$kuduBase/api/deployments/$($deployment.id)/log"
+                          $logs = Invoke-RestMethod -Uri $logUrl -Headers $headers -TimeoutSec 20
+                          foreach ($entry in $logs) {
+                              $key = "$($entry.id)-$($entry.message)"
+                              if (-not $seenLogs.ContainsKey($key)) {
+                                  $seenLogs[$key] = $true
+                                  Write-Host "  > [KUDU] $($entry.message)"
+                              }
+                          }
+                      } catch {}
+                  }
               } catch {
                   Write-Host "Aguardando status do deploy: $($_.Exception.Message)"
               }
