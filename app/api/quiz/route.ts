@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyPipelineChanged } from "@/lib/crm-realtime";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     // 2. Injeta automaticamente no primeiro estágio do funil do CRM
     const defaultStage = await prisma.crmStage.findFirst({
       orderBy: { order: "asc" },
-      select: { id: true },
+      select: { id: true, pipelineId: true },
     });
 
     if (defaultStage) {
@@ -59,6 +60,8 @@ export async function POST(req: NextRequest) {
           },
         },
       }).catch((err) => console.error("Erro ao criar card no CRM pelo Quiz:", err));
+
+      notifyPipelineChanged(defaultStage.pipelineId);
     }
 
     return NextResponse.json({ success: true, score: cleanScore, total: cleanTotal });

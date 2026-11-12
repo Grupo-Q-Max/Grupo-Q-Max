@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyPipelineChanged } from "@/lib/crm-realtime";
 
 /**
  * Retorna ou cria o pipeline/funil dedicado exclusivo para eventos no CRM.
@@ -180,6 +181,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // Dispara atualização em tempo real para os Kanbans abertos
+      notifyPipelineChanged(pipeline.id);
+
       return NextResponse.json({
         success: true,
         updated: true,
@@ -238,6 +242,9 @@ export async function POST(req: NextRequest) {
         } : undefined,
       },
     });
+
+    // Dispara atualização em tempo real para os Kanbans abertos
+    notifyPipelineChanged(pipeline.id);
 
     return NextResponse.json({
       success: true,
