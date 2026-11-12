@@ -62,7 +62,6 @@ export class CrmService implements OnModuleInit, OnModuleDestroy {
         crm_sent_at: null,
         status: { not: 'BLOCKED' },
         created_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-        events: { crm_webhook_url: { not: null } },
         participants: { marketing_consent: true },
       },
       select: { id: true, draws: { select: { id: true } } },
