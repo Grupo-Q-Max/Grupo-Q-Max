@@ -20,6 +20,7 @@ import { CrmSavedViews } from "./CrmSavedViews";
 import { CrmBulkBar } from "./CrmBulkBar";
 import { alertDialog } from "@/components/ui/Dialogs";
 import { downloadCsv } from "@/lib/csv";
+import { CrmFunnelSummary } from "./CrmFunnelSummary";
 
 type DealFilters = {
   q: string;
@@ -395,15 +396,18 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
           ]),
         ])
       : downloadCsv(`negocios-${todayKey(new Date())}.csv`, [
-          ["Nº", "Negócio", "Empresa", "Fase", "Status", "Valor", "Responsável", "Criado em"],
+          ["Nº", "Negócio", "Empresa", "Contato", "Origem", "Fase", "Status", "Valor (R$)", "Responsável", "Etiquetas", "Criado em"],
           ...allCards.map((c) => [
             c.number,
             c.title,
-            c.company,
+            c.company ?? "",
+            c.contactName ?? "",
+            c.source ?? "Direto",
             c.stageName,
             DEAL_STATUSES[c.status ?? "OPEN"] ?? c.status,
             Number(c.value).toFixed(2).replace(".", ","),
-            c.responsible?.name,
+            c.responsible?.name ?? "",
+            c.tags?.map((t) => t.name).join(", ") ?? "",
             c.createdAt ? new Date(c.createdAt).toLocaleDateString("pt-BR") : "",
           ]),
         ]);
@@ -525,6 +529,17 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
             >
               🧩 Quiz
             </button>
+            <button
+              type="button"
+              className="view-btn"
+              onClick={exportCsv}
+              disabled={allCards.length === 0}
+              title="Exportar leads filtrados para CSV (Excel)"
+              style={{ fontSize: "0.78rem", padding: "6px 11px", height: "auto", display: "inline-flex", alignItems: "center", gap: 5 }}
+            >
+              <Download size={14} />
+              CSV
+            </button>
           </div>
         )}
         <CrmSavedViews pipelineId={pipeline.id} query={boardQuery(filters, view, sort, lanes)} onApply={applyQuery} />
@@ -597,6 +612,9 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
       </div>
 
       <div className="crm-content">
+        {(view === "kanban" || view === "list") && (
+          <CrmFunnelSummary pipeline={pipeline} deals={allCards} isTasks={isTasks} />
+        )}
         {view === "kanban" && (
           <>
             {selecting && (
