@@ -61,6 +61,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            eventos/package-lock.json
+            proposta/package-lock.json
 
       - name: Install Dependencies
         run: |
@@ -97,6 +101,17 @@ jobs:
       - name: Robô de Testes Automatizados
         continue-on-error: true
         run: node test-db.js
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .qmax-next/cache
+            eventos/apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json', 'eventos/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json', 'eventos/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-
 
       - name: Build Next.js
         run: |
@@ -295,6 +310,15 @@ jobs:
             pkg.scripts.start = 'node --env-file=.env runner.js';
             fs.writeFileSync(p, JSON.stringify(pkg, null, 2));
           "
+
+          echo ""
+          echo "6.1. Otimizando tamanho do pacote para acelerar descompactacao na Azure..."
+          find deploy -type f -name "*.map" -delete 2>/dev/null || true
+          find deploy -type f -name "*.md" ! -name "README.md" -delete 2>/dev/null || true
+          find deploy -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
+          find deploy -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
+          find deploy -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
+          find deploy -type d -name ".github" -exec rm -rf {} + 2>/dev/null || true
 
           echo ""
           echo "7. Criando ZIP..."
