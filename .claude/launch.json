@@ -21,6 +21,12 @@
         "REDIS_URL": "redis://127.0.0.1:6379"
       },
       "port": 3000
+    },
+    {
+      "name": "proposta",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "proposta", "run", "dev"],
+      "port": 3005
     }
   ]
 }

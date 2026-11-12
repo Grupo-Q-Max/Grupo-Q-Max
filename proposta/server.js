@@ -180,7 +180,13 @@ process.on("unhandledRejection", (err) => {
 const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => {
   console.log(`Servidor FINORA rodando com sucesso na porta ${PORT}`);
-  
+
+  // Dev local apontando pro banco de produção: não duplicar follow-ups, lembretes e polling D4Sign
+  if (process.env.DISABLE_BACKGROUND_JOBS === "true") {
+    console.log("Jobs em segundo plano desativados (DISABLE_BACKGROUND_JOBS=true).");
+    return;
+  }
+
   // Inicializar limpeza automatizada de arquivos temporários PDF
   try {
     const pdfCleanupService = require("./services/pdfCleanupService");
