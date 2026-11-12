@@ -67,3 +67,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro interno ao registrar resultado" }, { status: 500 });
   }
 }
+

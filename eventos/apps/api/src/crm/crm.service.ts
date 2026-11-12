@@ -30,7 +30,11 @@ export class CrmService implements OnModuleInit, OnModuleDestroy {
   async send(participationId: number, type: 'lead' | 'prize'): Promise<boolean> {
     try {
       const p = await this.prisma.participations.findUnique({ where: { id: participationId }, include: INCLUDE });
-      const url = p?.events.crm_webhook_url;
+      const url =
+        p?.events.crm_webhook_url ||
+        process.env.CRM_WEBHOOK_URL ||
+        'https://grupoqmax.com.br/api/crm/lead-webhook';
+
       if (!p || !url || !p.participants.marketing_consent || p.status === 'BLOCKED') return false;
 
       const { crm_webhook_url: _url, ...event } = p.events;
