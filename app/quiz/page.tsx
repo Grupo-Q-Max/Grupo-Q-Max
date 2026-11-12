@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Award, CheckCircle2, ChevronRight, HelpCircle, LoaderCircle, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Award, CheckCircle2, ChevronRight, HelpCircle, LoaderCircle, MessageCircle, RotateCcw, Sparkles } from "lucide-react";
 
 type Question = {
   id: number;
@@ -516,25 +516,38 @@ export default function QuizPage() {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
-              <Link
-                href="/"
-                className="flex-1 py-3.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-sm text-center transition"
+            <div className="flex flex-col gap-3 w-full">
+              <a
+                href={`https://wa.me/551128976514?text=${encodeURIComponent(
+                  `Olá! Fiz o Quiz do Grupo Q-Max e fiz ${calculateScore()} de ${totalMultipleChoice} pontos. Gostaria de conversar com um especialista do ecossistema.`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 px-6 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm text-center flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition cursor-pointer"
               >
-                Conhecer o Grupo Q-Max
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  setAnswers({});
-                  setMysteryGuess("");
-                  setCurrentIndex(0);
-                  setCurrentStep("QUIZ");
-                }}
-                className="px-6 py-3.5 rounded-full border border-slate-800 hover:bg-slate-900 text-slate-300 text-sm font-semibold flex items-center justify-center gap-2 transition"
-              >
-                <RotateCcw size={16} /> Tentar Novamente
-              </button>
+                <MessageCircle size={18} /> Conversar com Especialista no WhatsApp
+              </a>
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <Link
+                  href="/"
+                  className="flex-1 py-3.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-sm text-center transition"
+                >
+                  Conhecer o Grupo Q-Max
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAnswers({});
+                    setMysteryGuess("");
+                    setCurrentIndex(0);
+                    setCurrentStep("QUIZ");
+                  }}
+                  className="px-6 py-3.5 rounded-full border border-slate-800 hover:bg-slate-900 text-slate-300 text-sm font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
+                >
+                  <RotateCcw size={16} /> Tentar Novamente
+                </button>
+              </div>
             </div>
           </div>
         )}
