@@ -27,8 +27,7 @@ function parse(body: { name?: unknown; price?: unknown; hasBonus?: unknown }, re
   return data;
 }
 
-const isDuplicate = (error: unknown) => (error as { code?: string }).code === "P2002";
-const isMissing = (error: unknown) => (error as { code?: string }).code === "P2025";
+import { isNotFound as isMissing, isUniqueViolation as isDuplicate } from "@/lib/prisma-errors";
 
 /** Catalog products (/crm/products). Deal lines keep their own name/price snapshot. */
 export async function POST(req: Request) {

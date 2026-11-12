@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
-import type { PrismaClient, TeamMember } from "@prisma/client";
+import { Prisma, type PrismaClient, type TeamMember } from "@prisma/client";
 
 /**
  * CRM sign-in with Microsoft Entra ID. The browser gets an id_token (MSAL, Authorization Code + PKCE)
@@ -97,7 +97,9 @@ export async function verifyMicrosoftIdToken(
   return { oid, tid: payload.tid, email, name: String(payload.name ?? "").trim() };
 }
 
-const isUniqueViolation = (error: unknown) => (error as { code?: string })?.code === "P2002";
+// Local copy of lib/prisma-errors: tests load this file without the "@/" alias.
+const isUniqueViolation = (error: unknown) =>
+  error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 
 /**
  * The member of a validated identity: found by (tid, oid); on the first sign-in, linked by e-mail to

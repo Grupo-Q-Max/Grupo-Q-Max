@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { getUploadsDir, imageExtension } from "@/lib/storage";
+import { siteAdminDenied } from "@/lib/settings";
 
 export async function POST(req: NextRequest) {
+  const denied = siteAdminDenied(req);
+  if (denied) return denied;
   const formData = await req.formData();
   const file = formData.get("file");
   const memberId = formData.get("memberId");

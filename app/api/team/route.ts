@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { emailTakenResponse, parsePartnerInput, parseTeamInput, teamInclude, toPublicTeamDto, toTeamDto } from "@/lib/team";
 import { adminGroupChange } from "@/lib/crm-access";
 import { ADMIN_COOKIE, sessionMemberId } from "@/lib/auth";
-import { isAdminToken } from "@/lib/settings";
+import { isAdminToken, siteAdminDenied } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -39,6 +39,8 @@ export async function GET(req: NextRequest) {
 
 /** Creates a member; with `partner` in the body it is a partner (sócio), else an employee. */
 export async function POST(req: NextRequest) {
+  const denied = siteAdminDenied(req);
+  if (denied) return denied;
   const body = await req.json();
   const partner = parsePartnerInput(body);
   const member = await prisma.teamMember
@@ -60,6 +62,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const denied = siteAdminDenied(req);
+  if (denied) return denied;
   // Reorder: receives the ordered ids of one list (partners or employees)
   const { order } = (await req.json()) as { order: string[] };
   if (!Array.isArray(order)) return NextResponse.json({ error: "Missing order" }, { status: 400 });

@@ -5,11 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { getUploadsDir } from "@/lib/storage";
 import { emailTakenResponse, parsePartnerInput, parseTeamInput, teamInclude, toTeamDto } from "@/lib/team";
 import { adminGroupChange } from "@/lib/crm-access";
+import { siteAdminDenied } from "@/lib/settings";
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = siteAdminDenied(req);
+  if (denied) return denied;
   const { id } = await params;
   const member = await prisma.teamMember.findUnique({ where: { id } });
   if (!member) return NextResponse.json({ ok: true });
@@ -33,6 +36,8 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = siteAdminDenied(req);
+  if (denied) return denied;
   const { id } = await params;
   const body = await req.json();
   const exists = await prisma.teamMember.findUnique({

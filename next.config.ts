@@ -26,7 +26,6 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "X-XSS-Protection", value: "1; mode=block" },
           { key: "X-DNS-Prefetch-Control", value: "on" },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
           // camera=(self): the Finora Experience admin (rewritten under this origin) scans with the camera
@@ -76,19 +75,7 @@ const nextConfig: NextConfig = {
         destination: "/api/files/:filename*",
       
       },
-      // Sistema Q-Max Quiz
-      {
-        source: "/qmax-quiz",
-        destination: `${quizUrl}/index.php`,
-      },
-      {
-        source: "/qmax-quiz/",
-        destination: `${quizUrl}/index.php`,
-      },
-      {
-        source: "/qmax-quiz/:path*",
-        destination: `${quizUrl}/:path*`,
-      },
+      // Sistema Q-Max Quiz (/qmax-quiz is redirected to /quiz above)
       {
         source: "/quiz",
         destination: `${quizUrl}/index.php`,

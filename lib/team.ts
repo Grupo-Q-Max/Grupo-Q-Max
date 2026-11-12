@@ -1,5 +1,6 @@
 import type { TeamMember, TeamPartner } from "@prisma/client";
 import { isArea } from "@/lib/crm-areas";
+import { isUniqueViolation } from "@/lib/prisma-errors";
 
 /**
  * Team members live in the TeamMember table (they are also the CRM users:
@@ -43,7 +44,7 @@ export function toPublicTeamDto(member: TeamMember & { partner: TeamPartner }) {
 
 /** 409 response for a duplicated CRM e-mail (unique constraint), else rethrows. */
 export function emailTakenResponse(error: unknown) {
-  if ((error as { code?: string })?.code === "P2002") {
+  if (isUniqueViolation(error)) {
     return Response.json({ error: "Este e-mail já é usado por outro membro" }, { status: 409 });
   }
   throw error;

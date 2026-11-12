@@ -1,27 +1,18 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import mariadb from "mariadb";
 
-const globalForPrisma = global as unknown as { 
-  prisma: PrismaClient;
-  pool: any; 
-};
+const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
-const connectionString = process.env.DATABASE_URL!;
-
-// Cache the pool so it doesn't get recreated on every HMR in development
-if (!globalForPrisma.pool) {
-  globalForPrisma.pool = mariadb.createPool(connectionString.replace('mysql://', 'mariadb://'));
-}
-
-const pool = globalForPrisma.pool;
-const adapter = new PrismaMariaDb(pool);
+// The adapter builds its own pool from the URL (mysql:// accepted; pool size via
+// `?connectionLimit=N`, driver default 10). Caching the client keeps one pool across HMR.
+const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
     adapter,
-    log: ["query"],
+    // Query logs carry parameters (e-mails, tokens): development only.
+    log: process.env.NODE_ENV === "development" ? ["query", "error"] : ["error"],
   });
 
 if (process.env.NODE_ENV !== "production") {
