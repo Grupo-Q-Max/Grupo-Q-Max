@@ -321,6 +321,10 @@ jobs:
           find deploy -type d -name ".github" -exec rm -rf {} + 2>/dev/null || true
 
           echo ""
+          echo "6.2. Desativando build redundante do Oryx/Kudu na Azure..."
+          printf "[config]\nSCM_DO_BUILD_DURING_DEPLOYMENT = false\n" > deploy/.deployment
+
+          echo ""
           echo "7. Criando ZIP..."
           cd deploy
           zip -1 -q -r ../site.zip .
@@ -333,6 +337,7 @@ jobs:
           unzip -l site.zip | grep "public/brands/brand-talents.png"
           unzip -l site.zip | grep "public/brands/brand-technology.png"
           unzip -l site.zip | grep "public/brands/brand-lagerhaus.png"
+          unzip -l site.zip | grep ".deployment"
           unzip -l site.zip | grep "runner.js"
           unzip -l site.zip | grep "eventos-api/dist/src/main.js"
           unzip -l site.zip | grep "eventos-web/apps/web/server.js"
