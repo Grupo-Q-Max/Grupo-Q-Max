@@ -50,6 +50,41 @@ export function TaxDiagnosticCalculator() {
     `Olá! Fiz o diagnóstico no simulador do Grupo Q-Max para o segmento "${selectedSegment.name}" (Faturamento mensal: ${formatCurrency(monthlyRevenue)}) e gostaria de validar minha economia estimada.`
   );
 
+  const handleWhatsAppClick = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("qmax:analytics", {
+          detail: {
+            event: "lead_generation_intent",
+            action: "tax_diagnostic_whatsapp_click",
+            source: "tax_diagnostic_calculator",
+            segment: selectedSegment.name,
+            monthlyRevenue,
+            estimatedAnnualSavings,
+          },
+        })
+      );
+    }
+  };
+
+  const handleOpenModal = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("qmax:analytics", {
+          detail: {
+            event: "lead_generation_intent",
+            action: "tax_diagnostic_modal_open",
+            source: "tax_diagnostic_calculator",
+            segment: selectedSegment.name,
+            monthlyRevenue,
+            estimatedAnnualSavings,
+          },
+        })
+      );
+      window.dispatchEvent(new CustomEvent("open-qmax-modal"));
+    }
+  };
+
   return (
     <section id="diagnostico" className="qmax-calculator">
       <div className="container">
@@ -134,15 +169,37 @@ export function TaxDiagnosticCalculator() {
               <p>{selectedSegment.description}</p>
             </div>
 
-            <a
-              href={`https://wa.me/551128976514?text=${whatsappMessage}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="qmax-calculator__cta"
-            >
-              <span>Solicitar Diagnóstico Detalhado</span>
-              <ArrowRight size={17} />
-            </a>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", marginTop: 16 }}>
+              <a
+                href={`https://wa.me/551128976514?text=${whatsappMessage}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleWhatsAppClick}
+                className="qmax-calculator__cta"
+              >
+                <span>Solicitar Diagnóstico no WhatsApp</span>
+                <ArrowRight size={17} />
+              </a>
+
+              <button
+                type="button"
+                onClick={handleOpenModal}
+                style={{
+                  background: "transparent",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  color: "#d4d4d8",
+                  padding: "10px 18px",
+                  borderRadius: 12,
+                  fontSize: "0.86rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  textAlign: "center",
+                }}
+              >
+                Ou preencher formulário de contato rápido
+              </button>
+            </div>
           </div>
         </div>
       </div>

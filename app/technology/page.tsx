@@ -22,6 +22,21 @@ export const metadata: Metadata = {
       "Soluções digitais inteligentes e ferramentas sob medida pelo Grupo Q-Max.",
     url: "/technology",
     type: "website",
+    siteName: "Grupo Q-Max",
+    images: [
+      {
+        url: "/brands/qmax-technology-white.png",
+        width: 1200,
+        height: 630,
+        alt: "Q-Max Technology",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Q-Max Technology | Digital & Inovação com Propósito",
+    description: "Soluções digitais inteligentes e ferramentas sob medida pelo Grupo Q-Max.",
+    images: ["/brands/qmax-technology-white.png"],
   },
 };
 

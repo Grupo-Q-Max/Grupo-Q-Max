@@ -36,6 +36,21 @@ export const metadata: Metadata = {
       "Contabilidade consultiva, BPO financeiro e planejamento tributário estratégico pelo Grupo Q-Max.",
     url: "/contabil",
     type: "website",
+    siteName: "Grupo Q-Max",
+    images: [
+      {
+        url: "/brands/qx-contabil-branco.png",
+        width: 1200,
+        height: 630,
+        alt: "Q-Max Contábil",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Q-Max Contábil | Inteligência para seu Negócio Prosperar",
+    description: "Contabilidade consultiva, BPO financeiro e planejamento tributário estratégico.",
+    images: ["/brands/qx-contabil-branco.png"],
   },
 };
 

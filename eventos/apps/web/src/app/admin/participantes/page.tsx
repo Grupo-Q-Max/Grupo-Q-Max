@@ -60,6 +60,11 @@ export default async function ParticipantsPage({
         event.id === eventId,
     );
 
+  const crmSynced = Array.isArray(participations)
+    ? participations.filter((p: { crm_sent_at?: string | null }) => Boolean(p.crm_sent_at)).length
+    : 0;
+  const crmPending = Math.max(0, (participations?.length || 0) - crmSynced);
+
   return (
     <div className="adminShell">
       <AdminSidebar />
@@ -97,25 +102,24 @@ export default async function ParticipantsPage({
         </AdminHeader>
 
 
-        <section className="grid grid-cols-[minmax(0,1fr)_150px] gap-2.5 max-sm:grid-cols-1 [&>div]:rounded-[18px] [&>div]:border [&>div]:border-line [&>div]:bg-surface [&>div]:px-4 [&>div]:py-3 [&_span]:block [&_span]:text-xs [&_span]:text-text-2 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-base">
+        <section className="grid grid-cols-[minmax(0,1.2fr)_130px_minmax(0,1fr)] gap-2.5 max-sm:grid-cols-1 [&>div]:rounded-[18px] [&>div]:border [&>div]:border-line [&>div]:bg-surface [&>div]:px-4 [&>div]:py-3 [&_span]:block [&_span]:text-xs [&_span]:text-text-2 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-base">
           <div>
-            <span>
-              Evento atual
-            </span>
-
-            <strong>
-              {currentEvent?.name ||
-                "Evento"}
-            </strong>
+            <span>Evento atual</span>
+            <strong>{currentEvent?.name || "Evento"}</strong>
           </div>
 
           <div>
-            <span>
-              Participações
-            </span>
+            <span>Participações</span>
+            <strong>{participations.length}</strong>
+          </div>
 
-            <strong>
-              {participations.length}
+          <div className="border-emerald-500/25 bg-emerald-950/15">
+            <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+              <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+              Integração CRM Q-Max
+            </span>
+            <strong className="text-emerald-300">
+              {crmSynced} sincronizados {crmPending > 0 ? `(${crmPending} na fila de retry)` : "• 100% entregue"}
             </strong>
           </div>
         </section>
