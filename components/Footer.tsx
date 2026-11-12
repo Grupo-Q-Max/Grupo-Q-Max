@@ -209,10 +209,6 @@ export function Footer() {
             >
               FINORA
             </a>
-            <a href="/quiz" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span>Quiz Q-Max</span>
-              <span style={{ fontSize: "0.68rem", padding: "1px 6px", borderRadius: 4, background: "rgba(217, 15, 129, 0.2)", color: "#ff2f91", fontWeight: 700 }}>NOVO</span>
-            </a>
             <a href="/#diagnostico">
               Simulador Tributário
             </a>
