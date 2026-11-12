@@ -3,13 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { denyUnless } from "@/lib/crm-access";
 import { sessionMemberId } from "@/lib/auth";
 import { isPermission } from "@/lib/crm-permissions";
+import { hasCode, isNotFound, isUniqueViolation } from "@/lib/prisma-errors";
 
 /** Valid, distinct permission keys of a request body, as rows for CrmGroupPermission. */
 const permissionRows = (value: unknown) =>
   [...new Set(Array.isArray(value) ? value.filter(isPermission) : [])].map((permission) => ({ permission }));
 
 const nameTaken = (error: unknown) =>
-  (error as { code?: string })?.code === "P2002"
+  isUniqueViolation(error)
     ? NextResponse.json({ error: "Já existe um grupo com este nome." }, { status: 409 })
     : null;
 
@@ -115,7 +116,7 @@ export async function PATCH(req: Request) {
     });
     return NextResponse.json({ success: true });
   } catch (error) {
-    if ((error as { code?: string })?.code === "P2003" || (error as { code?: string })?.code === "P2025") {
+    if (hasCode(error, "P2003") || isNotFound(error)) {
       return NextResponse.json({ error: "Usuário ou grupo não encontrado." }, { status: 404 });
     }
     console.error(error);

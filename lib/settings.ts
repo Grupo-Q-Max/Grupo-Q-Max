@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { createHash, timingSafeEqual } from "crypto";
 import { getSettingsJsonPath } from "./storage";
-import { readAdminToken } from "./auth";
+import { ADMIN_COOKIE, readAdminToken } from "./auth";
 
 export const DEFAULTS = {
   siteName: "Grupo Q-Max",
@@ -64,4 +64,9 @@ export function readSettings() {
   } catch {
     return DEFAULTS;
   }
+}
+
+/** 401 unless the request carries the site admin cookie. Handlers check it too, not only proxy.ts. */
+export function siteAdminDenied(req: { cookies: { get(name: string): { value: string } | undefined } }) {
+  return isAdminToken(req.cookies.get(ADMIN_COOKIE)?.value) ? null : Response.json({ error: "Unauthorized" }, { status: 401 });
 }

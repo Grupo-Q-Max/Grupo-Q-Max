@@ -16,6 +16,7 @@ const isHiddenCard = async (cardId: string) => (await prisma.crmCard.count({ whe
 import { notifyQxbackStage } from "@/lib/crm-qxback";
 import { notifyRuleFailed } from "@/lib/crm-card-notify";
 import { isPublicUrl } from "@/lib/public-url";
+import { isUniqueViolation } from "@/lib/prisma-errors";
 import { notifyQxsignStage } from "@/lib/crm-qxsign";
 import {
   DEAL_STATUSES,
@@ -520,7 +521,7 @@ async function claimStep(runId: string, seq: number, data: Omit<Prisma.CrmAutoma
     const row = await prisma.crmAutomationRunStep.create({ data: { ...data, runId, seq, status: "RUNNING" } });
     return row.id;
   } catch (e) {
-    if ((e as { code?: string }).code !== "P2002") throw e;
+    if (!isUniqueViolation(e)) throw e;
   }
   const existing = await prisma.crmAutomationRunStep.findUniqueOrThrow({ where: { runId_seq: { runId, seq } } });
   if (existing.status === "FAILED") {

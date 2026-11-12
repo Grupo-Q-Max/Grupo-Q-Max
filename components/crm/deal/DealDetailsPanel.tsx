@@ -76,14 +76,19 @@ export function DealDetailsPanel({ dealId, onLoad, onClose, onChanged, onOpenCar
   const dirtyRef = useRef(isDirty);
   dirtyRef.current = isDirty;
 
+  // Realtime events can start loads that answer out of order: only the latest one applies
+  const loadSeq = useRef(0);
   const load = useCallback(
     async (resetDraft: boolean) => {
+      const seq = ++loadSeq.current;
       const res = await fetch(`/api/crm/card?id=${dealId}`, { cache: "no-store" });
+      if (seq !== loadSeq.current) return;
       if (!res.ok) {
         setError(res.status === 404 ? "Este negócio não existe mais." : "Não foi possível carregar o negócio.");
         return;
       }
       const data: DealDetails = await res.json();
+      if (seq !== loadSeq.current) return;
       setDeal(data);
       if (resetDraft) setDraft(pickDraft(data));
     },

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { RefreshCw } from "lucide-react";
 import {
@@ -191,12 +191,17 @@ export function AutomationRunsTab({ pipelineId }: { pipelineId: string }) {
   const [acting, setActing] = useState<string | null>(null);
   const can = useCan();
 
+  // Only the latest request may update the list (fast paging/filtering can answer out of order)
+  const loadSeq = useRef(0);
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     const params = new URLSearchParams({ pipelineId, page: String(page), ...(status && { status }) });
     const res = await fetch(`/api/crm/automation/runs?${params}`, { cache: "no-store" });
+    if (seq !== loadSeq.current) return;
     if (res.ok) {
       const data = await res.json();
+      if (seq !== loadSeq.current) return;
       setRuns(data.runs);
       setTotal(data.total);
       setPageSize(data.pageSize);
