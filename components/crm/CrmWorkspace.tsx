@@ -130,7 +130,7 @@ const toList = (values: string[]) => values.join(",");
 
 function matchesDeal(deal: CrmDeal, f: DealFilters) {
   const next = deal.activities?.[0];
-  if (!matches(f.q, deal.title, deal.company, deal.contactName, `#${deal.number}`)) return false;
+  if (!matches(f.q, deal.title, deal.company, deal.contactName, deal.source ?? "", `#${deal.number}`)) return false;
   // A co-assignee counts as responsible for the filter
   // Several values of one filter = any of them; a co-assignee counts as responsible
   const responsibles = listOf(f.responsibleId);
@@ -496,6 +496,37 @@ export function CrmWorkspace({ pipeline, initialDealId }: { pipeline: any; initi
             </div>
           </FilterField>
         </FilterSearch>
+        {!isTasks && (
+          <div className="crm-quick-sources" style={{ display: "inline-flex", alignItems: "center", gap: 6, margin: "0 2px" }}>
+            <button
+              type="button"
+              className={`view-btn ${filters.q === "Evento" ? "is-active" : ""}`}
+              onClick={() => set({ q: filters.q === "Evento" ? "" : "Evento" })}
+              title="Filtrar leads de eventos"
+              style={{ fontSize: "0.78rem", padding: "6px 11px", height: "auto" }}
+            >
+              🎪 Eventos
+            </button>
+            <button
+              type="button"
+              className={`view-btn ${filters.q === "Site" ? "is-active" : ""}`}
+              onClick={() => set({ q: filters.q === "Site" ? "" : "Site" })}
+              title="Filtrar leads do site"
+              style={{ fontSize: "0.78rem", padding: "6px 11px", height: "auto" }}
+            >
+              🌐 Site
+            </button>
+            <button
+              type="button"
+              className={`view-btn ${filters.q === "Quiz" ? "is-active" : ""}`}
+              onClick={() => set({ q: filters.q === "Quiz" ? "" : "Quiz" })}
+              title="Filtrar leads do quiz"
+              style={{ fontSize: "0.78rem", padding: "6px 11px", height: "auto" }}
+            >
+              🧩 Quiz
+            </button>
+          </div>
+        )}
         <CrmSavedViews pipelineId={pipeline.id} query={boardQuery(filters, view, sort, lanes)} onApply={applyQuery} />
         {view === "kanban" && (
           <button

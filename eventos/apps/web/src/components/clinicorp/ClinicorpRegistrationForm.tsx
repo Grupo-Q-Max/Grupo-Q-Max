@@ -282,7 +282,7 @@ function RegistrationForm({
         : nameParts[0] || "Participante";
 
     return (
-      <div className="flex flex-1 flex-col pb-6">
+      <div className="flex flex-1 flex-col pb-6 overscroll-y-contain">
         <PaperHeading
           eyebrow={
             <>
@@ -438,7 +438,7 @@ function RegistrationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
+    <form onSubmit={handleSubmit} className="flex flex-1 flex-col overscroll-y-contain">
       <PaperHeading
         eyebrow={<><StepBar step={1} total={2} /><span className="mt-2.5 block">Passo 1 de 2 · leva 1 minuto</span></>}
         title="Seus dados para girar a roleta"

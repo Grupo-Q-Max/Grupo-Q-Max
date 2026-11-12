@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Award, CheckCircle2, ChevronRight, HelpCircle, LoaderCircle, MessageCircle, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Award, Check, CheckCircle2, ChevronRight, Copy, HelpCircle, LoaderCircle, MessageCircle, RotateCcw, Share2, Sparkles } from "lucide-react";
 
 type Question = {
   id: number;
@@ -163,6 +163,15 @@ export default function QuizPage() {
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function handleCopyLink() {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.origin + "/quiz");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
+  }
 
   const totalMultipleChoice = QUIZ_QUESTIONS.filter((q) => q.type === "single").length;
 
@@ -290,6 +299,15 @@ export default function QuizPage() {
               className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-lg transition-all shadow-[0_0_25px_rgba(0,229,255,0.4)] active:scale-95 cursor-pointer"
             >
               Começar o Quiz Agora <ArrowRight size={20} />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition cursor-pointer"
+            >
+              {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+              <span>{copied ? "Link Copiado para a Área de Transferência!" : "Copiar Link do Quiz para Convidar Colega"}</span>
             </button>
           </div>
         )}
@@ -548,6 +566,15 @@ export default function QuizPage() {
                   <RotateCcw size={16} /> Tentar Novamente
                 </button>
               </div>
+
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="w-full py-2.5 rounded-full border border-slate-800/80 hover:bg-slate-900 text-slate-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer mt-1"
+              >
+                {copied ? <Check size={14} className="text-emerald-400" /> : <Share2 size={14} />}
+                <span>{copied ? "Link Copiado para a Área de Transferência!" : "Copiar Link do Quiz para Desafiar Colega"}</span>
+              </button>
             </div>
           </div>
         )}
