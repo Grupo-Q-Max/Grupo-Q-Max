@@ -3,7 +3,7 @@ import { ADMIN_COOKIE, readSession, SESSION_COOKIE } from "@/lib/auth";
 import { isAdminToken } from "@/lib/settings";
 
 // These authenticate on their own (webhook token / CRON_SECRET / QXBACK_TOKEN / QXSIGN_TOKEN / CRM_API_TOKEN) and are called by other servers
-const PUBLIC_API = ["/api/crm/hook/", "/api/crm/automation/cron", "/api/crm/qxback/", "/api/crm/qxsign/", "/api/crm/tasks"];
+const PUBLIC_API = ["/api/crm/hook/", "/api/crm/automation/cron", "/api/crm/qxback/", "/api/crm/qxsign/", "/api/crm/tasks", "/api/crm/lead-webhook"];
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 });
