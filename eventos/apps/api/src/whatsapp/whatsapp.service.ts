@@ -529,6 +529,7 @@ export class WhatsappService {
         if (!url || typeof url !== 'string') return false;
         const trimmed = url.trim();
         if (trimmed.includes('...')) return false;
+        if (trimmed.startsWith('data:image/') || trimmed.startsWith('data:application/')) return true;
         try {
           const parsed = new URL(trimmed);
           return parsed.protocol === 'http:' || parsed.protocol === 'https:';

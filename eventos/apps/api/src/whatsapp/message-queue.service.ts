@@ -3,54 +3,65 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { WhatsappService } from './whatsapp.service';
 
-// ─── Configurações Anti-Ban ───────────────────────────────────────────────────
+// ─── Configurações Anti-Ban Inteligentes (Para Número Aquecido) ───────────────
 //
-// Após um ban/restrição, enviar de forma humana é essencial:
-//  - Delay aleatório entre mensagens (3 a 6 minutos)
-//  - Somente em horário comercial (9h–20h, horário de Brasília)
-//  - Máximo de 15 mensagens por hora
-//  - Jitter extra nos primeiros dias após desbloqueio
-//
-// O cron roda a cada 30s para maior precisão, mas o controle real
-// é feito internamente via lastSentAt + intervalo aleatório.
+// Regras para máxima taxa de entrega sem risco de bloqueio:
+//  - Delay aleatório e flutuante (60 a 150 segundos) entre envios individuais
+//  - Pausa humana automática (8 a 15 min) a cada bloco de 15 mensagens enviadas
+//  - Horário de entrega seguro (08h às 21h, horário de Brasília)
+//  - Limite seguro por hora: máximo 25 mensagens
+//  - Spintax e hashes únicos para cada mensagem e destinatário
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ANTI_BAN = {
-  /** Intervalo mínimo entre envios (ms). Padrão: 3 minutos. */
+  /** Intervalo mínimo entre envios (ms). Padrão para número aquecido: 60s. */
   get MIN_DELAY_MS() {
     return process.env.WHATSAPP_MIN_DELAY_MS
       ? Math.max(1000, Number(process.env.WHATSAPP_MIN_DELAY_MS))
-      : 3 * 60 * 1000;
+      : 60 * 1000;
   },
-  /** Intervalo máximo entre envios (ms). Padrão: 6 minutos. */
+  /** Intervalo máximo entre envios (ms). Padrão para número aquecido: 150s (2.5 min). */
   get MAX_DELAY_MS() {
     return process.env.WHATSAPP_MAX_DELAY_MS
       ? Math.max(1000, Number(process.env.WHATSAPP_MAX_DELAY_MS))
-      : 6 * 60 * 1000;
+      : 150 * 1000;
   },
-  /** Hora de início do envio (horário de Brasília, UTC-3). Padrão: 9h. */
+  /** Hora de início do envio (horário de Brasília, UTC-3). Padrão: 8h. */
   get BUSINESS_HOUR_START() {
     return process.env.WHATSAPP_BUSINESS_START
       ? Number(process.env.WHATSAPP_BUSINESS_START)
-      : 9;
+      : 8;
   },
-  /** Hora de término do envio (horário de Brasília, UTC-3). Padrão: 20h. */
+  /** Hora de término do envio (horário de Brasília, UTC-3). Padrão: 21h. */
   get BUSINESS_HOUR_END() {
     return process.env.WHATSAPP_BUSINESS_END
       ? Number(process.env.WHATSAPP_BUSINESS_END)
-      : 20;
+      : 21;
   },
-  /** Máximo de mensagens enviadas por hora. Padrão: 15. */
+  /** Máximo de mensagens enviadas por hora. Padrão seguro: 25. */
   get MAX_PER_HOUR() {
     return process.env.WHATSAPP_MAX_PER_HOUR
       ? Number(process.env.WHATSAPP_MAX_PER_HOUR)
-      : 15;
+      : 25;
   },
   /** Máximo de tentativas antes de desistir. */
   get MAX_ATTEMPTS() {
     return process.env.WHATSAPP_MAX_ATTEMPTS
       ? Number(process.env.WHATSAPP_MAX_ATTEMPTS)
-      : 1;
+      : 2;
+  },
+  /** Quantidade de envios contínuos antes de acionar uma pausa humana maior. */
+  get BATCH_SIZE_BEFORE_PAUSE() {
+    return process.env.WHATSAPP_BATCH_SIZE
+      ? Number(process.env.WHATSAPP_BATCH_SIZE)
+      : 15;
+  },
+  /** Pausa maior entre lotes (ms): 8 a 15 minutos aleatórios. */
+  get BATCH_PAUSE_MS() {
+    const minMinutes = 8;
+    const maxMinutes = 15;
+    const randomMinutes = minMinutes + Math.floor(Math.random() * (maxMinutes - minMinutes + 1));
+    return randomMinutes * 60 * 1000;
   },
 };
 
@@ -69,6 +80,9 @@ export class MessageQueueService {
 
   /** Histórico de envios na última hora para controle do cap. */
   private sentTimestamps: Date[] = [];
+
+  /** Contador de envios contínuos para acionar pausas humanas entre lotes. */
+  private consecutiveSentCount = 0;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -225,7 +239,18 @@ export class MessageQueueService {
         // Registra timestamp para o cap horário e sorteia próximo intervalo
         this.lastSentAt = new Date();
         this.sentTimestamps.push(this.lastSentAt);
-        this.nextIntervalMs = this.randomDelay();
+
+        this.consecutiveSentCount++;
+        if (this.consecutiveSentCount >= ANTI_BAN.BATCH_SIZE_BEFORE_PAUSE) {
+          this.consecutiveSentCount = 0;
+          this.nextIntervalMs = ANTI_BAN.BATCH_PAUSE_MS;
+          const pauseMin = Math.round(this.nextIntervalMs / 60000);
+          this.logger.log(
+            `[Anti-Ban] ☕ Lote de ${ANTI_BAN.BATCH_SIZE_BEFORE_PAUSE} msgs enviado. Pausa humana de ~${pauseMin}min antes do próximo bloco.`,
+          );
+        } else {
+          this.nextIntervalMs = this.randomDelay();
+        }
 
         const minStr = Math.floor(this.nextIntervalMs / 60000);
         const secStr = Math.floor((this.nextIntervalMs % 60000) / 1000);
