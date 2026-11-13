@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarCheck, CheckCircle2, LoaderCircle, Users } from "lucide-react";
+import { AlertCircle, CalendarCheck, CheckCircle2, LoaderCircle, Users } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/api-client";
 import Link from "next/link";
 import { StepBar } from "@/components/brand/Brand";
 import { Alert, Check, Field, PaperHeading, Segmented, StickyActions, primaryButton } from "@/components/form/Paper";
@@ -139,6 +140,58 @@ function RegistrationForm({
   const [croState, setCroState] = useState(initialPrefill?.croState || "SP");
   const [chairsCount, setChairsCount] = useState<number | null>(initialPrefill?.chairsCount ?? null);
   const [vipCode, setVipCode] = useState(initialVipCode.toUpperCase());
+  const [vipStatus, setVipStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [vipMessage, setVipMessage] = useState<string>("");
+
+  useEffect(() => {
+    const clean = vipCode.trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (!clean) {
+      setVipStatus("idle");
+      setVipMessage("");
+      return;
+    }
+
+    if (clean.length < 4) {
+      setVipStatus("invalid");
+      setVipMessage("Código VIP incompleto.");
+      return;
+    }
+
+    let active = true;
+    setVipStatus("checking");
+
+    const timer = setTimeout(async () => {
+      try {
+        const apiUrl = getApiBaseUrl();
+        const res = await fetch(`${apiUrl}/vip-codes/event/${eventId}/validate/${encodeURIComponent(clean)}`, {
+          cache: "no-store",
+        });
+        if (!active) return;
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.valid) {
+            setVipStatus("valid");
+            setVipMessage("Código VIP Validado com Sucesso!");
+          } else {
+            setVipStatus("invalid");
+            setVipMessage(data.message || "Código VIP não encontrado ou já utilizado.");
+          }
+        } else {
+          setVipStatus("invalid");
+          setVipMessage("Código VIP não encontrado para este evento.");
+        }
+      } catch {
+        if (!active) return;
+        setVipStatus("idle");
+      }
+    }, 350);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [vipCode, eventId]);
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [acceptMarketing, setAcceptMarketing] = useState(true);
 
@@ -234,8 +287,8 @@ function RegistrationForm({
           id: participation.id,
           name: fullName.trim() || result.participant?.fullName || "Participante",
           autoBookedSlot: result.autoBookedSlot || null,
-          isVip: Boolean(result.vip || participation.vip || participation.vip_codes || result.participation?.vip || vipCode.trim()),
-          vipCode: result.participation?.vipCode || participation.vipCode || vipCode.trim() || undefined,
+          isVip: Boolean(result.vip || participation.vip || participation.vip_codes || result.participation?.vipCode || (vipStatus === "valid" && !result.error)),
+          vipCode: result.participation?.vipCode || participation.vipCode || (vipStatus === "valid" ? vipCode.trim() : undefined),
           alreadyRegistered: Boolean(result.alreadyRegistered),
           hasDrawn: Boolean(result.participation?.hasDrawn),
           drawnPrize: result.participation?.drawnPrize || null,
@@ -493,13 +546,27 @@ function RegistrationForm({
           onChange={(e) => setVipCode(e.target.value.toUpperCase())}
         />
 
-        {vipCode.trim() && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/70 p-3 text-xs font-bold text-amber-900 shadow-xs">
+        {vipStatus === "checking" && (
+          <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/40 p-2.5 text-xs text-slate-300">
+            <LoaderCircle size={14} className="animate-spin text-accent" />
+            <span>Verificando autenticidade do código VIP...</span>
+          </div>
+        )}
+
+        {vipStatus === "valid" && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/70 p-3 text-xs font-bold text-amber-900 shadow-xs animate-pop-burst">
             <span className="text-lg">👑</span>
             <div>
-              <p className="font-extrabold text-amber-900">Bilhete Dourado Ativo!</p>
+              <p className="font-extrabold text-amber-900">Código VIP Validado!</p>
               <p className="text-[11px] text-amber-800 font-medium">Seu cadastro terá acesso liberado ao Pool de Prêmios VIP exclusivos no estande.</p>
             </div>
+          </div>
+        )}
+
+        {vipStatus === "invalid" && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-rose-400/40 bg-rose-500/10 p-2.5 text-xs text-rose-300">
+            <AlertCircle size={15} className="text-rose-400 flex-none" />
+            <span>{vipMessage || "Código VIP não encontrado ou já utilizado. Deixe em branco caso não possua cartão VIP."}</span>
           </div>
         )}
 
@@ -533,10 +600,14 @@ function RegistrationForm({
       </div>
 
       <StickyActions>
-        <button type="submit" disabled={loading || (cpf.length === 14 && !isCpfValid)} className={primaryButton}>
+        <button
+          type="submit"
+          disabled={loading || (cpf.length === 14 && !isCpfValid) || vipStatus === "checking" || vipStatus === "invalid"}
+          className={primaryButton}
+        >
           {loading ? (
             <><LoaderCircle size={20} className="animate-spin" /> Liberando giro…</>
-          ) : vipCode.trim() ? (
+          ) : vipStatus === "valid" ? (
             "👑 Liberar Giro VIP na Roleta 🌟"
           ) : (
             "Liberar Meu Giro na Roleta 🎯"

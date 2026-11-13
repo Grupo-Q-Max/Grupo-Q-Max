@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { generateVipCode } from './vip-code';
+import { generateVipCode, normalizeVipCode } from './vip-code';
 
 @Injectable()
 export class VipCodesService {
@@ -67,6 +67,36 @@ export class VipCodesService {
         prizeName: code.participations?.draws?.prizes.name ?? null,
       })),
     };
+  }
+
+  async validateCode(eventId: number, rawCode: string) {
+    await this.ensureEvent(eventId);
+    const code = normalizeVipCode(rawCode);
+    if (!code) {
+      return { valid: false, message: 'Código VIP vazio.' };
+    }
+
+    const vipRecord = await this.prisma.vip_codes.findFirst({
+      where: {
+        event_id: eventId,
+        code: code,
+      },
+      select: {
+        id: true,
+        code: true,
+        participation_id: true,
+      },
+    });
+
+    if (!vipRecord) {
+      return { valid: false, message: 'Código VIP não encontrado.' };
+    }
+
+    if (vipRecord.participation_id !== null) {
+      return { valid: false, message: 'Este código VIP já foi utilizado.' };
+    }
+
+    return { valid: true, code: vipRecord.code, message: 'Código VIP válido!' };
   }
 
   private async ensureEvent(eventId: number) {

@@ -39,4 +39,15 @@ export class VipCodesController {
   ) {
     return this.vipCodesService.findByEvent(eventId);
   }
+
+  @Get('event/:eventId/validate/:code')
+  validate(
+    @Param('eventId', ParseIntPipe)
+    eventId: number,
+
+    @Param('code')
+    code: string,
+  ) {
+    return this.vipCodesService.validateCode(eventId, code);
+  }
 }

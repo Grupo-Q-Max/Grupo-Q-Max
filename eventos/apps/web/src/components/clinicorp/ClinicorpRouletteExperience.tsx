@@ -310,7 +310,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
             const partRes = await fetch(`${apiUrl}/participants/${queryPartId}/public`, { cache: "no-store" });
             if (partRes.ok) {
               const partData = await partRes.json();
-              const isVipUser = Boolean(partData.isVip || queryVip || partData.vipCode);
+              const isVipUser = Boolean(partData.isVip || partData.vipCode);
               const displayName = partData.participant.fullName || partData.participant.firstName || "Participante";
 
               if (partData.draw) {
