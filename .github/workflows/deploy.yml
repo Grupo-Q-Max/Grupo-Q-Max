@@ -203,6 +203,15 @@ jobs:
           if [ -z "${FECHAMENTO_URL}" ] || [[ "${FECHAMENTO_URL}" == *"grupoqmax.com.br/controle_fechamento"* ]]; then
             echo "FECHAMENTO_URL='http://127.0.0.1:8002'" >> deploy/.env
           fi
+          if [ -z "${ZAPI_INSTANCE_ID}" ]; then
+            echo "ZAPI_INSTANCE_ID='3F89F6D486DE607670FCC6875DDA7AD5'" >> deploy/.env
+          fi
+          if [ -z "${ZAPI_TOKEN}" ]; then
+            echo "ZAPI_TOKEN='B6484C6CC1E7F0C99EAAD46C'" >> deploy/.env
+          fi
+          if [ -z "${ZAPI_CLIENT_TOKEN}" ]; then
+            echo "ZAPI_CLIENT_TOKEN='F3c0fad77fa1b4aa485ee6d6ff93b4bbbS'" >> deploy/.env
+          fi
 
           echo ""
                     mkdir -p deploy/bin

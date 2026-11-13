@@ -29,9 +29,9 @@ const apiEnv = {
   DATA_ENCRYPTION_KEY: process.env.EVENTOS_DATA_ENCRYPTION_KEY || 'KpNIaoTapxUlgRL8zfFJf28/h7GuRWt1/6x1pNwu9gU=',
   FINORA_ADMIN_API_KEY: process.env.FINORA_ADMIN_API_KEY || 'd1e5e0767cdf3fa8011eac46f983cbaf3d2f5aff806d27c6631cb751b4c8c9b3',
   DISABLE_WHATSAPP: process.env.DISABLE_WHATSAPP ?? 'false',
-  ZAPI_INSTANCE_ID: process.env.ZAPI_INSTANCE_ID || '',
-  ZAPI_TOKEN: process.env.ZAPI_TOKEN || '',
-  ZAPI_CLIENT_TOKEN: process.env.ZAPI_CLIENT_TOKEN || '',
+  ZAPI_INSTANCE_ID: process.env.ZAPI_INSTANCE_ID || '3F89F6D486DE607670FCC6875DDA7AD5',
+  ZAPI_TOKEN: process.env.ZAPI_TOKEN || 'B6484C6CC1E7F0C99EAAD46C',
+  ZAPI_CLIENT_TOKEN: process.env.ZAPI_CLIENT_TOKEN || 'F3c0fad77fa1b4aa485ee6d6ff93b4bbbS',
 };
 
 // Variáveis de ambiente para o Web de Eventos
