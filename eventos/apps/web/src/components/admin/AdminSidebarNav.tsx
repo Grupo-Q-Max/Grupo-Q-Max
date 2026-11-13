@@ -28,6 +28,7 @@ import {
   Menu,
   X,
   Printer,
+  Send,
   type LucideIcon,
 } from "lucide-react";
 

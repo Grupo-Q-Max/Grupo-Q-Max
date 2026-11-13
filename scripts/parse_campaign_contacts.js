@@ -155,3 +155,4 @@ console.log('\n--- ÚLTIMOS 5 CONTATOS DA FILA ---');
 contacts.slice(-5).forEach((c, i) => {
   console.log(`${contacts.length - 4 + i}. DDD ${c.ddd} | ${c.phone} | Nome: "${c.friendlyName || '(Sem nome)'}" (Original: "${c.rawName}")`);
 });
+
