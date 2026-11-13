@@ -69,7 +69,7 @@ export class WhatsappController {
   ) {
     return this.whatsappService.getQueueHistory(
       eventId ? Number(eventId) : undefined,
-      limit ? Number(limit) : 50,
+      limit ? Number(limit) : 200,
     );
   }
 

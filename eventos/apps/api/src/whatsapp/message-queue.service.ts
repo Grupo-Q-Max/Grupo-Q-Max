@@ -192,7 +192,7 @@ export class MessageQueueService {
           next_attempt_at: { lte: new Date() },
           attempts: { lt: ANTI_BAN.MAX_ATTEMPTS },
         },
-        orderBy: { created_at: 'asc' }, // FIFO
+        orderBy: [{ next_attempt_at: 'asc' }, { id: 'asc' }], // Estrita ordem cronológica e por DDD
       });
 
       if (!message) {

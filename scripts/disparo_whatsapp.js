@@ -251,3 +251,4 @@ module.exports = {
 if (require.main === module) {
   console.log('Disparador carregado como módulo. Pronto para uso!');
 }
+

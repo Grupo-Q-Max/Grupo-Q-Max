@@ -51,6 +51,11 @@ jobs:
       FINORA_ADMIN_SESSION_TOKEN: ${{ secrets.FINORA_ADMIN_SESSION_TOKEN }}
       # Controle de Fechamento (PHP App Service URL)
       FECHAMENTO_URL: ${{ secrets.FECHAMENTO_URL }}
+      # WhatsApp Z-API credentials
+      ZAPI_INSTANCE_ID: ${{ secrets.ZAPI_INSTANCE_ID }}
+      ZAPI_TOKEN: ${{ secrets.ZAPI_TOKEN }}
+      ZAPI_CLIENT_TOKEN: ${{ secrets.ZAPI_CLIENT_TOKEN }}
+      DISABLE_WHATSAPP: ${{ secrets.DISABLE_WHATSAPP }}
 
     steps:
       - name: Checkout Repository
@@ -164,12 +169,16 @@ jobs:
           echo "MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID}" >> deploy/.env
           echo "MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}" >> deploy/.env
           echo "MICROSOFT_ALLOWED_DOMAINS=${MICROSOFT_ALLOWED_DOMAINS}" >> deploy/.env
-          echo "DISABLE_WHATSAPP='true'" >> deploy/.env
+          if [ -n "${DISABLE_WHATSAPP}" ]; then
+            echo "DISABLE_WHATSAPP='${DISABLE_WHATSAPP}'" >> deploy/.env
+          else
+            echo "DISABLE_WHATSAPP='false'" >> deploy/.env
+          fi
           # Aspas simples: QXBACK_STAGES/QXBACK_FIELDS são JSON; secret vazio = variável fora do .env (node --env-file)
           for name in AUTH_SECRET ADMIN_PASSWORD ADMIN_EMAILS QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET \
             QXSIGN_TOKEN QXSIGN_STAGES QXSIGN_WEBHOOK_URL QXSIGN_WEBHOOK_SECRET \
             EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN \
-            FECHAMENTO_URL; do
+            FECHAMENTO_URL ZAPI_INSTANCE_ID ZAPI_TOKEN ZAPI_CLIENT_TOKEN; do
             if [ -n "${!name}" ]; then echo "${name}='${!name}'" >> deploy/.env; fi
           done
           # Se EVENTOS_DATABASE_URL for vazio ou contiver o IP legado 74.249.25.198, garante o banco correto da Azure
