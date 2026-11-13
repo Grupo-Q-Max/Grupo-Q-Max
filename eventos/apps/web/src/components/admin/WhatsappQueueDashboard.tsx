@@ -134,18 +134,38 @@ export default function WhatsappQueueDashboard({ eventId, eventName }: Props) {
 
   async function loadDashboard() {
     try {
-      const [statsRes, historyRes] = await Promise.all([
-        fetchAdminProxy(`/whatsapp/queue-stats?eventId=${eventId}`),
-        fetchAdminProxy(`/whatsapp/queue-history?eventId=${eventId}&limit=200`),
-      ]);
+      let statsLoaded: QueueStats | null = null;
+      let historyLoaded: QueueMessage[] = [];
 
-      if (statsRes.ok) {
-        setStats(await statsRes.json());
+      try {
+        const [statsRes, historyRes] = await Promise.all([
+          fetchAdminProxy(`/whatsapp/queue-stats?eventId=${eventId}`),
+          fetchAdminProxy(`/whatsapp/queue-history?eventId=${eventId}&limit=200`),
+        ]);
+
+        if (statsRes.ok) statsLoaded = await statsRes.json();
+        if (historyRes.ok) {
+          const raw = await historyRes.json();
+          if (Array.isArray(raw)) historyLoaded = raw;
+        }
+      } catch (err) {
+        // Ignora e tenta fallback
       }
-      if (historyRes.ok) {
-        const rawHistory = await historyRes.json();
-        setHistory(Array.isArray(rawHistory) ? rawHistory : []);
+
+      // Fallback para rotas diretas caso a sessão admin precise de sincronia
+      if (!statsLoaded || historyLoaded.length === 0) {
+        try {
+          const [directStats, directHistory] = await Promise.all([
+            fetch(`/finora-experience/api/v1/whatsapp/queue-stats?eventId=${eventId}`).then((r) => r.ok ? r.json() : null),
+            fetch(`/finora-experience/api/v1/whatsapp/queue-history?eventId=${eventId}&limit=200`).then((r) => r.ok ? r.json() : null),
+          ]);
+          if (directStats) statsLoaded = directStats;
+          if (Array.isArray(directHistory)) historyLoaded = directHistory;
+        } catch (e) {}
       }
+
+      if (statsLoaded) setStats(statsLoaded);
+      if (historyLoaded.length > 0) setHistory(historyLoaded);
     } catch (err) {
       console.error("Erro ao carregar dashboard de filas:", err);
     } finally {
