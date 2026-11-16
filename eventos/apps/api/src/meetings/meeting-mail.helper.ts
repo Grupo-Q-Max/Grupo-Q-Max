@@ -63,6 +63,9 @@ export type MeetingInvitePayload = {
 };
 
 export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<boolean> {
+  if (process.env.DISABLE_EMAIL === 'true') {
+    return false;
+  }
   const { meetingId, scheduledAt, participant, bossEmail } = payload;
   const user = env('EMAIL_USER') || env('SMTP_USER') || 'envio@qmax.com.br';
 

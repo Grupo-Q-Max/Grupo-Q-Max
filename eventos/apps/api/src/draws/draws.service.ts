@@ -598,7 +598,7 @@ export class DrawsService {
           template = participation.events.whatsapp_prize_message;
         }
 
-        if (template) {
+        if (template && process.env.ENABLE_DRAW_WHATSAPP === 'true') {
           const nome = participation.participants.full_name.split(' ')[0] || '';
           let finalMsg = template
             .replace(/{nome}/g, nome)
@@ -778,7 +778,7 @@ export class DrawsService {
         pickupMsg +
         channelLinkMsg;
 
-      if (process.env.DISABLE_WHATSAPP !== 'true') {
+      if (process.env.ENABLE_DRAW_WHATSAPP === 'true') {
         await this.whatsappService.enqueueMessage(phone, message, { 
           eventId: participation.event_id, 
           participantId: participation.participant_id 

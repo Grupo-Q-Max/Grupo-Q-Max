@@ -837,8 +837,10 @@ export class ParticipantsService {
         .replace(/\[LINK_CANAL\]/gi, event?.whatsapp_channel_link || '')
         .replace(/\{link_canal\}/gi, event?.whatsapp_channel_link || '');
 
-      // Disparo assíncrono (desativado quando DISABLE_WHATSAPP=true)
-      if (process.env.DISABLE_WHATSAPP !== 'true') {
+      // Disparo automático imediato no WhatsApp DESATIVADO:
+      // O participante cadastra e vai direto para a roleta liberado sem receber mensagens automáticas.
+      // O telefone e dados ficam registrados no banco para posterior exportação comercial.
+      if (process.env.ENABLE_REGISTRATION_WHATSAPP === 'true') {
         setImmediate(() => {
           this.whatsappService
             .enqueueMessage(phone, msg, { eventId: event?.id, participantId: result.participant.id })
