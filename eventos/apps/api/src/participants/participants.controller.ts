@@ -78,6 +78,22 @@ export class ParticipantsController {
     return res.send(csvContent);
   }
 
+  @Get('event/:eventId/export-commercial-csv')
+  async exportCommercialCsv(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Res() res: Response,
+    @Query('segment') segment?: string,
+  ) {
+    const csvContent = await this.participantsService.exportCommercialCsv(eventId, segment);
+    const suffix = segment && segment !== 'all' ? `-${segment}` : '';
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="leads-comercial-segmentado-evento-${eventId}${suffix}.csv"`,
+    );
+    return res.send(csvContent);
+  }
+
   @Get('pending-draws')
   findPendingDraws(
     @Query('eventId') queryEventId?: string,

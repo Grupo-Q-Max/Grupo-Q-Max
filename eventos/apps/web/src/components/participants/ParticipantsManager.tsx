@@ -51,6 +51,7 @@ type Draw = {
   id: number;
   source: string;
   drawn_at: string;
+  claimed_at?: string | null;
   prizes: Prize;
 };
 
@@ -78,6 +79,11 @@ type Participant = {
     city: string | null;
     state: string | null;
     chairs_count: number | null;
+    meetings?: Array<{
+      id: number;
+      scheduled_at: string;
+      status: string;
+    }>;
   };
 
   vip_codes?: {
@@ -97,6 +103,9 @@ type Props = {
 
 type Filter =
   | "ALL"
+  | "HOT_LEADS"
+  | "WARM_LEADS"
+  | "GENERAL_LEADS"
   | "VIP_MENTOR"
   | "VIP_CHAIRS"
   | "SPUN"
@@ -172,6 +181,45 @@ function buildWhatsAppDirectUrl(participant: Participant["participants"], prizeN
   }
   msg += ` Gostaríamos de conversar sobre como otimizar a gestão financeira da sua clínica. Você tem 5 minutinhos hoje?`;
   return `https://wa.me/${internationalPhone}?text=${encodeURIComponent(msg)}`;
+}
+
+export function getLeadCommercialCategory(item: Participant): {
+  type: "HOT" | "WARM" | "GENERAL";
+  label: string;
+  badgeClass: string;
+  pillColor: string;
+} {
+  const hasMeeting = item.participants?.meetings?.some(
+    (m) => m.status === "SCHEDULED" || m.status === "COMPLETED",
+  );
+  const draw = Array.isArray(item.draws) ? item.draws[0] : (item.draws as any);
+  const hasClaimed = Boolean(draw?.claimed_at);
+
+  if (hasMeeting || hasClaimed) {
+    return {
+      type: "HOT",
+      label: "🟢 Quente",
+      badgeClass: "border-emerald-500/40 bg-emerald-50 text-emerald-800 font-extrabold shadow-2xs",
+      pillColor: "#10B981",
+    };
+  }
+
+  const isVip = Boolean(item.vip_codes) || (item.participants?.chairs_count || 0) >= 6;
+  if (isVip) {
+    return {
+      type: "WARM",
+      label: "🟡 Morno (VIP)",
+      badgeClass: "border-amber-400 bg-amber-50 text-amber-900 font-extrabold shadow-2xs",
+      pillColor: "#F59E0B",
+    };
+  }
+
+  return {
+    type: "GENERAL",
+    label: "⚪ Geral",
+    badgeClass: "border-slate-300 bg-slate-100 text-slate-700 font-medium",
+    pillColor: "#64748B",
+  };
 }
 
 export default function ParticipantsManager({
@@ -273,6 +321,9 @@ export default function ParticipantsManager({
   const counts = useMemo(() => {
     return {
       all: participations.length,
+      hotLeads: participations.filter((item) => getLeadCommercialCategory(item).type === "HOT").length,
+      warmLeads: participations.filter((item) => getLeadCommercialCategory(item).type === "WARM").length,
+      generalLeads: participations.filter((item) => getLeadCommercialCategory(item).type === "GENERAL").length,
       vipMentor: participations.filter((item) => Boolean(item.vip_codes)).length,
       vipChairs: participations.filter(
         (item) => (item.participants?.chairs_count || 0) >= 6,
@@ -291,6 +342,18 @@ export default function ParticipantsManager({
 
     return participations.filter((item) => {
       const participant = item.participants;
+
+      if (filter === "HOT_LEADS" && getLeadCommercialCategory(item).type !== "HOT") {
+        return false;
+      }
+
+      if (filter === "WARM_LEADS" && getLeadCommercialCategory(item).type !== "WARM") {
+        return false;
+      }
+
+      if (filter === "GENERAL_LEADS" && getLeadCommercialCategory(item).type !== "GENERAL") {
+        return false;
+      }
 
       if (filter === "VIP_MENTOR" && !item.vip_codes) {
         return false;
@@ -543,6 +606,48 @@ export default function ParticipantsManager({
           <button
             type="button"
             className={
+              filter === "HOT_LEADS"
+                ? "border-emerald-600! bg-gradient-to-r from-emerald-600 to-teal-600! text-white! font-black! shadow-sm [&>span]:bg-white! [&>span]:text-emerald-950!"
+                : "border-emerald-400/80 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 font-bold [&>span]:bg-emerald-200 [&>span]:text-emerald-950"
+            }
+            onClick={() => setFilter("HOT_LEADS")}
+            title="Filtrar Leads Quentes: Agendaram reunião ou passaram pelo estande (Alta Prioridade)"
+          >
+            🟢 Quentes
+            <span>{counts.hotLeads}</span>
+          </button>
+
+          <button
+            type="button"
+            className={
+              filter === "WARM_LEADS"
+                ? "border-amber-500! bg-gradient-to-r from-amber-500 to-yellow-500! text-white! font-black! shadow-sm [&>span]:bg-white! [&>span]:text-amber-950!"
+                : "border-amber-400/80 bg-amber-50 text-amber-900 hover:bg-amber-100 font-bold [&>span]:bg-amber-200 [&>span]:text-amber-950"
+            }
+            onClick={() => setFilter("WARM_LEADS")}
+            title="Filtrar Leads Mornos: VIPs / Mentorados sem reunião confirmada"
+          >
+            🟡 Mornos
+            <span>{counts.warmLeads}</span>
+          </button>
+
+          <button
+            type="button"
+            className={
+              filter === "GENERAL_LEADS"
+                ? "border-slate-500! bg-slate-700! text-white! font-black! shadow-sm [&>span]:bg-white! [&>span]:text-slate-900!"
+                : "border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium [&>span]:bg-slate-200 [&>span]:text-slate-800"
+            }
+            onClick={() => setFilter("GENERAL_LEADS")}
+            title="Filtrar Leads Gerais: Visitantes de feira para nutrição ampla"
+          >
+            ⚪ Gerais
+            <span>{counts.generalLeads}</span>
+          </button>
+
+          <button
+            type="button"
+            className={
               filter === "VIP_MENTOR"
                 ? "border-amber-500! bg-gradient-to-r from-amber-500 to-yellow-500! text-white! font-black! shadow-sm [&>span]:bg-white! [&>span]:text-amber-950!"
                 : "border-amber-400/80 bg-amber-100/70 text-amber-950 hover:bg-amber-200/70 font-bold [&>span]:bg-amber-300/80 [&>span]:text-amber-950"
@@ -770,6 +875,17 @@ export default function ParticipantsManager({
                           participant.full_name
                         }
                       </strong>
+                      {(() => {
+                        const comm = getLeadCommercialCategory(item);
+                        return (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] ${comm.badgeClass}`}
+                            title={`Classificação Comercial: ${comm.label}`}
+                          >
+                            {comm.label}
+                          </span>
+                        );
+                      })()}
                       {isVipMentor && (
                         <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-200 to-yellow-300 border border-amber-400 text-[10px] font-black text-amber-950 shadow-2xs tracking-wide">
                           👑 VIP · {item.vip_codes?.code}
@@ -921,6 +1037,36 @@ export default function ParticipantsManager({
             </header>
 
             <div className="flex flex-col gap-3 p-4">
+              {/* Card Classificação Comercial */}
+              {(() => {
+                const comm = getLeadCommercialCategory(selected);
+                const meeting = selected.participants?.meetings?.[0];
+                return (
+                  <div className={`flex items-center justify-between rounded-2xl border p-3.5 shadow-xs ${
+                    comm.type === "HOT"
+                      ? "border-emerald-400 bg-emerald-50/80 text-emerald-950"
+                      : comm.type === "WARM"
+                      ? "border-amber-400 bg-amber-50/80 text-amber-950"
+                      : "border-slate-200 bg-slate-50 text-slate-900"
+                  }`}>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold tracking-wider opacity-75">Qualificação Comercial</span>
+                      <strong className="text-sm font-extrabold flex items-center gap-1.5 mt-0.5">
+                        {comm.label}
+                        {meeting && (
+                          <span className="text-xs font-semibold text-emerald-700">
+                            · Reunião: {new Date(meeting.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </strong>
+                    </div>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white/80 border border-current shadow-2xs">
+                      {comm.type === "HOT" ? "Prioridade 1" : comm.type === "WARM" ? "Prioridade 2" : "Prioridade 3"}
+                    </span>
+                  </div>
+                );
+              })()}
+
               {/* Card Destaque VIP Mentorado */}
               {selected.vip_codes && (
                 <div className="flex items-center justify-between rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100/60 p-3.5 shadow-sm">

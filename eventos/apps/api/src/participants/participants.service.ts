@@ -912,6 +912,14 @@ export class ParticipantsService {
             city: true,
             state: true,
             chairs_count: true,
+            meetings: {
+              where: { event_id: eventId },
+              select: {
+                id: true,
+                scheduled_at: true,
+                status: true,
+              },
+            },
           },
         },
 
@@ -920,6 +928,7 @@ export class ParticipantsService {
             id: true,
             source: true,
             drawn_at: true,
+            claimed_at: true,
 
             prizes: {
               select: {
@@ -1396,6 +1405,198 @@ export class ParticipantsService {
 
     const bom = '\uFEFF';
     return bom + [headers.join(';'), ...rows].join('\r\n');
+  }
+
+  /**
+   * Exporta a planilha comercial segmentada em 1 clique:
+   * - 🟢 QUENTES: Agendou reunião e/ou compareceu/retirou brinde no estande (Alta Prioridade)
+   * - 🟡 MORNOS: Ativou bilhete VIP / mentorado ou possui clínica de grande porte sem reunião
+   * - ⚪ GERAIS: Visitantes comuns da feira
+   */
+  async exportCommercialCsv(eventId: number, segment?: string): Promise<string> {
+    const event = await this.prisma.events.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Evento não encontrado.');
+    }
+
+    const participations = await this.prisma.participations.findMany({
+      where: { event_id: eventId },
+      include: {
+        events: true,
+        participants: {
+          include: {
+            meetings: {
+              where: { event_id: eventId },
+              orderBy: { scheduled_at: 'desc' },
+            },
+          },
+        },
+        vip_codes: true,
+        draws: {
+          include: {
+            prizes: true,
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    const headers = [
+      'Classificação Comercial',
+      'Score de Prioridade',
+      'Nome Completo',
+      'Primeiro Nome',
+      'Sobrenome',
+      'VIP / Mentorado',
+      'Código VIP Utilizado',
+      'WhatsApp / Celular',
+      'Link WhatsApp Direto (Clique para Iniciar)',
+      'Mensagem Sugerida para Abordagem Comercial',
+      'E-mail',
+      'Porte da Clínica (Cadeiras)',
+      'Clínica / Empresa',
+      'CRO / Registro',
+      'UF CRO',
+      'Cidade',
+      'Reunião no Estande',
+      'Data da Reunião',
+      'Status da Reunião',
+      'Brinde Ganho',
+      'Brinde Retirado no Estande',
+      'PIN de Resgate',
+      'Status Participação',
+      'Data do Cadastro',
+      'Tags CRM Comercial',
+    ];
+
+    const escapeCsv = (val: unknown) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const mapped = participations.map((p) => {
+      const part = p.participants;
+      const draw = p.draws;
+      const prize = draw?.prizes;
+      const isVip = Boolean(p.vip_codes);
+      const meeting = part.meetings?.[0];
+      const hasScheduledMeeting = Boolean(
+        meeting && (meeting.status === 'SCHEDULED' || meeting.status === 'COMPLETED'),
+      );
+      const hasClaimedPrize = Boolean(draw?.claimed_at);
+
+      let classification = '⚪ GERAL (Visitante)';
+      let priorityScore = 3;
+      let segmentType = 'general';
+
+      if (hasScheduledMeeting || hasClaimedPrize) {
+        classification = '🟢 QUENTE (Reunião / Estande)';
+        priorityScore = 1;
+        segmentType = 'hot';
+      } else if (isVip || (part.chairs_count && part.chairs_count >= 6)) {
+        classification = '🟡 MORNO (VIP Sem Reunião)';
+        priorityScore = 2;
+        segmentType = 'warm';
+      }
+
+      const names = (part.full_name || '').trim().split(/\s+/);
+      const firstName = names[0] || 'Doutor(a)';
+      const lastName = names.slice(1).join(' ') || '';
+      const cleanPhone = (part.phone || '').replace(/\D/g, '');
+      const waPhone = cleanPhone.replace(/^55/, '');
+      const waLink = cleanPhone ? `https://wa.me/55${waPhone}` : '';
+
+      let suggestedMsg = '';
+      if (segmentType === 'hot') {
+        suggestedMsg = `Olá Dr(a). ${firstName}, tudo bem? Aqui é da equipe Finora / Grupo Q-Max! Vimos seu agendamento no nosso estande no evento ${event.name}. Foi ótimo conhecê-lo! Gostaria de dar continuidade à sua proposta personalizada de gestão financeira?`;
+      } else if (segmentType === 'warm') {
+        suggestedMsg = `Olá Dr(a). ${firstName}, tudo bem? Aqui é da equipe Finora / Grupo Q-Max! Vimos que você ativou seu convite VIP no evento ${event.name}. Gostaríamos de liberar a condição especial exclusiva que o Dr. Igor preparou para a sua clínica. Você teria 5 minutos hoje?`;
+      } else {
+        suggestedMsg = `Olá Dr(a). ${firstName}, tudo bem? Aqui é da equipe Finora / Grupo Q-Max! Foi um prazer recebê-lo no evento ${event.name}. Como podemos apoiar a sua clínica na redução tributária e gestão este mês?`;
+      }
+
+      const chairsDesc =
+        part.chairs_count === 6
+          ? '6 ou mais cadeiras (Grande Porte / VIP)'
+          : part.chairs_count === 4
+          ? '3 a 5 cadeiras (Médio Porte)'
+          : part.chairs_count === 1
+          ? '1 a 2 cadeiras (Pequeno Porte)'
+          : 'Não informado';
+
+      const meetingInfo = hasScheduledMeeting && meeting
+        ? `SIM - ${new Date(meeting.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+        : 'Não agendada';
+
+      const meetingDateFormatted = meeting
+        ? new Date(meeting.scheduled_at).toLocaleString('pt-BR')
+        : '-';
+
+      const prizeClaimed = draw?.claimed_at
+        ? `SIM - Retirado em ${new Date(draw.claimed_at).toLocaleString('pt-BR')}`
+        : draw
+        ? 'Pendente de retirada no estande'
+        : 'Não sorteado';
+
+      const tags = [
+        'lead_estande',
+        segmentType === 'hot'
+          ? 'lead_quente_comercial'
+          : segmentType === 'warm'
+          ? 'lead_morno_vip'
+          : 'lead_geral',
+        isVip ? 'vip_mentorado' : 'geral',
+        hasScheduledMeeting ? 'reuniao_agendada' : 'sem_reuniao',
+        hasClaimedPrize ? 'passou_no_estande' : 'nao_passou',
+        `cadeiras_${part.chairs_count || 1}`,
+      ].join(',');
+
+      return {
+        priorityScore,
+        segmentType,
+        row: [
+          escapeCsv(classification),
+          escapeCsv(priorityScore),
+          escapeCsv(part.full_name),
+          escapeCsv(firstName),
+          escapeCsv(lastName),
+          escapeCsv(isVip ? 'SIM' : 'NÃO'),
+          escapeCsv(p.vip_codes?.code || '-'),
+          escapeCsv(part.phone),
+          escapeCsv(waLink),
+          escapeCsv(suggestedMsg),
+          escapeCsv(part.email),
+          escapeCsv(chairsDesc),
+          escapeCsv(part.clinic_name || '-'),
+          escapeCsv(part.cro_number || '-'),
+          escapeCsv(part.cro_state || '-'),
+          escapeCsv(part.city || '-'),
+          escapeCsv(meetingInfo),
+          escapeCsv(meetingDateFormatted),
+          escapeCsv(meeting?.status || '-'),
+          escapeCsv(prize?.name || 'Não sorteado'),
+          escapeCsv(prizeClaimed),
+          escapeCsv(p.id),
+          escapeCsv(p.status),
+          escapeCsv(p.created_at ? new Date(p.created_at).toLocaleString('pt-BR') : '-'),
+          escapeCsv(tags),
+        ].join(';'),
+      };
+    });
+
+    let filtered = mapped;
+    if (segment && segment !== 'all') {
+      filtered = mapped.filter((m) => m.segmentType === segment.toLowerCase());
+    }
+
+    filtered.sort((a, b) => a.priorityScore - b.priorityScore);
+
+    const bom = '\uFEFF';
+    return bom + [headers.join(';'), ...filtered.map((f) => f.row)].join('\r\n');
   }
 
   /**
