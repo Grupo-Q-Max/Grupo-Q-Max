@@ -266,5 +266,13 @@ describe('DrawsService', () => {
 
       await expect(run(tx)).rejects.toThrow(ConflictException);
     });
+
+    it('o giro NÃO enfileira mensagem de WhatsApp no momento da premiação', async () => {
+      const tx = buildTx({ vip: false });
+      const result = await run(tx);
+
+      expect(result.success).toBe(true);
+      expect(tx.message_queue.create).not.toHaveBeenCalled();
+    });
   });
 });

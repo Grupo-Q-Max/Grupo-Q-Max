@@ -33,7 +33,7 @@ test("quiosque sem internet: cadastro fica na fila e entra uma vez só", async (
   await page.getByLabel("CPF").fill(randomCpf());
   await page.getByLabel("WhatsApp").fill(`119${String(Date.now()).slice(-8)}`);
   await page.getByLabel("E-mail").fill(`off+${Date.now()}@teste.com.br`);
-  await page.getByRole("button", { name: /Receber link no WhatsApp/i }).click();
+  await page.getByRole("button", { name: /Liberar.*Giro|Receber link/i }).click();
   await expect(page.getByRole("heading", { name: "Cadastro salvo neste aparelho" })).toBeVisible();
   await expect(page.getByText("1 aguardando envio")).toBeVisible();
 
