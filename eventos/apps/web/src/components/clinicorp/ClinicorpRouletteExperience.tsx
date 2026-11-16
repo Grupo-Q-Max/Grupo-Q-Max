@@ -473,13 +473,6 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     setError(null);
     triggerHaptic();
 
-    if (stopTickerRef.current) {
-      stopTickerRef.current();
-    }
-    stopTickerRef.current = startPhysicsTicker(SPIN_MS, soundEnabled, () => {
-      setTickerCount((c) => c + 1);
-    });
-
     try {
       let targetPrizeId: number;
       let drawResponseData: DrawResponse;
@@ -514,6 +507,13 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
 
       rotationRef.current = finalRotation;
       setRotation(finalRotation);
+
+      if (stopTickerRef.current) {
+        stopTickerRef.current();
+      }
+      stopTickerRef.current = startPhysicsTicker(SPIN_MS, soundEnabled, () => {
+        setTickerCount((c) => c + 1);
+      });
 
       setTimeout(() => {
         if (stopTickerRef.current) {

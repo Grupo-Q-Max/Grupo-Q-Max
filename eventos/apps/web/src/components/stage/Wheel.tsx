@@ -118,7 +118,7 @@ export default function Wheel({
           transform: `rotate(${rotation}deg) translateZ(0)`,
           willChange: "transform",
           backfaceVisibility: "hidden",
-          transition: spinning ? `transform ${durationMs}ms cubic-bezier(0.15, 0.92, 0.24, 1)` : "none",
+          transition: spinning ? `transform ${durationMs}ms cubic-bezier(0.15, 0.75, 0.15, 1)` : "none",
         }}
       >
         {/* Nomes dos Prêmios nas Fatias */}
