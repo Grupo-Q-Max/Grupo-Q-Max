@@ -59,6 +59,53 @@ type Phase = "LOADING" | "READY" | "DRAWING" | "RESULT" | "ERROR";
 const SPIN_MS = 5000;
 const RESULT_RESET_S = 15;
 
+function startPhysicsTicker(
+  durationMs: number,
+  soundEnabled: boolean,
+  onTick?: () => void,
+): () => void {
+  let isRunning = true;
+  const startTime = Date.now();
+
+  function scheduleNextTick() {
+    if (!isRunning) return;
+    const elapsed = Date.now() - startTime;
+    if (elapsed >= durationMs) return;
+
+    const progress = elapsed / durationMs;
+
+    // Desaceleração física natural e progressiva (curva exponencial):
+    // 0% a 30%: 40ms a 55ms (alta rotação inicial com som rápido de catraca)
+    // 30% a 65%: 60ms a 140ms (desaceleração natural)
+    // 65% a 85%: 150ms a 280ms (fase de suspense)
+    // 85% a 98%: 300ms a 680ms (cliques finais lentos e dramáticos)
+    let nextDelay: number;
+    if (progress > 0.85) {
+      nextDelay = 280 + Math.pow((progress - 0.85) / 0.15, 2.2) * 400;
+    } else if (progress > 0.65) {
+      nextDelay = 140 + ((progress - 0.65) / 0.2) * 140;
+    } else if (progress > 0.3) {
+      nextDelay = 55 + ((progress - 0.3) / 0.35) * 85;
+    } else {
+      nextDelay = 38 + Math.random() * 8;
+    }
+
+    if (soundEnabled) {
+      const pitch = 740 + Math.random() * 140;
+      playTickSound(pitch);
+    }
+    onTick?.();
+
+    setTimeout(scheduleNextTick, nextDelay);
+  }
+
+  scheduleNextTick();
+
+  return () => {
+    isRunning = false;
+  };
+}
+
 const code = (id: number | null | undefined) => `#${String(id ?? 0).padStart(4, "0")}`;
 
 function minutesAgo(iso?: string | null) {
@@ -171,8 +218,18 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const rotationRef = useRef<number>(0);
-  const spinSoundIntervalRef = useRef<number | null>(null);
+  const stopTickerRef = useRef<(() => void) | null>(null);
+  const [tickerCount, setTickerCount] = useState<number>(0);
   const prevPendingCountRef = useRef<number>(0);
+
+  useEffect(() => {
+    return () => {
+      if (stopTickerRef.current) {
+        stopTickerRef.current();
+        stopTickerRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -454,16 +511,18 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     setError(null);
     triggerHaptic();
 
-    if (soundEnabled) {
-      spinSoundIntervalRef.current = window.setInterval(() => playTickSound(), 70);
+    if (stopTickerRef.current) {
+      stopTickerRef.current();
     }
+    stopTickerRef.current = startPhysicsTicker(SPIN_MS, soundEnabled, () => {
+      setTickerCount((c) => c + 1);
+    });
 
     try {
       let targetPrizeId: number;
       let drawResponseData: DrawResponse;
 
       if (isDemoSpin || !participationId) {
-        await new Promise((resolve) => setTimeout(resolve, 800));
         const demoPrize = wheelPrizes[Math.floor(Math.random() * wheelPrizes.length)];
         targetPrizeId = demoPrize.id;
         drawResponseData = {
@@ -489,15 +548,15 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
       // Fatia i é centrada em i * sliceDeg; precisa terminar sob o ponteiro (0°).
       const targetDeg = (360 - prizeIndex * sliceDeg) % 360;
       const current = ((rotationRef.current % 360) + 360) % 360;
-      const finalRotation = rotationRef.current + 6 * 360 + ((targetDeg - current + 360) % 360);
+      const finalRotation = rotationRef.current + 8 * 360 + ((targetDeg - current + 360) % 360);
 
       rotationRef.current = finalRotation;
       setRotation(finalRotation);
 
       setTimeout(() => {
-        if (spinSoundIntervalRef.current) {
-          clearInterval(spinSoundIntervalRef.current);
-          spinSoundIntervalRef.current = null;
+        if (stopTickerRef.current) {
+          stopTickerRef.current();
+          stopTickerRef.current = null;
         }
 
         if (soundEnabled) {
@@ -513,9 +572,9 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         setPhase("RESULT");
       }, SPIN_MS);
     } catch (err) {
-      if (spinSoundIntervalRef.current) {
-        clearInterval(spinSoundIntervalRef.current);
-        spinSoundIntervalRef.current = null;
+      if (stopTickerRef.current) {
+        stopTickerRef.current();
+        stopTickerRef.current = null;
       }
       setError(err instanceof Error ? err.message : "Erro ao processar giro.");
       setPhase("READY");
@@ -744,6 +803,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
               rotation={rotation}
               spinning={spinning}
               durationMs={SPIN_MS}
+              tickerCount={tickerCount}
               onSpin={handleSpin}
             />
           </div>

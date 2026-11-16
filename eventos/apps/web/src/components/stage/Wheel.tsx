@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { FinoraLogo } from "@/components/brand/Brand";
 import { RARITY, getPrizeRarity } from "./rarity";
 
@@ -15,25 +18,38 @@ const LED_DOTS = Array.from({ length: LED_COUNT }, (_, i) => {
   };
 });
 
-// Roda da roleta de alta fidelidade física:
-// - Pinos metálicos prateados com sombra 3D nas divisórias das fatias
-// - LEDs perseguidores dinâmicos no aro
-// - Cúpula de reflexo de vidro especular
-// - Miolo central com anel escovado e logo Finora
-// - Agulha ponteiro física no topo
+// Roda da roleta de altíssima fidelidade física e performance GPU:
+// - Disco giratório acelerado via hardware (translateZ(0) + will-change)
+// - Aro estático com casing metálico profundo (evita re-rasterização por frame)
+// - Pinos metálicos prateados com relevo 3D
+// - Ponteiro com clique mecânico sincronizado ao ticker de desaceleração
+// - LEDs dinâmicos de alta intensidade
 export default function Wheel({
   names,
   rotation,
   spinning,
   durationMs,
+  tickerCount = 0,
   onSpin,
 }: {
   names: string[];
   rotation: number;
   spinning: boolean;
   durationMs: number;
+  tickerCount?: number;
   onSpin?: () => void;
 }) {
+  const [flick, setFlick] = useState(false);
+
+  // Efeito mecânico de rebote do ponteiro em sincronia com o tick da catraca
+  useEffect(() => {
+    if (spinning && tickerCount > 0) {
+      setFlick(true);
+      const timer = setTimeout(() => setFlick(false), 75);
+      return () => clearTimeout(timer);
+    }
+  }, [spinning, tickerCount]);
+
   const step = 360 / Math.max(names.length, 1);
   const fills = names.map((name, i) => {
     const rarity = getPrizeRarity(name);
@@ -44,7 +60,7 @@ export default function Wheel({
     .map((f, i) => `${f} ${i * step}deg ${(i + 1) * step}deg`)
     .join(", ")})`;
 
-  // Pinos físicos nas divisórias das fatias que giram JUNTO com a roda
+  // Pinos físicos nas divisórias das fatias que giram JUNTO com o disco
   const pinDots = Array.from({ length: names.length }, (_, i) => {
     const deg = i * step - step / 2;
     const rad = (deg - 90) * (Math.PI / 180);
@@ -81,20 +97,28 @@ export default function Wheel({
     >
       {/* Halo de luz e pulso neon externo */}
       <div
-        className="pointer-events-none absolute -inset-6 rounded-full opacity-65 blur-3xl transition-all duration-700"
+        className="pointer-events-none absolute -inset-6 rounded-full opacity-70 blur-3xl transition-all duration-700"
         style={{
           background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 72%)",
-          transform: spinning ? "scale(1.12)" : "scale(1)",
+          transform: spinning ? "scale(1.15)" : "scale(1)",
         }}
       />
 
-      {/* Roda Giratória Mecânica */}
+      {/* Casing Fixo Estático (Sombra 3D e aro chanfrado - não gira, isolando o custo de pintura) */}
       <div
-        className="absolute inset-0 overflow-hidden rounded-full shadow-[0_0_0_8px_#0A1020,0_0_0_12px_rgba(255,255,255,0.12),0_0_0_16px_#141E36,0_0_60px_rgba(0,0,0,0.9),inset_0_0_35px_rgba(0,0,0,0.75)]"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-full shadow-[0_0_0_8px_#0A1020,0_0_0_12px_rgba(255,255,255,0.14),0_0_0_18px_#141E36,0_20px_70px_rgba(0,0,0,0.92)] z-5"
+      />
+
+      {/* Disco Giratório com Aceleração de Hardware GPU (will-change + translateZ) */}
+      <div
+        className="absolute inset-0 overflow-hidden rounded-full shadow-[inset_0_0_35px_rgba(0,0,0,0.8)]"
         style={{
           background,
-          transform: `rotate(${rotation}deg)`,
-          transition: spinning ? `transform ${durationMs}ms cubic-bezier(.12,.7,.12,1)` : "none",
+          transform: `rotate(${rotation}deg) translateZ(0)`,
+          willChange: "transform",
+          backfaceVisibility: "hidden",
+          transition: spinning ? `transform ${durationMs}ms cubic-bezier(0.15, 0.92, 0.24, 1)` : "none",
         }}
       >
         {/* Nomes dos Prêmios nas Fatias */}
@@ -107,8 +131,8 @@ export default function Wheel({
               style={{ transform: `rotate(${i * step}deg)` }}
             >
               <span
-                className={`mt-[7%] line-clamp-2 text-center text-[clamp(12px,3.4cqw,20px)] font-black leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] ${
-                  dark ? "text-ink-950 font-black" : "text-ink-text"
+                className={`mt-[7%] line-clamp-2 text-center text-[clamp(12px,3.4cqw,20px)] font-black leading-tight select-none ${
+                  dark ? "text-ink-950 font-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.4)]" : "text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
                 }`}
                 style={{ maxWidth: `${Math.min(72, 2 * 44 * Math.sin((step * Math.PI) / 360))}%` }}
               >
@@ -131,10 +155,10 @@ export default function Wheel({
           />
         ))}
 
-        {/* Divisória sutil e vinheta interna da roda */}
+        {/* Vinheta interna suave */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_50px_rgba(0,0,0,0.65)]"
+          className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_50px_rgba(0,0,0,0.7)]"
         />
       </div>
 
@@ -143,7 +167,7 @@ export default function Wheel({
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-10 rounded-full overflow-hidden"
       >
-        <div className="absolute -top-1/2 left-0 right-0 h-full rounded-[100%] bg-gradient-to-b from-white/16 via-white/5 to-transparent blur-[1px]" />
+        <div className="absolute -top-1/2 left-0 right-0 h-full rounded-[100%] bg-gradient-to-b from-white/14 via-white/4 to-transparent blur-[1px]" />
       </div>
 
       {/* Anel de lâmpadas LED ao redor do aro */}
@@ -158,15 +182,15 @@ export default function Wheel({
               left: led.left,
               top: led.top,
               animation: spinning
-                ? `ledChase 0.5s linear infinite ${led.delay}`
+                ? `ledChase 0.4s linear infinite ${led.delay}`
                 : `ledBlink 2.2s ease-in-out infinite alternate ${led.idleDelay}`,
             }}
           />
         ))}
       </div>
 
-      {/* Miolo Central com Logo Finora e anéis metálicos nobres */}
-      <div className="absolute top-1/2 left-1/2 flex size-[29%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] border-accent bg-gradient-to-b from-[#18233C] via-[#0D1527] to-[#060A13] shadow-[0_0_35px_rgba(0,0,0,0.95),inset_0_3px_10px_rgba(255,255,255,0.35),0_0_25px_var(--event-accent,#22C3DC)] z-20">
+      {/* Miolo Central Estático com Logo Finora e anéis metálicos nobres */}
+      <div className="absolute top-1/2 left-1/2 flex size-[29%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] border-accent bg-gradient-to-b from-[#18233C] via-[#0D1527] to-[#060A13] shadow-[0_0_35px_rgba(0,0,0,0.95),inset_0_3px_10px_rgba(255,255,255,0.35),0_0_25px_var(--event-accent,#22C3DC)] z-20 pointer-events-none">
         <div className="absolute inset-1.5 rounded-full border border-white/20 shadow-inner" />
         <div className="absolute inset-3 rounded-full border border-accent/30 bg-gradient-to-tr from-black/80 via-transparent to-white/10" />
         <div className="relative z-10 flex items-center justify-center p-2.5 transition-transform hover:scale-105">
@@ -174,18 +198,23 @@ export default function Wheel({
         </div>
       </div>
 
-      {/* Ponteiro Físico no Topo com Efeito de Flick e Sombra Projetada */}
+      {/* Ponteiro Físico no Topo com Efeito de Catraca Realista */}
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute -top-[34px] left-1/2 z-30 origin-top ${
-          spinning ? "animate-pointer-flick" : ""
-        }`}
+        className="pointer-events-none absolute -top-[34px] left-1/2 z-30 -translate-x-1/2 origin-top transition-transform duration-75 ease-out"
+        style={{
+          transform: flick
+            ? "translateX(-50%) rotate(-15deg)"
+            : spinning
+            ? "translateX(-50%) rotate(-3deg)"
+            : "translateX(-50%) rotate(0deg)",
+        }}
       >
-        <div className="relative -translate-x-1/2 drop-shadow-[0_8px_16px_rgba(0,0,0,0.95)]">
+        <div className="relative drop-shadow-[0_8px_16px_rgba(0,0,0,0.95)]">
           {/* Lâmina do ponteiro */}
           <div className="h-0 w-0 border-x-[26px] border-t-[58px] border-x-transparent border-t-accent" />
-          <div className="absolute top-1.5 left-1/2 h-0 w-0 -translate-x-1/2 border-x-[18px] border-t-[44px] border-x-transparent border-t-white/40" />
-          <div className="absolute top-3 left-1/2 h-0 w-0 -translate-x-1/2 border-x-[10px] border-t-[26px] border-x-transparent border-t-black/35" />
+          <div className="absolute top-1.5 left-1/2 h-0 w-0 -translate-x-1/2 border-x-[18px] border-t-[44px] border-x-transparent border-t-white/50" />
+          <div className="absolute top-3 left-1/2 h-0 w-0 -translate-x-1/2 border-x-[10px] border-t-[26px] border-x-transparent border-t-black/40" />
           {/* Rebite metálico de fixação com reflexo */}
           <span className="absolute -top-1.5 left-1/2 size-4 -translate-x-1/2 rounded-full border border-white/80 bg-gradient-to-br from-white via-slate-200 to-slate-600 shadow-[0_0_12px_#fff,0_2px_4px_rgba(0,0,0,0.6)]" />
         </div>
