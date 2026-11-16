@@ -350,6 +350,20 @@ function RegistrationForm({
       <div className="flex flex-1 flex-col gap-4.5 px-5 pt-2 pb-6">
         {error && <Alert>{error}</Alert>}
 
+        {initialVipCode && (
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-100/90 via-amber-50 to-amber-100/60 p-3.5 shadow-sm text-amber-950 animate-pop-burst">
+            <span className="text-2xl">👑</span>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-xs uppercase tracking-wider text-amber-900">
+                Passe VIP Identificado via QR Code
+              </span>
+              <span className="text-xs font-semibold text-amber-800">
+                Bilhete <strong className="font-mono font-black text-amber-950">#{vipCode}</strong> ativado! Seus prêmios exclusivos já estão liberados.
+              </span>
+            </div>
+          </div>
+        )}
+
         <Field id="c-nome" label="Nome completo" autoComplete="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
         <Field
           id="c-cpf"

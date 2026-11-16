@@ -6,7 +6,7 @@ import {
   ParseIntPipe,
   Post,
 } from '@nestjs/common';
-import { IsInt, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 import { VipCodesService } from './vip-codes.service';
 
@@ -15,6 +15,15 @@ class GenerateVipCodesDto {
   @Min(1)
   @Max(5000)
   quantity: number;
+
+  @IsOptional()
+  @IsString()
+  format?: 'NUMERIC' | 'ALPHANUMERIC';
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  startNumber?: number;
 }
 
 @Controller('vip-codes')
@@ -29,7 +38,12 @@ export class VipCodesController {
     @Body()
     dto: GenerateVipCodesDto,
   ) {
-    return this.vipCodesService.generate(eventId, dto.quantity);
+    return this.vipCodesService.generate(
+      eventId,
+      dto.quantity,
+      dto.format || 'NUMERIC',
+      dto.startNumber,
+    );
   }
 
   @Get('event/:eventId')

@@ -41,6 +41,7 @@ export default function VipCodesManager({
 }) {
   const [data, setData] = useState<VipCodesResponse | null>(null);
   const [quantity, setQuantity] = useState("50");
+  const [format, setFormat] = useState<"NUMERIC" | "ALPHANUMERIC">("NUMERIC");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<VipCode | null>(null);
@@ -63,7 +64,7 @@ export default function VipCodesManager({
       const res = await fetch(`${getAdminProxyUrl()}/vip-codes/event/${eventId}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: qty }),
+        body: JSON.stringify({ quantity: qty, format }),
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(result.message || "Não foi possível gerar os códigos.");
@@ -77,18 +78,23 @@ export default function VipCodesManager({
 
   function exportXlsx() {
     if (!data) return;
-    const base = `${window.location.origin}/finora-experience/${eventSlug}/cadastro?vip=`;
+    const origin =
+      typeof window !== "undefined" && window.location.origin && !window.location.origin.includes("localhost")
+        ? window.location.origin
+        : "https://grupoqmax.com.br";
+    const base = `${origin}/finora-experience/${eventSlug}/cadastro?vip=`;
     const rows = data.codes.map((c) => ({
+      Numero_Bilhete: c.code.startsWith("#") ? c.code : `#${c.code}`,
       Codigo: c.code,
-      Link_Ativacao: `${base}${c.code}`,
+      Link_QRCode_Ativacao: `${base}${encodeURIComponent(c.code)}`,
       Situacao: c.redeemedAt ? "Usado" : "Livre",
       UsadoEm: c.redeemedAt ? new Date(c.redeemedAt).toLocaleString("pt-BR") : "",
       Mentorado_Participante: c.participantName ?? "",
       Premio_VIP_Sorteado: c.prizeName ?? "",
     }));
     const book = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(rows), "Bilhetes de Mentorado");
-    XLSX.writeFile(book, `bilhetes-mentorado-${eventName.replace(/\W+/g, "-").toLowerCase()}.xlsx`);
+    XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(rows), "Bilhetes VIP");
+    XLSX.writeFile(book, `bilhetes-vip-${eventName.replace(/\W+/g, "-").toLowerCase()}.xlsx`);
   }
 
   return (
@@ -110,7 +116,7 @@ export default function VipCodesManager({
       {/* Barra de Ações: Gerar e Exportar */}
       <div className={`${ui.card} flex flex-wrap items-end justify-between gap-4 p-5`}>
         <div className="flex flex-wrap items-end gap-3">
-          <label className="flex w-36 flex-col gap-1.5 text-xs font-bold text-text-2 uppercase tracking-wider">
+          <label className="flex w-32 flex-col gap-1.5 text-xs font-bold text-text-2 uppercase tracking-wider">
             Qtd. a Gerar
             <input
               type="number"
@@ -121,6 +127,19 @@ export default function VipCodesManager({
               className={ui.input}
             />
           </label>
+
+          <label className="flex w-52 flex-col gap-1.5 text-xs font-bold text-text-2 uppercase tracking-wider">
+            Formato do Código
+            <select
+              value={format}
+              onChange={(e) => setFormat(e.target.value as any)}
+              className={ui.input}
+            >
+              <option value="NUMERIC">🔢 Numérico (ex: 1001, 1002)</option>
+              <option value="ALPHANUMERIC">🔤 Alfanumérico (ex: 8J4P2K)</option>
+            </select>
+          </label>
+
           <button type="button" className={ui.primary} disabled={busy} onClick={generate}>
             {busy ? "Gerando…" : "Gerar novos bilhetes"}
           </button>

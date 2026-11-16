@@ -8,8 +8,46 @@ import { generateVipCode, normalizeVipCode } from './vip-code';
 export class VipCodesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generate(eventId: number, quantity: number) {
+  async generate(
+    eventId: number,
+    quantity: number,
+    format: 'NUMERIC' | 'ALPHANUMERIC' = 'NUMERIC',
+    startNumber?: number,
+  ) {
     await this.ensureEvent(eventId);
+
+    if (format === 'NUMERIC') {
+      // Busca todos os códigos existentes do evento para determinar o próximo número sequencial
+      const existing = await this.prisma.vip_codes.findMany({
+        where: { event_id: eventId },
+        select: { code: true },
+      });
+
+      const numericCodes = existing
+        .map((c) => parseInt(c.code.replace(/\D/g, ''), 10))
+        .filter((n) => !isNaN(n) && n >= 1000);
+
+      const maxExisting = numericCodes.length > 0 ? Math.max(...numericCodes) : 1000;
+      const initialNum = startNumber && startNumber > maxExisting ? startNumber : maxExisting + 1;
+
+      const batch = Array.from({ length: quantity }, (_, idx) => ({
+        event_id: eventId,
+        code: String(initialNum + idx),
+      }));
+
+      const result = await this.prisma.vip_codes.createMany({
+        data: batch,
+        skipDuplicates: true,
+      });
+
+      return {
+        eventId,
+        created: result.count,
+        format,
+        startCode: String(initialNum),
+        endCode: String(initialNum + result.count - 1),
+      };
+    }
 
     let created = 0;
 
@@ -28,7 +66,7 @@ export class VipCodesService {
       created += result.count;
     }
 
-    return { eventId, created };
+    return { eventId, created, format };
   }
 
   async findByEvent(eventId: number) {

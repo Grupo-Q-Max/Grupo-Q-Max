@@ -29,11 +29,14 @@ export default function GoldenTicket({
   const [copied, setCopied] = useState(false);
 
   // Se o bilhete já foi emitido com PIN de participação, o QR abre direto a roleta; senão abre o cadastro pré-preenchido
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const siteOrigin =
+    typeof window !== "undefined" && window.location.origin && !window.location.origin.includes("localhost")
+      ? window.location.origin
+      : "https://grupoqmax.com.br";
   const rawTicketNum = ticketNumber ? String(ticketNumber).replace(/\D/g, "") : null;
   const activationUrl = rawTicketNum
-    ? `${origin}/finora-experience/${eventSlug}/roleta?pin=${rawTicketNum}&vip=${encodeURIComponent(code)}`
-    : `${origin}/finora-experience/${eventSlug}/cadastro?vip=${encodeURIComponent(code)}`;
+    ? `${siteOrigin}/finora-experience/${eventSlug}/roleta?pin=${rawTicketNum}&vip=${encodeURIComponent(code)}`
+    : `${siteOrigin}/finora-experience/${eventSlug}/cadastro?vip=${encodeURIComponent(code)}`;
 
   const formattedTicket = ticketNumber
     ? typeof ticketNumber === "number"
@@ -168,15 +171,18 @@ export default function GoldenTicket({
                   fgColor="#0C1222"
                 />
               </div>
+              <span className="mt-1 text-[9px] text-[#A7B2C6] font-medium leading-tight">
+                Abre cadastro com código pronto
+              </span>
             </div>
 
-            {/* Código Alfanumérico */}
-            <div className="mt-4 flex flex-col items-center">
+            {/* Código Numérico / Alfanumérico */}
+            <div className="mt-3 flex flex-col items-center">
               <span className="font-mono text-[9px] text-[#A7B2C6] uppercase tracking-widest">
-                CÓDIGO VIP
+                BILHETE VIP
               </span>
-              <span className="font-mono text-lg font-black tracking-widest text-[#FFDF73] select-all">
-                {code}
+              <span className="font-mono text-xl font-black tracking-widest text-[#FFDF73] select-all">
+                {code.startsWith("#") ? code : `#${code}`}
               </span>
               <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400">
                 <ShieldCheck size={11} /> {redeemedAt ? "Resgatado" : "Válido p/ 1 Giro"}

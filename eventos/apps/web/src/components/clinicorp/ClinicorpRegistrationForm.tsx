@@ -500,6 +500,20 @@ function RegistrationForm({
       <div className="flex flex-1 flex-col gap-4.5 px-5 pt-2 pb-6">
         {error && <Alert>{error}</Alert>}
 
+        {initialVipCode && (
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-100/90 via-amber-50 to-amber-100/60 p-3.5 shadow-sm text-amber-950 animate-pop-burst">
+            <span className="text-2xl">👑</span>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-xs uppercase tracking-wider text-amber-900">
+                Passe VIP Identificado via QR Code
+              </span>
+              <span className="text-xs font-semibold text-amber-800">
+                Bilhete <strong className="font-mono font-black text-amber-950">#{vipCode}</strong> ativado! Seus prêmios exclusivos já estão liberados.
+              </span>
+            </div>
+          </div>
+        )}
+
         {initialPrefill?.clinicName && (
           <div className="flex items-center gap-2.5 rounded-xl border border-accent/40 bg-accent/15 px-3.5 py-2.5 text-xs text-slate-200 animate-pop-burst">
             <Users size={16} className="text-accent flex-none" />
@@ -555,9 +569,11 @@ function RegistrationForm({
 
         {vipStatus === "valid" && (
           <div className="flex items-center gap-2.5 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/70 p-3 text-xs font-bold text-amber-900 shadow-xs animate-pop-burst">
-            <span className="text-lg">👑</span>
+            <span className="text-xl">👑</span>
             <div>
-              <p className="font-extrabold text-amber-900">Código VIP Validado!</p>
+              <p className="font-extrabold text-amber-900">
+                {initialVipCode ? `Bilhete VIP #${vipCode} Ativado via QR Code!` : `Bilhete VIP #${vipCode} Validado!`}
+              </p>
               <p className="text-[11px] text-amber-800 font-medium">Seu cadastro terá acesso liberado ao Pool de Prêmios VIP exclusivos no estande.</p>
             </div>
           </div>
