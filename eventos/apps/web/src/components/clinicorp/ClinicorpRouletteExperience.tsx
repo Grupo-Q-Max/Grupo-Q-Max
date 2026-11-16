@@ -122,53 +122,14 @@ function eventAccent() {
 }
 
 function fireVictoryCelebration(accent: string, rarityColor: string) {
-  const colors = [accent, rarityColor, "#FFD700", "#FFFFFF", "#00F0FF", "#FF3366"];
-
-  // Explosão central massiva
+  // Comemoração ultra-leve de 40 partículas (desempenho máximo para celular/mobile)
   confetti({
-    particleCount: 140,
-    spread: 100,
-    origin: { x: 0.5, y: 0.52 },
-    colors,
+    particleCount: 40,
+    spread: 70,
+    origin: { x: 0.5, y: 0.5 },
+    colors: [accent, rarityColor, "#FFD700", "#FFFFFF"],
     disableForReducedMotion: true,
   });
-
-  // Canhão estádio esquerdo
-  setTimeout(() => {
-    confetti({
-      particleCount: 90,
-      angle: 60,
-      spread: 75,
-      origin: { x: 0.05, y: 0.8 },
-      colors,
-      disableForReducedMotion: true,
-    });
-  }, 180);
-
-  // Canhão estádio direito
-  setTimeout(() => {
-    confetti({
-      particleCount: 90,
-      angle: 120,
-      spread: 75,
-      origin: { x: 0.95, y: 0.8 },
-      colors,
-      disableForReducedMotion: true,
-    });
-  }, 360);
-
-  // Cascata de estrelas douradas
-  setTimeout(() => {
-    confetti({
-      particleCount: 80,
-      spread: 120,
-      origin: { x: 0.5, y: 0.25 },
-      colors: ["#FFE066", "#FFD700", "#FFF", "#38BDF8"],
-      ticks: 200,
-      gravity: 0.85,
-      disableForReducedMotion: true,
-    });
-  }, 580);
 }
 
 type ClinicorpRouletteExperienceProps = {
@@ -197,7 +158,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   const [participantInfo, setParticipantInfo] = useState<string>("");
   const [rotation, setRotation] = useState<number>(0);
   const [result, setResult] = useState<DrawResponse | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isDemoSpin, setIsDemoSpin] = useState<boolean>(false);
   // false = operador vendo a ficha; true = tablet entregue ao visitante.
@@ -668,9 +629,12 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     const image = result.prize.imageUrl || result.prize.image_url;
     return (
       <div className="relative h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between items-center px-4 py-3 sm:py-5 select-none text-center">
-        {/* Fundo com grade cibernética e aura de vitória */}
+        {/* Fundo com grade cibernética e aura de vitória leve */}
         <div className="cyber-grid-overlay pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-accent/15 rounded-full blur-[140px] pointer-events-none" />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full pointer-events-none opacity-40"
+          style={{ background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 70%)" }}
+        />
 
         {/* Topo Compacto */}
         <div className="flex-none w-full max-w-4xl flex items-center justify-between z-10 px-2">
@@ -745,9 +709,12 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     const spinning = phase === "DRAWING";
     return (
       <div className="relative h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between items-center px-4 py-2.5 sm:py-4 select-none landscape:grid landscape:grid-cols-[minmax(0,56%)_minmax(0,1fr)] landscape:items-center landscape:gap-10 landscape:px-12 landscape:py-6">
-        {/* Efeito de ambiente futurista */}
+        {/* Efeito de ambiente futurista leve */}
         <div className="cyber-grid-overlay pointer-events-none opacity-40" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-accent/15 rounded-full blur-[140px] pointer-events-none" />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full pointer-events-none opacity-30"
+          style={{ background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 70%)" }}
+        />
 
         {/* Barra superior: Logotipo, Identificação do Participante e Controles */}
         <div className="flex-none w-full max-w-5xl h-10 sm:h-11 flex items-center justify-between z-20 px-1">
@@ -806,7 +773,10 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         {/* Coluna da Roleta: Perfeitamente Centralizada e Proporcionada */}
         <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative my-auto z-10 px-2 py-1 landscape:h-full">
           <div className="relative flex items-center justify-center w-full aspect-square max-w-[min(90vw,calc(100dvh-175px),520px)] landscape:max-w-[min(720px,84dvh)]">
-            <div className="absolute -inset-8 rounded-full bg-gradient-to-r from-accent/25 via-blue-500/20 to-accent/25 blur-3xl pointer-events-none" />
+            <div
+              className="absolute -inset-4 rounded-full pointer-events-none opacity-30"
+              style={{ background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 75%)" }}
+            />
             <Wheel
               names={wheelPrizes.map((p) => p.name)}
               rotation={rotation}

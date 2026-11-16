@@ -89,7 +89,7 @@ export default function GrandDrawExperience({ eventId, eventName, initialPartici
   const [lockedDigits, setLockedDigits] = useState(0);
   const [target, setTarget] = useState<string[] | null>(null);
   const [winner, setWinner] = useState<WinnerData | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [search, setSearch] = useState("");
   const [loadingEligible, setLoadingEligible] = useState(false);
   const [claimingId, setClaimingId] = useState<number | null>(null);
@@ -255,28 +255,14 @@ export default function GrandDrawExperience({ eventId, eventName, initialPartici
             playApplauseSound();
             announcePrizeVoice(winningParticipant.fullName, prizeName);
           }
-          const colors = [eventAccent(), "#0077FF", "#FFD700", "#FFFFFF", "#38BDF8", "#10B981"];
-
-          // Canhões de estádio imediatos
+          // Celebração ultra-leve otimizada para mobile / celular (50 partículas em disparo único)
           confetti({
-            particleCount: 160,
-            spread: 120,
+            particleCount: 50,
+            spread: 80,
             origin: { x: 0.5, y: 0.5 },
-            colors,
+            colors: [eventAccent(), "#0077FF", "#FFD700", "#FFFFFF", "#38BDF8"],
             disableForReducedMotion: true,
           });
-          setTimeout(() => {
-            confetti({ particleCount: 110, angle: 60, spread: 80, origin: { x: 0.05, y: 0.8 }, colors, disableForReducedMotion: true });
-          }, 200);
-          setTimeout(() => {
-            confetti({ particleCount: 110, angle: 120, spread: 80, origin: { x: 0.95, y: 0.8 }, colors, disableForReducedMotion: true });
-          }, 400);
-
-          const end = Date.now() + 5000;
-          const burst = setInterval(() => {
-            if (Date.now() > end) return clearInterval(burst);
-            confetti({ startVelocity: 45, spread: 360, ticks: 90, origin: { x: Math.random(), y: Math.random() - 0.2 }, colors, disableForReducedMotion: true });
-          }, 250);
         }, 550);
       };
 
@@ -319,9 +305,12 @@ export default function GrandDrawExperience({ eventId, eventName, initialPartici
     <div className="flex w-full flex-col text-ink-text relative">
       {/* Palco da revelação */}
       <section className="relative flex min-h-[78dvh] flex-col items-center justify-center gap-10 overflow-hidden px-6 pt-28 pb-12 text-center">
-        {/* Background Cyber-Grid e Aura Luminosa */}
+        {/* Background Cyber-Grid e Aura Luminosa leve sem blur pesado */}
         <div className="cyber-grid-overlay pointer-events-none opacity-40" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[850px] bg-accent/15 rounded-full blur-[160px] pointer-events-none" />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full pointer-events-none opacity-30"
+          style={{ background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 72%)" }}
+        />
 
         <div className="absolute top-8 right-8 left-8 flex flex-wrap items-center justify-between gap-4 text-left z-10">
           <div className="flex items-center gap-4">

@@ -95,12 +95,12 @@ export default function Wheel({
       }`}
       title={onSpin && !spinning ? "Clique para girar a roleta!" : undefined}
     >
-      {/* Halo de luz e pulso neon externo */}
+      {/* Halo de luz leve sem blur pesado (otimizado para mobile) */}
       <div
-        className="pointer-events-none absolute -inset-6 rounded-full opacity-70 blur-3xl transition-all duration-700"
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-4 rounded-full opacity-40"
         style={{
           background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 72%)",
-          transform: spinning ? "scale(1.15)" : "scale(1)",
         }}
       />
 
