@@ -216,6 +216,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   const [pendingList, setPendingList] = useState<PendingParticipant[]>([]);
   const [queueError, setQueueError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [queueSortOrder, setQueueSortOrder] = useState<"FIFO" | "RECENT">("FIFO");
 
   const rotationRef = useRef<number>(0);
   const stopTickerRef = useRef<(() => void) | null>(null);
@@ -583,17 +584,25 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
 
   const filteredPending = useMemo(() => {
     const q = searchQuery.trim().toLowerCase().replace(/^#/, "");
-    if (!q) return pendingList;
-    return pendingList.filter(
-      (p) =>
-        p.fullName.toLowerCase().includes(q) ||
-        p.phone.includes(q) ||
-        p.cpfLastDigits.includes(q) ||
-        String(p.participantId).padStart(4, "0").includes(q) ||
-        String(p.participationId).includes(q) ||
-        (p.clinicName && p.clinicName.toLowerCase().includes(q)),
-    );
-  }, [pendingList, searchQuery]);
+    let list = pendingList;
+    if (q) {
+      list = pendingList.filter(
+        (p) =>
+          p.fullName.toLowerCase().includes(q) ||
+          p.phone.includes(q) ||
+          p.cpfLastDigits.includes(q) ||
+          String(p.participantId).padStart(4, "0").includes(q) ||
+          String(p.participationId).includes(q) ||
+          (p.clinicName && p.clinicName.toLowerCase().includes(q)),
+      );
+    }
+
+    return [...list].sort((a, b) => {
+      const timeA = new Date(a.createdAt || 0).getTime() || a.participationId;
+      const timeB = new Date(b.createdAt || 0).getTime() || b.participationId;
+      return queueSortOrder === "FIFO" ? timeA - timeB : timeB - timeA;
+    });
+  }, [pendingList, searchQuery, queueSortOrder]);
 
   function toggleFullscreen() {
     if (!document.fullscreenElement) {
@@ -984,17 +993,41 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
           </div>
 
           <div className="mt-2 flex flex-col">
-            <div className="flex items-center justify-between border-b border-ink-line pb-2 mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-line pb-2 mb-2">
               <span className="font-mono text-xs tracking-[0.08em] text-ink-text-2 uppercase font-semibold">
-                VALIDADOS, AGUARDANDO GIRO · {pendingList.length}
+                FILA DE GIRO · {pendingList.length}
               </span>
-              <button
-                type="button"
-                onClick={startDemoMode}
-                className="text-xs font-mono font-bold text-accent hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Play size={12} fill="currentColor" /> Fazer giro de teste
-              </button>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex rounded-lg bg-ink-950 p-0.5 border border-ink-line text-[11px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setQueueSortOrder("FIFO")}
+                    title="Quem chegou primeiro na fila física gira primeiro (Ordem de chegada)"
+                    className={`px-2 py-0.5 rounded font-bold transition-colors cursor-pointer ${
+                      queueSortOrder === "FIFO" ? "bg-accent text-ink-950 shadow-sm" : "text-ink-text-2 hover:text-white"
+                    }`}
+                  >
+                    Ordem de Chegada
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQueueSortOrder("RECENT")}
+                    title="Quem acabou de se cadastrar aparece no topo"
+                    className={`px-2 py-0.5 rounded font-bold transition-colors cursor-pointer ${
+                      queueSortOrder === "RECENT" ? "bg-accent text-ink-950 shadow-sm" : "text-ink-text-2 hover:text-white"
+                    }`}
+                  >
+                    Mais Recentes
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={startDemoMode}
+                  className="text-xs font-mono font-bold text-accent hover:underline flex items-center gap-1 cursor-pointer ml-1"
+                >
+                  <Play size={12} fill="currentColor" /> Teste
+                </button>
+              </div>
             </div>
 
             {queueError && <p className="py-3 text-[#FF8FA3]">{queueError}</p>}
