@@ -182,16 +182,6 @@ export class WhatsappController {
     });
   }
 
-  @Post('trigger-broadcast')
-  async triggerBroadcast() {
-    const { exec } = require('child_process');
-    exec('npx ts-node scripts/broadcast-hugo.ts', { cwd: process.cwd() }, (error: any, stdout: string) => {
-      if (error) console.error(`Erro no disparo do Excel:`, error);
-      else console.log(`Disparo do Excel finalizado:\n`, stdout);
-    });
-    return { success: true, message: 'Disparo iniciado em background!' };
-  }
-
   @Post('event/:eventId/analyze-contacts')
   async analyzeContacts(
     @Param('eventId', ParseIntPipe) eventId: number,

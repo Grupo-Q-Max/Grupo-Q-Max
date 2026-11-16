@@ -35,7 +35,7 @@ async function forward(
   const isWhatsappQueueRead =
     request.method === "GET" &&
     path[0] === "whatsapp" &&
-    (path[1] === "queue-stats" || path[1] === "queue-history" || path[1] === "status");
+    (path[1] === "queue-stats" || path[1] === "status");
 
   if (!session && !isWhatsappQueueRead) {
     return NextResponse.json(

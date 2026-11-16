@@ -42,27 +42,6 @@ export class ParticipantsController {
     });
   }
 
-  @Post('clinicorp/register')
-  registerClinicorp(
-    @Body()
-    dto: RegisterParticipantDto,
-
-    @Ip()
-    ipAddress: string,
-
-    @Headers('user-agent')
-    userAgent?: string,
-
-    @Headers('origin')
-    origin?: string,
-  ) {
-    return this.participantsService.register(dto, {
-      ipAddress,
-      userAgent: userAgent ?? null,
-      origin: origin ?? null,
-    });
-  }
-
   @Get('event/:eventId')
   findByEvent(
     @Param('eventId', ParseIntPipe)

@@ -23,7 +23,6 @@ const PUBLIC_ROUTES: Array<[method: string, pattern: RegExp]> = [
   ['POST', /^\/api\/v1\/meetings\/event\/\d+\/book\/?$/],
   ['GET', /^\/api\/v1\/whatsapp\/status\/?$/],
   ['GET', /^\/api\/v1\/whatsapp\/queue-stats\/?$/],
-  ['GET', /^\/api\/v1\/whatsapp\/queue-history\/?$/],
   ['GET', /^\/api\/v1\/dashboard\/event\/\d+\/public\/?$/],
   ['GET', /^\/api\/v1\/live\/event\/\d+\/?$/],
   ['GET', /^\/api\/v1\/vip-codes\/event\/\d+\/validate\/[^\/]+\/?$/],
