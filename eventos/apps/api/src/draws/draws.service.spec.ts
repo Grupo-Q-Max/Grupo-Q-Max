@@ -109,6 +109,79 @@ describe('DrawsService', () => {
       expect(result.prize).toBe('iPhone 16 Pro');
       expect(result.winner.fullName).toBe('Dr. Lucas');
     });
+
+    it('não deve sortear participantes que já ganharam o Grande Sorteio anteriormente (antiduplicidade)', async () => {
+      // Simula que o participante 10 já ganhou anteriormente
+      prismaMock.audit_logs.findMany.mockResolvedValue([
+        {
+          id: 1,
+          event_id: 1,
+          action: 'GRAND_DRAW_COMPLETED',
+          entity_id: '10',
+        },
+      ]);
+
+      // Participante 10 (já ganhou) e Participante 20 (elegível)
+      prismaMock.participations.findMany.mockResolvedValue([
+        {
+          id: 1,
+          created_at: new Date(),
+          participants: {
+            id: 10,
+            full_name: 'Dr. Lucas Já Ganhou',
+            phone: '11999999999',
+            clinic_name: 'Clínica 1',
+          },
+        },
+        {
+          id: 2,
+          created_at: new Date(),
+          participants: {
+            id: 20,
+            full_name: 'Dra. Beatriz Nova',
+            phone: '11888888888',
+            clinic_name: 'Clínica 2',
+          },
+        },
+      ]);
+
+      const result = await service.performGrandDraw(1, 'Câmera Intraoral');
+
+      expect(result.success).toBe(true);
+      expect(result.winner.participantId).toBe(20);
+      expect(result.winner.fullName).toBe('Dra. Beatriz Nova');
+      expect(result.totalCompetitors).toBe(1);
+    });
+
+    it('deve deduplicar múltiplos cupons com o mesmo telefone', async () => {
+      prismaMock.audit_logs.findMany.mockResolvedValue([]);
+      prismaMock.participations.findMany.mockResolvedValue([
+        {
+          id: 1,
+          created_at: new Date(),
+          participants: {
+            id: 10,
+            full_name: 'Dr. Carlos 1',
+            phone: '(11) 97777-6666',
+            clinic_name: 'Clínica A',
+          },
+        },
+        {
+          id: 2,
+          created_at: new Date(),
+          participants: {
+            id: 11,
+            full_name: 'Dr. Carlos 2 (Duplicado)',
+            phone: '11977776666',
+            clinic_name: 'Clínica B',
+          },
+        },
+      ]);
+
+      const eligible = await service.getEligibleForGrandDraw(1);
+      expect(eligible.totalEligible).toBe(1);
+      expect(eligible.participants[0].participantId).toBe(10);
+    });
   });
 
   describe('draw', () => {

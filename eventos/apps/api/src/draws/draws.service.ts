@@ -1117,9 +1117,33 @@ export class DrawsService {
   }
 
   /**
-   * Retorna os participantes únicos e válidos elegíveis para o Grande Sorteio Final do Evento
+   * Retorna os participantes únicos e válidos elegíveis para o Grande Sorteio Final do Evento,
+   * garantindo proteção estrita antiduplicidade: ganhadores anteriores de GRAND_DRAW deste evento
+   * e cadastros duplicados (mesmo ID ou mesmo telefone limpo) são excluídos da lista.
    */
   async getEligibleForGrandDraw(eventId: number) {
+    // 1. Identificar quem já foi sorteado e premiado no Grande Sorteio deste evento
+    const previousWinnersLogs = await this.prisma.audit_logs.findMany({
+      where: {
+        event_id: eventId,
+        action: 'GRAND_DRAW_COMPLETED',
+      },
+      select: {
+        entity_id: true,
+      },
+    });
+
+    const alreadyWonIds = new Set<number>();
+    for (const log of previousWinnersLogs) {
+      if (log.entity_id) {
+        const idNum = parseInt(log.entity_id, 10);
+        if (!isNaN(idNum) && idNum > 0) {
+          alreadyWonIds.add(idNum);
+        }
+      }
+    }
+
+    // 2. Buscar todas as participações do evento com status válido
     const participations = await this.prisma.participations.findMany({
       where: {
         event_id: eventId,
@@ -1149,25 +1173,47 @@ export class DrawsService {
     });
 
     const uniqueMap = new Map<number, any>();
+    const seenPhones = new Set<string>();
+
     for (const p of participations) {
-      if (!uniqueMap.has(p.participants.id)) {
-        uniqueMap.set(p.participants.id, {
-          participationId: p.id,
-          participantId: p.participants.id,
-          ticketCode: `#${String(p.participants.id).padStart(4, '0')}`,
-          fullName: p.participants.full_name,
-          cpfLastDigits: p.participants.cpf_last_digits,
-          phone: p.participants.phone || null,
-          email: p.participants.email || null,
-          cro: p.participants.cro_number
-            ? `${p.participants.cro_number}/${p.participants.cro_state || ''}`
-            : null,
-          clinicName: p.participants.clinic_name || 'Clínica não informada',
-          city: p.participants.city,
-          state: p.participants.state,
-          registeredAt: p.created_at,
-        });
+      const part = p.participants;
+      if (!part) continue;
+
+      // REGRA ANTIDUPLICIDADE 1: Ganhadores anteriores do Grande Sorteio NÃO podem concorrer novamente
+      if (alreadyWonIds.has(part.id)) {
+        continue;
       }
+
+      // REGRA ANTIDUPLICIDADE 2: Deduplicação por ID do participante
+      if (uniqueMap.has(part.id)) {
+        continue;
+      }
+
+      // REGRA ANTIDUPLICIDADE 3: Deduplicação por telefone sanitizado (evita mesma pessoa com 2 cupons)
+      const cleanPhone = (part.phone || '').replace(/\D/g, '');
+      if (cleanPhone.length >= 10) {
+        if (seenPhones.has(cleanPhone)) {
+          continue;
+        }
+        seenPhones.add(cleanPhone);
+      }
+
+      uniqueMap.set(part.id, {
+        participationId: p.id,
+        participantId: part.id,
+        ticketCode: `#${String(part.id).padStart(4, '0')}`,
+        fullName: part.full_name,
+        cpfLastDigits: part.cpf_last_digits,
+        phone: part.phone || null,
+        email: part.email || null,
+        cro: part.cro_number
+          ? `${part.cro_number}/${part.cro_state || ''}`
+          : null,
+        clinicName: part.clinic_name || 'Clínica não informada',
+        city: part.city,
+        state: part.state,
+        registeredAt: p.created_at,
+      });
     }
 
     const eligible = Array.from(uniqueMap.values());
@@ -1175,6 +1221,7 @@ export class DrawsService {
     return {
       eventId,
       totalEligible: eligible.length,
+      alreadyWonCount: alreadyWonIds.size,
       participants: eligible,
     };
   }
@@ -1194,7 +1241,7 @@ export class DrawsService {
 
     if (totalEligible === 0) {
       throw new BadRequestException(
-        'Nenhum participante elegível para o sorteio final.',
+        'Nenhum participante elegível para o sorteio final (ou todos os concorrentes já foram premiados).',
       );
     }
 
