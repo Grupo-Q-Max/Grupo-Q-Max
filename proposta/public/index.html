@@ -653,6 +653,9 @@
                 <p>Selecione a empresa, preencha os dados do cliente e acompanhe o investimento em tempo real.</p>
             </div>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <button type="button" onclick="salvarRascunhoServidor(true)" class="btn-primary" id="btnSalvarRascunhoTop" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 13px; font-weight: 800; padding: 8px 16px; border-radius: 999px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);" title="Salvar rascunho incompleto para continuar mais tarde">
+                    💾 Salvar Rascunho
+                </button>
                 <div style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:999px; font-size:11px; font-weight:700;" title="Atalhos: Ctrl+Enter (Gerar), Ctrl+S (Salvar), Esc (Fechar), Alt+1..6 (Passos)">
                     Atalhos: <span style="background:#e2e8f0; color:#0f172a; padding:1px 6px; border-radius:4px; font-family:monospace;">Ctrl+Enter</span> / <span style="background:#e2e8f0; color:#0f172a; padding:1px 6px; border-radius:4px; font-family:monospace;">Ctrl+S</span>
                 </div>
@@ -1416,9 +1419,12 @@ Conclusões
                     <!-- PAINEL DE AÇÕES COMERCIAIS ORGANIZADO -->
                     <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
                         <!-- Bloco 1: Ações Principais -->
-                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
                             <button type="button" class="btn-primary" id="btnEnviar" style="font-size: 14px; padding: 14px 20px; font-weight: 800; border-radius: 12px;" onclick="salvarEEnviarProposta()">
                                 Salvar e Enviar Proposta
+                            </button>
+                            <button type="button" class="btn-secondary" id="btnSalvarRascunhoBottom" style="font-size: 13px; padding: 10px 16px; font-weight: 800; border-radius: 12px; border: 1.5px solid #d97706; color: #b45309; background: #fffbeb; cursor: pointer;" onclick="salvarRascunhoServidor(true)">
+                                💾 Salvar como Rascunho / Incompleta
                             </button>
                         </div>
 

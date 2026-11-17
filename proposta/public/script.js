@@ -1399,6 +1399,232 @@ async function salvarEEnviarProposta() {
     }
   }
 }
+
+// ==========================================
+// GESTÃO DE RASCUNHOS & PROPOSTAS INCOMPLETAS
+// ==========================================
+let RASCUNHO_ID_ATUAL = null;
+
+function capturarEstadoCompletoFormulario() {
+  const form = document.getElementById("propostaForm") || document.body;
+  const inputs = form.querySelectorAll("input, select, textarea");
+  const estado = {};
+  inputs.forEach((el) => {
+    if (!el.id) return;
+    if (el.type === "checkbox") {
+      estado[el.id] = el.checked;
+    } else if (el.type === "radio") {
+      if (el.checked) estado[el.name || el.id] = el.value;
+    } else {
+      estado[el.id] = el.value;
+    }
+  });
+  return estado;
+}
+
+function restaurarEstadoFormulario(estado) {
+  if (!estado || typeof estado !== "object") return;
+  Object.keys(estado).forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) {
+      const radio = document.querySelector(`input[name="${id}"][value="${estado[id]}"]`);
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event("change"));
+      }
+      return;
+    }
+    if (el.type === "checkbox") {
+      el.checked = Boolean(estado[id]);
+      el.dispatchEvent(new Event("change"));
+    } else if (el.type === "radio") {
+      el.checked = Boolean(estado[id]);
+      el.dispatchEvent(new Event("change"));
+    } else {
+      el.value = estado[id];
+      el.dispatchEvent(new Event("input"));
+      el.dispatchEvent(new Event("change"));
+    }
+  });
+}
+
+async function salvarRascunhoServidor(mostrarNotificacao = true) {
+  try {
+    const itens = (typeof aplicarDescontoNosItens === "function" && typeof obterItensCalculados === "function")
+      ? aplicarDescontoNosItens(obterItensCalculados())
+      : [];
+    const { totalMensal, totalPontual, totalGeral } = (typeof separarTotais === "function")
+      ? separarTotais(itens)
+      : { totalMensal: 0, totalPontual: 0, totalGeral: 0 };
+
+    const payload = {
+      id: RASCUNHO_ID_ATUAL,
+      dataProposta: valorCampo("dataProposta") || new Date().toISOString().split("T")[0],
+      nomeClinica: valorCampo("nomeClinica") || "Rascunho Em Elaboração",
+      razaoSocial: valorCampo("razaoSocial"),
+      cnpj: valorCampo("cnpj"),
+      nomeSocio: valorCampo("nomeSocio"),
+      cpfSocio: valorCampo("cpfSocio"),
+      email: valorCampo("email"),
+      telefone: valorCampo("telefone"),
+      videoPitch: valorCampo("videoPitch"),
+      audioPitch: document.getElementById("audioPitchBase64")?.value || "",
+      enderecoClinica: valorCampo("enderecoClinica"),
+      cadeiras: numeroCampo("cadeiras"),
+      funcionarios: numeroCampo("funcionarios"),
+      socios: numeroCampo("socios"),
+      faturamento: numeroCampo("faturamento"),
+      regimeFiscal: valorCampo("regimeFiscal"),
+      regimeHibrido: valorCampo("regimeHibrido"),
+      distanciaKm: numeroCampo("distanciaKm"),
+      metragem: numeroCampo("metragem"),
+      ...(typeof obterDadosOnboardingV2 === "function" ? obterDadosOnboardingV2() : {}),
+      tipoProposta: valorCampo("tipoProposta") || "finora",
+      empresaProposta:
+        valorCampo("tipoProposta") === "tech"
+          ? "TECH"
+          : valorCampo("tipoProposta") === "contabil"
+            ? "QMAX"
+            : valorCampo("tipoProposta") === "auditoria"
+              ? "AUDITORIA"
+              : valorCampo("tipoProposta") === "lagerhaus"
+                ? "LAGERHAUS"
+                : "FINORA",
+      itens,
+      totalMensal,
+      totalPontual,
+      total: totalGeral,
+      justificativaDesconto: valorCampo("justificativaDesconto") || "",
+      formState: capturarEstadoCompletoFormulario()
+    };
+
+    const token = localStorage.getItem("finora_token");
+    const res = await fetch("/api/propostas/rascunho", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      if (mostrarNotificacao) alert(data.error || "Erro ao salvar rascunho.");
+      return;
+    }
+
+    if (data.id) {
+      RASCUNHO_ID_ATUAL = data.id;
+      const url = new URL(window.location);
+      url.searchParams.set("rascunhoId", data.id);
+      window.history.replaceState({}, "", url);
+    }
+
+    const indic = document.getElementById("autoSaveIndicator");
+    const indicTxt = document.getElementById("autoSaveText");
+    if (indic && indicTxt) {
+      indicTxt.innerText = `Rascunho salvo às ${new Date().toLocaleTimeString().slice(0, 5)}`;
+      indic.style.borderColor = "#f59e0b";
+      indic.style.color = "#b45309";
+      indic.style.background = "#fef3c7";
+      setTimeout(() => {
+        indicTxt.innerText = "Auto-save ativo";
+        indic.style.borderColor = "rgba(16,185,129,0.3)";
+        indic.style.color = "#059669";
+        indic.style.background = "rgba(16,185,129,0.12)";
+      }, 4000);
+    }
+
+    if (mostrarNotificacao) {
+      if (window.showToast) {
+        window.showToast(`Rascunho ${data.numeroProposta || ''} salvo com sucesso!`, "success");
+      } else {
+        alert(`Rascunho salvo com sucesso! (Nº ${data.numeroProposta || ''})\nVocê pode continuar preenchendo agora ou acessá-lo pelo Dashboard a qualquer momento.`);
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao salvar rascunho:", err);
+    if (mostrarNotificacao) alert("Erro de conexão ao salvar rascunho.");
+  }
+}
+window.salvarRascunhoServidor = salvarRascunhoServidor;
+
+async function carregarRascunhoPorId(rascunhoId) {
+  try {
+    const token = localStorage.getItem("finora_token");
+    const res = await fetch(`/api/propostas/${rascunhoId}/rascunho`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      console.warn("Rascunho não encontrado ou sem autorização.");
+      return;
+    }
+    const data = await res.json();
+    const p = data.proposta;
+    if (!p) return;
+
+    RASCUNHO_ID_ATUAL = p.id;
+
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && val !== undefined && val !== null) {
+        el.value = val;
+        el.dispatchEvent(new Event("input"));
+        el.dispatchEvent(new Event("change"));
+      }
+    };
+
+    setVal("nomeClinica", p.nome_clinica);
+    setVal("razaoSocial", p.razao_social);
+    setVal("cnpj", p.cnpj);
+    setVal("nomeSocio", p.nome_socio);
+    setVal("cpfSocio", p.cpf_socio);
+    setVal("email", p.email);
+    setVal("telefone", p.telefone);
+    setVal("enderecoClinica", p.endereco_clinica);
+    setVal("faturamento", p.faturamento);
+    setVal("regimeFiscal", p.regime_fiscal);
+    setVal("regimeHibrido", p.regime_hibrido);
+    setVal("cadeiras", p.cadeiras);
+    setVal("funcionarios", p.funcionarios);
+    setVal("socios", p.socios);
+    setVal("metragem", p.metragem);
+    setVal("distanciaKm", p.distancia_km);
+    setVal("videoPitch", p.video_pitch);
+    setVal("justificativaDesconto", p.justificativa_desconto);
+
+    if (p.tipo_proposta) {
+      setVal("tipoProposta", p.tipo_proposta.toLowerCase());
+      if (typeof window.selecionarEmpresa === "function") {
+        window.selecionarEmpresa(p.tipo_proposta.toLowerCase());
+      }
+    }
+
+    if (data.formState) {
+      restaurarEstadoFormulario(data.formState);
+    }
+
+    if (typeof recalcularProposta === "function") {
+      recalcularProposta();
+    }
+
+    if (window.showToast) {
+      window.showToast(`Rascunho ${p.numero_proposta} carregado para continuação!`, "info");
+    }
+  } catch (err) {
+    console.error("Erro ao carregar rascunho:", err);
+  }
+}
+window.carregarRascunhoPorId = carregarRascunhoPorId;
+
+// Atalho global Ctrl+S para salvar rascunho
+window.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+    e.preventDefault();
+    salvarRascunhoServidor(true);
+  }
+});
 // Inicia o cálculo na tela
 carregarRegrasPrecificacao();
 
@@ -2041,6 +2267,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     } catch (e) {}
+  }
+
+  // Se houver rascunhoId na URL, carregar do servidor
+  const urlParams = new URLSearchParams(window.location.search);
+  const rascunhoUrlId = urlParams.get("rascunhoId");
+  if (rascunhoUrlId) {
+    setTimeout(() => {
+      carregarRascunhoPorId(rascunhoUrlId);
+    }, 400);
   }
 
   // Monitorar alterações no formulário

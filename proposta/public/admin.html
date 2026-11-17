@@ -211,8 +211,8 @@
                 <div class="hud-bracket top-left"></div><div class="hud-bracket top-right"></div><div class="hud-bracket bottom-left"></div><div class="hud-bracket bottom-right"></div><span class="hud-status-code">SYS.CFG_05</span>
                 
                 <h3>Controle de Usuários</h3>
-                <p>Cadastre novos vendedores e diretores com credenciais e roles específicas de acesso.</p>
-                <button class="btn-primary" onclick="abrirModal('modalUsuario')">Cadastrar</button>
+                <p>Gerencie vendedores e diretores, edite acessos, permissões e cadastre novos usuários.</p>
+                <button class="btn-primary" onclick="abrirModalGerenciarUsuarios()">Gerenciar Usuários</button>
             </div>
 
             <!-- Estabilidade & Monitoramento do Sistema -->
@@ -788,6 +788,93 @@
                 </select>
             </div>
             <button class="btn-primary" style="margin-top: 16px;" onclick="criarUsuario()">Salvar Usuário</button>
+        </div>
+    </div>
+
+    <div id="modalGerenciarUsuarios" class="modal">
+        <div class="modal-content" style="width: 95vw; max-width: 1000px;">
+            <span class="close-btn" onclick="fecharModal('modalGerenciarUsuarios')">&times;</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0;">Gestão de Usuários Cadastrados</h3>
+                    <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">
+                        Visualize os acessos da equipe comercial e diretoria, edite permissões ou redefina senhas.
+                    </p>
+                </div>
+                <button class="btn-primary" style="width: auto;" onclick="abrirModal('modalUsuario')">
+                    + Cadastrar Novo Usuário
+                </button>
+            </div>
+
+            <div style="overflow-x: auto; max-height: 65vh; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <table class="styled-table" style="width: 100%; border-collapse: collapse; margin: 0;">
+                    <thead style="background: #f8fafc; position: sticky; top: 0; z-index: 2;">
+                        <tr>
+                            <th style="padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 800; color: #475569;">NOME</th>
+                            <th style="padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 800; color: #475569;">E-MAIL</th>
+                            <th style="padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 800; color: #475569;">WHATSAPP</th>
+                            <th style="padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 800; color: #475569;">CARGO</th>
+                            <th style="padding: 12px 14px; text-align: center; font-size: 12px; font-weight: 800; color: #475569;">STATUS</th>
+                            <th style="padding: 12px 14px; text-align: right; font-size: 12px; font-weight: 800; color: #475569;">AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabelaUsuarios">
+                        <tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">Carregando usuários...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Usuário -->
+    <div id="modalEditarUsuario" class="modal">
+        <div class="modal-content" style="max-width: 520px;">
+            <span class="close-btn" onclick="fecharModal('modalEditarUsuario')">&times;</span>
+            <h3>Editar Usuário</h3>
+            <input type="hidden" id="editUsuarioId">
+
+            <div class="input-group" style="margin-top: 10px;">
+                <label for="editUsuarioNome">Nome Completo</label>
+                <input type="text" id="editUsuarioNome" placeholder="Ex.: Rodrigo Silva">
+            </div>
+
+            <div class="input-group" style="margin-top: 10px;">
+                <label for="editUsuarioEmail">E-mail de Acesso</label>
+                <input type="email" id="editUsuarioEmail" placeholder="usuario@qmax.com.br">
+            </div>
+
+            <div class="input-group" style="margin-top: 10px;">
+                <label for="editUsuarioTelefone">WhatsApp / Telefone</label>
+                <input type="tel" id="editUsuarioTelefone" placeholder="(11) 99999-9999">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+                <div class="input-group">
+                    <label for="editUsuarioRole">Cargo / Permissão</label>
+                    <select id="editUsuarioRole">
+                        <option value="Comercial">Comercial</option>
+                        <option value="Diretor">Diretor</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="editUsuarioAtivo">Status</label>
+                    <select id="editUsuarioAtivo">
+                        <option value="1">Ativo</option>
+                        <option value="0">Inativo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-group" style="margin-top: 12px;">
+                <label for="editUsuarioSenha">Nova Senha (deixe em branco para não alterar)</label>
+                <input type="password" id="editUsuarioSenha" placeholder="Digite apenas para redefinir">
+            </div>
+
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn-secondary" onclick="fecharModal('modalEditarUsuario')">Cancelar</button>
+                <button type="button" class="btn-primary" style="width: auto;" onclick="salvarEdicaoUsuario()">Salvar Alterações</button>
+            </div>
         </div>
     </div>
 

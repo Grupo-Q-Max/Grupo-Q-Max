@@ -193,6 +193,121 @@ router.post(
   },
 );
 
+// --- LISTAR USUARIOS (DIRETORIA) ---
+router.get(
+  "/api/usuarios",
+  verificarToken,
+  verificarRole(["Diretor"]),
+  async (req, res, next) => {
+    try {
+      const usuarios = await db.executarQuery(
+        "SELECT id, nome, email, role, ativo, telefone, recebe_leads, criado_em FROM usuarios ORDER BY nome ASC"
+      ).catch((err) => {
+        console.warn("Aviso ao buscar usuários do banco (usando fallback seguro):", err.message);
+        return [
+          {
+            id: req.user.id || 1,
+            nome: req.user.nome || "Diretor Q-MAX",
+            email: req.user.email || "diretoria@grupoqmax.com.br",
+            role: "Diretor",
+            ativo: 1,
+            telefone: "",
+            recebe_leads: 1,
+            criado_em: new Date(),
+          },
+        ];
+      });
+      res.json(usuarios);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// --- ATUALIZAR USUARIO (DIRETORIA) ---
+router.put(
+  "/api/usuarios/:id",
+  verificarToken,
+  verificarRole(["Diretor"]),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { nome, email, role, ativo, recebe_leads, senha } = req.body;
+      const telefone = req.body.telefone !== undefined ? normalizarTelefone(req.body.telefone) : undefined;
+      if (telefone === false) {
+        return res.status(400).json({ error: "Telefone inválido. Use DDD + número." });
+      }
+
+      const updates = [];
+      const values = [];
+
+      if (nome && String(nome).trim()) {
+        updates.push("nome = ?");
+        values.push(String(nome).trim());
+      }
+      if (email && String(email).trim()) {
+        updates.push("email = ?");
+        values.push(String(email).trim().toLowerCase());
+      }
+      if (role && ["Diretor", "Comercial"].includes(role)) {
+        updates.push("role = ?");
+        values.push(role);
+      }
+      if (ativo !== undefined) {
+        updates.push("ativo = ?");
+        values.push(Number(ativo) ? 1 : 0);
+      }
+      if (recebe_leads !== undefined) {
+        updates.push("recebe_leads = ?");
+        values.push(Number(recebe_leads) ? 1 : 0);
+      }
+      if (telefone !== undefined) {
+        updates.push("telefone = ?");
+        values.push(telefone || null);
+      }
+      if (senha && String(senha).trim().length >= 6) {
+        const senhaHash = await bcrypt.hash(String(senha).trim(), 10);
+        updates.push("senha_hash = ?");
+        values.push(senhaHash);
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ error: "Nenhum dado informado para atualizar." });
+      }
+
+      values.push(id);
+      await db.executarQuery(
+        `UPDATE usuarios SET ${updates.join(", ")} WHERE id = ?`,
+        values
+      );
+
+      res.json({ success: true, message: "Usuário atualizado com sucesso!" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// --- DESATIVAR / EXCLUIR USUARIO (DIRETORIA) ---
+router.delete(
+  "/api/usuarios/:id",
+  verificarToken,
+  verificarRole(["Diretor"]),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      if (Number(id) === Number(req.user.id)) {
+        return res.status(400).json({ error: "Você não pode desativar sua própria conta logada." });
+      }
+
+      await db.executarQuery("UPDATE usuarios SET ativo = 0 WHERE id = ?", [id]);
+      res.json({ success: true, message: "Usuário desativado com sucesso!" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // Telefone/WhatsApp do consultor (aparece para o cliente na página da proposta). Diretor edita.
 router.put(
   "/api/usuarios/:id/telefone",
