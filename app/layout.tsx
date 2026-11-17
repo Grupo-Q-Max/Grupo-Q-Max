@@ -9,6 +9,8 @@ import { SettingsProvider } from "@/components/SettingsProvider";
 import { readSettings, withoutPassword } from "@/lib/settings";
 import { PageTracker } from "@/components/PageTracker";
 import { CookieConsent } from "@/components/CookieConsent";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { QuickLeadModal } from "@/components/QuickLeadModal";
 import type { Metadata, Viewport } from "next";
 import "./qmax-base.css";
 import "./qmax-overrides.css";
@@ -108,38 +110,24 @@ export default function RootLayout({
         <SettingsProvider settings={settings}>
           {/* GA, visit tracking and the floating buttons are for site visitors, not CRM/admin users */}
           <SiteOnly>
-            <Script
-              id="qmax-ga4-bootstrap"
-              strategy="afterInteractive"
-            >
+            {/* No network request here: defines gtag with every signal denied. GA4 itself loads in
+                GoogleAnalytics only after the visitor allows statistics in the cookie banner. */}
+            <Script id="qmax-ga4-bootstrap" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){window.dataLayer.push(arguments);}
                 window.gtag = gtag;
-
-                // Google Consent Mode v2 (Conformidade estrita com a LGPD Lei 13.709/18)
                 gtag('consent', 'default', {
-                  'analytics_storage': 'denied',
-                  'ad_storage': 'denied',
-                  'ad_user_data': 'denied',
-                  'ad_personalization': 'denied',
-                  'functionality_storage': 'granted',
-                  'security_storage': 'granted',
-                  'wait_for_update': 500
-                });
-
-                gtag('js', new Date());
-
-                gtag('config', 'G-L5CSV2XQL3', {
-                  send_page_view: true
+                  analytics_storage: 'denied',
+                  ad_storage: 'denied',
+                  ad_user_data: 'denied',
+                  ad_personalization: 'denied',
+                  functionality_storage: 'denied',
+                  security_storage: 'granted'
                 });
               `}
             </Script>
-
-            <Script
-              src="https://www.googletagmanager.com/gtag/js?id=G-L5CSV2XQL3"
-              strategy="lazyOnload"
-            />
+            <GoogleAnalytics />
             <QmaxAnalytics />
             <CookieConsent />
           </SiteOnly>
@@ -150,6 +138,7 @@ export default function RootLayout({
           <SiteOnly>
             <FloatingWhatsApp whatsapp={settings.whatsapp} />
             <PageTracker />
+            <QuickLeadModal />
             <BackToTop />
           </SiteOnly>
         </SettingsProvider>

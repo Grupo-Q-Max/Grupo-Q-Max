@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { processDueRuns } from "@/lib/crm-automation";
 import { mailTaskChanges, remindDueTasks } from "@/lib/crm-my-tasks";
+import { purgeExpiredDataDaily } from "@/lib/data-retention";
 
 /**
  * Runs the delayed automation rules that are due, reminds responsibles of due
@@ -17,7 +18,8 @@ async function handler(req: Request) {
   const processed = await processDueRuns();
   const reminded = await remindDueTasks();
   const mailed = await mailTaskChanges();
-  return NextResponse.json({ processed, reminded, mailed });
+  const retention = await purgeExpiredDataDaily();
+  return NextResponse.json({ processed, reminded, mailed, retention });
 }
 
 export { handler as GET, handler as POST };

@@ -5,11 +5,23 @@ import { isAdminToken } from "@/lib/settings";
 import { ADMIN_COOKIE } from "@/lib/auth";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { escapeHtml, sendMail } from "@/lib/mail";
+import { legal } from "@/data/site";
 
 // Prisma String columns are varchar(191)
 const field = (value: unknown) => (typeof value === "string" ? value.trim().slice(0, 191) : "");
 
-/** Public lead form (QuickLeadModal). Open endpoint: validated, rate limited, answers only success. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Brazilian phone: 10 to 13 digits once punctuation is removed (with or without +55). */
+const validPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 13;
+};
+
+/**
+ * Public lead form (QuickLeadModal). Open endpoint: validated, rate limited, answers only success.
+ * LGPD: refuses the lead without the visitor's explicit consent and records when and which policy
+ * version was accepted. Keeps only the fields the form asks for (data minimisation).
+ */
 export async function POST(req: NextRequest) {
   const wait = await rateLimit(`lead:ip:${clientIp(req)}`, 5, 10 * 60_000);
   if (wait) return tooManyRequests(wait);
@@ -25,10 +37,15 @@ export async function POST(req: NextRequest) {
     company: field(body.company) || null,
     message: field(body.message),
   };
-  if (!data.name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  if (body.consent !== true) return NextResponse.json({ error: "Consent is required" }, { status: 400 });
+  if (data.name.length < 2) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  if (data.email && !EMAIL_RE.test(data.email)) return NextResponse.json({ error: "Invalid e-mail" }, { status: 400 });
+  if (data.phone && !validPhone(data.phone)) return NextResponse.json({ error: "Invalid phone" }, { status: 400 });
 
   try {
-    await prisma.contactLead.create({ data });
+    await prisma.contactLead.create({
+      data: { ...data, consentAt: new Date(), privacyVersion: legal.privacyVersion },
+    });
   } catch (error) {
     console.error("Error creating lead:", error);
     return NextResponse.json({ error: "Failed to save lead" }, { status: 500 });
@@ -58,9 +75,13 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ success: true });
 }
 
-export async function GET() {
+async function isAdmin() {
   const cookieStore = await cookies();
-  if (!isAdminToken(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  return isAdminToken(cookieStore.get(ADMIN_COOKIE)?.value);
+}
+
+export async function GET() {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
@@ -72,5 +93,30 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching leads:", error);
     return NextResponse.json({ error: "Failed to fetch leads" }, { status: 500 });
+  }
+}
+
+/**
+ * Deletes leads for a data subject request (LGPD Art. 18, VI). Admin only.
+ * `?id=` removes one lead; `?email=` and/or `?phone=` remove every lead of that person.
+ */
+export async function DELETE(req: NextRequest) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const params = req.nextUrl.searchParams;
+  const id = params.get("id")?.trim();
+  const email = params.get("email")?.trim();
+  const phone = params.get("phone")?.trim();
+  if (!id && !email && !phone) {
+    return NextResponse.json({ error: "id, email or phone is required" }, { status: 400 });
+  }
+  const or = [...(email ? [{ email }] : []), ...(phone ? [{ phone }] : [])];
+  try {
+    const { count } = await prisma.contactLead.deleteMany({ where: id ? { id } : { OR: or } });
+    return NextResponse.json({ deleted: count });
+  } catch (error) {
+    console.error("Error deleting lead:", error instanceof Error ? error.message : error);
+    return NextResponse.json({ error: "Failed to delete lead" }, { status: 500 });
   }
 }

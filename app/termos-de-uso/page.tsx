@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Scale, Shield, AlertTriangle, FileCheck, Copyright, Server, Ban, ArrowRight, Building } from "lucide-react";
+import { legal } from "@/data/site";
 import "@/app/legal.css";
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default function TermosDeUsoPage() {
-  const dataAtualizacao = "27 de Outubro de 2026";
+  const dataAtualizacao = legal.lastUpdated;
 
   return (
     <main className="qmax-legal-page">
@@ -37,7 +38,7 @@ export default function TermosDeUsoPage() {
           </p>
           <div className="qmax-legal-meta">
             <span className="qmax-legal-meta-item">
-              <FileCheck size={14} /> Versão 3.1
+              <FileCheck size={14} /> Versão {legal.privacyVersion}
             </span>
             <span className="qmax-legal-meta-item">
               <Building size={14} /> Grupo Q-Max Consolidado
@@ -64,6 +65,7 @@ export default function TermosDeUsoPage() {
             <li><a href="#links-terceiros">8. Links para Portais Externos</a></li>
             <li><a href="#rescisao">9. Bloqueio e Rescisão de Acesso</a></li>
             <li><a href="#foro">10. Legislação Aplicável e Foro</a></li>
+            <li><a href="#identificacao">11. Identificação e Contato</a></li>
           </ul>
         </nav>
 
@@ -160,11 +162,11 @@ export default function TermosDeUsoPage() {
             <h2 className="qmax-legal-heading">6. Limitação de Responsabilidade Civil</h2>
             <div className="qmax-legal-callout qmax-legal-callout-warning">
               <div className="qmax-legal-callout-title">
-                <AlertTriangle size={16} color="#f59e0b" /> Cláusula de Blindagem e Isenção de Responsabilidade
+                <AlertTriangle size={16} color="#f59e0b" /> Limites de responsabilidade
               </div>
               <p>
-                Em nenhuma hipótese o Grupo Q-Max, seus sócios, diretores, colaboradores ou prepostos responderão perante o
-                usuário ou terceiros por:
+                Na extensão permitida pela lei, e sem afastar os direitos garantidos pelo Código de Defesa do Consumidor, o
+                Grupo Q-Max não responde por:
               </p>
               <ul style={{ marginBottom: 0 }}>
                 <li>Danos indiretos, lucros cessantes, perdas financeiras, interrupção de negócios ou perda de oportunidades comerciais;</li>
@@ -215,9 +217,25 @@ export default function TermosDeUsoPage() {
               Brasil.
             </p>
             <p>
-              Fica expressamente eleito o <strong>Foro da Comarca de São Bernardo do Campo, Estado de São Paulo</strong>, com
-              renúncia categórica a qualquer outro foro por mais privilegiado ou especial que seja, para dirimir qualquer dúvida,
-              demanda ou litígio decorrente destes Termos.
+              Fica eleito o <strong>Foro da Comarca de São Bernardo do Campo, Estado de São Paulo</strong>, para dirimir
+              dúvidas ou litígios decorrentes destes Termos, ressalvado o direito do consumidor de propor ação no foro do seu
+              domicílio (art. 101, I do Código de Defesa do Consumidor).
+            </p>
+          </section>
+
+          <section id="identificacao" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">11. Identificação e Contato</h2>
+            <p>Este site é mantido pelas empresas do {legal.groupName}, com sede em {legal.address}:</p>
+            <ul>
+              {legal.companies.map((company) => (
+                <li key={company.brand}>
+                  <strong>{company.brand}</strong> — {company.legalName}, CNPJ {company.cnpj}
+                </li>
+              ))}
+            </ul>
+            <p>
+              Dados pessoais são tratados conforme a <Link href="/politica-de-privacidade">Política de Privacidade</Link>.
+              Pedidos sobre seus dados: <a href={`mailto:${legal.dpoEmail}`}>{legal.dpoEmail}</a>.
             </p>
           </section>
         </article>

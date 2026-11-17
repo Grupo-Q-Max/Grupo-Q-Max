@@ -103,3 +103,33 @@ export const contact = {
   whatsapp: "+55 (11) 2897-6514",
   address: "R. Frei Gaspar, 941 - Conjunto 103-105, São Bernardo do Campo - SP",
 } as const;
+
+/*
+ * Data controller details used by the privacy policy, terms, cookie policy and footers.
+ * Fill in each legalName and cnpj: the policy must identify the controller (LGPD Art. 9, II).
+ * Bump privacyVersion whenever the privacy policy changes in substance: the cookie banner asks
+ * again and new leads record the version they accepted.
+ */
+export const legal = {
+  groupName: "Grupo Q-Max",
+  companies: [
+    { brand: "Q-Max Auditoria e Consultoria", legalName: "[RAZÃO SOCIAL]", cnpj: "[CNPJ]" },
+    { brand: "Q-Max Contábil", legalName: "[RAZÃO SOCIAL]", cnpj: "[CNPJ]" },
+    { brand: "Q-Max Talents", legalName: "[RAZÃO SOCIAL]", cnpj: "[CNPJ]" },
+    { brand: "Q-Max Technology", legalName: "[RAZÃO SOCIAL]", cnpj: "[CNPJ]" },
+    { brand: "FINORA", legalName: "[RAZÃO SOCIAL]", cnpj: "[CNPJ]" },
+    { brand: "Lagerhaus Coworking & Negócios", legalName: "[RAZÃO SOCIAL]", cnpj: "[CNPJ]" },
+  ],
+  /** Company shown in the footer as the main controller. */
+  mainCompanyIndex: 0,
+  address: "R. Frei Gaspar, 941 - Conjunto 103-105, Centro, São Bernardo do Campo - SP, CEP 09710-180",
+  dpoName: "Encarregado de Proteção de Dados (DPO)",
+  dpoEmail: "dpo@grupoqmax.com.br",
+  privacyVersion: "2026-11-17",
+  lastUpdated: "17 de novembro de 2026",
+  responseDays: 15,
+  retention: {
+    leadsMonths: 24,
+    pageVisitsMonths: 6,
+  },
+} as const;

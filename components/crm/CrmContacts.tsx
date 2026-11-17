@@ -7,7 +7,7 @@ import { Building2, Download, Upload, Users } from "lucide-react";
 import { matches } from "@/lib/text-search";
 import { downloadCsv } from "@/lib/csv";
 import { alertDialog } from "@/components/ui/Dialogs";
-import { useCan } from "./CrmAccess";
+import { useCan, useViewer } from "./CrmAccess";
 
 type DealLink = { number: number; title: string };
 
@@ -53,6 +53,8 @@ export function CrmContacts({ contacts, companies }: { contacts: ContactRow[]; c
   const shownCompanies = companies.filter((c) => matches(search, c.name, c.email, c.phone, c.document));
   const dealList = (deals: DealLink[]) => deals.map((d) => `#${d.number} ${d.title}`).join(", ");
   const can = useCan();
+  // LGPD: bulk export of personal data only for CRM admins (fewer copies of contact lists outside the system)
+  const { isAdmin } = useViewer();
   const router = useRouter();
   const [importing, setImporting] = useState(false);
 
@@ -101,14 +103,16 @@ export function CrmContacts({ contacts, companies }: { contacts: ContactRow[]; c
             <Building2 size={16} /> Empresas ({companies.length})
           </button>
         </div>
-        <button
-          type="button"
-          className="btn-secondary"
-          onClick={exportCsv}
-          disabled={!(view === "contacts" ? shownContacts : shownCompanies).length}
-        >
-          <Download size={16} /> Exportar CSV
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={exportCsv}
+            disabled={!(view === "contacts" ? shownContacts : shownCompanies).length}
+          >
+            <Download size={16} /> Exportar CSV
+          </button>
+        )}
         {can("deal.create") && (
           <label
             className="btn-secondary"

@@ -11,13 +11,13 @@
   max-width: 1100px;
   margin: 0 auto;
   z-index: 99990;
-  background: rgba(13, 14, 18, 0.94);
+  background: rgba(7, 7, 8, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
   padding: 24px 28px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(20, 208, 193, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(217, 15, 129, 0.15);
   animation: qmaxCookieSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   color: #f4f4f5;
   font-family: var(--font-montserrat, "Montserrat", sans-serif);
@@ -58,9 +58,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(20, 208, 193, 0.12);
-  border: 1px solid rgba(20, 208, 193, 0.3);
-  color: #14d0c1;
+  background: rgba(217, 15, 129, 0.12);
+  border: 1px solid rgba(217, 15, 129, 0.3);
+  color: var(--qmax-magenta, #d90f81);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -85,14 +85,14 @@
 }
 
 .qmax-cookie-desc a {
-  color: #14d0c1;
+  color: var(--qmax-magenta, #d90f81);
   text-decoration: underline;
   text-underline-offset: 3px;
   transition: color 0.2s ease;
 }
 
 .qmax-cookie-desc a:hover {
-  color: #4df8ec;
+  color: var(--qmax-magenta-bright, #ff2b91);
 }
 
 .qmax-cookie-actions {
@@ -118,17 +118,17 @@
 }
 
 .qmax-cookie-btn-primary {
-  background: linear-gradient(135deg, #14d0c1 0%, #0bb3a5 100%);
-  color: #050506;
+  background: linear-gradient(135deg, var(--qmax-magenta, #d90f81) 0%, var(--qmax-magenta-bright, #ff2b91) 100%);
+  color: #fff;
   border: none;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(20, 208, 193, 0.25);
+  box-shadow: 0 4px 14px rgba(217, 15, 129, 0.25);
 }
 
 .qmax-cookie-btn-primary:hover {
-  background: linear-gradient(135deg, #4df8ec 0%, #14d0c1 100%);
+  background: linear-gradient(135deg, var(--qmax-magenta-bright, #ff2b91) 0%, var(--qmax-magenta, #d90f81) 100%);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(20, 208, 193, 0.35);
+  box-shadow: 0 6px 18px rgba(217, 15, 129, 0.35);
 }
 
 .qmax-cookie-btn-secondary {
@@ -160,10 +160,10 @@
   bottom: 24px;
   left: 24px;
   z-index: 99980;
-  background: rgba(13, 14, 18, 0.88);
+  background: rgba(7, 7, 8, 0.88);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #14d0c1;
+  color: var(--qmax-magenta, #d90f81);
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -176,10 +176,10 @@
 }
 
 .qmax-cookie-floating-toggle:hover {
-  background: #14d0c1;
-  color: #050506;
+  background: var(--qmax-magenta, #d90f81);
+  color: #fff;
   transform: scale(1.08) rotate(15deg);
-  box-shadow: 0 10px 30px rgba(20, 208, 193, 0.4);
+  box-shadow: 0 10px 30px rgba(217, 15, 129, 0.4);
 }
 
 /* Modal Overlay */
@@ -312,8 +312,8 @@
 }
 
 .qmax-cookie-category-badge.always {
-  background: rgba(20, 208, 193, 0.15);
-  color: #14d0c1;
+  background: rgba(217, 15, 129, 0.15);
+  color: var(--qmax-magenta, #d90f81);
 }
 
 .qmax-cookie-category-badge.optional {
@@ -365,11 +365,11 @@
 }
 
 .qmax-cookie-switch input:checked + .qmax-cookie-slider {
-  background-color: #14d0c1;
+  background-color: var(--qmax-magenta, #d90f81);
 }
 
 .qmax-cookie-switch input:focus + .qmax-cookie-slider {
-  box-shadow: 0 0 1px #14d0c1;
+  box-shadow: 0 0 1px var(--qmax-magenta, #d90f81);
 }
 
 .qmax-cookie-switch input:checked + .qmax-cookie-slider:before {

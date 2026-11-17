@@ -1,302 +1,341 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Shield, Lock, FileText, CheckCircle2, AlertCircle, Mail, Building, Scale, ArrowRight } from "lucide-react";
+import { Shield, FileText, Mail, Building, Scale, ArrowRight } from "lucide-react";
+import { legal } from "@/data/site";
 import "@/app/legal.css";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidade e Proteção de Dados (LGPD) | Grupo Q-Max",
+  title: "Política de Privacidade (LGPD)",
   description:
-    "Conheça nossa Política de Privacidade e Governança de Dados em estrita conformidade com a Lei Geral de Proteção de Dados (Lei Federal nº 13.709/2018 - LGPD).",
-  alternates: {
-    canonical: "/politica-de-privacidade",
-  },
+    "Como o Grupo Q-Max trata dados pessoais: quais dados, para quê, com quem compartilha, por quanto tempo e como exercer seus direitos (Lei nº 13.709/2018).",
+  alternates: { canonical: "/politica-de-privacidade" },
   openGraph: {
     title: "Política de Privacidade | Grupo Q-Max",
-    description:
-      "Transparência, segurança e governança no tratamento de dados pessoais pelo Grupo Q-Max em conformidade com a LGPD.",
+    description: "Como o Grupo Q-Max trata dados pessoais conforme a LGPD.",
     url: "/politica-de-privacidade",
     type: "website",
   },
 };
 
-export default function PoliticaPrivacidadePage() {
-  const dataAtualizacao = "27 de Outubro de 2026";
+/*
+ * Keep this page in step with the code: every row below matches a real form, cookie or integration.
+ * When a new form, tracker or partner is added, update the tables and bump legal.privacyVersion
+ * in data/site.ts (the cookie banner then asks again).
+ */
+const operations = [
+  {
+    origin: "Formulário “Fale com o especialista” do site",
+    data: "Nome, empresa (opcional), telefone/WhatsApp (opcional), unidade de interesse, data do aceite e versão desta política.",
+    purpose: "Responder ao seu pedido de contato e diagnóstico. A conversa segue no WhatsApp.",
+    basis: "Consentimento (art. 7º, I) e procedimentos preliminares a contrato a seu pedido (art. 7º, V).",
+    retention: `${legal.retention.leadsMonths} meses após o envio, ou até você pedir a exclusão.`,
+  },
+  {
+    origin: "Estatísticas de visita (somente se você autorizar no aviso de cookies)",
+    data: "Página visitada, site de origem (apenas o domínio) e data. Pelo Google Analytics: identificador de cookie, dados do dispositivo e localização aproximada, com IP anonimizado.",
+    purpose: "Saber quais páginas e serviços interessam mais e melhorar o site.",
+    basis: "Consentimento (art. 7º, I), revogável a qualquer momento em “Preferências de Cookies”.",
+    retention: `Contador próprio: ${legal.retention.pageVisitsMonths} meses. Google Analytics: 14 meses.`,
+  },
+  {
+    origin: "Cadastro em ativações e eventos FINORA (ex.: roleta e sorteios em feiras)",
+    data: "Nome, CPF, WhatsApp, e-mail, CRO e UF, nome da clínica, número de cadeiras (quando pedido), código VIP. Para evitar fraude: identificador do aparelho, IP e navegador.",
+    purpose: "Validar a participação (um cadastro por pessoa), enviar o PIN e o resultado por WhatsApp, entregar prêmios e agendar a reunião solicitada.",
+    basis: "Execução do regulamento que você aceita (art. 7º, V) e prevenção à fraude (art. 11, II, “g” e art. 7º, IX). Envio de novidades e contato comercial só com o seu consentimento separado (art. 7º, I).",
+    retention: "12 meses após o fim do evento; depois os dados são anonimizados. Quem autorizou novidades permanece até revogar.",
+  },
+  {
+    origin: "Propostas comerciais e contratação",
+    data: "Dados de contato, CNPJ, nome e CPF de quem aceita a proposta, IP e data do aceite. Documentos de onboarding enviados por você: contrato social, certificado digital, alvará e folha de pagamento.",
+    purpose: "Formalizar e comprovar a contratação, assinar o contrato eletronicamente e iniciar a prestação do serviço contábil.",
+    basis: "Execução de contrato (art. 7º, V), obrigação legal (art. 7º, II) e exercício regular de direitos (art. 7º, VI).",
+    retention: "Durante o contrato e pelos prazos legais (fiscais, contábeis e trabalhistas, em regra 5 anos). Documentos de propostas não aceitas: até 90 dias.",
+  },
+  {
+    origin: "Clientes e serviços prestados (contábil, auditoria, RH, coworking)",
+    data: "Dados societários, de sócios, fiscais, contábeis e, na folha de pagamento, dados de empregados do cliente.",
+    purpose: "Prestar o serviço contratado e cumprir obrigações perante Receita Federal, Fazendas, eSocial e demais órgãos.",
+    basis: "Execução de contrato (art. 7º, V) e obrigação legal (art. 7º, II). Para dados de empregados do cliente, o Grupo Q-Max atua como operador, seguindo as instruções do cliente (controlador).",
+    retention: "Prazos legais de guarda de cada obrigação.",
+  },
+  {
+    origin: "Currículos enviados por e-mail ou WhatsApp (Q-Max Talents)",
+    data: "Currículo e dados de contato que você decidir enviar.",
+    purpose: "Avaliar seu perfil para vagas do Grupo ou de clientes de recrutamento.",
+    basis: "Procedimentos preliminares a contrato a seu pedido (art. 7º, V) e consentimento para indicação a clientes (art. 7º, I).",
+    retention: "Até 12 meses após o envio, salvo pedido de exclusão antes disso.",
+  },
+];
 
+const processors = [
+  ["Microsoft (Azure e Microsoft 365)", "Hospedagem do site e dos sistemas, banco de dados e e-mail.", "Brasil e/ou exterior"],
+  ["Google (Analytics e Maps)", "Estatísticas de visita e mapa, somente com a sua autorização.", "Exterior (EUA)"],
+  ["Meta (WhatsApp)", "Conversa que você inicia pelo site.", "Exterior"],
+  ["Z-API", "Envio do PIN e de avisos por WhatsApp nas ativações FINORA.", "Brasil"],
+  ["D4Sign", "Assinatura eletrônica de contratos.", "Brasil"],
+  ["Ferramentas de CRM (ex.: RD Station)", "Somente para participantes de eventos que autorizaram receber novidades.", "Brasil e/ou exterior"],
+  ["Órgãos públicos", "Receita Federal, Fazendas, Prefeituras, Junta Comercial, eSocial, quando a lei exige.", "Brasil"],
+  ["Autoridades", "Quando houver ordem judicial ou requisição legal.", "Brasil"],
+];
+
+export default function PoliticaPrivacidadePage() {
   return (
     <main className="qmax-legal-page">
       <div className="qmax-legal-container">
-        {/* Header */}
         <header className="qmax-legal-header">
           <div className="qmax-legal-badge">
-            <Shield size={14} /> Lei Federal nº 13.709/2018 (LGPD)
+            <Shield size={14} /> Lei nº 13.709/2018 (LGPD)
           </div>
-          <h1 className="qmax-legal-title">Política de Privacidade e Proteção de Dados</h1>
+          <h1 className="qmax-legal-title">Política de Privacidade</h1>
           <p className="qmax-legal-subtitle">
-            Diretrizes corporativas de governança, segurança da informação e garantia dos direitos fundamentais de
-            privacidade e autodeterminação informativa no âmbito de todas as unidades do Grupo Q-Max.
+            Como o {legal.groupName} trata seus dados pessoais, por que, com quem compartilha, por quanto tempo e como
+            você exerce seus direitos.
           </p>
           <div className="qmax-legal-meta">
             <span className="qmax-legal-meta-item">
-              <FileText size={14} /> Versão 3.1
+              <FileText size={14} /> Versão {legal.privacyVersion}
             </span>
             <span className="qmax-legal-meta-item">
-              <Building size={14} /> Grupo Q-Max Consolidado
+              <Building size={14} /> {legal.groupName}
             </span>
             <span className="qmax-legal-meta-item">
-              <Scale size={14} /> Atualizado em: {dataAtualizacao}
+              <Scale size={14} /> Atualizado em {legal.lastUpdated}
             </span>
           </div>
         </header>
 
-        {/* Sumário Rápido */}
         <nav className="qmax-legal-index" aria-label="Índice da Política">
           <div className="qmax-legal-index-title">
-            <FileText size={16} color="#14d0c1" /> Índice da Política de Privacidade
+            <FileText size={16} /> Índice
           </div>
           <ul className="qmax-legal-index-list">
-            <li><a href="#controlador">1. Identificação do Controlador</a></li>
-            <li><a href="#dpo">2. Encarregado de Dados (DPO)</a></li>
-            <li><a href="#principios">3. Princípios e Compromisso Legal</a></li>
-            <li><a href="#dados-coletados">4. Dados Coletados e Finalidades</a></li>
-            <li><a href="#bases-legais">5. Bases Legais de Tratamento</a></li>
-            <li><a href="#direitos-titular">6. Direitos do Titular (Art. 18)</a></li>
-            <li><a href="#compartilhamento">7. Compartilhamento de Dados</a></li>
-            <li><a href="#seguranca">8. Segurança da Informação</a></li>
-            <li><a href="#retencao">9. Retenção e Descarte</a></li>
-            <li><a href="#isencao">10. Limitação de Responsabilidade</a></li>
-            <li><a href="#foro">11. Legislação Aplicável e Foro</a></li>
+            <li><a href="#controlador">1. Quem é o controlador</a></li>
+            <li><a href="#dpo">2. Encarregado (DPO)</a></li>
+            <li><a href="#dados">3. Quais dados tratamos e por quê</a></li>
+            <li><a href="#minimizacao">4. O que não coletamos</a></li>
+            <li><a href="#compartilhamento">5. Com quem compartilhamos</a></li>
+            <li><a href="#internacional">6. Transferência internacional</a></li>
+            <li><a href="#cookies">7. Cookies</a></li>
+            <li><a href="#direitos">8. Seus direitos</a></li>
+            <li><a href="#seguranca">9. Segurança e incidentes</a></li>
+            <li><a href="#retencao">10. Retenção e exclusão</a></li>
+            <li><a href="#menores">11. Crianças e adolescentes</a></li>
+            <li><a href="#alteracoes">12. Alterações desta política</a></li>
+            <li><a href="#lei">13. Legislação e foro</a></li>
           </ul>
         </nav>
 
-        {/* Conteúdo Principal */}
         <article className="qmax-legal-body">
-          {/* Seção 1 */}
           <section id="controlador" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">1. Identificação do Controlador</h2>
+            <h2 className="qmax-legal-heading">1. Quem é o controlador</h2>
             <p>
-              O <strong>GRUPO Q-MAX</strong>, sociedade empresária com sede na Rua Frei Gaspar, 941 - Conjunto 103-105,
-              Centro, São Bernardo do Campo - SP, CEP 09710-180, doravante denominado simplesmente &quot;Controlador&quot;,
-              atua no ecossistema de soluções corporativas integradas compreendendo as seguintes unidades e marcas
-              associadas:
+              O {legal.groupName} reúne as empresas abaixo, com sede em {legal.address}. Cada empresa é controladora dos
+              dados tratados nos serviços que presta; os canais do site são operados em conjunto.
             </p>
-            <ul>
-              <li><strong>Q-Max Auditoria e Consultoria</strong> (serviços de auditoria independente, controles internos e compliance);</li>
-              <li><strong>Q-Max Contábil</strong> (assessoria contábil, tributária, fiscal e outsourcing de folha de pagamento);</li>
-              <li><strong>Q-Max Talents</strong> (recrutamento executivo, seleção e gestão estratégica de talentos);</li>
-              <li><strong>Q-Max Technology</strong> (desenvolvimento de soluções de software corporativo, integrações e plataformas digitais);</li>
-              <li><strong>FINORA</strong> (soluções em inteligência fiscal e gestão contábil para clínicas e profissionais de saúde);</li>
-              <li><strong>Lagerhaus Coworking &amp; Negócios</strong> (espaço empresarial, domicílio fiscal e salas corporativas).</li>
-            </ul>
-            <p>
-              Esta Política aplica-se indistintamente a todos os portais, sistemas web, plataformas e serviços operados sob o
-              domínios <code>grupoqmax.com.br</code> e <code>qmaxbrasil.com.br</code> e suas aplicações vinculadas.
-            </p>
-          </section>
-
-          {/* Seção 2 */}
-          <section id="dpo" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">2. Encarregado pelo Tratamento de Dados Pessoais (DPO)</h2>
-            <p>
-              Em atendimento formal ao Artigo 41 da Lei nº 13.709/2018 (LGPD), o Grupo Q-Max instituiu um Encarregado
-              de Proteção de Dados (Data Protection Officer - DPO) dedicado a intermediar a comunicação entre os
-              titulares dos dados, a empresa e a Autoridade Nacional de Proteção de Dados (ANPD).
-            </p>
-            <div className="qmax-legal-callout">
-              <div className="qmax-legal-callout-title">
-                <Mail size={16} color="#14d0c1" /> Canal Oficial do Encarregado (DPO)
-              </div>
-              <p style={{ margin: 0 }}>
-                Para exercer qualquer direito previsto em lei, esclarecer dúvidas ou encaminhar notificações sobre
-                privacidade, contate formalmente nosso DPO através do e-mail:{" "}
-                <a href="mailto:dpo@grupoqmax.com.br"><strong>dpo@grupoqmax.com.br</strong></a> ou{" "}
-                <a href="mailto:privacidade@grupoqmax.com.br"><strong>privacidade@grupoqmax.com.br</strong></a>.
-              </p>
-            </div>
-          </section>
-
-          {/* Seção 3 */}
-          <section id="principios" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">3. Princípios e Compromisso Legal</h2>
-            <p>
-              O tratamento de dados pessoais no Grupo Q-Max é pautado pela boa-fé e pela estrita observância de todos os
-              princípios consagrados pelo Artigo 6º da LGPD:
-            </p>
-            <ul>
-              <li><strong>Finalidade:</strong> Realização do tratamento para propósitos legítimos, específicos e informados;</li>
-              <li><strong>Adequação:</strong> Compatibilidade do tratamento com as finalidades comunicadas ao titular;</li>
-              <li><strong>Necessidade (Minimização):</strong> Coleta limitada ao mínimo estritamente indispensável para a realização de suas finalidades;</li>
-              <li><strong>Livre Acesso:</strong> Garantia de consulta facilitada e gratuita aos titulares sobre a forma e a duração do tratamento;</li>
-              <li><strong>Qualidade dos Dados:</strong> Garantia de exatidão, clareza, relevância e atualização contínua;</li>
-              <li><strong>Transparência:</strong> Informações claras, precisas e facilmente acessíveis aos titulares;</li>
-              <li><strong>Segurança:</strong> Emprego de medidas técnicas e administrativas aptas a proteger os dados de acessos não autorizados;</li>
-              <li><strong>Prevenção:</strong> Adoção de medidas para evitar a ocorrência de danos em virtude do tratamento;</li>
-              <li><strong>Não Discriminação:</strong> Impossibilidade de realização de tratamento para fins discriminatórios ou abusivos;</li>
-              <li><strong>Responsabilização e Prestação de Contas:</strong> Demonstração de eficácia das medidas adotadas.</li>
-            </ul>
-          </section>
-
-          {/* Seção 4 */}
-          <section id="dados-coletados" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">4. Dados Coletados e Finalidades do Tratamento</h2>
-            <p>
-              As informações pessoais tratadas pelo Grupo Q-Max dependem da interação estabelecida com as nossas
-              plataformas e serviços:
-            </p>
-
             <div className="qmax-legal-table-wrapper">
               <table className="qmax-legal-table">
                 <thead>
                   <tr>
-                    <th>Origem / Categoria</th>
-                    <th>Dados Coletados</th>
-                    <th>Finalidade Específica</th>
+                    <th>Marca</th>
+                    <th>Razão social</th>
+                    <th>CNPJ</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {legal.companies.map((company) => (
+                    <tr key={company.brand}>
+                      <td><strong>{company.brand}</strong></td>
+                      <td>{company.legalName}</td>
+                      <td>{company.cnpj}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p>
+              Esta política vale para os sites <code>grupoqmax.com.br</code> e <code>qmaxbrasil.com.br</code>, suas
+              páginas de eventos e de propostas, e para os atendimentos feitos a partir deles.
+            </p>
+          </section>
+
+          <section id="dpo" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">2. Encarregado pelo tratamento de dados (DPO)</h2>
+            <div className="qmax-legal-callout">
+              <div className="qmax-legal-callout-title">
+                <Mail size={16} /> Canal do encarregado
+              </div>
+              <p style={{ margin: 0 }}>
+                {legal.dpoName}:{" "}
+                <a href={`mailto:${legal.dpoEmail}`}><strong>{legal.dpoEmail}</strong></a>. Use este canal para dúvidas,
+                pedidos sobre seus dados e comunicações da ANPD (art. 41 da LGPD).
+              </p>
+            </div>
+          </section>
+
+          <section id="dados" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">3. Quais dados tratamos e por quê</h2>
+            <p>Tratamos apenas os dados necessários para cada finalidade abaixo.</p>
+            <div className="qmax-legal-table-wrapper">
+              <table className="qmax-legal-table">
+                <thead>
                   <tr>
-                    <td><strong>Formulários de Contato e Diagnóstico</strong></td>
-                    <td>Nome completo, endereço de e-mail corporativo/pessoal, telefone/WhatsApp, nome da empresa e mensagem.</td>
-                    <td>Responder solicitações, elaborar propostas comerciais customizadas e viabilizar contato técnico solicitado.</td>
+                    <th>Onde</th>
+                    <th>Dados</th>
+                    <th>Finalidade</th>
+                    <th>Base legal</th>
+                    <th>Prazo</th>
                   </tr>
+                </thead>
+                <tbody>
+                  {operations.map((row) => (
+                    <tr key={row.origin}>
+                      <td><strong>{row.origin}</strong></td>
+                      <td>{row.data}</td>
+                      <td>{row.purpose}</td>
+                      <td>{row.basis}</td>
+                      <td>{row.retention}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p>
+              Quando a base é o consentimento, você pode revogá-lo a qualquer momento, sem custo, pelo e-mail do
+              encarregado ou, para cookies, em “Preferências de Cookies” no rodapé. A revogação não afeta o que foi feito
+              antes dela.
+            </p>
+          </section>
+
+          <section id="minimizacao" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">4. O que não coletamos</h2>
+            <ul>
+              <li>Não pedimos dados sensíveis (saúde, religião, biometria, etc.) nos formulários do site.</li>
+              <li>O contador de visitas próprio não guarda IP, nome, e-mail nem identificador de navegador.</li>
+              <li>Não usamos cookies de publicidade nem fazemos remarketing.</li>
+              <li>Não vendemos nem alugamos dados pessoais.</li>
+              <li>Não tomamos decisões automatizadas que afetem seus interesses com base nos dados do site.</li>
+            </ul>
+          </section>
+
+          <section id="compartilhamento" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">5. Com quem compartilhamos</h2>
+            <p>
+              Compartilhamos dados somente com os fornecedores (operadores) e órgãos abaixo, na medida do necessário para
+              cada finalidade, e entre as empresas do {legal.groupName} para atender ao serviço que você pediu.
+            </p>
+            <div className="qmax-legal-table-wrapper">
+              <table className="qmax-legal-table">
+                <thead>
                   <tr>
-                    <td><strong>Navegação e Telemetria</strong></td>
-                    <td>Endereço IP, data e hora de acesso, tipo de navegador, sistema operacional e páginas visualizadas.</td>
-                    <td>Cumprir obrigação legal do Marco Civil da Internet (guarda de logs por 6 meses) e prevenção a fraudes/ataques.</td>
+                    <th>Quem</th>
+                    <th>Para quê</th>
+                    <th>Onde</th>
                   </tr>
-                  <tr>
-                    <td><strong>Contratação e Serviços Contábeis/Fiscais</strong></td>
-                    <td>Dados societários, CPF/CNPJ de sócios, informações fiscais, bancárias e contábeis de clientes contratantes.</td>
-                    <td>Execução do contrato de prestação de serviços contábeis, apuração tributária e envio de obrigações acessórias ao Fisco.</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Q-Max Talents (Candidatos)</strong></td>
-                    <td>Currículo profissional, histórico de formação, experiências anteriores e dados de contato.</td>
-                    <td>Processos seletivos, triagem de competências e encaminhamento a vagas condizentes com o perfil do candidato.</td>
-                  </tr>
+                </thead>
+                <tbody>
+                  {processors.map(([who, why, where]) => (
+                    <tr key={who}>
+                      <td><strong>{who}</strong></td>
+                      <td>{why}</td>
+                      <td>{where}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </section>
 
-          {/* Seção 5 */}
-          <section id="bases-legais" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">5. Bases Legais de Tratamento</h2>
+          <section id="internacional" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">6. Transferência internacional</h2>
             <p>
-              Nenhum dado é tratado sem enquadramento prévio em uma das bases legais expressamente autorizadas pela
-              legislação federal:
-            </p>
-            <ul>
-              <li><strong>Execução de Contrato ou Procedimentos Preliminares (Art. 7º, V):</strong> Necessário para o cumprimento de contratos com clientes, parceiros e colaboradores ou para etapas que antecedem a contratação;</li>
-              <li><strong>Cumprimento de Obrigação Legal ou Regulatória (Art. 7º, II):</strong> Para cumprimento de normas do Conselho Federal de Contabilidade (CFC), Receita Federal do Brasil, Secretarias da Fazenda e Ministério do Trabalho;</li>
-              <li><strong>Legítimo Interesse (Art. 7º, IX):</strong> Para aprimoramento da segurança cibernética, prevenção contra fraudes e melhoria contínua da usabilidade das plataformas;</li>
-              <li><strong>Consentimento (Art. 7º, I):</strong> Quando expressamente requerido para comunicações promocionais e cookies analíticos opcionais.</li>
-            </ul>
-          </section>
-
-          {/* Seção 6 */}
-          <section id="direitos-titular" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">6. Direitos do Titular dos Dados (Art. 18 da LGPD)</h2>
-            <p>
-              O titular dos dados possui o direito inalienável de obter do Controlador, a qualquer momento e mediante
-              requisição expressa e gratuita:
-            </p>
-            <ul>
-              <li><strong>Confirmação da existência de tratamento</strong> de seus dados;</li>
-              <li><strong>Acesso aos dados</strong> tratados pelo Grupo Q-Max;</li>
-              <li><strong>Correção</strong> de dados incompletos, inexatos ou desatualizados;</li>
-              <li><strong>Anonimização, bloqueio ou eliminação</strong> de dados desnecessários, excessivos ou tratados em desconformidade com a lei;</li>
-              <li><strong>Portabilidade dos dados</strong> a outro fornecedor de serviço, mediante requisição expressa e resguardados os segredos comerciais;</li>
-              <li><strong>Eliminação dos dados pessoais</strong> tratados com o seu consentimento, exceto nas hipóteses de conservação legalmente admitidas;</li>
-              <li><strong>Informação das entidades públicas e privadas</strong> com as quais o Controlador realizou uso compartilhado de dados;</li>
-              <li><strong>Revogação do consentimento</strong> de forma facilitada e a qualquer tempo.</li>
-            </ul>
-            <p>
-              Para o exercício de qualquer um desses direitos, basta enviar e-mail com a identificação do titular para{" "}
-              <a href="mailto:dpo@grupoqmax.com.br"><strong>dpo@grupoqmax.com.br</strong></a>. Nossa equipe responderá no prazo
-              legal estipulado pela ANPD.
+              Alguns fornecedores (Google, Microsoft, Meta) podem armazenar dados fora do Brasil. Essas transferências se
+              apoiam nas hipóteses do art. 33 da LGPD, como cláusulas contratuais padrão e garantias oferecidas pelos
+              fornecedores, e, no caso das estatísticas do Google, no seu consentimento específico.
             </p>
           </section>
 
-          {/* Seção 7 */}
-          <section id="compartilhamento" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">7. Compartilhamento de Dados</h2>
+          <section id="cookies" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">7. Cookies</h2>
             <p>
-              O Grupo Q-Max não comercializa, não aluga e não compartilha dados pessoais com terceiros para fins de
-              marketing não autorizado. O compartilhamento ocorre exclusivamente nas hipóteses estritamente necessárias:
+              Só usamos o armazenamento necessário para o site funcionar. Estatísticas e o mapa do Google ficam
+              desligados até você autorizar. A lista completa está na{" "}
+              <Link href="/politica-de-cookies">Política de Cookies</Link>.
             </p>
-            <ul>
-              <li><strong>Provedores de Infraestrutura de Nuvem:</strong> Servidores em nuvem de alta segurança (Microsoft Azure), com redundância e certificações internacionais de proteção (ISO 27001, SOC 2);</li>
-              <li><strong>Órgãos Governamentais e Reguladores:</strong> Receita Federal, Prefeituras, Secretarias Estaduais da Fazenda, Caixa Econômica Federal e Junta Comercial, para cumprimento inescusável de obrigações legais;</li>
-              <li><strong>Instituições Financeiras Homologadas:</strong> Para processamento seguro de pagamentos e emissão de notas fiscais;</li>
-              <li><strong>Determinação Judicial ou Policial:</strong> Mediante ordem judicial fundamentada ou solicitação expressa da ANPD.</li>
-            </ul>
           </section>
 
-          {/* Seção 8 */}
+          <section id="direitos" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">8. Seus direitos (art. 18 da LGPD)</h2>
+            <p>Você pode pedir, de graça, a qualquer momento:</p>
+            <ul>
+              <li>confirmação de que tratamos seus dados e acesso a eles;</li>
+              <li>correção de dados incompletos, errados ou desatualizados;</li>
+              <li>anonimização, bloqueio ou eliminação de dados desnecessários, excessivos ou tratados em desacordo com a lei;</li>
+              <li>portabilidade a outro fornecedor;</li>
+              <li>eliminação dos dados tratados com seu consentimento, salvo guarda exigida por lei;</li>
+              <li>informação sobre com quem compartilhamos seus dados;</li>
+              <li>informação sobre a possibilidade de não consentir e as consequências disso;</li>
+              <li>revogação do consentimento;</li>
+              <li>revisão de decisões tomadas apenas com base em tratamento automatizado.</li>
+            </ul>
+            <p>
+              Envie o pedido para <a href={`mailto:${legal.dpoEmail}`}><strong>{legal.dpoEmail}</strong></a>. Podemos
+              pedir uma confirmação de identidade para proteger seus dados. Respondemos em até {legal.responseDays} dias.
+              Se não ficar satisfeito, você pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD) em{" "}
+              <a href="https://www.gov.br/anpd" target="_blank" rel="noopener noreferrer">gov.br/anpd</a> ou aos órgãos de
+              defesa do consumidor.
+            </p>
+          </section>
+
           <section id="seguranca" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">8. Segurança da Informação e Blindagem Técnica</h2>
+            <h2 className="qmax-legal-heading">9. Segurança e incidentes</h2>
             <p>
-              Adotamos medidas técnicas, operacionais e administrativas de nível empresarial para blindar as informações contra
-              acesso não autorizado, destruição, perda, alteração ou vazamento:
+              Usamos medidas técnicas e administrativas razoáveis para proteger os dados, entre elas: conexão HTTPS,
+              acesso restrito por login às áreas internas, permissões por perfil, limite de tentativas nos formulários,
+              CPF cifrado nos cadastros de eventos e registro de acessos administrativos. Nenhum sistema é totalmente
+              imune a falhas. Se ocorrer um incidente de segurança com risco ou dano relevante, comunicaremos a ANPD e os
+              titulares afetados, como manda o art. 48 da LGPD.
             </p>
-            <ul>
-              <li>Criptografia de ponta a ponta em trânsito com protocolo <strong>TLS 1.3 / HTTPS</strong> e certificados de alta confidencialidade;</li>
-              <li>Isolamento de credenciais e senhas através de algoritmos criptográficos modernos de hashing (Bcrypt / Argon2);</li>
-              <li>Controle de acesso granular baseado no princípio do menor privilégio (Least Privilege Access);</li>
-              <li>Proteção contra ataques automatizados, limitação de taxa (Rate Limiting) e prevenção contra ataques CSRF e XSS;</li>
-              <li>Backups periódicos e testes contínuos de integridade e continuidade de negócios.</li>
-            </ul>
           </section>
 
-          {/* Seção 9 */}
           <section id="retencao" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">9. Retenção e Descarte de Dados</h2>
+            <h2 className="qmax-legal-heading">10. Retenção e exclusão</h2>
             <p>
-              Os dados pessoais serão retidos pelo período estritamente necessário para cumprir as finalidades para as quais
-              foram coletados, observados os prazos prescricionais previstos na legislação brasileira (Código Civil, Código
-              Tributário Nacional, Consolidação das Leis do Trabalho e normas do CFC). Após o término da finalidade e do prazo
-              legal obrigatório, os dados serão eliminados ou anonimizados de forma segura e irreversível.
+              Guardamos os dados pelos prazos da tabela da seção 3. Encerrado o prazo, os dados são eliminados ou
+              anonimizados automaticamente, exceto quando a lei exige guarda por mais tempo (por exemplo, documentos
+              fiscais, contábeis e trabalhistas) ou para defesa em processos (art. 16 da LGPD).
             </p>
           </section>
 
-          {/* Seção 10 */}
-          <section id="isencao" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">10. Limitação de Responsabilidade</h2>
-            <div className="qmax-legal-callout qmax-legal-callout-warning">
-              <div className="qmax-legal-callout-title">
-                <AlertCircle size={16} color="#f59e0b" /> Cláusula de Isenção de Responsabilidade
-              </div>
-              <p style={{ margin: 0 }}>
-                O Grupo Q-Max emprega os mais elevados padrões técnicos razoáveis e disponíveis para garantir a segurança dos
-                dados. Todavia, a empresa <strong>não será responsabilizada</strong> por: (i) atos culposos ou dolosos
-                praticados exclusivamente pelo titular (como compartilhamento voluntário ou negligente de suas senhas ou
-                acesso a links maliciosos em dispositivos próprios); (ii) ataques cibernéticos de força maior ou que
-                extrapolem o estado da técnica de segurança universalmente aplicável; (iii) veracidade ou exatidão de dados
-                unilateralmente inseridos por usuários e visitantes nos formulários.
-              </p>
-            </div>
+          <section id="menores" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">11. Crianças e adolescentes</h2>
+            <p>
+              Nossos serviços são voltados a empresas e profissionais. Não coletamos intencionalmente dados de menores de
+              18 anos. Se isso ocorrer, escreva para o encarregado e os dados serão excluídos.
+            </p>
           </section>
 
-          {/* Seção 11 */}
-          <section id="foro" className="qmax-legal-section">
-            <h2 className="qmax-legal-heading">11. Legislação Aplicável e Foro de Eleição</h2>
+          <section id="alteracoes" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">12. Alterações desta política</h2>
             <p>
-              Esta Política é regida e interpretada em conformidade integral com as Leis da República Federativa do Brasil, em
-              especial a Lei nº 13.709/2018 (LGPD), a Lei nº 12.965/2014 (Marco Civil da Internet) e o Código de Defesa do
-              Consumidor.
+              Podemos atualizar esta política. A versão e a data ficam no topo da página. Mudanças relevantes são
+              avisadas no site, e o aviso de cookies é exibido de novo para você confirmar suas escolhas.
             </p>
+          </section>
+
+          <section id="lei" className="qmax-legal-section">
+            <h2 className="qmax-legal-heading">13. Legislação e foro</h2>
             <p>
-              Fica eleito o <strong>Foro da Comarca de São Bernardo do Campo, Estado de São Paulo</strong>, com expressa renúncia
-              a qualquer outro, por mais privilegiado que seja, para dirimir quaisquer controvérsias oriundas desta Política.
+              Esta política segue a legislação brasileira, em especial a Lei nº 13.709/2018 (LGPD), a Lei nº 12.965/2014
+              (Marco Civil da Internet) e o Código de Defesa do Consumidor. Fica eleito o foro da Comarca de São Bernardo
+              do Campo/SP, ressalvado o direito do consumidor de propor ação no foro do seu domicílio.
             </p>
           </section>
         </article>
 
-        {/* Rodapé Interno com Botões de Ação */}
         <div style={{ marginTop: 40, paddingTop: 30, borderTop: "1px solid rgba(255, 255, 255, 0.1)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
           <div style={{ fontSize: "0.86rem", color: "#a1a1aa" }}>
-            Dúvidas jurídicas ou exercício de direitos? Entre em contato com{" "}
-            <a href="mailto:dpo@grupoqmax.com.br" style={{ color: "#14d0c1", fontWeight: 600 }}>dpo@grupoqmax.com.br</a>
+            Dúvidas ou pedidos sobre seus dados:{" "}
+            <a href={`mailto:${legal.dpoEmail}`} style={{ color: "var(--qmax-magenta, #d90f81)", fontWeight: 600 }}>{legal.dpoEmail}</a>
           </div>
           <div style={{ display: "flex", gap: 12 }}>
             <Link href="/termos-de-uso" className="qmax-legal-btn">

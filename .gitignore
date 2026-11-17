@@ -46,7 +46,7 @@ azure-pipelines.backup-*.yml
 /seed_socios.*
 Grupo-Q-Max/
 *.sql
-!qmax_quiz.sql
+# qmax_quiz.sql holds staff names, e-mails and Microsoft IDs: never commit it (LGPD)
 *.git_backup
 
 # Azure App Service settings export (secrets)
