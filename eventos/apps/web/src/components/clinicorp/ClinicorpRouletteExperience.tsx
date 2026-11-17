@@ -826,9 +826,9 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         {/* Coluna Lateral no Landscape: Compacta, Nobre, com Botão Imediato */}
         <div className="hidden landscape:flex flex-col justify-center gap-6 z-10 w-full max-w-md">
           {isVipSpin && (
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37]/30 to-[#996515]/30 px-4 py-1.5 shadow-[0_0_25px_rgba(212,175,55,0.4)] animate-pulse-glow">
-              <Crown size={18} className="text-[#FFDF73] animate-bounce" />
-              <span className="font-mono text-xs font-black tracking-widest text-[#FFDF73] uppercase">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37]/30 to-[#996515]/30 px-4 py-1.5 shadow-[0_0_25px_rgba(212,175,55,0.4)] animate-pulse-glow shrink-0 whitespace-nowrap">
+              <Crown size={18} className="text-[#FFDF73] animate-bounce shrink-0" />
+              <span className="font-mono text-xs font-black tracking-widest text-[#FFDF73] uppercase whitespace-nowrap">
                 BILHETE DOURADO · POOL VIP
               </span>
             </div>

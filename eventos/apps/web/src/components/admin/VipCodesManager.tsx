@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
-import { Crown, Sparkles, X, Printer, Eye } from "lucide-react";
+import { Crown, Sparkles, X, Printer, Eye, Archive, Loader2, Download } from "lucide-react";
 
 import { ui } from "@/components/form/Paper";
 import { getAdminProxyUrl } from "@/lib/api-client";
 import GoldenTicket from "@/components/brand/GoldenTicket";
+import { exportAllTicketsToZip } from "@/lib/ticket-export";
 
 type VipCode = {
   id: number;
@@ -45,6 +46,8 @@ export default function VipCodesManager({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<VipCode | null>(null);
+  const [exportingZip, setExportingZip] = useState(false);
+  const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
 
   useEffect(() => {
     fetchCodes(eventId)
@@ -95,6 +98,24 @@ export default function VipCodesManager({
     const book = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(rows), "Bilhetes VIP");
     XLSX.writeFile(book, `bilhetes-vip-${eventName.replace(/\W+/g, "-").toLowerCase()}.xlsx`);
+  }
+
+  async function handleExportZip() {
+    if (!data || !data.codes.length) return;
+    setError(null);
+    setExportingZip(true);
+    setExportProgress({ current: 0, total: data.codes.length });
+
+    try {
+      await exportAllTicketsToZip(data.codes, eventName, eventSlug, (current, total) => {
+        setExportProgress({ current, total });
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao exportar bilhetes em ZIP.");
+    } finally {
+      setExportingZip(false);
+      setExportProgress(null);
+    }
   }
 
   return (
@@ -160,8 +181,50 @@ export default function VipCodesManager({
           <button type="button" className={ui.pill} disabled={!data?.total} onClick={exportXlsx}>
             Exportar planilha (.xlsx)
           </button>
+
+          <button
+            type="button"
+            disabled={!data?.total || exportingZip}
+            onClick={handleExportZip}
+            className="flex items-center gap-2 rounded-full border border-[#D4AF37] bg-gradient-to-r from-[#F7E7A9] via-[#E5C158] to-[#B8860B] px-4 py-2 text-xs font-black text-[#0C1222] shadow-sm hover:brightness-110 active:scale-95 disabled:opacity-50 cursor-pointer transition-all"
+            title="Gera e empacota em ZIP as imagens em alta resolução de todos os bilhetes VIP"
+          >
+            {exportingZip ? (
+              <>
+                <Loader2 size={14} className="animate-spin text-[#0C1222]" />
+                <span>
+                  Gerando ZIP ({exportProgress?.current ?? 0}/{exportProgress?.total ?? data?.total})…
+                </span>
+              </>
+            ) : (
+              <>
+                <Archive size={14} className="text-[#0C1222]" />
+                <span>Exportar Todos em ZIP (.png)</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
+
+      {exportingZip && exportProgress && (
+        <div className={`${ui.card} flex flex-col gap-2 p-4 border border-[#D4AF37]/50 bg-gradient-to-r from-[#FFFDF0] to-[#FFF9E6]`}>
+          <div className="flex items-center justify-between text-xs font-bold text-[#6B4E00]">
+            <span className="flex items-center gap-1.5">
+              <Loader2 size={13} className="animate-spin text-[#B8860B]" />
+              Gerando imagens de alta resolução dos {exportProgress.total} bilhetes...
+            </span>
+            <span>
+              {Math.round((exportProgress.current / exportProgress.total) * 100)}% ({exportProgress.current}/{exportProgress.total})
+            </span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[#E5D7A0]/50">
+            <div
+              className="h-full bg-gradient-to-r from-[#D4AF37] to-[#B8860B] transition-all duration-150"
+              style={{ width: `${(exportProgress.current / exportProgress.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {error && <div className={ui.error}>{error}</div>}
 

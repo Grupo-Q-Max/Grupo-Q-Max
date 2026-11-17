@@ -22,3 +22,4 @@ exports.up = async function (knex) {
 exports.down = function (knex) {
   return knex.schema.dropTableIfExists("proposta_logs");
 };
+

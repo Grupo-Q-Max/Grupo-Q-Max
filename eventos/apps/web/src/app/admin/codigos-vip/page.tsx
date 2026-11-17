@@ -16,7 +16,10 @@ export default async function VipCodesPage({ searchParams }: PageProps) {
     throw new Error("Nenhum evento cadastrado.");
   }
 
-  const event = events.find((e: { id: number }) => e.id === Number(params.event)) || events[0];
+  const event =
+    events.find((e: { id: number }) => e.id === Number(params.event)) ||
+    events.find((e: { id: number }) => e.id === 3) ||
+    events[0];
 
   return (
     <div className="adminShell">

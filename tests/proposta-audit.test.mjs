@@ -132,3 +132,4 @@ test("calcularDiferencasProposta returns empty when nothing changed", () => {
   assert.deepEqual(diff.anterior, {});
   assert.deepEqual(diff.novo, {});
 });
+

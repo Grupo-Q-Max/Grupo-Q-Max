@@ -281,3 +281,4 @@ module.exports = {
   obterLogsProposta,
   obterLogsGlobais
 };
+
