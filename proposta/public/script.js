@@ -443,6 +443,15 @@ function obterSociosDetalhadosSeguro() {
   return [];
 }
 
+function toggleVencimentoItem(tipo) {
+  const select = document.getElementById(tipo === "Certificado" ? "certificadoDigital" : `tem${tipo}`);
+  const box = document.getElementById(`boxVencimento${tipo}`);
+  if (select && box) {
+    box.style.display = select.value === "Sim" ? "block" : "none";
+  }
+}
+window.toggleVencimentoItem = toggleVencimentoItem;
+
 function obterDadosOnboardingV2() {
   const arquivo = document.getElementById("arquivoCertificadoDigital")?.files?.[0];
   const elCnpjEst = document.getElementById("cnpjEstabelecido");
@@ -458,6 +467,33 @@ function obterDadosOnboardingV2() {
     certificadoDigitalTipoArquivo: arquivo?.type || "",
     certificadoDigitalTamanho: Number(arquivo?.size || 0),
     senhaCertificadoDigital: document.getElementById("senhaCertificadoDigital")?.value || "",
+    vencimentoCertificadoDigital: document.getElementById("vencimentoCertificadoDigital")?.value || "",
+    vencimentoAlvara: document.getElementById("vencimentoAlvara")?.value || "",
+    vencimentoVigilancia: document.getElementById("vencimentoVigilancia")?.value || "",
+    vencimentoAVCB: document.getElementById("vencimentoAVCB")?.value || "",
+    vencimentoCRO: document.getElementById("vencimentoCRO")?.value || "",
+    vencimentosRegularizacoes: {
+      certificado: {
+        status: document.getElementById("certificadoDigital")?.value || "Não",
+        dataVencimento: document.getElementById("vencimentoCertificadoDigital")?.value || null
+      },
+      alvara: {
+        status: document.getElementById("temAlvara")?.value || "Sim",
+        dataVencimento: document.getElementById("vencimentoAlvara")?.value || null
+      },
+      vigilancia: {
+        status: document.getElementById("temVigilancia")?.value || "Sim",
+        dataVencimento: document.getElementById("vencimentoVigilancia")?.value || null
+      },
+      avcb: {
+        status: document.getElementById("temAVCB")?.value || "Sim",
+        dataVencimento: document.getElementById("vencimentoAVCB")?.value || null
+      },
+      cro: {
+        status: document.getElementById("temCRO")?.value || "Sim",
+        dataVencimento: document.getElementById("vencimentoCRO")?.value || null
+      }
+    }
   };
 }
 
@@ -876,35 +912,39 @@ function obterItensCalculados() {
     return km > 50 ? v * 1.15 : v;
   }
 
-  if (ehContabilidade && valorCampo("temCRO") === "Não") {
+  const croStatus = valorCampo("temCRO");
+  if (ehContabilidade && (croStatus === "Não" || croStatus === "Vencido")) {
     itens.push({
-      servico: "Inscrição CRO",
+      servico: croStatus === "Vencido" ? "Regularização CRO (Renovação)" : "Inscrição CRO",
       valor: calcularValorConfigurado("cro", contexto, BASE.cro),
-      observacao: "+ Taxas",
+      observacao: croStatus === "Vencido" ? "Renovação CRO" : "+ Taxas",
     });
   }
 
-  if (ehContabilidade && valorCampo("temAlvara") === "Não") {
+  const alvaraStatus = valorCampo("temAlvara");
+  if (ehContabilidade && (alvaraStatus === "Não" || alvaraStatus === "Vencido")) {
     itens.push({
-      servico: "Alvará Func.",
+      servico: alvaraStatus === "Vencido" ? "Renovação Alvará Func." : "Alvará Func.",
       valor: calcularRegulatorio(metragem, distanciaKm),
-      observacao: "+ Taxas",
+      observacao: alvaraStatus === "Vencido" ? "Renovação" : "+ Taxas",
     });
   }
 
-  if (ehContabilidade && valorCampo("temAVCB") === "Não") {
+  const avcbStatus = valorCampo("temAVCB");
+  if (ehContabilidade && (avcbStatus === "Não" || avcbStatus === "Vencido")) {
     itens.push({
-      servico: "AVCB",
+      servico: avcbStatus === "Vencido" ? "Renovação AVCB" : "AVCB",
       valor: calcularRegulatorio(metragem, distanciaKm),
-      observacao: "+ Taxas",
+      observacao: avcbStatus === "Vencido" ? "Renovação" : "+ Taxas",
     });
   }
 
-  if (ehContabilidade && valorCampo("temVigilancia") === "Não") {
+  const vigStatus = valorCampo("temVigilancia");
+  if (ehContabilidade && (vigStatus === "Não" || vigStatus === "Vencido")) {
     itens.push({
-      servico: "Vigilância San.",
+      servico: vigStatus === "Vencido" ? "Renovação Vigilância San." : "Vigilância San.",
       valor: calcularRegulatorio(metragem, distanciaKm),
-      observacao: "+ Taxas",
+      observacao: vigStatus === "Vencido" ? "Renovação" : "+ Taxas",
     });
   }
 
@@ -1470,6 +1510,16 @@ function restaurarEstadoFormulario(estado) {
   if (typeof sincronizarFaturamentoAnualParaMensal === "function") {
     sincronizarFaturamentoAnualParaMensal();
   }
+
+  ["CRO", "Alvara", "AVCB", "Vigilancia", "Certificado"].forEach((tipo) => {
+    if (typeof toggleVencimentoItem === "function") toggleVencimentoItem(tipo);
+  });
+
+  // Atualiza visibilidade dos campos de data de vencimento
+  ["CRO", "Alvara", "AVCB", "Vigilancia", "Certificado"].forEach((tipo) => {
+    if (typeof toggleVencimentoItem === "function") toggleVencimentoItem(tipo);
+  });
+  if (typeof toggleCertificadoDigital === "function") toggleCertificadoDigital();
 }
 
 async function salvarRascunhoServidor(mostrarNotificacao = true) {
@@ -2283,6 +2333,10 @@ document.addEventListener("DOMContentLoaded", () => {
     sincronizarFaturamentoAnualParaMensal();
   }
 
+  ["CRO", "Alvara", "AVCB", "Vigilancia", "Certificado"].forEach((tipo) => {
+    if (typeof toggleVencimentoItem === "function") toggleVencimentoItem(tipo);
+  });
+
   // Mostrar banner de rascunho se existir dados salvos
   const rascunho = localStorage.getItem("qmax_proposta_rascunho");
   if (rascunho) {
@@ -2304,6 +2358,51 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       carregarRascunhoPorId(rascunhoUrlId);
     }, 400);
+  } else {
+    // Pré-preenchimento automático a partir do CRM Q-MAX
+    const paramClinica = urlParams.get("nomeClinica") || urlParams.get("clinica") || urlParams.get("empresa");
+    const paramRazao = urlParams.get("razaoSocial") || urlParams.get("razao");
+    const paramCnpj = urlParams.get("cnpj") || urlParams.get("documento");
+    const paramSocio = urlParams.get("nomeSocio") || urlParams.get("socio") || urlParams.get("contato");
+    const paramEmail = urlParams.get("email");
+    const paramTelefone = urlParams.get("telefone") || urlParams.get("phone") || urlParams.get("whatsapp");
+    const paramTipo = urlParams.get("tipoProposta") || urlParams.get("tipo");
+    const paramFat = urlParams.get("faturamento");
+    const paramDealId = urlParams.get("dealId");
+
+    if (paramClinica) { const el = document.getElementById("nomeClinica"); if (el) el.value = paramClinica; }
+    if (paramRazao) { const el = document.getElementById("razaoSocial"); if (el) el.value = paramRazao; }
+    if (paramCnpj) { const el = document.getElementById("cnpj"); if (el) el.value = paramCnpj; }
+    if (paramSocio) { const el = document.getElementById("nomeSocio"); if (el) el.value = paramSocio; }
+    if (paramEmail) { const el = document.getElementById("email"); if (el) el.value = paramEmail; }
+    if (paramTelefone) { const el = document.getElementById("telefone"); if (el) el.value = paramTelefone; }
+    if (paramTipo) {
+      const el = document.getElementById("tipoProposta");
+      if (el) {
+        el.value = paramTipo;
+        if (typeof trocarTipoProposta === "function") trocarTipoProposta();
+      }
+    }
+    if (paramFat) {
+      const numFat = Number(paramFat);
+      if (!isNaN(numFat) && numFat > 0) {
+        const elFat = document.getElementById("faturamento");
+        if (elFat) elFat.value = numFat;
+        const elFatMensal = document.getElementById("faturamentoMensal");
+        if (elFatMensal) elFatMensal.value = (numFat / 12).toFixed(2);
+      }
+    }
+    if (paramDealId) {
+      const elObs = document.getElementById("justificativaDesconto");
+      if (elObs && !elObs.value) {
+        elObs.value = `Proposta originada do Deal #${paramDealId} do Q-Max CRM.`;
+      }
+    }
+    if (paramClinica || paramEmail) {
+      setTimeout(() => {
+        if (typeof gerarProposta === "function") gerarProposta();
+      }, 300);
+    }
   }
 
   // Monitorar alterações no formulário

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./quiz.css";
 
 export const metadata: Metadata = {
   title: "Quiz Interno | Grupo Q-Max",

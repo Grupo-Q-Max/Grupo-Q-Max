@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Temporary & Test files
+test_*.js
+inspect_*.js
+teste_*.xlsx
+teste_*.xls
+
+# Generated Excel/PDF files with client data
+*.pdf
+*.zip
+*.xlsx
+*.xls
+!automação/exemplo_relatorio_tributos.xlsx
+
+# Logs & System
+.system_generated/
+*.log
+__pycache__/
+.DS_Store
+Thumbs.db

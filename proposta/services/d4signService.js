@@ -405,6 +405,9 @@ async function iniciarAssinaturaProposta(proposta, pdfBuffer) {
     try {
       if (typeof proposta.sociosDetalhados === "object") sociosDetalhados = proposta.sociosDetalhados;
       else if (proposta.socios_detalhados_json) sociosDetalhados = typeof proposta.socios_detalhados_json === "string" ? JSON.parse(proposta.socios_detalhados_json) : proposta.socios_detalhados_json;
+      if (sociosDetalhados && !Array.isArray(sociosDetalhados) && Array.isArray(sociosDetalhados.socios)) {
+        sociosDetalhados = sociosDetalhados.socios;
+      }
     } catch {}
 
     if (Array.isArray(sociosDetalhados)) {
@@ -454,6 +457,14 @@ async function iniciarAssinaturaProposta(proposta, pdfBuffer) {
     // 4. Disparar o envio para assinatura na D4Sign (email oficial deles)
     await enviarParaAssinatura(uuidDocumento);
     enviadoAosSignatarios = true;
+
+    // Sincroniza imediatamente o funil próprio do CRM para a etapa 'Em Assinatura'
+    try {
+      const crmPipelineService = require("./crmPipelineService");
+      await crmPipelineService.tratarEnvioD4Sign(proposta.id, uuidDocumento);
+    } catch (crmErr) {
+      console.warn("[D4Sign] Erro ao sincronizar CRM no envio:", crmErr.message);
+    }
 
     // 5. Obter link de assinatura oficial e disparar e-mail personalizado da Q-MAX / Finora
     const signatarioCliente = Array.isArray(signatariosCadastrados)
@@ -762,6 +773,27 @@ async function processarDocumentoD4Sign(uuid, evento, mensagem = "") {
     [proposta.id, proposta.criado_por || 1, MARCA_ASSINATURA_D4SIGN],
   );
 
+  try {
+    const auditService = require("./auditService");
+    auditService.registrarLogProposta({
+      proposta_id: proposta.id,
+      usuario_nome: "D4Sign Signatários",
+      usuario_role: "Cliente",
+      acao: "ASSINATURA_D4SIGN",
+      titulo: "Contrato Assinado Digitalmente (D4Sign)",
+      detalhes: "Todas as partes concluíram a assinatura digital com validade jurídica via D4Sign.",
+      dados_novos: { status: "Aprovada", d4sign_status: "4 - Finalizado" }
+    }).catch(() => {});
+  } catch (e) {}
+
+  // Sincronizar pipeline própria de propostas no CRM para 'Assinada' (Ganho)
+  try {
+    const crmPipelineService = require("./crmPipelineService");
+    await crmPipelineService.tratarAssinaturaCompletaD4Sign(uuid);
+  } catch (crmErr) {
+    console.warn("[D4Sign] Erro ao sincronizar CRM na assinatura completa:", crmErr.message);
+  }
+
   notificationService.enviarNotificacao("aprovada", {
     id: proposta.id,
     numeroProposta: proposta.numero_proposta,
@@ -879,9 +911,127 @@ async function segredoWebhookValido(recebido) {
   });
 }
 
+// Consulta completa de signatários e status de cada um no D4Sign
+async function consultarSignatariosDocumento(uuidDocumento) {
+  if (!uuidDocumento || !ehUuidD4Sign(uuidDocumento)) {
+    return null;
+  }
+
+  const config = await obterConfiguracoesD4Sign();
+  const authQuery = `tokenAPI=${encodeURIComponent(config.apiToken)}&cryptKey=${encodeURIComponent(config.apiSecret)}`;
+
+  let signers = [];
+  let statusDoc = "Aguardando Assinaturas";
+  let statusId = "2";
+
+  try {
+    const [resDoc, resList] = await Promise.all([
+      rawRequest(config.apiUrl, "GET", `/documents/${uuidDocumento}?${authQuery}`, null, 8000).catch(() => null),
+      rawRequest(config.apiUrl, "GET", `/documents/${uuidDocumento}/list?${authQuery}`, null, 8000).catch(() => null),
+    ]);
+
+    if (resDoc && resDoc.data) {
+      const doc = Array.isArray(resDoc.data) ? resDoc.data[0] : resDoc.data;
+      if (doc) {
+        statusId = String(doc.statusId || "2");
+        statusDoc = doc.statusName || (statusId === "4" ? "Finalizado" : statusId === "6" ? "Cancelado" : "Aguardando Assinaturas");
+      }
+    }
+
+    if (resList && resList.data) {
+      let rawList = [];
+      const listData = Array.isArray(resList.data) ? resList.data[0] : resList.data;
+      if (listData && listData.list) {
+        rawList = Array.isArray(listData.list) ? listData.list : Object.values(listData.list);
+      } else if (Array.isArray(resList.data)) {
+        rawList = resList.data;
+      }
+
+      signers = rawList.map((s) => {
+        const isSigned = s.signed === "1" || s.signed === 1 || s.status === "Assinado" || Boolean(s.date_signed);
+        let papel = "Signatário";
+        if (s.act == 1) papel = "Parte Contratante / Assinante";
+        else if (s.act == 4) papel = "Testemunha";
+        else if (s.act == 3) papel = "Acusar Recebimento";
+
+        return {
+          email: s.email || "",
+          nome: s.name || s.nome || s.email || "Signatário",
+          papel,
+          assinado: isSigned,
+          dataAssinatura: s.date_signed || s.signed_at || (isSigned ? "Assinado" : null),
+          keySigner: s.key_signer || null,
+        };
+      });
+    }
+  } catch (err) {
+    console.warn(`[D4Sign] Erro ao consultar signatários de ${uuidDocumento}:`, err.message);
+  }
+
+  // Fallback inteligente se a lista remota não puder ser consultada (offline/sandbox)
+  if (signers.length === 0) {
+    try {
+      const propostas = await db.executarQuery(
+        "SELECT id, nome_socio, nome_clinica, email, status, data_decisao FROM propostas WHERE ip_assinatura = ? LIMIT 1",
+        [uuidDocumento]
+      );
+      if (propostas.length > 0) {
+        const p = propostas[0];
+        const isFinal = p.status === "Aprovada";
+        signers = [
+          {
+            email: p.email,
+            nome: p.nome_socio || p.nome_clinica || "Cliente",
+            papel: "Cliente (Contratante)",
+            assinado: isFinal,
+            dataAssinatura: isFinal && p.data_decisao ? p.data_decisao : null,
+          },
+          {
+            email: "hugo@grupoqmax.com.br",
+            nome: "Hugo (Representante Legal)",
+            papel: "Representante Legal Q-MAX",
+            assinado: isFinal,
+            dataAssinatura: isFinal && p.data_decisao ? p.data_decisao : null,
+          },
+          {
+            email: "alessandra@grupoqmax.com.br",
+            nome: "Alessandra (Testemunha)",
+            papel: "Testemunha",
+            assinado: isFinal,
+            dataAssinatura: isFinal && p.data_decisao ? p.data_decisao : null,
+          },
+        ];
+        if (isFinal) {
+          statusDoc = "Finalizado (Todos Assinaram)";
+          statusId = "4";
+        }
+      }
+    } catch {}
+  }
+
+  const total = signers.length;
+  const assinados = signers.filter((s) => s.assinado).length;
+  const pendentes = total - assinados;
+  const progresso = total > 0 ? Math.round((assinados / total) * 100) : 0;
+  const todosAssinaram = assinados === total && total > 0;
+
+  return {
+    uuid: uuidDocumento,
+    statusId,
+    statusNome: statusDoc,
+    total,
+    assinados,
+    pendentes,
+    progresso,
+    todosAssinaram,
+    signatarios: signers,
+  };
+}
+
 module.exports = {
   MARCA_ASSINATURA_D4SIGN,
   consultarStatusDocumento,
+  consultarSignatariosDocumento,
   processarDocumentoD4Sign,
   verificarAssinaturasPendentes,
   segredoWebhookValido,

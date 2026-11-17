@@ -626,6 +626,20 @@
                         <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                         <span>Configurações CRM</span>
                     </a>
+
+                    <div class="sidebar-section-title">Workspace Q-Max CRM</div>
+                    <a href="/crm" class="sidebar-link" title="Abrir Central do CRM">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>Pipelines do CRM</span>
+                    </a>
+                    <a href="/crm/me" class="sidebar-link" title="Minhas Tarefas e Atividades">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <span>Minhas Tarefas CRM</span>
+                    </a>
+                    <a href="/crm/contacts" class="sidebar-link" title="Base de Contatos & Clientes">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span>Contatos CRM</span>
+                    </a>
                 </nav>
             </div>
 
@@ -1161,39 +1175,58 @@
                         <div class="grid-2" id="secaoRegularizacoes">
                             <div class="input-group" id="grupoTemCRO">
                                 <label for="temCRO"><svg class="icone-dente" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3C4.5 3 3 5 3 7.5c0 2 .8 3.5 1.5 5 .6 1.4.8 3 1.2 4.8.4 1.9 1 3.7 2.1 3.7 1.3 0 1.4-2.3 1.9-4.2.3-1.2.8-1.8 1.3-1.8s1 .6 1.3 1.8c.5 1.9.6 4.2 1.9 4.2 1.1 0 1.7-1.8 2.1-3.7.4-1.8.6-3.4 1.2-4.8.7-1.5 1.5-3 1.5-5C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>Possui regularização CRO?</label>
-                                <select id="temCRO" onchange="gerarProposta()">
-                                    <option value="Sim">Sim</option>
-                                    <option value="Não">Não</option>
+                                <select id="temCRO" onchange="toggleVencimentoItem('CRO'); gerarProposta()">
+                                    <option value="Sim" selected>Sim (Válido / A vencer)</option>
+                                    <option value="Vencido">Vencido (Adicionar regularização)</option>
+                                    <option value="Não">Não Possui (Adicionar regularização)</option>
                                 </select>
+                                <div id="boxVencimentoCRO" style="margin-top: 6px;">
+                                    <label for="vencimentoCRO" style="font-size: 11px; font-weight: 700; color: #64748b;">Data de Vencimento / Anuidade CRO</label>
+                                    <input type="date" id="vencimentoCRO" onchange="gerarProposta()" style="font-size: 12px; height: 36px;" />
+                                </div>
                             </div>
                             <div class="input-group">
                                 <label for="temAlvara">Possui Alvará de Funcionamento?</label>
-                                <select id="temAlvara" onchange="gerarProposta()">
-                                    <option value="Sim">Sim</option>
-                                    <option value="Não">Não</option>
+                                <select id="temAlvara" onchange="toggleVencimentoItem('Alvara'); gerarProposta()">
+                                    <option value="Sim" selected>Sim (Válido / A vencer)</option>
+                                    <option value="Vencido">Vencido (Adicionar renovação)</option>
+                                    <option value="Não">Não Possui (Adicionar obtenção)</option>
                                 </select>
+                                <div id="boxVencimentoAlvara" style="margin-top: 6px;">
+                                    <label for="vencimentoAlvara" style="font-size: 11px; font-weight: 700; color: #64748b;">Data de Vencimento do Alvará</label>
+                                    <input type="date" id="vencimentoAlvara" onchange="gerarProposta()" style="font-size: 12px; height: 36px;" />
+                                </div>
                             </div>
                             <div class="input-group">
                                 <label for="temAVCB">Possui AVCB (Bombeiros)?</label>
-                                <select id="temAVCB" onchange="gerarProposta()">
-                                    <option value="Sim">Sim</option>
-                                    <option value="Não">Não</option>
+                                <select id="temAVCB" onchange="toggleVencimentoItem('AVCB'); gerarProposta()">
+                                    <option value="Sim" selected>Sim (Válido / A vencer)</option>
+                                    <option value="Vencido">Vencido (Adicionar regularização)</option>
+                                    <option value="Não">Não Possui (Adicionar regularização)</option>
                                 </select>
+                                <div id="boxVencimentoAVCB" style="margin-top: 6px;">
+                                    <label for="vencimentoAVCB" style="font-size: 11px; font-weight: 700; color: #64748b;">Data de Vencimento do AVCB</label>
+                                    <input type="date" id="vencimentoAVCB" onchange="gerarProposta()" style="font-size: 12px; height: 36px;" />
+                                </div>
                             </div>
                             <div class="input-group">
                                 <label for="temVigilancia">Possui Vigilância Sanitária?</label>
-                                <select id="temVigilancia" onchange="gerarProposta()">
-                                    <option value="Sim">Sim</option>
-                                    <option value="Não">Não</option>
+                                <select id="temVigilancia" onchange="toggleVencimentoItem('Vigilancia'); gerarProposta()">
+                                    <option value="Sim" selected>Sim (Válido / A vencer)</option>
+                                    <option value="Vencido">Vencido (Adicionar renovação)</option>
+                                    <option value="Não">Não Possui (Adicionar obtenção)</option>
                                 </select>
+                                <div id="boxVencimentoVigilancia" style="margin-top: 6px;">
+                                    <label for="vencimentoVigilancia" style="font-size: 11px; font-weight: 700; color: #64748b;">Data de Vencimento da Vigilância Sanitária</label>
+                                    <input type="date" id="vencimentoVigilancia" onchange="gerarProposta()" style="font-size: 12px; height: 36px;" />
+                                </div>
                             </div>
-
 
                     <!-- SEÇÃO CERTIFICADO DIGITAL -->
                     <div class="input-group span-2" id="secaoCertificadoDigital" style="margin-top: 18px; display: block;">
                         <label for="certificadoDigital" style="font-weight: 700; color: #172033;">Certificado Digital</label>
-                        <select id="certificadoDigital" onchange="toggleCertificadoDigital(); gerarProposta()" style="margin-top: 6px;">
-                            <option value="Sim">Sim (Fazer upload do arquivo .pfx/.p12)</option>
+                        <select id="certificadoDigital" onchange="toggleCertificadoDigital(); toggleVencimentoItem('Certificado'); gerarProposta()" style="margin-top: 6px;">
+                            <option value="Sim">Sim (Válido / A vencer - Upload .pfx/.p12)</option>
                             <option value="Não" selected>Não Possui (Adicionar emissão na proposta)</option>
                             <option value="Vencido">Vencido (Adicionar renovação na proposta)</option>
                         </select>
@@ -1209,6 +1242,10 @@
                                 <div class="input-group">
                                     <label for="senhaCertificadoDigital" style="font-weight: 600; color: #475569;">Senha do Certificado</label>
                                     <input type="password" id="senhaCertificadoDigital" placeholder="Digite a senha do arquivo" style="width: 100%; margin-top: 6px;" />
+                                </div>
+                                <div class="input-group span-2" id="boxVencimentoCertificado" style="margin-top: 8px;">
+                                    <label for="vencimentoCertificadoDigital" style="font-size: 11.5px; font-weight: 700; color: #475569;">Data de Vencimento do Certificado Digital</label>
+                                    <input type="date" id="vencimentoCertificadoDigital" onchange="gerarProposta()" style="font-size: 12px; height: 36px;" />
                                 </div>
                             </div>
                         </div>
@@ -2316,14 +2353,16 @@
             if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
             if (pathName.includes("prospeccao.html")) document.getElementById("navProspeccao")?.classList.add("active");
 
-            // Exibir links adicionais para Diretores
+            // Links de Gestão e CRM
+            const navCrmConfig = document.getElementById("navCrmConfig");
+            const secGestaoTitle = document.getElementById("secGestaoTitle");
+            if (navCrmConfig) navCrmConfig.style.display = "flex";
+            if (secGestaoTitle) secGestaoTitle.style.display = "block";
+
+            // Painel exclusivo da Diretoria
             if (userRole === "Diretor") {
                 const navAdmin = document.getElementById("navAdmin");
-                const navCrmConfig = document.getElementById("navCrmConfig");
-                const secGestaoTitle = document.getElementById("secGestaoTitle");
                 if (navAdmin) navAdmin.style.display = "flex";
-                if (navCrmConfig) navCrmConfig.style.display = "flex";
-                if (secGestaoTitle) secGestaoTitle.style.display = "block";
             }
         });
     </script>

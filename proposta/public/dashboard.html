@@ -524,6 +524,20 @@
                         <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                         <span>Configurações CRM</span>
                     </a>
+
+                    <div class="sidebar-section-title">Workspace Q-Max CRM</div>
+                    <a href="/crm" class="sidebar-link" title="Abrir Central do CRM">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>Pipelines do CRM</span>
+                    </a>
+                    <a href="/crm/me" class="sidebar-link" title="Minhas Tarefas e Atividades">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <span>Minhas Tarefas CRM</span>
+                    </a>
+                    <a href="/crm/contacts" class="sidebar-link" title="Base de Contatos & Clientes">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span>Contatos CRM</span>
+                    </a>
                 </nav>
             </div>
 
@@ -787,6 +801,7 @@
                 <button class="btn-mini btn-mini-light" onclick="filtroRapidoDashboard('', this)">Todos</button>
                 <button class="btn-mini btn-mini-light" onclick="filtroRapidoDashboard('Pendente', this)">Pendentes</button>
                 <button class="btn-mini btn-mini-light" onclick="filtroRapidoDashboard('Rascunho', this)" style="border-left: 3px solid #f59e0b; font-weight: 700; color: #b45309; background: #fffbeb;">📝 Incompletas / Rascunhos</button>
+                <button class="btn-mini btn-mini-light" onclick="filtroVencimentosDashboard(this)" style="border-left: 3px solid #ef4444; font-weight: 700; color: #b91c1c; background: #fef2f2;">⚠️ Vencimentos Próximos</button>
                 <button class="btn-mini btn-mini-light" onclick="filtroTermometroDashboard('quente', this)"><span class="termo termo-quente"></span>Quentes</button>
                 <button class="btn-mini btn-mini-light" onclick="filtroTermometroDashboard('medio', this)"><span class="termo termo-medio"></span>Médios</button>
                 <button class="btn-mini btn-mini-light" onclick="filtroTermometroDashboard('frio', this)"><span class="termo termo-frio"></span>Frios</button>
@@ -938,12 +953,16 @@
     </div>
 
     <div id="modalLinhaTempo" class="modal">
-        <div class="modal-content" style="width: 720px; max-width: 90%;">
+        <div class="modal-content" style="width: 840px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 24px;">
             <span class="close-btn" onclick="fecharModal('modalLinhaTempo')">&times;</span>
-            <h3>Linha do Tempo da Negociação</h3>
-            <p style="font-size: 13.5px; color: var(--muted); margin-bottom: 20px;">
-                Histórico cronológico de propostas, renegociações e decisões para esta clínica.
-            </p>
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a;" id="tituloModalLinhaTempo">Registro & Linha do Tempo da Proposta</h3>
+                    <p style="margin: 4px 0 0; font-size: 13px; color: #64748b;">
+                        Histórico completo e auditável de alterações, edições, faturamentos, descontos e interações com o cliente.
+                    </p>
+                </div>
+            </div>
             <div id="timelineContainer" class="timeline-container">
                 <!-- Injetado dinamicamente -->
             </div>
@@ -1103,14 +1122,16 @@
             if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
             if (pathName.includes("prospeccao.html")) document.getElementById("navProspeccao")?.classList.add("active");
 
-            // Exibir links adicionais para Diretores
+            // Links de Gestão e CRM
+            const navCrmConfig = document.getElementById("navCrmConfig");
+            const secGestaoTitle = document.getElementById("secGestaoTitle");
+            if (navCrmConfig) navCrmConfig.style.display = "flex";
+            if (secGestaoTitle) secGestaoTitle.style.display = "block";
+
+            // Painel exclusivo da Diretoria
             if (userRole === "Diretor") {
                 const navAdmin = document.getElementById("navAdmin");
-                const navCrmConfig = document.getElementById("navCrmConfig");
-                const secGestaoTitle = document.getElementById("secGestaoTitle");
                 if (navAdmin) navAdmin.style.display = "flex";
-                if (navCrmConfig) navCrmConfig.style.display = "flex";
-                if (secGestaoTitle) secGestaoTitle.style.display = "block";
             }
 
             // Atualizar Meta da Arena Comercial (Ex: Meta R$ 50k MRR)

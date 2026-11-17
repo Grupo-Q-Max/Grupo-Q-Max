@@ -1,9 +1,10 @@
 "use client";
 
-import { Crown, Sparkles, ShieldCheck, Printer, Check, Copy } from "lucide-react";
+import { Crown, Sparkles, ShieldCheck, Printer, Check, Copy, Download, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { QmaxBrandLogo } from "@/components/brand/Brand";
+import { FinoraLogo, assetUrl } from "@/components/brand/Brand";
+import { renderGoldenTicketCanvas } from "@/lib/ticket-export";
 
 export type GoldenTicketProps = {
   code: string;
@@ -27,6 +28,47 @@ export default function GoldenTicket({
   className = "",
 }: GoldenTicketProps) {
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownloadImage() {
+    setDownloading(true);
+    try {
+      const canvas = document.createElement("canvas");
+      let logoImg: HTMLImageElement | null = null;
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        await new Promise((res) => {
+          img.onload = () => res(img);
+          img.onerror = () => res(null);
+          img.src = assetUrl("/brands/finora-symbol.png");
+        });
+        if (img.complete && img.naturalWidth > 0) {
+          logoImg = img;
+        }
+      } catch {}
+
+      await renderGoldenTicketCanvas(
+        canvas,
+        { code, participantName, redeemedAt },
+        eventName,
+        eventSlug,
+        logoImg
+      );
+
+      const url = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bilhete-vip-${code.replace(/\W+/g, "")}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error("Erro ao baixar imagem do bilhete:", e);
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   // Se o bilhete já foi emitido com PIN de participação, o QR abre direto a roleta; senão abre o cadastro pré-preenchido
   const siteOrigin =
@@ -88,18 +130,18 @@ export default function GoldenTicket({
             />
 
             {/* Cabeçalho do Bilhete */}
-            <div className="relative z-10 flex items-center justify-between border-b border-[#D4AF37]/25 pb-4">
-              <div className="flex items-center gap-2.5">
-                <QmaxBrandLogo className="text-lg" />
-                <span className="h-4 w-px bg-[#D4AF37]/40" />
-                <span className="font-mono text-[10px] font-bold tracking-widest text-[#F3E5AB] uppercase">
+            <div className="relative z-10 flex items-center justify-between gap-2 border-b border-[#D4AF37]/25 pb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <FinoraLogo variant="symbol" height={28} className="h-7 w-auto shrink-0" />
+                <span className="h-4 w-px bg-[#D4AF37]/40 shrink-0" />
+                <span className="font-mono text-[10px] font-bold tracking-wider text-[#F3E5AB] uppercase whitespace-nowrap truncate">
                   Finora Experience
                 </span>
               </div>
 
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/50 bg-gradient-to-r from-[#D4AF37]/20 to-[#996515]/30 px-3 py-1 shadow-inner">
-                <Crown size={12} className="text-[#FFDF73]" />
-                <span className="font-mono text-[10px] font-black tracking-wider text-[#FFDF73] uppercase">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/50 bg-gradient-to-r from-[#D4AF37]/20 to-[#996515]/30 px-2.5 py-1 shadow-inner shrink-0 whitespace-nowrap">
+                <Crown size={12} className="text-[#FFDF73] shrink-0" />
+                <span className="font-mono text-[9.5px] sm:text-[10px] font-black tracking-wider text-[#FFDF73] uppercase whitespace-nowrap">
                   BILHETE DOURADO · VIP
                 </span>
               </div>
@@ -208,6 +250,25 @@ export default function GoldenTicket({
             <>
               <Copy size={14} className="text-text-2" />
               <span>Copiar Link do Bilhete</span>
+            </>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleDownloadImage}
+          disabled={downloading}
+          className="flex items-center gap-1.5 rounded-full border border-[#D4AF37] bg-gradient-to-r from-[#FFF5C0] to-[#FFE082] px-4 py-2 font-bold text-[#5C4000] shadow-sm transition-all hover:brightness-105 active:scale-95 cursor-pointer disabled:opacity-50"
+        >
+          {downloading ? (
+            <>
+              <Loader2 size={14} className="animate-spin text-[#5C4000]" />
+              <span>Gerando PNG…</span>
+            </>
+          ) : (
+            <>
+              <Download size={14} className="text-[#B8860B]" />
+              <span>Baixar Imagem (.png)</span>
             </>
           )}
         </button>

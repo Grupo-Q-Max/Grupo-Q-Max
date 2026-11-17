@@ -19,6 +19,215 @@ let FILTRO_VISUALIZACAO_DASHBOARD = "";
 let FILTRO_OBSERVACAO_DASHBOARD = "";
 let FILTRO_DESCONTO_DASHBOARD = "";
 let FILTRO_TERMOMETRO_DASHBOARD = "";
+let FILTRO_VENCIMENTO_DASHBOARD = false;
+
+window.filtroVencimentosDashboard = function(botao) {
+  const filtroStatus = document.getElementById("filtroStatus");
+  if (filtroStatus) {
+    filtroStatus.value = "";
+  }
+  FILTRO_VISUALIZACAO_DASHBOARD = "";
+  FILTRO_OBSERVACAO_DASHBOARD = "";
+  FILTRO_DESCONTO_DASHBOARD = "";
+  FILTRO_TERMOMETRO_DASHBOARD = "";
+  FILTRO_VENCIMENTO_DASHBOARD = false;
+  FILTRO_VENCIMENTO_DASHBOARD = !FILTRO_VENCIMENTO_DASHBOARD;
+
+  if (FILTRO_VENCIMENTO_DASHBOARD) {
+    destacarFiltroSelecionado(botao);
+  } else {
+    document.querySelectorAll("#filtrosRapidosDashboard button").forEach((btn) => btn.classList.remove("filtro-ativo"));
+  }
+  aplicarFiltrosDashboard();
+};
+
+function extrairDadosVencimentos(p) {
+  let v = {};
+  if (p && p.socios_detalhados_json) {
+    try {
+      const obj = typeof p.socios_detalhados_json === "string" ? JSON.parse(p.socios_detalhados_json) : p.socios_detalhados_json;
+      if (obj && typeof obj === "object") {
+        if (obj.vencimentosRegularizacoes) {
+          v = obj.vencimentosRegularizacoes;
+        } else if (obj.formState && obj.formState.vencimentosRegularizacoes) {
+          v = obj.formState.vencimentosRegularizacoes;
+        } else {
+          v = {
+            certificado: {
+              status: obj.certificadoDigital || obj.certificado_status || (obj.vencimentoCertificadoDigital ? "Sim" : (p.certificado_status || "Não")),
+              dataVencimento: obj.vencimentoCertificadoDigital || null
+            },
+            alvara: {
+              status: obj.temAlvara || (obj.vencimentoAlvara ? "Sim" : "Não"),
+              dataVencimento: obj.vencimentoAlvara || null
+            },
+            vigilancia: {
+              status: obj.temVigilancia || (obj.vencimentoVigilancia ? "Sim" : "Não"),
+              dataVencimento: obj.vencimentoVigilancia || null
+            },
+            avcb: {
+              status: obj.temAVCB || (obj.vencimentoAVCB ? "Sim" : "Não"),
+              dataVencimento: obj.vencimentoAVCB || null
+            },
+            cro: {
+              status: obj.temCRO || (obj.vencimentoCRO ? "Sim" : "Não"),
+              dataVencimento: obj.vencimentoCRO || null
+            }
+          };
+        }
+      }
+    } catch {}
+  }
+  return v;
+}
+
+function calcularAlertasVencimento(p) {
+  const v = extrairDadosVencimentos(p);
+  const alertas = [];
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const itens = [
+    { chave: "certificado", nome: "Certificado Digital" },
+    { chave: "alvara", nome: "Alvará de Funcionamento" },
+    { chave: "vigilancia", nome: "Vigilância Sanitária (AVS)" },
+    { chave: "avcb", nome: "AVCB (Bombeiros)" },
+    { chave: "cro", nome: "Regularização CRO" }
+  ];
+
+  for (const item of itens) {
+    const dadosItem = v[item.chave];
+    if (!dadosItem) continue;
+
+    const status = String(dadosItem.status || "");
+    const dataVenc = dadosItem.dataVencimento;
+
+    if (status === "Vencido") {
+      let diasVencido = 0;
+      let dataFmt = "Vencido";
+      if (dataVenc) {
+        const d = new Date(dataVenc + "T00:00:00");
+        if (!isNaN(d.getTime())) {
+          diasVencido = Math.max(1, Math.round((hoje.getTime() - d.getTime()) / (1000 * 60 * 60 * 24)));
+          dataFmt = d.toLocaleDateString("pt-BR");
+        }
+      }
+      alertas.push({
+        item: item.chave,
+        nome: item.nome,
+        tipo: "vencido",
+        data: dataVenc,
+        dataFmt,
+        dias: diasVencido,
+        mensagem: diasVencido > 0 ? `Vencido há ${diasVencido} dia(s)` : "Vencido",
+        waMsg: `Olá! Notamos que o ${item.nome} da ${p.nome_clinica || 'clínica'} está VENCIDO (${dataFmt}). É urgente providenciarmos a regularização/renovação para evitar autuações e paralisações!`
+      });
+    } else if (dataVenc) {
+      const d = new Date(dataVenc + "T00:00:00");
+      if (!isNaN(d.getTime())) {
+        const diffDias = Math.ceil((d.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        const dataFmt = d.toLocaleDateString("pt-BR");
+        if (diffDias < 0) {
+          alertas.push({
+            item: item.chave,
+            nome: item.nome,
+            tipo: "vencido",
+            data: dataVenc,
+            dataFmt,
+            dias: Math.abs(diffDias),
+            mensagem: `Vencido há ${Math.abs(diffDias)} dia(s)`,
+            waMsg: `Olá! Notamos que o ${item.nome} da ${p.nome_clinica || 'clínica'} venceu em ${dataFmt}. É urgente providenciarmos a renovação para manter a clínica 100% regularizada!`
+          });
+        } else if (diffDias <= 30) {
+          alertas.push({
+            item: item.chave,
+            nome: item.nome,
+            tipo: "a_vencer",
+            data: dataVenc,
+            dataFmt,
+            dias: diffDias,
+            mensagem: diffDias === 0 ? "Vence hoje!" : `Vence em ${diffDias} dia(s)`,
+            waMsg: `Olá! Passando para avisar que o ${item.nome} da ${p.nome_clinica || 'clínica'} está próximo do vencimento (${dataFmt} - faltam ${diffDias} dias). Vamos providenciar a renovação com antecedência?`
+          });
+        }
+      }
+    }
+  }
+
+  return alertas;
+}
+
+function renderTabelaVencimentos(p, vencimentosObj) {
+  const itens = [
+    { chave: "certificado", nome: "Certificado Digital" },
+    { chave: "alvara", nome: "Alvará de Funcionamento" },
+    { chave: "vigilancia", nome: "Vigilância Sanitária (AVS)" },
+    { chave: "avcb", nome: "AVCB (Bombeiros)" },
+    { chave: "cro", nome: "Regularização CRO" }
+  ];
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const linhas = itens.map(item => {
+    const reg = vencimentosObj && vencimentosObj[item.chave] ? vencimentosObj[item.chave] : null;
+    const status = reg?.status || "Não informado";
+    const dataVenc = reg?.dataVencimento || null;
+
+    let statusBadge = `<span style="background:#f1f5f9; color:#64748b; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">Não informado</span>`;
+    let acaoWa = "";
+
+    if (status === "Não") {
+      statusBadge = `<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">Não Possui (Emitir)</span>`;
+    } else if (status === "Vencido") {
+      let dataFmt = dataVenc ? new Date(dataVenc + "T00:00:00").toLocaleDateString("pt-BR") : "";
+      statusBadge = `<span style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; padding:2px 8px; border-radius:6px; font-weight:800; font-size:11px;">🚨 VENCIDO ${dataFmt ? `(${dataFmt})` : ""}</span>`;
+      if (p.telefone) {
+        const msg = encodeURIComponent(`Olá! Notamos que o ${item.nome} da ${p.nome_clinica || 'clínica'} está VENCIDO. Precisamos providenciar a regularização/renovação imediatamente!`);
+        acaoWa = `<a href="https://wa.me/55${String(p.telefone).replace(/\D/g, '')}?text=${msg}" target="_blank" onclick="event.stopPropagation()" style="background:#25d366; color:#fff; text-decoration:none; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px;">Falar com Cliente 💬</a>`;
+      }
+    } else if (status === "Sim") {
+      if (dataVenc) {
+        const d = new Date(dataVenc + "T00:00:00");
+        const dataFmt = !isNaN(d.getTime()) ? d.toLocaleDateString("pt-BR") : dataVenc;
+        const diffDias = Math.ceil((d.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDias < 0) {
+          statusBadge = `<span style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; padding:2px 8px; border-radius:6px; font-weight:800; font-size:11px;">🚨 VENCIDO (${dataFmt})</span>`;
+          if (p.telefone) {
+            const msg = encodeURIComponent(`Olá! Notamos que o ${item.nome} da ${p.nome_clinica || 'clínica'} venceu em ${dataFmt}. Vamos providenciar a renovação?`);
+            acaoWa = `<a href="https://wa.me/55${String(p.telefone).replace(/\D/g, '')}?text=${msg}" target="_blank" onclick="event.stopPropagation()" style="background:#25d366; color:#fff; text-decoration:none; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px;">Renovar WhatsApp 💬</a>`;
+          }
+        } else if (diffDias <= 30) {
+          statusBadge = `<span style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; padding:2px 8px; border-radius:6px; font-weight:800; font-size:11px;">⏳ Vence em ${diffDias} dias (${dataFmt})</span>`;
+          if (p.telefone) {
+            const msg = encodeURIComponent(`Olá! Passando para avisar que o ${item.nome} da ${p.nome_clinica || 'clínica'} está próximo do vencimento (${dataFmt} - faltam ${diffDias} dias). Vamos providenciar a renovação?`);
+            acaoWa = `<a href="https://wa.me/55${String(p.telefone).replace(/\D/g, '')}?text=${msg}" target="_blank" onclick="event.stopPropagation()" style="background:#25d366; color:#fff; text-decoration:none; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px;">Avisar Cliente 💬</a>`;
+          }
+        } else {
+          statusBadge = `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">✅ Válido até ${dataFmt} (${diffDias} dias)</span>`;
+        }
+      } else {
+        statusBadge = `<span style="background:#f0fdf4; color:#15803d; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">✅ Possui (Válido)</span>`;
+      }
+    }
+
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9; gap:10px;">
+        <span style="font-weight:600; color:#1e293b; font-size:12px;">${item.nome}</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          ${statusBadge}
+          ${acaoWa}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-top:6px;">
+      ${linhas}
+    </div>
+  `;
+}
 
 function atualizarVisibilidadeCardsEmpresa() {
   const empresa = document.getElementById("filtroEmpresa")?.value || "FINORA";
@@ -74,6 +283,7 @@ function filtroRapidoDashboard(status, botao) {
   FILTRO_OBSERVACAO_DASHBOARD = "";
   FILTRO_DESCONTO_DASHBOARD = "";
   FILTRO_TERMOMETRO_DASHBOARD = "";
+  FILTRO_VENCIMENTO_DASHBOARD = false;
 
   destacarFiltroSelecionado(botao);
   aplicarFiltrosDashboard();
@@ -228,6 +438,9 @@ function aplicarFiltrosDashboard() {
       !FILTRO_TERMOMETRO_DASHBOARD ||
       termometro.label.toLowerCase().includes(FILTRO_TERMOMETRO_DASHBOARD.toLowerCase());
 
+    const alertasVenc = calcularAlertasVencimento(p);
+    const passaVencimento = !FILTRO_VENCIMENTO_DASHBOARD || alertasVenc.length > 0;
+
     return (
       passaEmpresa &&
       passaStatus &&
@@ -235,7 +448,8 @@ function aplicarFiltrosDashboard() {
       passaVisualizacao &&
       passaObservacao &&
       passaDesconto &&
-      passaTermometro
+      passaTermometro &&
+      passaVencimento
     );
   });
 
@@ -285,13 +499,17 @@ function aplicarFiltrosDashboard() {
       !FILTRO_TERMOMETRO_DASHBOARD ||
       termometro.label.toLowerCase().includes(FILTRO_TERMOMETRO_DASHBOARD.toLowerCase());
 
+    const alertasVenc = calcularAlertasVencimento(p);
+    const passaVencimento = !FILTRO_VENCIMENTO_DASHBOARD || alertasVenc.length > 0;
+
     return (
       passaStatus &&
       passaBusca &&
       passaVisualizacao &&
       passaObservacao &&
       passaDesconto &&
-      passaTermometro
+      passaTermometro &&
+      passaVencimento
     );
   });
 
@@ -384,6 +602,9 @@ function renderizarTabelaDashboard(propostas) {
       }
     }
 
+    const alertasVenc = calcularAlertasVencimento(p);
+    const vencimentosObj = extrairDadosVencimentos(p);
+
     const linhaHtml = `
       <tr>
         <td>
@@ -405,6 +626,22 @@ function renderizarTabelaDashboard(propostas) {
           <small>${escapeHTML(p.email || "-")}</small><br>
           <small>Criado por: ${escapeHTML(p.criador || "-")}</small>
           ${temDesconto ? `<br><small style="color:#ef4444;font-weight:700;">Com desconto</small>` : ""}
+          ${alertasVenc.length > 0 ? `
+            <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+              ${alertasVenc.map(a => `
+                <div style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <span style="background:${a.tipo === 'vencido' ? '#fee2e2' : '#fef3c7'}; color:${a.tipo === 'vencido' ? '#991b1b' : '#92400e'}; border:1px solid ${a.tipo === 'vencido' ? '#fca5a5' : '#fcd34d'}; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+                    ${a.tipo === 'vencido' ? '🚨' : '⏳'} ${a.nome}: ${a.mensagem}
+                  </span>
+                  ${p.telefone ? `
+                    <a href="https://wa.me/55${String(p.telefone).replace(/\D/g, '')}?text=${encodeURIComponent(a.waMsg)}" target="_blank" onclick="event.stopPropagation()" style="background:#25d366; color:#fff; text-decoration:none; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px;" title="Avisar cliente no WhatsApp sobre ${a.nome}">
+                      Avisar 💬
+                    </a>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
           <div id="ultimaObs-${p.id}" class="ultima-observacao">
             ${
               p.ultima_observacao
@@ -486,7 +723,7 @@ function renderizarTabelaDashboard(propostas) {
         <td>
           <div class="acoes-proposta">
             ${ehRascunho ? `
-              <a href="${APP_BASE_PATH}/index.html?rascunhoId=${p.id}" class="btn-action-icon" style="background:#0284c7; color:#fff; text-decoration:none; padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:4px; border:none;" title="Continuar preenchendo proposta">
+              <a href="${APP_BASE_PATH}/index.html?rascunhoId=${p.id}" class="btn-continuar-rascunho" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; text-decoration: none; padding: 0 14px; border-radius: 8px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none; white-space: nowrap; height: 34px; line-height: 34px; box-shadow: 0 2px 6px rgba(2,132,199,0.3); transition: all 0.2s ease;" title="Continuar preenchendo proposta">
                 Continuar ➔
               </a>
               <button class="btn-action-icon btn-action-detail" onclick="toggleDetalhes(${p.id}, this)" title="Ver Detalhes">
@@ -554,6 +791,19 @@ function renderizarTabelaDashboard(propostas) {
               </div>
             </div>
 
+            <div class="proposta-box" style="border-left: 4px solid ${alertasVenc.length > 0 ? '#ef4444' : '#10b981'};">
+              <h4 style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <span>Controle de Vencimentos & Renovações</span>
+                ${alertasVenc.length > 0
+                  ? `<span style="background:#fef2f2; color:#b91c1c; border:1px solid #fecdd3; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:800;">⚠️ ${alertasVenc.length} atenção necessária</span>`
+                  : `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:800;">Regular</span>`
+                }
+              </h4>
+              <div style="font-size:12px; line-height:1.6;">
+                ${renderTabelaVencimentos(p, vencimentosObj)}
+              </div>
+            </div>
+
             <div class="proposta-box">
               <h4>Assinatura Eletrônica & D4Sign</h4>
               <div style="font-size:12px; line-height:1.6; color:#334155;">
@@ -602,6 +852,28 @@ function renderizarTabelaDashboard(propostas) {
                   <a href="/api/propostas/${p.token_acesso}/pdf" target="_blank" class="btn-mini btn-mini-light" style="text-decoration:none; padding:4px 10px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
                     PDF Oficial
                   </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="proposta-box" style="border-left: 4px solid #2563eb;">
+              <h4 style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <span>Registro de Alterações & Auditoria</span>
+                <span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:800;">Log Ativo</span>
+              </h4>
+              <div style="font-size:12px; line-height:1.6; color:#334155;">
+                <p style="margin: 0 0 10px; color: #64748b; font-size: 11.5px;">
+                  Consulte todas as edições no rascunho, alterações de faturamento, pedidos de desconto e ações registradas pela equipe e pelo cliente.
+                </p>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <button class="btn-mini" style="background:#2563eb; color:#fff; padding:6px 12px; font-weight:800; border-radius:6px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;" onclick="abrirLinhaDoTempo(${p.id})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Ver Linha do Tempo de Alterações
+                  </button>
+                  <button class="btn-mini btn-mini-light" style="padding:6px 12px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:6px;" onclick="abrirModalObservacoes(${p.id})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Adicionar Anotação
+                  </button>
                 </div>
               </div>
             </div>
@@ -832,64 +1104,301 @@ async function carregarUltimaObservacao(propostaId) {
   }
 }
 
+let cacheLogsAuditoria = [];
+let cacheVersoesProposta = [];
+let idPropostaLinhaTempoAtual = null;
+
 async function abrirLinhaDoTempo(id) {
   const container = document.getElementById("timelineContainer");
   if (!container) return;
 
-  container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--muted);">Carregando histórico...</div>';
+  idPropostaLinhaTempoAtual = id;
+  container.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--muted);"><div class="loading-spinner" style="margin: 0 auto 12px;"></div>Carregando registro completo de alterações e histórico...</div>';
   abrirModal("modalLinhaTempo");
 
   try {
-    const res = await fetch(`/api/propostas/${id}/historico`, { headers: authHeaders });
-    if (!res.ok) {
-      container.innerHTML = '<div class="viewer-error">Erro ao carregar histórico.</div>';
-      return;
-    }
+    const [resLogs, resVersoes] = await Promise.all([
+      fetch(`/api/propostas/${id}/logs`, { headers: authHeaders }).catch(() => ({ ok: false })),
+      fetch(`/api/propostas/${id}/historico`, { headers: authHeaders }).catch(() => ({ ok: false }))
+    ]);
 
-    const historico = await res.json();
-    if (!Array.isArray(historico) || historico.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--muted);">Nenhuma proposta encontrada na linha do tempo.</div>';
-      return;
-    }
+    cacheLogsAuditoria = resLogs.ok ? await resLogs.json() : [];
+    cacheVersoesProposta = resVersoes.ok ? await resVersoes.json() : [];
 
-    let html = '<div class="qmax-timeline">';
-    historico.forEach((p) => {
-      const statusClean = String(p.status || "").replace(/\s/g, "-");
-      const dataCriacao = new Date(p.criado_em).toLocaleString("pt-BR");
-      const isCurrent = p.id === id;
-
-      let descHtml = "";
-      if (Number(p.percentual_desconto || 0) > 0) {
-        descHtml = `<div class="timeline-discount">Desconto de ${p.percentual_desconto}% (-${formatador.format(p.valor_desconto)})</div>`;
-      }
-
-      html += `
-        <div class="timeline-item ${isCurrent ? "current-item" : ""}">
-          <div class="timeline-badge badge-${statusClean}"></div>
-          <div class="timeline-content">
-            <div class="timeline-header">
-              <span class="timeline-title">Proposta #${p.numero_proposta}</span>
-              <span class="status-badge status-${statusClean}">${escapeHTML(p.status)}</span>
-            </div>
-            <div class="timeline-body">
-              <div class="timeline-meta">
-                <span>${dataCriacao}</span>
-                <span>${escapeHTML(p.criador || "Vendedor")}</span>
-              </div>
-              <div class="timeline-value">Valor Total: <strong>${formatador.format(p.valor_total)}</strong></div>
-              ${descHtml}
-            </div>
-            ${isCurrent ? '<div class="current-label">Visualizando esta versão</div>' : ""}
-          </div>
-        </div>
-      `;
-    });
-    html += "</div>";
-    container.innerHTML = html;
+    renderizarLinhaTempoCompleta("todos", "logs");
   } catch (error) {
     console.error("Erro na requisição da linha do tempo:", error);
-    container.innerHTML = '<div class="viewer-error">Erro de conexão ao carregar histórico.</div>';
+    container.innerHTML = '<div class="viewer-error">Erro de conexão ao carregar histórico da proposta.</div>';
   }
+}
+
+function alternarAbaLinhaTempo(aba) {
+  renderizarLinhaTempoCompleta("todos", aba);
+}
+
+function filtrarLogsLinhaTempo(filtro) {
+  renderizarLinhaTempoCompleta(filtro, "logs");
+}
+
+function renderizarLinhaTempoCompleta(filtro = "todos", aba = "logs") {
+  const container = document.getElementById("timelineContainer");
+  if (!container) return;
+
+  const totalLogs = Array.isArray(cacheLogsAuditoria) ? cacheLogsAuditoria.length : 0;
+  const totalVersoes = Array.isArray(cacheVersoesProposta) ? cacheVersoesProposta.length : 0;
+
+  // Header com abas e estatísticas
+  let html = `
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; gap: 8px;">
+          <button type="button" onclick="alternarAbaLinhaTempo('logs')" class="btn-mini ${aba === 'logs' ? 'filtro-ativo' : 'btn-mini-light'}" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer;">
+            📋 Registro de Alterações (${totalLogs})
+          </button>
+          <button type="button" onclick="alternarAbaLinhaTempo('versoes')" class="btn-mini ${aba === 'versoes' ? 'filtro-ativo' : 'btn-mini-light'}" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer;">
+            🌿 Versões Geradas (${totalVersoes})
+          </button>
+        </div>
+        <div style="font-size: 12px; color: #64748b;">
+          Proposta ID: <strong>#${idPropostaLinhaTempoAtual}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (aba === "versoes") {
+    // Renderiza árvore de versões
+    if (!Array.isArray(cacheVersoesProposta) || cacheVersoesProposta.length === 0) {
+      html += '<div style="text-align:center; padding: 30px; color: var(--muted);">Nenhuma versão encontrada na árvore da proposta.</div>';
+    } else {
+      html += '<div class="qmax-timeline" style="margin-top: 10px;">';
+      cacheVersoesProposta.forEach((p) => {
+        const statusClean = String(p.status || "").replace(/\s/g, "-");
+        const dataCriacao = new Date(p.criado_em).toLocaleString("pt-BR");
+        const isCurrent = p.id === idPropostaLinhaTempoAtual;
+
+        let descHtml = "";
+        if (Number(p.percentual_desconto || 0) > 0) {
+          descHtml = `<div class="timeline-discount">Desconto de ${p.percentual_desconto}% (-${formatador.format(p.valor_desconto)})</div>`;
+        }
+
+        html += `
+          <div class="timeline-item ${isCurrent ? "current-item" : ""}">
+            <div class="timeline-badge badge-${statusClean}"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">Proposta #${p.numero_proposta}</span>
+                <span class="status-badge status-${statusClean}">${escapeHTML(p.status)}</span>
+              </div>
+              <div class="timeline-body">
+                <div class="timeline-meta">
+                  <span>${dataCriacao}</span>
+                  <span>${escapeHTML(p.criador || "Vendedor")}</span>
+                </div>
+                <div class="timeline-value">Valor Total: <strong>${formatador.format(p.valor_total)}</strong></div>
+                ${descHtml}
+              </div>
+              ${isCurrent ? '<div class="current-label">Visualizando esta versão</div>' : ""}
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+    }
+  } else {
+    // Renderiza logs de auditoria
+    let logsFiltrados = cacheLogsAuditoria || [];
+    if (filtro === "edicoes") {
+      logsFiltrados = logsFiltrados.filter(l => l.acao.includes("EDICAO") || l.acao.includes("CRIACAO"));
+    } else if (filtro === "descontos") {
+      logsFiltrados = logsFiltrados.filter(l => l.acao.includes("DESCONTO"));
+    } else if (filtro === "cliente") {
+      logsFiltrados = logsFiltrados.filter(l => l.acao.includes("VISUALIZACAO") || l.acao.includes("REABERTURA") || l.acao.includes("APROVACAO") || l.acao.includes("RECUSA") || l.acao.includes("ASSINATURA"));
+    } else if (filtro === "observacoes") {
+      logsFiltrados = logsFiltrados.filter(l => l.acao.includes("OBSERVACAO"));
+    }
+
+    // Filtros por pílula
+    html += `
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px;">
+        <button type="button" onclick="filtrarLogsLinhaTempo('todos')" class="btn-mini ${filtro === 'todos' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">Todos</button>
+        <button type="button" onclick="filtrarLogsLinhaTempo('edicoes')" class="btn-mini ${filtro === 'edicoes' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">✏️ Criação & Edições</button>
+        <button type="button" onclick="filtrarLogsLinhaTempo('descontos')" class="btn-mini ${filtro === 'descontos' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">🏷️ Descontos & Diretoria</button>
+        <button type="button" onclick="filtrarLogsLinhaTempo('cliente')" class="btn-mini ${filtro === 'cliente' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">👤 Acessos & Aceites</button>
+        <button type="button" onclick="filtrarLogsLinhaTempo('observacoes')" class="btn-mini ${filtro === 'observacoes' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">💬 Observações</button>
+      </div>
+    `;
+
+    if (!Array.isArray(logsFiltrados) || logsFiltrados.length === 0) {
+      html += `
+        <div style="text-align: center; padding: 40px 20px; color: #64748b; background: #fff; border: 1px dashed #cbd5e1; border-radius: 12px;">
+          <div style="font-size: 28px; margin-bottom: 8px;">📋</div>
+          <strong style="color: #0f172a;">Nenhuma alteração registrada nesta categoria</strong>
+          <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">As ações realizadas pelos consultores, diretores e clientes serão exibidas aqui em tempo real.</p>
+        </div>
+      `;
+    } else {
+      html += '<div style="position: relative; margin-top: 10px;">';
+      html += '<div style="position: absolute; left: 14px; top: 12px; bottom: 20px; width: 2px; background: #e2e8f0; z-index: 0;"></div>';
+      logsFiltrados.forEach(log => {
+        html += renderItemAuditLog(log);
+      });
+      html += '</div>';
+    }
+  }
+
+  container.innerHTML = html;
+}
+
+function renderItemAuditLog(log) {
+  const dataFormatada = new Date(log.criado_em).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  // Ícone e cores conforme a ação
+  let icone = "📝";
+  let badgeCor = "#2563eb";
+  let badgeBg = "#eff6ff";
+  let borderCor = "#bfdbfe";
+
+  const acaoUpper = String(log.acao || "").toUpperCase();
+
+  if (acaoUpper.includes("CRIACAO")) {
+    icone = "✨";
+    badgeCor = "#16a34a";
+    badgeBg = "#f0fdf4";
+    borderCor = "#bbf7d0";
+  } else if (acaoUpper.includes("EDICAO")) {
+    icone = "✏️";
+    badgeCor = "#d97706";
+    badgeBg = "#fffbeb";
+    borderCor = "#fde68a";
+  } else if (acaoUpper.includes("DESCONTO_APROVADO")) {
+    icone = "✅";
+    badgeCor = "#059669";
+    badgeBg = "#ecfdf5";
+    borderCor = "#a7f3d0";
+  } else if (acaoUpper.includes("DESCONTO_RECUSADO") || acaoUpper.includes("RECUSA")) {
+    icone = "❌";
+    badgeCor = "#dc2626";
+    badgeBg = "#fef2f2";
+    borderCor = "#fecdd3";
+  } else if (acaoUpper.includes("DESCONTO_SOLICITADO")) {
+    icone = "⏳";
+    badgeCor = "#ea580c";
+    badgeBg = "#fff7ed";
+    borderCor = "#ffedd5";
+  } else if (acaoUpper.includes("VISUALIZACAO") || acaoUpper.includes("REABERTURA")) {
+    icone = "👁️";
+    badgeCor = "#0284c7";
+    badgeBg = "#f0f9ff";
+    borderCor = "#bae6fd";
+  } else if (acaoUpper.includes("ASSINATURA") || acaoUpper.includes("APROVACAO")) {
+    icone = "🖋️";
+    badgeCor = "#7c3aed";
+    badgeBg = "#faf5ff";
+    borderCor = "#ddd6fe";
+  } else if (acaoUpper.includes("RENOVACAO")) {
+    icone = "🔄";
+    badgeCor = "#0d9488";
+    badgeBg = "#f0fdfa";
+    borderCor = "#99f6e4";
+  }
+
+  // Role tag
+  let roleTag = "";
+  if (log.usuario_role === "Diretor") {
+    roleTag = `<span style="background:#581c87; color:#f3e8ff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">👑 DIRETOR</span>`;
+  } else if (log.usuario_role === "Comercial") {
+    roleTag = `<span style="background:#065f46; color:#d1fae5; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">💼 COMERCIAL</span>`;
+  } else if (log.usuario_role === "Cliente") {
+    roleTag = `<span style="background:#1e3a8a; color:#dbeafe; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">👤 CLIENTE</span>`;
+  } else {
+    roleTag = `<span style="background:#334155; color:#f1f5f9; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">⚙️ SISTEMA</span>`;
+  }
+
+  // Diff antes/depois se disponível
+  let diffHtml = "";
+  const temDiff = (log.dados_anteriores && Object.keys(log.dados_anteriores).length > 0) ||
+                  (log.dados_novos && Object.keys(log.dados_novos).length > 0);
+  if (temDiff) {
+    const diffId = `diff-log-${log.id || Math.random().toString(36).substr(2, 6)}`;
+    let linhasDiff = "";
+
+    const chaves = Array.from(new Set([
+      ...Object.keys(log.dados_anteriores || {}),
+      ...Object.keys(log.dados_novos || {})
+    ]));
+
+    chaves.forEach(chave => {
+      let vAntigo = log.dados_anteriores ? log.dados_anteriores[chave] : "-";
+      let vNovo = log.dados_novos ? log.dados_novos[chave] : "-";
+
+      if (typeof vAntigo === "object") vAntigo = JSON.stringify(vAntigo);
+      if (typeof vNovo === "object") vNovo = JSON.stringify(vNovo);
+
+      linhasDiff += `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
+          <td style="padding: 6px 10px; font-weight: 700; color: #475569; text-transform: capitalize;">${escapeHTML(chave.replace(/_/g, " "))}</td>
+          <td style="padding: 6px 10px; color: #dc2626; background: #fff5f5;">${escapeHTML(String(vAntigo || "-"))}</td>
+          <td style="padding: 6px 10px; color: #16a34a; background: #f0fdf4; font-weight: 600;">${escapeHTML(String(vNovo || "-"))}</td>
+        </tr>
+      `;
+    });
+
+    diffHtml = `
+      <div style="margin-top: 10px;">
+        <button type="button" onclick="const el=document.getElementById('${diffId}'); el.style.display=el.style.display==='none'?'block':'none';" style="background: none; border: 1px dashed #94a3b8; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: #475569; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+          🔍 Ver Comparativo Antes / Depois
+        </button>
+        <div id="${diffId}" style="display: none; margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead style="background: #f8fafc; font-size: 11px; text-transform: uppercase; color: #64748b;">
+              <tr>
+                <th style="padding: 6px 10px;">Campo Alterado</th>
+                <th style="padding: 6px 10px;">Valor Anterior</th>
+                <th style="padding: 6px 10px;">Novo Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${linhasDiff}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div style="position: relative; padding-left: 38px; margin-bottom: 20px; z-index: 1;">
+      <div style="position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: ${badgeBg}; border: 1.5px solid ${borderCor}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+        ${icone}
+      </div>
+      <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <strong style="color: #0f172a; font-size: 13.5px;">${escapeHTML(log.titulo || "Registro do Sistema")}</strong>
+            ${roleTag}
+          </div>
+          <span style="font-size: 11.5px; color: #64748b; font-weight: 500;">
+            🕒 ${dataFormatada}
+          </span>
+        </div>
+        <div style="font-size: 12.5px; color: #334155; line-height: 1.5; word-break: break-word;">
+          ${escapeHTML(log.detalhes || "Ação executada com sucesso.")}
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 11px; color: #94a3b8;">
+          <span>Executado por: <strong style="color: #475569;">${escapeHTML(log.usuario_nome || "Sistema")}</strong></span>
+          ${log.ip ? `<span>IP: <code style="font-size: 10.5px;">${escapeHTML(log.ip)}</code></span>` : ""}
+        </div>
+        ${diffHtml}
+      </div>
+    </div>
+  `;
 }
 
 function compartilharWhatsApp(numeroProposta, nomeClinica, nomeSocio, tokenAcesso, tipoProposta) {

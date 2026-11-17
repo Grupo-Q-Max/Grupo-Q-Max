@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Award, Check, CheckCircle2, ChevronRight, Copy, HelpCircle, LoaderCircle, MessageCircle, RotateCcw, Share2, Sparkles } from "lucide-react";
+import "./quiz.css";
 
 type Question = {
   id: number;

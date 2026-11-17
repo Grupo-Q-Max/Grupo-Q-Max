@@ -139,6 +139,20 @@
                         <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                         <span>Configurações CRM</span>
                     </a>
+
+                    <div class="sidebar-section-title">Workspace Q-Max CRM</div>
+                    <a href="/crm" class="sidebar-link" title="Abrir Central do CRM">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>Pipelines do CRM</span>
+                    </a>
+                    <a href="/crm/me" class="sidebar-link" title="Minhas Tarefas e Atividades">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <span>Minhas Tarefas CRM</span>
+                    </a>
+                    <a href="/crm/contacts" class="sidebar-link" title="Base de Contatos & Clientes">
+                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span>Contatos CRM</span>
+                    </a>
                 </nav>
             </div>
 
@@ -223,8 +237,64 @@
                 <p>Acompanhe o status em tempo real do banco de dados, e-mails, D4Sign e auditoria de logs do sistema.</p>
                 <button class="btn-primary" onclick="abrirModalStatusSistema()">Monitorar Sistema</button>
             </div>
+
+            <!-- Registro de Propostas & Auditoria -->
+            <div class="admin-card">
+                <div class="hud-bracket top-left"></div><div class="hud-bracket top-right"></div><div class="hud-bracket bottom-left"></div><div class="hud-bracket bottom-right"></div><span class="hud-status-code">SYS.CFG_07</span>
+                
+                <h3>Registro de Propostas & Auditoria</h3>
+                <p>Audite alterações feitas em cada proposta: edições de rascunhos, faturamentos, descontos, renegociações e decisões da equipe.</p>
+                <button class="btn-primary" onclick="abrirModalRegistroPropostas()">Auditar Propostas</button>
+            </div>
         </div>
     </main>
+
+    <!-- Modal de Registro de Propostas & Auditoria (Diretoria) -->
+    <div id="modalRegistroPropostas" class="modal">
+        <div class="modal-content" style="width: 1000px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px;">
+            <span class="close-btn" onclick="fecharModal('modalRegistroPropostas')">&times;</span>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff;">Registro & Auditoria Global de Propostas</h3>
+                    <p style="margin: 3px 0 0; font-size: 13px; color: #94a3b8;">
+                        Rastreamento completo de alterações, edições de rascunhos, faturamentos, pedidos de desconto e fechamentos.
+                    </p>
+                </div>
+                <button class="btn-primary" onclick="carregarLogsAuditoriaPropostas()" style="height: 36px; padding: 0 14px; font-size: 12px;">
+                    Atualizar Registro
+                </button>
+            </div>
+
+            <!-- Filtros de Pesquisa -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;">
+                <input type="text" id="inputBuscaAuditoriaPropostas" placeholder="Buscar por proposta #, clínica, consultor ou detalhe..." style="flex: 1; min-width: 240px; height: 38px; border-radius: 8px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.12); padding: 0 12px; font-size: 13px;" onkeyup="if(event.key==='Enter') carregarLogsAuditoriaPropostas()">
+                <select id="selectFiltroAcaoAuditoria" onchange="carregarLogsAuditoriaPropostas()" style="height: 38px; font-size: 13px; border-radius: 8px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.12); padding: 0 10px;">
+                    <option value="todos">Todas as Ações</option>
+                    <option value="CRIACAO">Criação de Propostas</option>
+                    <option value="EDICAO_RASCUNHO">Edições de Rascunho</option>
+                    <option value="DESCONTO_SOLICITADO">Descontos Solicitados</option>
+                    <option value="DESCONTO_APROVADO">Descontos Aprovados</option>
+                    <option value="DESCONTO_RECUSADO">Descontos Recusados</option>
+                    <option value="APROVACAO_CLIENTE">Aprovações do Cliente</option>
+                    <option value="APROVACAO_PARCIAL_CLIENTE">Aprovações Parciais</option>
+                    <option value="RECUSA_CLIENTE">Recusas do Cliente</option>
+                    <option value="ASSINATURA_D4SIGN">Assinaturas D4Sign</option>
+                    <option value="VISUALIZACAO_CLIENTE">Visualizações de Clientes</option>
+                    <option value="RENOVACAO_VALIDADE">Renovações de Validade</option>
+                    <option value="OBSERVACAO">Observações Internas</option>
+                </select>
+                <button type="button" class="btn-primary" onclick="carregarLogsAuditoriaPropostas()" style="height: 38px; padding: 0 16px; font-size: 13px;">
+                    Filtrar
+                </button>
+            </div>
+
+            <!-- Tabela / Feed de Logs -->
+            <div id="containerLogsAuditoriaPropostas" style="overflow-x: auto; max-height: 60vh; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: #0f172a;">
+                <div style="text-align: center; padding: 30px; color: #94a3b8;">Clique para carregar o registro de alterações.</div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal de Estabilidade & Monitoramento do Sistema -->
     <div id="modalStatusSistema" class="modal">
@@ -953,12 +1023,16 @@
             if (pathName.includes("admin.html")) document.getElementById("navAdmin")?.classList.add("active");
             if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
 
-            // Exibir links adicionais para Diretores
+            // Links de Gestão e CRM
+            const navCrmConfig = document.getElementById("navCrmConfig");
+            const secGestaoTitle = document.getElementById("secGestaoTitle");
+            if (navCrmConfig) navCrmConfig.style.display = "flex";
+            if (secGestaoTitle) secGestaoTitle.style.display = "block";
+
+            // Painel exclusivo da Diretoria
             if (userRole === "Diretor") {
                 const navAdmin = document.getElementById("navAdmin");
-                const navCrmConfig = document.getElementById("navCrmConfig");
                 if (navAdmin) navAdmin.style.display = "flex";
-                if (navCrmConfig) navCrmConfig.style.display = "flex";
             }
 
             if (window.aplicarTemaEmpresa) {

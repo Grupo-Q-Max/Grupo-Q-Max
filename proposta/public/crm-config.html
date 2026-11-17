@@ -4,28 +4,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configurações de CRM | QMAX</title>
+  <title>Configurações do CRM | Q-MAX Intelligence</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="css/qmax-ui.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+  <link rel="stylesheet" href="css/tema-escritorio.css">
   <style>
     .config-container {
-      max-width: 1000px;
-      margin: 40px auto;
+      max-width: 1140px;
+      margin: 32px auto;
       padding: 0 24px;
     }
     
     .config-header {
-      margin-bottom: 32px;
+      margin-bottom: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
     }
     
     .config-title h1 {
       margin: 0 0 6px;
       color: #0f172a;
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
       letter-spacing: -0.02em;
     }
@@ -33,21 +37,27 @@
     .config-title p {
       margin: 0;
       color: #64748b;
-      font-size: 14.5px;
+      font-size: 14px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
 
     .btn-back {
       background: #f1f5f9;
       border: 1px solid #e2e8f0;
       color: #475569;
-      padding: 10px 20px;
-      border-radius: 12px;
+      padding: 9px 18px;
+      border-radius: 10px;
       font-weight: 600;
       text-decoration: none;
-      font-size: 13.5px;
+      font-size: 13px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       transition: all 0.2s;
     }
 
@@ -56,40 +66,147 @@
       color: #0f172a;
     }
 
+    .btn-crm-kanban {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: none;
+      color: #ffffff;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+      transition: all 0.2s;
+    }
+
+    .btn-crm-kanban:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    /* Tabs de Navegação */
+    .config-tabs-nav {
+      display: flex;
+      gap: 8px;
+      background: #ffffff;
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tab-btn:hover {
+      color: #0f172a;
+      background: #f8fafc;
+    }
+
+    .tab-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+    }
+
+    .tab-pane {
+      display: none;
+      animation: fadeInTab 0.2s ease-in-out;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeInTab {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .card-settings {
       background: #ffffff;
-      border-radius: 20px;
+      border-radius: 18px;
       border: 1px solid rgba(15, 23, 42, 0.08);
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
-      padding: 32px;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.03);
+      padding: 28px;
       margin-bottom: 24px;
     }
 
     .section-title {
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 17px;
+      font-weight: 800;
       color: #0f172a;
       margin-top: 0;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       border-bottom: 1px solid #f1f5f9;
       padding-bottom: 14px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 10px;
     }
 
+    .section-title span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-box {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      color: #065f46;
+      line-height: 1.5;
+      margin-bottom: 22px;
+    }
+
+    .info-box.info-blue {
+      background: #eff6ff;
+      border-left-color: #3b82f6;
+      color: #1e40af;
+    }
+
+    .info-box.info-amber {
+      background: #fffbeb;
+      border-left-color: #f59e0b;
+      color: #92400e;
+    }
+
+    /* Vendedores Grid */
     .vendors-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
+      gap: 18px;
     }
 
     .vendor-card {
       border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 20px;
+      border-radius: 14px;
+      padding: 18px;
       background: #f8fafc;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -98,33 +215,34 @@
     .vendor-card:hover {
       border-color: #cbd5e1;
       transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
     }
 
     .vendor-info {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .vendor-name {
       font-weight: 700;
-      font-size: 15.5px;
+      font-size: 15px;
       color: #0f172a;
       margin: 0 0 4px;
     }
 
     .vendor-email {
-      font-size: 12.5px;
+      font-size: 12px;
       color: #64748b;
       margin: 0 0 8px;
+      word-break: break-all;
     }
 
     .vendor-role {
       display: inline-block;
-      font-size: 11px;
-      font-weight: 700;
+      font-size: 10.5px;
+      font-weight: 800;
       background: #e2e8f0;
       color: #475569;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 6px;
       text-transform: uppercase;
     }
@@ -140,10 +258,10 @@
     }
 
     .vendor-stats {
-      font-size: 13px;
+      font-size: 12.5px;
       color: #475569;
-      margin: 12px 0 16px;
-      padding-top: 12px;
+      margin: 10px 0 14px;
+      padding-top: 10px;
       border-top: 1px dashed #e2e8f0;
       display: flex;
       justify-content: space-between;
@@ -155,20 +273,22 @@
       justify-content: space-between;
       padding-top: 10px;
       border-top: 1px solid #e2e8f0;
+      gap: 6px;
     }
 
     .toggle-label {
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
       color: #334155;
     }
 
-    /* Switch Customizado */
+    /* Switch */
     .switch {
       position: relative;
       display: inline-block;
-      width: 44px;
-      height: 24px;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
     }
 
     .switch input {
@@ -182,19 +302,19 @@
       cursor: pointer;
       inset: 0;
       background-color: #cbd5e1;
-      transition: .3s;
-      border-radius: 24px;
+      transition: .25s;
+      border-radius: 22px;
     }
 
     .slider:before {
       position: absolute;
       content: "";
-      height: 18px;
-      width: 18px;
+      height: 16px;
+      width: 16px;
       left: 3px;
       bottom: 3px;
       background-color: white;
-      transition: .3s;
+      transition: .25s;
       border-radius: 50%;
     }
 
@@ -203,170 +323,747 @@
     }
 
     input:checked + .slider:before {
-      transform: translateX(20px);
+      transform: translateX(18px);
     }
 
-    .info-box {
-      background: #eff6ff;
-      border-left: 4px solid #3b82f6;
-      padding: 16px 20px;
-      border-radius: 12px;
+    /* Funis Grid */
+    .funis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .funil-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 18px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .funil-card:hover {
+      border-color: #94a3b8;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+    }
+
+    .funil-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .funil-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 4px;
+    }
+
+    .funil-desc {
+      font-size: 12.5px;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .funil-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    /* Etapas List */
+    .etapas-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .etapa-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+
+    .etapa-item:hover {
+      background: #ffffff;
+      border-color: #cbd5e1;
+    }
+
+    .etapa-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .etapa-cor-ball {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .etapa-nome {
       font-size: 13.5px;
-      color: #1e3a8a;
-      line-height: 1.6;
-      margin-bottom: 24px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .etapa-ordem {
+      font-size: 11px;
+      color: #64748b;
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .etapa-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* Webhook */
+    .code-box {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 12.5px;
+      position: relative;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .btn-copy-code {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-copy-code:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .integration-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .integration-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .integration-card strong {
+      font-size: 13.5px;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .integration-card p {
+      font-size: 12px;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    /* Modal Form */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #ffffff;
+      border-radius: 18px;
+      width: 480px;
+      max-width: 92vw;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      outline: none;
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .color-presets {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .color-swatch-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .color-swatch-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .color-swatch-btn.selected {
+      border-color: #0f172a;
+      box-shadow: 0 0 0 2px #fff;
     }
 
     .empty-state {
       text-align: center;
-      padding: 40px;
+      padding: 32px;
       color: #64748b;
+      font-size: 13.5px;
     }
   </style>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
-    <link rel="stylesheet" href="css/tema-escritorio.css">
 </head>
 
 <body class="page-dashboard theme-finora">
   <div class="app-layout">
-        <!-- Sidebar Master Unificada -->
-        <aside class="sidebar">
-            <div class="sidebar-top">
-                <div class="sidebar-logo">
-                    <div class="sidebar-logo-icon">Q</div>
-                    <span><span class="highlight">Q-MAX</span> Intelligence</span>
-                </div>
-                
-                <div class="sidebar-user">
-                    <div class="sidebar-user-avatar" id="sidebarAvatar">Q</div>
-                    <div class="sidebar-user-info">
-                        <div class="sidebar-user-name" id="sidebarUserName">Carregando...</div>
-                        <div class="sidebar-user-role" id="sidebarUserRole">...</div>
-                    </div>
-                </div>
+    <!-- Sidebar Master Unificada -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">Q</div>
+          <span><span class="highlight">Q-MAX</span> Intelligence</span>
+        </div>
+        
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" id="sidebarAvatar">Q</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebarUserName">Carregando...</div>
+            <div class="sidebar-user-role" id="sidebarUserRole">...</div>
+          </div>
+        </div>
 
-                <nav class="sidebar-nav">
-                    <div class="sidebar-section-title">Comercial & Leads</div>
-                    <a href="/proposta/dashboard.html" class="sidebar-link" id="navDashboard">
-                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
-                        <span>Dashboard Geral</span>
-                    </a>
-                    <a href="/proposta/crm.html" class="sidebar-link" id="navCrm">
-                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        <span>Funil CRM Leads</span>
-                    </a>
-                    <a href="/proposta/prospeccao.html" class="sidebar-link" id="navProspeccao">
-                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <span>Prospecção Ativa</span>
-                    </a>
+        <nav class="sidebar-nav">
+          <div class="sidebar-section-title">Comercial & Leads</div>
+          <a href="/proposta/dashboard.html" class="sidebar-link" id="navDashboard">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+            <span>Dashboard Geral</span>
+          </a>
+          <a href="/proposta/crm.html" class="sidebar-link" id="navCrm">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <span>Funil CRM Leads</span>
+          </a>
+          <a href="/proposta/prospeccao.html" class="sidebar-link" id="navProspeccao">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <span>Prospecção Ativa</span>
+          </a>
 
-                    <div class="sidebar-section-title">Propostas & Fechamento</div>
-                    <a href="/proposta/index.html" class="sidebar-link" id="navNovaProposta">
-                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        <span>Nova Proposta</span>
-                    </a>
+          <div class="sidebar-section-title">Propostas & Fechamento</div>
+          <a href="/proposta/index.html" class="sidebar-link" id="navNovaProposta">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>Nova Proposta</span>
+          </a>
 
-                    <div class="sidebar-section-title sec-gestao" id="secGestaoTitle" style="display: none;">Gestão & Diretoria</div>
-                    <a href="/proposta/admin.html" class="sidebar-link" id="navAdmin" style="display: none;">
-                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        <span>Painel da Diretoria</span>
-                    </a>
-                    <a href="/proposta/crm-config.html" class="sidebar-link" id="navCrmConfig" style="display: none;">
-                        <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                        <span>Configurações CRM</span>
-                    </a>
-                </nav>
-            </div>
+          <div class="sidebar-section-title sec-gestao" id="secGestaoTitle">Gestão & CRM</div>
+          <a href="/proposta/admin.html" class="sidebar-link" id="navAdmin" style="display: none;">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span>Painel da Diretoria</span>
+          </a>
+          <a href="/proposta/crm-config.html" class="sidebar-link active" id="navCrmConfig">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+            <span>Configurações CRM</span>
+          </a>
 
-            <div class="sidebar-bottom">
-                <div class="sidebar-status-box">
-                    <span class="status-indicator">
-                        <span id="sseStatusDot" class="sidebar-status-dot"></span>
-                        <span id="sseStatusText">Ao vivo</span>
-                    </span>
-                    <button id="btnToggleSound" onclick="toggleMuteSound()" class="sidebar-btn-mute" title="Silenciar som">Som</button>
-                </div>
-                <button onclick="localStorage.clear(); window.location.href='/proposta/login.html'" class="sidebar-btn-logout">
-                    Sair da Conta
-                </button>
-            </div>
-        </aside>
-
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <div class="config-container">
-                <header class="config-header">
-                  <div class="config-title">
-                    <h1>Configurações do CRM</h1>
-                    <p>Gerencie a fila de distribuição de leads e permissões do comercial</p>
-                  </div>
-                  <a href="crm.html" class="btn-back">
-                    <span>← Voltar ao CRM</span>
-                  </a>
-                </header>
-
-    <div class="info-box">
-      <strong>Algoritmo Round-Robin Ativo:</strong> Novos leads sem vendedor atribuído são direcionados automaticamente para o vendedor ativo da fila que recebeu o lead comercial há mais tempo. Isso garante igualdade absoluta na distribuição das oportunidades.
-    </div>
-
-    <div class="card-settings">
-      <h2 class="section-title">Fila de Distribuição de Leads</h2>
-      
-      <div class="vendors-grid" id="vendors-list">
-        <div class="empty-state">Carregando usuários...</div>
+          <div class="sidebar-section-title">Workspace Q-Max CRM</div>
+          <a href="/crm" class="sidebar-link" title="Abrir Central do CRM">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <span>Pipelines do CRM</span>
+          </a>
+          <a href="/crm/me" class="sidebar-link" title="Minhas Tarefas e Atividades">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+            <span>Minhas Tarefas CRM</span>
+          </a>
+          <a href="/crm/contacts" class="sidebar-link" title="Base de Contatos & Clientes">
+            <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <span>Contatos CRM</span>
+          </a>
+        </nav>
       </div>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-status-box">
+          <span class="status-indicator">
+            <span id="sseStatusDot" class="sidebar-status-dot"></span>
+            <span id="sseStatusText">Ao vivo</span>
+          </span>
+          <button id="btnToggleSound" onclick="toggleMuteSound()" class="sidebar-btn-mute" title="Silenciar som">Som</button>
+        </div>
+        <button onclick="localStorage.clear(); window.location.href='/proposta/login.html'" class="sidebar-btn-logout">
+          Sair da Conta
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <div class="config-container">
+        <header class="config-header">
+          <div class="config-title">
+            <h1>Configurações do CRM</h1>
+            <p>Gerencie funis, etapas kanban, distribuição de leads, SLAs e integrações comerciais</p>
+          </div>
+          <div class="header-actions">
+            <a href="crm.html" class="btn-crm-kanban">
+              <span>📊 Abrir Funil Kanban</span>
+            </a>
+            <a href="dashboard.html" class="btn-back">
+              <span>← Dashboard</span>
+            </a>
+          </div>
+        </header>
+
+        <!-- Tabs de Configuração -->
+        <div class="config-tabs-nav">
+          <button class="tab-btn active" onclick="trocarAbaConfig('fila', this)">
+            <span>🎯 Fila & Consultores</span>
+          </button>
+          <button class="tab-btn" onclick="trocarAbaConfig('funis', this)">
+            <span>📊 Funis (Pipelines)</span>
+          </button>
+          <button class="tab-btn" onclick="trocarAbaConfig('etapas', this)">
+            <span>📋 Etapas do Kanban</span>
+          </button>
+          <button class="tab-btn" onclick="trocarAbaConfig('slas', this)">
+            <span>⏱️ SLAs & Alertas</span>
+          </button>
+          <button class="tab-btn" onclick="trocarAbaConfig('webhooks', this)">
+            <span>🔌 Webhooks & Captação</span>
+          </button>
+          <button class="tab-btn" onclick="trocarAbaConfig('acessos', this)">
+            <span>👥 Times & Níveis</span>
+          </button>
+        </div>
+
+        <!-- ABA 1: Fila & Vendedores -->
+        <div id="tab-fila" class="tab-pane active">
+          <div class="info-box">
+            <strong>Algoritmo Round-Robin Ativo:</strong> Novos leads sem vendedor atribuído são direcionados automaticamente para o vendedor ativo da fila que recebeu o lead comercial há mais tempo. Isso garante distribuição igual e justa das oportunidades.
+          </div>
+
+          <div class="card-settings">
+            <div class="section-title">
+              <span><span>🎯</span> Fila de Distribuição de Leads</span>
+              <button class="btn-mini btn-mini-light" onclick="carregarFila()" style="padding:6px 12px; font-weight:700;">🔄 Atualizar</button>
+            </div>
+            
+            <div class="vendors-grid" id="vendors-list">
+              <div class="empty-state">Carregando consultores...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 2: Funis de Vendas (Pipelines) -->
+        <div id="tab-funis" class="tab-pane">
+          <div class="info-box info-blue">
+            <strong>Multi-Funis CRM:</strong> Crie pipelines separados para diferentes segmentos (ex.: Prospecção Finora Clínicas, Regularização Contábil Q-MAX, Projetos de Tecnologia Q-MAX Tech). Cada funil possui seu próprio fluxo de etapas.
+          </div>
+
+          <div class="card-settings">
+            <div class="section-title">
+              <span><span>📊</span> Pipelines de Vendas Cadastrados</span>
+              <button class="btn-mini" style="background:#0f172a; color:#fff; padding:6px 14px; font-weight:800; border:none; border-radius:8px; cursor:pointer;" onclick="abrirModalCriarFunil()">
+                + Novo Funil
+              </button>
+            </div>
+
+            <div class="funis-grid" id="funis-list">
+              <div class="empty-state">Carregando funis de vendas...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 3: Etapas do Kanban -->
+        <div id="tab-etapas" class="tab-pane">
+          <div class="info-box info-blue">
+            <strong>Colunas do Kanban:</strong> Personalize o fluxo de atendimento. As etapas são as colunas visíveis no Quadro Kanban do CRM para os consultores arrastarem e avançarem os leads.
+          </div>
+
+          <div class="card-settings">
+            <div class="section-title">
+              <span><span>📋</span> Colunas do Funil</span>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <select id="selectFunilEtapas" onchange="carregarEtapasConfig(this.value)" style="padding:6px 12px; border-radius:8px; border:1px solid #cbd5e1; font-weight:700; font-size:13px;">
+                  <option value="1">Funil Principal</option>
+                </select>
+                <button class="btn-mini" style="background:#0284c7; color:#fff; padding:6px 14px; font-weight:800; border:none; border-radius:8px; cursor:pointer;" onclick="abrirModalCriarEtapa()">
+                  + Nova Coluna
+                </button>
+              </div>
+            </div>
+
+            <div class="etapas-list" id="etapas-list-container">
+              <div class="empty-state">Carregando etapas...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 4: SLAs & Alertas -->
+        <div id="tab-slas" class="tab-pane">
+          <div class="info-box info-amber">
+            <strong>Regras de Aceleração Comercial:</strong> O CRM monitora o engajamento e a velocidade do funil para evitar que negócios fiquem esquecidos.
+          </div>
+
+          <div class="card-settings">
+            <div class="section-title">
+              <span><span>⏱️</span> Regras de Tempo & Estagnação</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:18px;">
+              <div style="border:1px solid #e2e8f0; border-radius:12px; padding:18px; background:#f8fafc;">
+                <h4 style="margin:0 0 6px; color:#0f172a; font-size:14px; font-weight:800;">🚨 Lead Parado no Funil (+48h)</h4>
+                <p style="font-size:12.5px; color:#64748b; margin:0 0 12px; line-height:1.4;">
+                  Sinaliza automaticamente cards parados há mais de 48 horas em qualquer etapa sem movimentação ou anotação.
+                </p>
+                <span style="background:#fee2e2; color:#b91c1c; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px;">Status: Ativo no Kanban</span>
+              </div>
+
+              <div style="border:1px solid #e2e8f0; border-radius:12px; padding:18px; background:#f8fafc;">
+                <h4 style="margin:0 0 6px; color:#0f172a; font-size:14px; font-weight:800;">🔥 Raio-X de Engajamento Quente</h4>
+                <p style="font-size:12.5px; color:#64748b; margin:0 0 12px; line-height:1.4;">
+                  Propostas abertas mais de 2 vezes ou com mais de 60s de leitura ganham o badge "Lead Quente 🔥" para fechamento imediato.
+                </p>
+                <span style="background:#dcfce7; color:#15803d; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px;">Status: Ativo com Termômetro</span>
+              </div>
+
+              <div style="border:1px solid #e2e8f0; border-radius:12px; padding:18px; background:#f8fafc;">
+                <h4 style="margin:0 0 6px; color:#0f172a; font-size:14px; font-weight:800;">💬 Mensagens de Primeiro Contato</h4>
+                <p style="font-size:12.5px; color:#64748b; margin:0 0 12px; line-height:1.4;">
+                  Scripts automáticos com pitch personalizado no WhatsApp para novos leads recebidos ou prospecção ativa.
+                </p>
+                <span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px;">Status: Ativo no Modal do Lead</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 5: Webhooks & Integrações -->
+        <div id="tab-webhooks" class="tab-pane">
+          <div class="info-box info-blue">
+            <strong>Endpoint Oficial de Entrada:</strong> Integre landing pages, formulários do site, Meta Ads (Facebook/Instagram), Google Ads e plataformas externas diretamente ao CRM da Q-MAX.
+          </div>
+
+          <div class="card-settings">
+            <div class="section-title">
+              <span><span>🔌</span> Webhook Universal de Entrada de Leads</span>
+            </div>
+
+            <p style="font-size:13px; color:#475569; margin-top:0;">Envie requisições HTTP <code>POST</code> com payload JSON para o endereço abaixo:</p>
+
+            <div class="code-box" id="webhookUrlBox">
+              <span id="webhookUrlText">https://grupoqmax.com.br/api/webhooks/leads</span>
+              <button class="btn-copy-code" onclick="copiarTexto('webhookUrlText', this)">Copiar URL</button>
+            </div>
+
+            <div style="margin-top:20px;">
+              <h4 style="margin:0 0 8px; font-size:13.5px; color:#0f172a;">Exemplo de Payload JSON (Envio via API / n8n / Zapier):</h4>
+              <div class="code-box" style="font-size:12px;">
+<pre style="margin:0;">{
+  "nome": "Dr. Fernando Santos",
+  "clinica": "Clínica Odonto Prime",
+  "email": "drfernando@odontoprime.com.br",
+  "telefone": "11999998888",
+  "faturamento": 85000,
+  "cadeiras": 3,
+  "origem": "Meta Ads / Instagram",
+  "funil_id": 1
+}</pre>
+              </div>
+            </div>
+
+            <h4 style="margin:24px 0 12px; font-size:14px; color:#0f172a;">Plataformas Suportadas Nativamente:</h4>
+            <div class="integration-grid">
+              <div class="integration-card">
+                <strong>📸 Meta Ads (Lead Ads)</strong>
+                <p>Captação automática de anúncios do Facebook e Instagram diretamente para a fila round-robin.</p>
+              </div>
+              <div class="integration-card">
+                <strong>🔍 Google Ads</strong>
+                <p>Extensões de formulário de lead do Google conectadas diretamente ao comercial.</p>
+              </div>
+              <div class="integration-card">
+                <strong>📬 RD Station / HubSpot</strong>
+                <p>Conversões de formulários e landing pages sincronizadas instantaneamente.</p>
+              </div>
+              <div class="integration-card">
+                <strong>⚙️ n8n / Zapier / Make</strong>
+                <p>Gatilhos flexíveis com qualquer sistema externo via Webhook JSON padrão.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 6: Times & Acessos -->
+        <div id="tab-acessos" class="tab-pane">
+          <div class="info-box">
+            <strong>Mapeamento de Níveis de Acesso:</strong> O CRM possui controle refinado de permissões para manter a integridade comercial.
+          </div>
+
+          <div class="card-settings">
+            <div class="section-title">
+              <span><span>👥</span> Perfis e Permissões do Sistema</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:18px;">
+              <div style="border:1px solid #e2e8f0; border-radius:14px; padding:20px; background:#ffffff;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h4 style="margin:0; font-size:15px; color:#0f172a; font-weight:800;">Diretoria & Sócios</h4>
+                  <span class="vendor-role diretor">Acesso Total</span>
+                </div>
+                <ul style="font-size:12.5px; color:#475569; padding-left:18px; margin:0; line-height:1.7;">
+                  <li>Visualização de todos os leads de todos os vendedores</li>
+                  <li>Configuração completa de funis, etapas e round-robin</li>
+                  <li>Aprovação de descontos solicitados pelos comerciais</li>
+                  <li>Métricas consolidadas de faturamento e taxas de conversão</li>
+                  <li>Edição de tabelas de honorários e regras tributárias</li>
+                </ul>
+              </div>
+
+              <div style="border:1px solid #e2e8f0; border-radius:14px; padding:20px; background:#ffffff;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h4 style="margin:0; font-size:15px; color:#0f172a; font-weight:800;">Equipe Comercial</h4>
+                  <span class="vendor-role comercial">Operacional</span>
+                </div>
+                <ul style="font-size:12.5px; color:#475569; padding-left:18px; margin:0; line-height:1.7;">
+                  <li>Atendimento e movimentação de seus próprios leads</li>
+                  <li>Criação de propostas personalizadas e envio via WhatsApp</li>
+                  <li>Solicitação de desconto para aprovação da diretoria</li>
+                  <li>Acesso ao gerador de scripts pitch e histórico</li>
+                  <li>Atualização do seu próprio WhatsApp de atendimento</li>
+                </ul>
+              </div>
+            </div>
+
+            <div style="margin-top:20px; padding:16px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div>
+                <strong style="color:#0f172a; font-size:13.5px;">Módulo Avançado de Times & Governança</strong>
+                <p style="margin:3px 0 0; color:#64748b; font-size:12px;">Gerencie times e permissões avançadas do workspace consolidado.</p>
+              </div>
+              <a href="/crm/settings" class="btn-mini" style="background:#0f172a; color:#fff; text-decoration:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:12px;">
+                Abrir Central de Times →
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: Criar / Editar Funil -->
+  <div id="modalFunil" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 id="modalFunilTitulo" style="margin:0; font-size:17px; font-weight:800; color:#0f172a;">Novo Funil de Vendas</h3>
+        <button type="button" onclick="fecharModalFunil()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#94a3b8;">&times;</button>
+      </div>
+      <form id="formFunil" onsubmit="salvarFunil(event)">
+        <input type="hidden" id="funilId">
+        <div class="form-group">
+          <label for="funilNome">Nome do Funil:</label>
+          <input type="text" id="funilNome" placeholder="Ex: Finora Clínicas, Regularização QMAX..." required>
+        </div>
+        <div class="form-group">
+          <label for="funilDescricao">Descrição / Objetivo:</label>
+          <textarea id="funilDescricao" rows="3" placeholder="Breve resumo da finalidade deste funil..."></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="btn-back" onclick="fecharModalFunil()">Cancelar</button>
+          <button type="submit" class="btn-crm-kanban" style="border:none;">Salvar Funil</button>
+        </div>
+      </form>
     </div>
-        </main>
+  </div>
+
+  <!-- MODAL: Criar / Editar Etapa -->
+  <div id="modalEtapa" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 id="modalEtapaTitulo" style="margin:0; font-size:17px; font-weight:800; color:#0f172a;">Nova Coluna do Kanban</h3>
+        <button type="button" onclick="fecharModalEtapa()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#94a3b8;">&times;</button>
+      </div>
+      <form id="formEtapa" onsubmit="salvarEtapa(event)">
+        <input type="hidden" id="etapaId">
+        <div class="form-group">
+          <label for="etapaNome">Nome da Etapa:</label>
+          <input type="text" id="etapaNome" placeholder="Ex: Diagnóstico Agendado, Negociação..." required>
+        </div>
+        <div class="form-group">
+          <label>Cor de Identificação:</label>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="color" id="etapaCor" value="#3b82f6" style="width:44px; height:36px; padding:2px; border-radius:6px; cursor:pointer;">
+            <span id="etapaCorHex" style="font-family:monospace; font-weight:700; font-size:13px; color:#475569;">#3b82f6</span>
+          </div>
+          <div class="color-presets">
+            <button type="button" class="color-swatch-btn" style="background:#3b82f6;" onclick="selecionarCorPreset('#3b82f6')"></button>
+            <button type="button" class="color-swatch-btn" style="background:#10b981;" onclick="selecionarCorPreset('#10b981')"></button>
+            <button type="button" class="color-swatch-btn" style="background:#f59e0b;" onclick="selecionarCorPreset('#f59e0b')"></button>
+            <button type="button" class="color-swatch-btn" style="background:#ef4444;" onclick="selecionarCorPreset('#ef4444')"></button>
+            <button type="button" class="color-swatch-btn" style="background:#8b5cf6;" onclick="selecionarCorPreset('#8b5cf6')"></button>
+            <button type="button" class="color-swatch-btn" style="background:#06b6d4;" onclick="selecionarCorPreset('#06b6d4')"></button>
+            <button type="button" class="color-swatch-btn" style="background:#64748b;" onclick="selecionarCorPreset('#64748b')"></button>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="btn-back" onclick="fecharModalEtapa()">Cancelar</button>
+          <button type="submit" class="btn-crm-kanban" style="border:none;">Salvar Coluna</button>
+        </div>
+      </form>
     </div>
+  </div>
 
   <script src="js/qmax-theme.js"></script>
   <script>
     const token = localStorage.getItem('finora_token') || localStorage.getItem('token');
-    const role = localStorage.getItem('finora_role') || localStorage.getItem('role');
+    const role = localStorage.getItem('finora_role') || localStorage.getItem('role') || 'Comercial';
 
     if (!token) {
       window.location.href = 'login.html';
     }
 
+    let LISTA_FUNIS = [];
+    let FUNIL_ATUAL_ID = 1;
+
     document.addEventListener("DOMContentLoaded", () => {
-        const userNome = localStorage.getItem("finora_nome") || "Usuário";
-        const userRole = localStorage.getItem("finora_role") || "Vendedor";
-        
-        const nameEl = document.getElementById("sidebarUserName");
-        const roleEl = document.getElementById("sidebarUserRole");
-        const avatarEl = document.getElementById("sidebarAvatar");
+      const userNome = localStorage.getItem("finora_nome") || "Usuário";
+      const userRole = localStorage.getItem("finora_role") || "Comercial";
+      
+      const nameEl = document.getElementById("sidebarUserName");
+      const roleEl = document.getElementById("sidebarUserRole");
+      const avatarEl = document.getElementById("sidebarAvatar");
 
-        if (nameEl) nameEl.innerText = userNome;
-        if (roleEl) roleEl.innerText = userRole;
-        if (avatarEl) avatarEl.innerText = userNome.charAt(0).toUpperCase();
+      if (nameEl) nameEl.innerText = userNome;
+      if (roleEl) roleEl.innerText = userRole;
+      if (avatarEl) avatarEl.innerText = userNome.charAt(0).toUpperCase();
 
-        // Destacar link ativo
-        const pathName = window.location.pathname;
-        if (pathName.includes("dashboard.html")) document.getElementById("navDashboard")?.classList.add("active");
-        if (pathName.includes("crm.html")) document.getElementById("navCrm")?.classList.add("active");
-        if (pathName.includes("index.html")) document.getElementById("navNovaProposta")?.classList.add("active");
-        if (pathName.includes("admin.html")) document.getElementById("navAdmin")?.classList.add("active");
-        if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
+      if (userRole === "Diretor") {
+        const navAdmin = document.getElementById("navAdmin");
+        if (navAdmin) navAdmin.style.display = "flex";
+      }
 
-        // Exibir links adicionais para Diretores
-        if (userRole === "Diretor") {
-            const navAdmin = document.getElementById("navAdmin");
-            const navCrmConfig = document.getElementById("navCrmConfig");
-            if (navAdmin) navAdmin.style.display = "flex";
-            if (navCrmConfig) navCrmConfig.style.display = "flex";
-        }
+      // Atualizar URL do webhook com o hostname atual
+      const host = window.location.origin;
+      const whEl = document.getElementById("webhookUrlText");
+      if (whEl) whEl.innerText = `${host}/api/webhooks/leads`;
+
+      // Inicializar dados
+      carregarFila();
+      carregarFunisConfig();
     });
 
-    // Carregar lista de vendedores e configurações de fila
+    // Navegação de Abas
+    function trocarAbaConfig(abaId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+      btn.classList.add('active');
+      const pane = document.getElementById(`tab-${abaId}`);
+      if (pane) pane.classList.add('active');
+
+      if (abaId === 'funis') carregarFunisConfig();
+      if (abaId === 'etapas') carregarEtapasConfig(FUNIL_ATUAL_ID);
+      if (abaId === 'fila') carregarFila();
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function copiarTexto(elementId, btn) {
+      const text = document.getElementById(elementId)?.innerText;
+      if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+          const original = btn.innerText;
+          btn.innerText = "Copiado! ✓";
+          setTimeout(() => { btn.innerText = original; }, 2000);
+        });
+      }
+    }
+
+    // ==========================================
+    // 1. GESTÃO DA FILA ROUND-ROBIN
+    // ==========================================
     async function carregarFila() {
       try {
         const res = await fetch('/api/comerciais/fila', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (res.status === 401 || res.status === 403) {
-          alert('Acesso restrito apenas para Diretores e Sócios.');
-          window.location.href = 'crm.html';
+        if (!res.ok) {
+          document.getElementById('vendors-list').innerHTML = '<div class="empty-state">Não foi possível carregar a fila de consultores.</div>';
           return;
         }
 
@@ -374,6 +1071,7 @@
         renderizarVendedores(dados);
       } catch (err) {
         console.error('Erro ao carregar fila:', err);
+        document.getElementById('vendors-list').innerHTML = '<div class="empty-state">Erro de conexão ao carregar consultores.</div>';
       }
     }
 
@@ -381,10 +1079,12 @@
       const container = document.getElementById('vendors-list');
       container.innerHTML = '';
 
-      if (usuarios.length === 0) {
-        container.innerHTML = '<div class="empty-state">Nenhum vendedor encontrado.</div>';
+      if (!Array.isArray(usuarios) || usuarios.length === 0) {
+        container.innerHTML = '<div class="empty-state">Nenhum consultor encontrado.</div>';
         return;
       }
+
+      const ehDiretor = role === 'Diretor';
 
       usuarios.forEach(user => {
         const card = document.createElement('div');
@@ -394,7 +1094,6 @@
         const roleLabel = user.role === 'Comercial' ? 'Comercial' : 'Diretor/Sócio';
         const isChecked = user.recebe_leads ? 'checked' : '';
 
-        // Formatação de data da última distribuição
         let ultimaDataStr = 'Nunca recebeu';
         if (user.ultimo_lead_recebido_em) {
           const data = new Date(user.ultimo_lead_recebido_em);
@@ -410,21 +1109,21 @@
           <div>
             <div class="vendor-stats">
               <span>Leads Atribuídos:</span>
-              <strong>${user.total_leads}</strong>
+              <strong>${user.total_leads || 0}</strong>
             </div>
-            <div class="vendor-stats" style="margin-top: -8px; font-size: 11.5px; border-top: none;">
+            <div class="vendor-stats" style="margin-top: -6px; font-size: 11.5px; border-top: none;">
               <span>Última Atribuição:</span>
               <span style="color: #64748b;">${ultimaDataStr}</span>
             </div>
             <div class="vendor-control" style="gap:6px;">
-              <label class="toggle-label" for="tel-${Number(user.id)}">WhatsApp (cliente vê):</label>
+              <label class="toggle-label" for="tel-${Number(user.id)}">WhatsApp:</label>
               <input id="tel-${Number(user.id)}" type="tel" value="${escapeHTML(user.telefone || '')}" placeholder="(11) 99999-0000" style="width:130px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;">
-              <button type="button" onclick="salvarTelefoneVendedor(${Number(user.id)})" style="padding:4px 8px; border:0; border-radius:6px; background:#0f172a; color:#fff; font-size:11px; cursor:pointer;">Salvar</button>
+              <button type="button" onclick="salvarTelefoneVendedor(${Number(user.id)})" style="padding:4px 8px; border:0; border-radius:6px; background:#0f172a; color:#fff; font-size:11px; cursor:pointer; font-weight:700;">Salvar</button>
             </div>
             <div class="vendor-control">
               <span class="toggle-label">Receber leads na Fila:</span>
               <label class="switch">
-                <input type="checkbox" ${isChecked} onchange="alterarFila(${user.id}, this.checked)">
+                <input type="checkbox" ${isChecked} ${!ehDiretor ? 'disabled' : ''} onchange="alterarFila(${user.id}, this.checked)">
                 <span class="slider"></span>
               </label>
             </div>
@@ -436,7 +1135,7 @@
     }
 
     async function salvarTelefoneVendedor(userId) {
-      const telefone = document.getElementById(`tel-${userId}`).value;
+      const telefone = document.getElementById(`tel-${userId}`)?.value || '';
       try {
         const res = await fetch(`/api/usuarios/${userId}/telefone`, {
           method: 'PUT',
@@ -444,7 +1143,7 @@
           body: JSON.stringify({ telefone })
         });
         const data = await res.json().catch(() => ({}));
-        alert(res.ok ? data.message : (data.error || 'Erro ao salvar telefone.'));
+        alert(res.ok ? (data.message || 'Telefone salvo com sucesso!') : (data.error || 'Erro ao salvar telefone.'));
       } catch (e) {
         alert('Erro de conexão ao salvar telefone.');
       }
@@ -462,7 +1161,7 @@
         });
 
         if (!res.ok) {
-          const data = await res.json();
+          const data = await res.json().catch(() => ({}));
           alert(data.error || 'Erro ao atualizar status.');
           carregarFila();
         }
@@ -472,7 +1171,277 @@
       }
     }
 
-    carregarFila();
+    // ==========================================
+    // 2. GESTÃO DE FUNIS (PIPELINES)
+    // ==========================================
+    async function carregarFunisConfig() {
+      try {
+        const res = await fetch('/api/crm/funis', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        LISTA_FUNIS = data.funis || [];
+        renderizarFunis(LISTA_FUNIS);
+        atualizarSelectFunis(LISTA_FUNIS);
+      } catch (err) {
+        console.error('Erro ao carregar funis:', err);
+      }
+    }
+
+    function renderizarFunis(funis) {
+      const container = document.getElementById('funis-list');
+      container.innerHTML = '';
+
+      if (funis.length === 0) {
+        container.innerHTML = '<div class="empty-state">Nenhum funil cadastrado.</div>';
+        return;
+      }
+
+      funis.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'funil-card';
+        card.innerHTML = `
+          <div>
+            <div class="funil-header">
+              <h3 class="funil-title">${escapeHTML(f.nome)}</h3>
+              <span style="font-size:11px; background:#e0f2fe; color:#0369a1; padding:2px 7px; border-radius:6px; font-weight:800;">ID #${f.id}</span>
+            </div>
+            <p class="funil-desc">${escapeHTML(f.descricao || 'Sem descrição cadastrada.')}</p>
+          </div>
+          <div class="funil-actions">
+            <button class="btn-mini btn-mini-light" onclick="verEtapasDoFunil(${f.id})" style="padding:4px 10px; font-weight:700; border-radius:6px;">
+              📋 Ver Etapas
+            </button>
+            <button class="btn-mini btn-mini-light" onclick="abrirModalEditarFunil(${f.id}, '${escapeHTML(f.nome)}', '${escapeHTML(f.descricao || '')}')" style="padding:4px 10px; font-weight:700; border-radius:6px;">
+              ✏️ Editar
+            </button>
+            ${f.id !== 1 ? `
+              <button class="btn-mini" onclick="excluirFunil(${f.id})" style="background:#fee2e2; color:#ef4444; border:1px solid #fecdd3; padding:4px 8px; border-radius:6px; font-weight:700; cursor:pointer;">
+                🗑
+              </button>
+            ` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function atualizarSelectFunis(funis) {
+      const sel = document.getElementById('selectFunilEtapas');
+      if (!sel) return;
+      sel.innerHTML = '';
+      funis.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.innerText = f.nome;
+        sel.appendChild(opt);
+      });
+      sel.value = FUNIL_ATUAL_ID;
+    }
+
+    function verEtapasDoFunil(funilId) {
+      FUNIL_ATUAL_ID = funilId;
+      const tabEtapasBtn = document.querySelectorAll('.tab-btn')[2];
+      trocarAbaConfig('etapas', tabEtapasBtn);
+    }
+
+    function abrirModalCriarFunil() {
+      document.getElementById('modalFunilTitulo').innerText = 'Novo Funil de Vendas';
+      document.getElementById('funilId').value = '';
+      document.getElementById('funilNome').value = '';
+      document.getElementById('funilDescricao').value = '';
+      document.getElementById('modalFunil').style.display = 'flex';
+    }
+
+    function abrirModalEditarFunil(id, nome, desc) {
+      document.getElementById('modalFunilTitulo').innerText = 'Editar Funil';
+      document.getElementById('funilId').value = id;
+      document.getElementById('funilNome').value = nome;
+      document.getElementById('funilDescricao').value = desc;
+      document.getElementById('modalFunil').style.display = 'flex';
+    }
+
+    function fecharModalFunil() {
+      document.getElementById('modalFunil').style.display = 'none';
+    }
+
+    async function salvarFunil(e) {
+      e.preventDefault();
+      const id = document.getElementById('funilId').value;
+      const nome = document.getElementById('funilNome').value.trim();
+      const descricao = document.getElementById('funilDescricao').value.trim();
+
+      const url = id ? `/api/crm/funis/${id}` : '/api/crm/funis';
+      const method = id ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ nome, descricao })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          fecharModalFunil();
+          carregarFunisConfig();
+        } else {
+          alert(data.error || 'Erro ao salvar funil.');
+        }
+      } catch (err) {
+        alert('Erro de conexão ao salvar funil.');
+      }
+    }
+
+    async function excluirFunil(id) {
+      if (!confirm('Tem certeza que deseja desativar este funil?')) return;
+      try {
+        const res = await fetch(`/api/crm/funis/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          carregarFunisConfig();
+        } else {
+          alert(data.error || 'Erro ao desativar funil.');
+        }
+      } catch (err) {
+        alert('Erro de conexão ao excluir funil.');
+      }
+    }
+
+    // ==========================================
+    // 3. GESTÃO DE ETAPAS (COLUNAS)
+    // ==========================================
+    async function carregarEtapasConfig(funilId) {
+      FUNIL_ATUAL_ID = Number(funilId || 1);
+      const sel = document.getElementById('selectFunilEtapas');
+      if (sel) sel.value = FUNIL_ATUAL_ID;
+
+      try {
+        const res = await fetch(`/api/crm/etapas?funil_id=${FUNIL_ATUAL_ID}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) return;
+
+        const etapas = await res.json();
+        renderizarEtapas(etapas);
+      } catch (err) {
+        console.error('Erro ao carregar etapas:', err);
+      }
+    }
+
+    function renderizarEtapas(etapas) {
+      const container = document.getElementById('etapas-list-container');
+      container.innerHTML = '';
+
+      if (!Array.isArray(etapas) || etapas.length === 0) {
+        container.innerHTML = '<div class="empty-state">Nenhuma etapa cadastrada neste funil.</div>';
+        return;
+      }
+
+      etapas.forEach((etapa, idx) => {
+        const item = document.createElement('div');
+        item.className = 'etapa-item';
+        item.innerHTML = `
+          <div class="etapa-info">
+            <span class="etapa-ordem">#${idx + 1}</span>
+            <div class="etapa-cor-ball" style="background:${etapa.cor || '#3b82f6'};"></div>
+            <span class="etapa-nome">${escapeHTML(etapa.nome)}</span>
+          </div>
+          <div class="etapa-actions">
+            <button class="btn-mini btn-mini-light" onclick="abrirModalEditarEtapa(${etapa.id}, '${escapeHTML(etapa.nome)}', '${etapa.cor || '#3b82f6'}')" style="padding:4px 8px; font-weight:700; border-radius:6px;">
+              ✏️ Editar
+            </button>
+            <button class="btn-mini" onclick="excluirEtapa(${etapa.id})" style="background:#fee2e2; color:#ef4444; border:1px solid #fecdd3; padding:4px 8px; border-radius:6px; font-weight:700; cursor:pointer;" title="Remover Etapa">
+              🗑
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function abrirModalCriarEtapa() {
+      document.getElementById('modalEtapaTitulo').innerText = 'Nova Coluna do Kanban';
+      document.getElementById('etapaId').value = '';
+      document.getElementById('etapaNome').value = '';
+      selecionarCorPreset('#3b82f6');
+      document.getElementById('modalEtapa').style.display = 'flex';
+    }
+
+    function abrirModalEditarEtapa(id, nome, cor) {
+      document.getElementById('modalEtapaTitulo').innerText = 'Editar Coluna';
+      document.getElementById('etapaId').value = id;
+      document.getElementById('etapaNome').value = nome;
+      selecionarCorPreset(cor || '#3b82f6');
+      document.getElementById('modalEtapa').style.display = 'flex';
+    }
+
+    function fecharModalEtapa() {
+      document.getElementById('modalEtapa').style.display = 'none';
+    }
+
+    function selecionarCorPreset(hex) {
+      const inputCor = document.getElementById('etapaCor');
+      const hexSpan = document.getElementById('etapaCorHex');
+      if (inputCor) inputCor.value = hex;
+      if (hexSpan) hexSpan.innerText = hex;
+    }
+
+    document.getElementById('etapaCor')?.addEventListener('input', (e) => {
+      document.getElementById('etapaCorHex').innerText = e.target.value;
+    });
+
+    async function salvarEtapa(e) {
+      e.preventDefault();
+      const id = document.getElementById('etapaId').value;
+      const nome = document.getElementById('etapaNome').value.trim();
+      const cor = document.getElementById('etapaCor').value;
+
+      const url = id ? `/api/crm/etapas/${id}` : '/api/crm/etapas';
+      const method = id ? 'PUT' : 'POST';
+      const body = id ? { nome, cor } : { nome, cor, funil_id: FUNIL_ATUAL_ID };
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          fecharModalEtapa();
+          carregarEtapasConfig(FUNIL_ATUAL_ID);
+        } else {
+          alert(data.error || 'Erro ao salvar etapa.');
+        }
+      } catch (err) {
+        alert('Erro de conexão ao salvar etapa.');
+      }
+    }
+
+    async function excluirEtapa(id) {
+      if (!confirm('Deseja realmente remover esta etapa do Kanban?')) return;
+      try {
+        const res = await fetch(`/api/crm/etapas/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          carregarEtapasConfig(FUNIL_ATUAL_ID);
+        } else {
+          alert(data.error || 'Erro ao remover etapa.');
+        }
+      } catch (err) {
+        alert('Erro de conexão ao excluir etapa.');
+      }
+    }
   </script>
 </body>
 
