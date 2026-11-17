@@ -84,6 +84,8 @@ async function forward(
   headers.set("x-finora-admin-key", adminKey);
 
   headers.set("x-finora-admin-user-id", String(session.uid));
+  // A API mascara contato/CPF para perfis sem ADMIN.
+  headers.set("x-finora-admin-role", session.role);
 
   headers.set(
     "accept",

@@ -15,6 +15,7 @@ import { postRegistration } from "@/lib/offline-queue";
 import OfflineSaved from "@/components/form/OfflineSaved";
 import VipScheduler from "./VipScheduler";
 import GoldenTicket from "@/components/brand/GoldenTicket";
+import { PrivacyConsentText } from "@/components/form/Legal";
 
 type Props = {
   eventId: number;
@@ -109,8 +110,9 @@ function RegistrationForm({
   const [clinicName, setClinicName] = useState("");
   const [cro, setCro] = useState("");
   const [croState, setCroState] = useState("SP");
-  const [acceptTerms, setAcceptTerms] = useState(true);
-  const [acceptMarketing, setAcceptMarketing] = useState(true);
+  // LGPD: consentimento nunca vem pré-marcado.
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptMarketing, setAcceptMarketing] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [offlineSaved, setOfflineSaved] = useState<string | null>(null);
@@ -118,6 +120,7 @@ function RegistrationForm({
   const [registeredParticipation, setRegisteredParticipation] = useState<{
     id: number;
     participationId: number;
+    token: string | null;
     name: string;
     isVip?: boolean;
     vipCode?: string;
@@ -150,7 +153,7 @@ function RegistrationForm({
     }
 
     if (!acceptTerms) {
-      setError("É necessário aceitar os termos para participar.");
+      setError("É necessário aceitar a Política de Privacidade e o Regulamento para participar.");
       return;
     }
 
@@ -189,6 +192,7 @@ function RegistrationForm({
         setRegisteredParticipation({
           id: result.participant?.id || participation.id,
           participationId: participation.id,
+          token: participation.whatsappToken || null,
           name: fullName.trim() || result.participant?.fullName || "Participante",
           isVip: Boolean(result.vip || participation.vip || participation.vip_codes || result.participation?.vip || vipCode.trim()),
           vipCode: result.participation?.vipCode || participation.vipCode || vipCode.trim() || undefined,
@@ -227,7 +231,6 @@ function RegistrationForm({
 
   // Passo 2: confirmação e agendamento VIP
   if (registeredParticipation) {
-    const id = registeredParticipation.id;
     const isVip = registeredParticipation.isVip;
     const isAlready = registeredParticipation.alreadyRegistered;
     const hasDrawn = registeredParticipation.hasDrawn;
@@ -264,10 +267,10 @@ function RegistrationForm({
           </div>
         )}
 
-        {!hasDrawn ? (
+        {!hasDrawn && registeredParticipation.token ? (
           <VipScheduler
             eventId={eventId}
-            participantId={id}
+            token={registeredParticipation.token}
             inviteText="Quem agenda libera uma tentativa no Cofre VIP do estande."
             onBooked={() => router.push(`/${route}/cofre?participation_id=${registeredParticipation.participationId}`)}
             skipHref={`/${route}/cofre?participation_id=${registeredParticipation.participationId}`}
@@ -352,11 +355,11 @@ function RegistrationForm({
         </div>
 
         <div className="flex flex-col gap-3 pt-1">
-          <Check checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}>
-            Aceito o regulamento e o uso dos meus dados para esta ativação e o sorteio.
+          <Check required checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}>
+            <PrivacyConsentText />
           </Check>
           <Check checked={acceptMarketing} onChange={(e) => setAcceptMarketing(e.target.checked)}>
-            Quero receber novidades da Finora.
+            Quero receber novidades e ofertas da Finora e do Grupo Q-Max por WhatsApp e e-mail. (opcional, posso cancelar quando quiser)
           </Check>
         </div>
       </div>

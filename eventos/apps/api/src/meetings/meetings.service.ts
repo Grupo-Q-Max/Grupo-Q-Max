@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { notifyLive } from '../live/live';
@@ -64,6 +64,18 @@ export class MeetingsService {
       }
     }
     return null;
+  }
+
+  // Link público: o token (não sequencial) da participação identifica a pessoa.
+  async bookMeetingByToken(eventId: number, token: string, scheduledAtIso: string) {
+    const participation = await this.prisma.participations.findFirst({
+      where: { event_id: eventId, whatsapp_token: token.trim() },
+      select: { participant_id: true },
+    });
+    if (!participation) {
+      throw new NotFoundException('Link de agendamento inválido ou expirado.');
+    }
+    return this.bookMeeting(eventId, participation.participant_id, scheduledAtIso);
   }
 
   async bookMeeting(eventId: number, participantId: number, scheduledAtIso: string) {

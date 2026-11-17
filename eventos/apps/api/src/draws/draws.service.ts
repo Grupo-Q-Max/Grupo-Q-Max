@@ -611,7 +611,7 @@ export class DrawsService {
 
           if (isVipPrize) {
             // Rota única por evento: o slug do banco é o endereço público.
-            const linkAgendamento = publicUrl(`/${participation.events.slug}/agendamento/${participation.participant_id}?event=${participation.event_id}`);
+            const linkAgendamento = publicUrl(`/${participation.events.slug}/agendamento/${participation.whatsapp_token}?event=${participation.event_id}`);
             finalMsg += `\n\n🎉 *Você ganhou a ${selectedPrize.name}!* 🎉\nPara evitar filas, escolha o melhor horário para o seu atendimento agora mesmo no link abaixo:\n👉 ${linkAgendamento}`;
           }
 

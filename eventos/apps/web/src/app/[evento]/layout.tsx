@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import ClinicorpKioskGuard from "@/components/clinicorp/ClinicorpKioskGuard";
 import { eventStyle, eventThemeOf } from "@/components/brand/Brand";
 import { getEventByRoute } from "@/lib/event-route";
+import EventLegalFooter from "@/components/form/EventLegalFooter";
 
 type Props = { params: Promise<{ evento: string }> };
 
@@ -31,6 +32,7 @@ export default async function EventLayout({ children, params }: Props & { childr
     <div data-event={evento} style={eventStyle(eventThemeOf(event))}>
       <ClinicorpKioskGuard event={evento} />
       {children}
+      <EventLegalFooter />
     </div>
   );
 }

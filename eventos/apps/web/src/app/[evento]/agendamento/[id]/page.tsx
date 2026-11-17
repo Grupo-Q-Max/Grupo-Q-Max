@@ -15,7 +15,7 @@ export default async function EventAgendamentoPage({ params, searchParams }: Pro
 
   return (
     <PaperShell event={eventThemeOf(event, evento)} backHref={`/${evento}`}>
-      <VipScheduler eventId={Number(query.event) || event.id} participantId={Number(id)} />
+      <VipScheduler eventId={Number(query.event) || event.id} token={decodeURIComponent(id)} />
     </PaperShell>
   );
 }

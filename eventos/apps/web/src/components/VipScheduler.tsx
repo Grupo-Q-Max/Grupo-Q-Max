@@ -10,14 +10,15 @@ import { Alert, StickyActions, primaryButton } from "@/components/form/Paper";
 
 type Props = {
   eventId: number;
-  participantId: number;
+  // Token (não sequencial) da participação: a API recusa agendar sem ele.
+  token: string;
   // Sem onBooked, mostra confirmação na própria tela.
   onBooked?: () => void;
   skipHref?: string;
   inviteText?: string;
 };
 
-export default function VipScheduler({ eventId, participantId, onBooked, skipHref, inviteText }: Props) {
+export default function VipScheduler({ eventId, token, onBooked, skipHref, inviteText }: Props) {
   // Gera 10 dias úteis pós-evento Invictus (a partir de 23/11/2026)
   const dates = useMemo(() => {
     const list: Date[] = [];
@@ -66,7 +67,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
     try {
       await fetchApi(`/meetings/event/${eventId}/book`, {
         method: "POST",
-        body: JSON.stringify({ participantId, scheduledAt: slot }),
+        body: JSON.stringify({ token, scheduledAt: slot }),
       });
       if (onBooked) onBooked();
       else setDone(true);

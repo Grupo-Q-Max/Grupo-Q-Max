@@ -370,6 +370,8 @@ export class ParticipantsService {
               vipCode: existingParticipation.vip_codes?.code || null,
               hasDrawn: Boolean(existingParticipation.draws),
               drawnPrize: existingParticipation.draws?.prizes?.name || null,
+              // Agendamento VIP no próprio quiosque exige o token.
+              whatsappToken: existingParticipation.whatsapp_token,
             },
           };
         }
@@ -476,6 +478,11 @@ export class ParticipantsService {
             },
           });
         } else {
+          const previous = participant;
+          const consentChanged =
+            previous.marketing_consent !== dto.marketingConsent ||
+            previous.privacy_consent !== dto.privacyConsent;
+
           participant = await tx.participants.update({
             where: {
               id: participant.id,
@@ -510,13 +517,41 @@ export class ParticipantsService {
 
               chairs_count: dto.chairsCount ?? null,
 
-              marketing_consent: dto.marketingConsent,
-
-              privacy_consent: dto.privacyConsent,
-
-              consented_at: new Date(),
+              // Consentimento só muda com registro em audit_logs (abaixo).
+              ...(consentChanged
+                ? {
+                    marketing_consent: dto.marketingConsent,
+                    privacy_consent: dto.privacyConsent,
+                    consented_at: new Date(),
+                  }
+                : {}),
             },
           });
+
+          if (consentChanged) {
+            await tx.audit_logs.create({
+              data: {
+                event_id: dto.eventId,
+                actor_type: 'PARTICIPANT',
+                action: 'PARTICIPANT_CONSENT_CHANGED',
+                entity_type: 'PARTICIPANT',
+                entity_id: String(participant.id),
+                description: 'Consentimento alterado em novo cadastro.',
+                before_data: JSON.stringify({
+                  marketingConsent: previous.marketing_consent,
+                  privacyConsent: previous.privacy_consent,
+                  consentedAt: previous.consented_at,
+                }),
+                after_data: JSON.stringify({
+                  marketingConsent: dto.marketingConsent,
+                  privacyConsent: dto.privacyConsent,
+                  consentedAt: participant.consented_at,
+                }),
+                ip_address: ipAddress,
+                user_agent: context?.userAgent ?? null,
+              },
+            });
+          }
         }
 
         const eventParticipant = await tx.event_participants.findFirst({
@@ -869,7 +904,7 @@ export class ParticipantsService {
     return result;
   }
 
-  async findByEvent(eventId: number) {
+  async findByEvent(eventId: number, fullAccess = false) {
     const event = await this.prisma.events.findUnique({
       where: {
         id: eventId,
@@ -880,7 +915,7 @@ export class ParticipantsService {
       throw new NotFoundException('Evento não encontrado.');
     }
 
-    return this.prisma.participations.findMany({
+    const rows = await this.prisma.participations.findMany({
       where: {
         event_id: eventId,
       },
@@ -952,9 +987,11 @@ export class ParticipantsService {
 
       take: 500,
     });
+
+    return fullAccess ? rows : rows.map(maskParticipationContact);
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, fullAccess = false) {
     const participation = await this.prisma.participations.findUnique({
       where: {
         id,
@@ -1037,13 +1074,16 @@ export class ParticipantsService {
     });
 
     return {
-      ...participation,
+      ...(fullAccess
+        ? participation
+        : maskParticipationContact(participation)),
       isVip: !!meeting,
     };
   }
 
   /**
-   * Dados mínimos para a tela pública da roleta: sem contato, CPF ou IP.
+   * Dados mínimos para a roleta do estande (operador logado, via admin-proxy):
+   * primeiro nome + clínica/CRO para conferir a pessoa. Sem contato, CPF ou IP.
    */
   async findPublic(id: number) {
     const participation = await this.prisma.participations.findUnique({
@@ -1059,8 +1099,6 @@ export class ParticipantsService {
             clinic_name: true,
             cro_number: true,
             cro_state: true,
-            city: true,
-            state: true,
           },
         },
         vip_codes: {
@@ -1111,12 +1149,9 @@ export class ParticipantsService {
       participant: {
         id: participation.participants.id,
         firstName: participation.participants.full_name.trim().split(/\s+/)[0],
-        fullName: participation.participants.full_name.trim(),
         clinicName: participation.participants.clinic_name,
         croNumber: participation.participants.cro_number,
         croState: participation.participants.cro_state,
-        city: participation.participants.city,
-        state: participation.participants.state,
       },
       draw: participation.draws,
     };
@@ -1450,6 +1485,24 @@ import { createHash } from 'crypto';
 
 function createSimpleIdentifierHash(value: string): string {
   return createHash('sha256').update(value).digest('hex');
+}
+
+// Perfis sem ADMIN (VIEWER/OPERATOR) veem contato e IP mascarados.
+export function maskParticipationContact<
+  T extends {
+    ip_address?: string | null;
+    participants: { phone: string; email: string | null };
+  },
+>(row: T): T {
+  return {
+    ...row,
+    ...('ip_address' in row ? { ip_address: row.ip_address ? '***' : null } : {}),
+    participants: {
+      ...row.participants,
+      phone: maskPhone(row.participants.phone),
+      email: row.participants.email ? maskEmail(row.participants.email) : null,
+    },
+  };
 }
 
 function maskPhone(value: string): string {
