@@ -83,7 +83,7 @@ export default function GrandDrawExperience({ eventId, eventName, initialPartici
   const [participants, setParticipants] = useState<Participant[]>(initialParticipants);
   const [historyLogs, setHistoryLogs] = useState<HistoryLog[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [prizeName, setPrizeName] = useState<string>("Câmera Intraoral");
+  const [prizeName, setPrizeName] = useState<string>("Fotopolimerizador");
   const [isDrawing, setIsDrawing] = useState(false);
   const [reel, setReel] = useState<Participant | null>(initialParticipants[0] || null);
   const [lockedDigits, setLockedDigits] = useState(0);
@@ -330,6 +330,28 @@ export default function GrandDrawExperience({ eventId, eventName, initialPartici
             <span className="text-[clamp(15px,1.5vw,26px)] text-ink-text-2 font-medium">
               <strong className="font-display text-[clamp(22px,2.2vw,38px)] text-ink-text">{participants.length}</strong>{" "}
               {participants.length === 1 ? "cupom concorrendo" : "cupons concorrendo"}
+            </span>
+          </div>
+        </div>
+
+        {/* Banner do Prêmio Oficial 19/11 */}
+        <div className="flex items-center gap-3.5 rounded-2xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-slate-900/90 to-amber-500/15 px-5 py-2.5 shadow-[0_0_35px_rgba(255,215,0,0.18)] z-10 max-w-xl animate-fade-in">
+          <div className="relative h-14 w-14 flex-none overflow-hidden rounded-xl border border-amber-400/50 bg-white/10 p-1 shadow-inner">
+            <img
+              src="/fotopolimerizador.jpg"
+              alt="Fotopolimerizador"
+              className="h-full w-full object-contain"
+            />
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="font-mono text-[11px] font-black uppercase tracking-widest text-amber-300 flex items-center gap-1.5">
+              <Trophy size={14} className="text-amber-400" /> Sorteio Geral Oficial · 19/11
+            </span>
+            <strong className="text-base font-bold text-white leading-tight">
+              {prizeName || "Fotopolimerizador"}
+            </strong>
+            <span className="text-xs text-slate-300">
+              Prêmio exclusivo de encerramento do evento
             </span>
           </div>
         </div>
