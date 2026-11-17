@@ -18,20 +18,77 @@ let BASE = {
   certificado: 220,
 };
 
+const CATALOGO_SERVICOS_PADRAO = [
+  // FINORA - Mensais
+  { id: 1, codigo: 'contabil', nome: 'Assessoria Contábil/Fiscal PJ', tipo: 'Mensal', valor_base: 1800, valor_base_pf: null, valor_base_pj: 1800, valor_base_hibrido: 2200, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 2, codigo: 'fiscal', nome: 'Assessoria Contábil/Fiscal PF', tipo: 'Mensal', valor_base: 1800, valor_base_pf: 1800, valor_base_pj: null, valor_base_hibrido: 2200, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 3, codigo: 'bpo', nome: 'BPO Financeiro', tipo: 'Mensal', valor_base: 2200, valor_base_pf: 2000, valor_base_pj: 2200, valor_base_hibrido: 2500, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 40, codigo: 'declaracao_irpf', nome: 'Declaração IRPF', tipo: 'Mensal', valor_base: 250, valor_base_pf: 250, valor_base_pj: 350, valor_base_hibrido: 350, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+
+  // FINORA - Pontuais
+  { id: 4, codigo: 'diagnostico', nome: 'Diagnóstico Tributário', tipo: 'Pontual', valor_base: 2500, valor_base_pf: 2000, valor_base_pj: 2500, valor_base_hibrido: 2800, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 13, codigo: 'AVS', nome: 'Alvará Vigilância Sanitária', tipo: 'Pontual', valor_base: 1500, valor_base_pf: 1200, valor_base_pj: 1500, valor_base_hibrido: 1500, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 41, codigo: 'diagnostico_obrigacoes', nome: 'Diagnóstico Obrigações Tributárias', tipo: 'Pontual', valor_base: 1500, valor_base_pf: 1200, valor_base_pj: 1500, valor_base_hibrido: 1500, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 42, codigo: 'regularizacao_cro', nome: 'Regularização CRO', tipo: 'Pontual', valor_base: 800, valor_base_pf: 600, valor_base_pj: 800, valor_base_hibrido: 800, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 43, codigo: 'regularizacao_prefeitura', nome: 'Regularização Prefeitura', tipo: 'Pontual', valor_base: 1000, valor_base_pf: 800, valor_base_pj: 1000, valor_base_hibrido: 1000, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 44, codigo: 'diagnostico_tributario_financeiro', nome: 'Diagnóstico Tributário/Financeiro', tipo: 'Pontual', valor_base: 2500, valor_base_pf: 2000, valor_base_pj: 2500, valor_base_hibrido: 2800, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 45, codigo: 'alvara', nome: 'Alvará', tipo: 'Pontual', valor_base: 1200, valor_base_pf: 1000, valor_base_pj: 1200, valor_base_hibrido: 1200, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+
+  // FINORA - Base Auxiliar
+  { id: 5, codigo: 'dpAte20', nome: 'Departamento Pessoal até 20 funcionários', tipo: 'Mensal', valor_base: 70, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 6, codigo: 'dp21a40', nome: 'Departamento Pessoal de 21 a 40 funcionários', tipo: 'Mensal', valor_base: 65, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 7, codigo: 'dpAcima40', nome: 'Departamento Pessoal acima de 40 funcionários', tipo: 'Mensal', valor_base: 60, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 8, codigo: 'proLabore', nome: 'Pró-labore', tipo: 'Mensal', valor_base: 70, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 9, codigo: 'cro', nome: 'Inscrição CRO', tipo: 'Pontual', valor_base: 400, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 10, codigo: 'regulatorio', nome: 'Serviços Regulatórios', tipo: 'Pontual', valor_base: 1500, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 11, codigo: 'certificado', nome: 'Certificado Digital', tipo: 'Mensal', valor_base: 220, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+
+  // CONTABIL
+  { id: 23, codigo: 'contabil_contabil', nome: 'Assessoria Contábil/Fiscal PJ', tipo: 'Mensal', valor_base: 1800, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+  { id: 24, codigo: 'fiscal_contabil', nome: 'Assessoria Contábil/Fiscal PF', tipo: 'Mensal', valor_base: 1800, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+  { id: 25, codigo: 'bpo_contabil', nome: 'BPO Financeiro', tipo: 'Mensal', valor_base: 2200, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+  { id: 26, codigo: 'diagnostico_contabil', nome: 'Diagnóstico Tributário', tipo: 'Pontual', valor_base: 2500, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+  { id: 35, codigo: 'AVS_contabil', nome: 'Alvará Vigilância Sanitária', tipo: 'Pontual', valor_base: 1500, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+
+  // AUDITORIA
+  { id: 46, codigo: 'auditoria_clinica', nome: 'Auditoria de Processos Clínicos e Conformidade', tipo: 'Pontual', valor_base: 3500, ativo: 1, categoria: 'Servico', empresa: 'AUDITORIA' },
+  { id: 47, codigo: 'auditoria_tributaria', nome: 'Auditoria Tributária e Fiscal', tipo: 'Pontual', valor_base: 4500, ativo: 1, categoria: 'Servico', empresa: 'AUDITORIA' },
+  { id: 48, codigo: 'auditoria_contabil', nome: 'Auditoria Contábil e Balanço', tipo: 'Pontual', valor_base: 5000, ativo: 1, categoria: 'Servico', empresa: 'AUDITORIA' },
+  { id: 49, codigo: 'auditoria_recorrente', nome: 'Auditoria Contínua & Compliance', tipo: 'Mensal', valor_base: 2500, ativo: 1, categoria: 'Servico', empresa: 'AUDITORIA' },
+
+  // LAGERHAUS
+  { id: 50, codigo: 'lagerhaus_coworking', nome: 'Locação de Estação Coworking Premium', tipo: 'Mensal', valor_base: 900, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+  { id: 51, codigo: 'lagerhaus_sala_privativa', nome: 'Locação de Sala Privativa Executiva', tipo: 'Mensal', valor_base: 2500, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+  { id: 52, codigo: 'lagerhaus_galpao_logistico', nome: 'Módulo Galpão Logístico Inteligente', tipo: 'Mensal', valor_base: 6500, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+  { id: 53, codigo: 'lagerhaus_endereco_fiscal', nome: 'Endereço Fiscal e Comercial', tipo: 'Mensal', valor_base: 250, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+  { id: 54, codigo: 'lagerhaus_taxa_adesao', nome: 'Taxa de Implantação e Credenciamento', tipo: 'Pontual', valor_base: 500, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+];
+
+const PLANOS_TECH_PADRAO = [
+  { id: 1, codigo: 'essencial', nome: 'Plano Essencial', valor_implantacao: 5470.00, valor_mensalidade: 1037.00, ativo: 1 },
+  { id: 2, codigo: 'performance', nome: 'Plano Performance', valor_implantacao: 8470.00, valor_mensalidade: 1727.00, ativo: 1 },
+  { id: 3, codigo: 'autoridade', nome: 'Plano Autoridade', valor_implantacao: 11470.00, valor_mensalidade: 2487.00, ativo: 1 },
+];
+
 let SERVICOS_DINAMICOS = [];
-let REGRAS_PRECIFICACAO = [];
-let PLANOS_TECH = [];
+let REGRAS_PRECIFICACAO = [...CATALOGO_SERVICOS_PADRAO];
+let PLANOS_TECH = [...PLANOS_TECH_PADRAO];
+
 async function carregarPlanosTech() {
   try {
-    const response = await fetchAuth("/api/tech-planos");
+    const response = await fetchAuth("/api/tech-planos").catch(() => null);
 
-    if (!response.ok) return;
-
-    PLANOS_TECH = await response.json();
+    if (response && response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data) && data.length) {
+        PLANOS_TECH = data;
+      }
+    }
 
     renderizarPlanosTech();
   } catch (error) {
-    console.warn("Erro ao carregar planos Tech.", error);
+    console.warn("Erro ao carregar planos Tech da API.", error);
+    renderizarPlanosTech();
   }
 }
 
@@ -49,23 +106,13 @@ function renderizarPlanosTech() {
 
   atualizarPlanoTech();
 }
+
 async function carregarServicosDinamicos(servicosBase = null) {
   try {
     let servicos = servicosBase || REGRAS_PRECIFICACAO;
 
     if (!servicos || !servicos.length) {
-      const container = document.getElementById("listaServicosDinamicos");
-      if (container) {
-        container.innerHTML = `
-          <div class="skeleton-box" style="height: 48px; margin-bottom: 12px; border-radius: 15px; grid-column: 1/-1;"></div>
-          <div class="skeleton-box" style="height: 48px; margin-bottom: 12px; border-radius: 15px; grid-column: 1/-1;"></div>
-        `;
-      }
-      const response = await fetchAuth("/api/regras-precificacao");
-
-      if (!response.ok) return;
-
-      servicos = await response.json();
+      servicos = CATALOGO_SERVICOS_PADRAO;
       REGRAS_PRECIFICACAO = servicos;
     }
 
@@ -98,8 +145,8 @@ async function carregarServicosDinamicos(servicosBase = null) {
 
       if (Number(s.ativo) !== 1) return false;
       if (s.categoria === "Base Auxiliar") return false;
-      if (s.codigo.startsWith("plano_")) return false;
-      if (s.codigo.startsWith("mensalidade_")) return false;
+      if (s.codigo && s.codigo.startsWith("plano_")) return false;
+      if (s.codigo && s.codigo.startsWith("mensalidade_")) return false;
 
       if (tipoAtual === "tech") return empresa === "TECH";
       if (tipoAtual === "contabil") return empresa === "CONTABIL";
@@ -112,6 +159,7 @@ async function carregarServicosDinamicos(servicosBase = null) {
     renderizarServicosDinamicos();
   } catch (error) {
     console.warn("Erro ao carregar serviços dinâmicos.", error);
+    renderizarServicosDinamicos();
   }
 }
 function deslogarSessao() {
@@ -267,41 +315,44 @@ function aplicarFiltrosServicosDinamicos() {
 }
 async function carregarRegrasPrecificacao() {
   try {
+    // 1. Renderiza imediatamente com os serviços padrão para nunca travar a tela em skeleton
+    await carregarServicosDinamicos(REGRAS_PRECIFICACAO);
+    renderizarPlanosTech();
+    gerarProposta();
+
+    // 2. Busca regras atualizadas no backend com timeout seguro
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
     const response = await fetchAuth("/api/regras-precificacao", {
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${localStorage.getItem("finora_token")}`,
       },
+    }).catch((err) => {
+      console.warn("Aviso: Requisição de regras demorou ou falhou, mantendo catálogo padrão.", err.message);
+      return null;
     });
 
-    if (!response.ok) {
-      console.warn(
-        "Não foi possível carregar regras do banco. Usando valores padrão.",
-      );
-      return;
+    clearTimeout(timeoutId);
+
+    if (response && response.ok) {
+      const regras = await response.json();
+      if (Array.isArray(regras) && regras.length > 0) {
+        REGRAS_PRECIFICACAO = regras;
+
+        regras.forEach((regra) => {
+          if (regra.codigo) BASE[regra.codigo] = Number(regra.valor_base || 0);
+        });
+
+        await carregarServicosDinamicos(regras);
+      }
     }
-
-    const regras = await response.json();
-    REGRAS_PRECIFICACAO = regras;
-
-    regras.forEach((regra) => {
-      BASE[regra.codigo] = Number(regra.valor_base || 0);
-    });
-
-    await carregarServicosDinamicos(regras);
+  } catch (error) {
+    console.warn("Aviso ao sincronizar regras de precificação (mantendo catálogo ativo):", error);
+  } finally {
     await carregarPlanosTech();
     gerarProposta();
-  } catch (error) {
-    console.warn("Erro ao carregar regras:", error);
-
-    const container = document.getElementById("listaServicosDinamicos");
-    if (container) {
-      container.innerHTML = `
-      <div class="alerta">
-        Não foi possível carregar os serviços agora. 
-        Atualize a página ou tente novamente em alguns instantes.
-      </div>
-    `;
-    }
   }
 }
 
@@ -1859,6 +1910,12 @@ window.descartarRascunho = function() {
 
 document.addEventListener("DOMContentLoaded", () => {
   preencherDataProposta();
+
+  // Garante a exibição imediata dos outros serviços
+  const containerServicos = document.getElementById("listaServicosDinamicos");
+  if (containerServicos && (!containerServicos.children.length || containerServicos.querySelector(".skeleton-box"))) {
+    carregarServicosDinamicos(REGRAS_PRECIFICACAO);
+  }
   const campos = [
     { id: "cpfSocio", formatador: formatarCPF },
     { id: "cnpj", formatador: formatarCNPJ },

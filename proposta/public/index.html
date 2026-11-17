@@ -678,7 +678,7 @@
                 <div class="proposal-step" data-step-indicator="2">2. Endereço</div>
                 <div class="proposal-step" data-step-indicator="3">3. Sócios</div>
                 <div class="proposal-step" data-step-indicator="4">4. Operação</div>
-                <div class="proposal-step" data-step-indicator="5">5. Serviços</div>
+                <div class="proposal-step" data-step-indicator="5">5. Outros serviços</div>
                 <div class="proposal-step" data-step-indicator="6">6. Revisão</div>
             </div>
         </section>
@@ -1004,7 +1004,7 @@
                                 Voltar: Sócios
                             </button>
                             <button type="button" class="btn-primary" style="width: auto; padding: 0 20px;" onclick="irParaPasso(5)">
-                                Avançar: Serviços ➔
+                                Avançar: Outros serviços ➔
                             </button>
                         </div>
                     </div>
@@ -1012,13 +1012,13 @@
 
                 <section class="card wizard-card" id="secaoServicos" data-wizard-step="5">
                     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <h2>5. Escopo de Serviços</h2>
+                        <h2>5. Outros serviços</h2>
                     </div>
                     <div class="card-body">
                         <!-- Barra de Busca Rápida e Filtros de Serviços -->
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; grid-column: 1 / -1;">
                             <div style="position:relative; flex:1; min-width:200px;">
-                                <input type="text" id="filtroBuscaServico" placeholder="Pesquisar serviço no escopo..." oninput="filtrarServicosPorTexto(this.value)" style="height:38px; border-radius:10px; font-size:13px; width:100%; border:1px solid #cbd5e1; padding:0 12px;">
+                                <input type="text" id="filtroBuscaServico" placeholder="Pesquisar outros serviços..." oninput="filtrarServicosPorTexto(this.value)" style="height:38px; border-radius:10px; font-size:13px; width:100%; border:1px solid #cbd5e1; padding:0 12px;">
                             </div>
                             <div style="display:flex; gap:6px;">
                                 <button type="button" class="btn-mini filtro-servico-btn filtro-ativo" onclick="filtrarCategoriaServicos('TODOS', this)">Todos</button>
@@ -1028,11 +1028,11 @@
                         </div>
 
                         <div class="checkbox-grid" id="listaServicosDinamicos">
-                            <small style="color:#64748b;">Carregando serviços...</small>
+                            <small style="color:#64748b;">Carregando outros serviços...</small>
                         </div>
                         <div id="boxOutrosServicos" style="grid-column:1/-1; margin-top:18px;"> <strong
                                 style="display:block; color:#0f172a; margin-bottom:8px;">
-                                Outros serviços
+                                Serviço sob Demanda / Personalizado
                             </strong>
 
                             <div class="checkbox-grid">
