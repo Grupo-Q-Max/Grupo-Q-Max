@@ -247,7 +247,7 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
             socios = ?, faturamento = ?, regime_fiscal = ?, regime_hibrido = ?, distancia_km = ?,
             metragem = ?, valor_total = ?, itens_json = ?, empresa_proposta = ?, tipo_proposta = ?,
             tipo_pessoa = ?, pro_labore = ?, dentistas_parceiros = ?, quantidade_socios = ?,
-            socios_detalhados_json = ?
+            socios_detalhados_json = ?, video_pitch = ?, audio_pitch = ?
           WHERE id = ? AND status = 'Rascunho'`,
           [
             nomeClinica, dados.razaoSocial || null, dados.cnpj || null, dados.nomeSocio || null, dados.cpfSocio || null,
@@ -255,7 +255,7 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
             Number(dados.socios || 0), Number(dados.faturamento || 0), dados.regimeFiscal || null, dados.regimeHibrido || null, Number(dados.distanciaKm || 0),
             Number(dados.metragem || 0), valorTotal, JSON.stringify(itens), (dados.tipoProposta || "FINORA").toUpperCase(), dados.tipoProposta || "finora",
             dados.tipoPessoa || "PJ", dados.proLabore || "Não", Number(dados.dentistasParceiros || 0), Number(dados.quantidadeSocios || 0),
-            estadoCompletoJson, rascunhoId
+            estadoCompletoJson, dados.videoPitch || dados.video_pitch || "", dados.audioPitch || dados.audio_pitch || "", rascunhoId
           ]
         );
 
@@ -278,8 +278,9 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
         nome_socio, cpf_socio, email, telefone, endereco_clinica, cadeiras, funcionarios,
         socios, faturamento, regime_fiscal, regime_hibrido, distancia_km, metragem,
         valor_total, itens_json, status, criado_por, empresa_proposta, tipo_proposta,
-        tipo_pessoa, pro_labore, dentistas_parceiros, quantidade_socios, socios_detalhados_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Rascunho', ?, ?, ?, ?, ?, ?, ?, ?)`,
+        tipo_pessoa, pro_labore, dentistas_parceiros, quantidade_socios, socios_detalhados_json,
+        video_pitch, audio_pitch
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Rascunho', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tokenAcesso, numeroProposta, dataProposta, nomeClinica, dados.razaoSocial || null, dados.cnpj || null,
         dados.nomeSocio || null, dados.cpfSocio || null, email, dados.telefone || null, dados.enderecoClinica || null,
@@ -287,7 +288,8 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
         dados.regimeFiscal || null, dados.regimeHibrido || null, Number(dados.distanciaKm || 0), Number(dados.metragem || 0),
         valorTotal, JSON.stringify(itens), req.user.id, (dados.tipoProposta || "FINORA").toUpperCase(),
         dados.tipoProposta || "finora", dados.tipoPessoa || "PJ", dados.proLabore || "Não",
-        Number(dados.dentistasParceiros || 0), Number(dados.quantidadeSocios || 0), estadoCompletoJson
+        Number(dados.dentistasParceiros || 0), Number(dados.quantidadeSocios || 0), estadoCompletoJson,
+        dados.videoPitch || dados.video_pitch || "", dados.audioPitch || dados.audio_pitch || ""
       ]
     );
 

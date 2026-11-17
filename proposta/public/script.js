@@ -707,16 +707,11 @@ function calcularValorConfigurado(codigo, contexto, fallback = 0) {
 function toggleServicoEspecial() {
   const principal = document.getElementById("boxServicosEspeciais");
   const boxPersonalizado = document.getElementById("boxPersonalizado");
-  const containerAuditoria = document.getElementById("boxAuditoriaContainer");
 
   const personalizado = checked("servicoPersonalizado");
-  const auditoria = checked("servicoAuditoria");
 
-  principal.style.display = personalizado ? "block" : "none";
-  boxPersonalizado.style.display = personalizado ? "block" : "none";
-  if (containerAuditoria) {
-    containerAuditoria.style.display = auditoria ? "block" : "none";
-  }
+  if (principal) principal.style.display = personalizado ? "block" : "none";
+  if (boxPersonalizado) boxPersonalizado.style.display = personalizado ? "block" : "none";
 }
 
 function obterTopicos(textareaId) {
@@ -950,12 +945,17 @@ function obterItensCalculados() {
     });
   }
 
-  if (checked("servicoAuditoria")) {
-    itens.push({
-      servico: "Auditoria",
-      valor: numeroCampo("valorAuditoria") || 2500,
-      observacao: "Auditoria",
-      topicosPersonalizados: obterTopicos("topicosAuditoria"),
+  // Serviços Adicionais Adicionados Manualmente
+  if (Array.isArray(SERVICOS_MANUAIS_ADICIONAIS)) {
+    SERVICOS_MANUAIS_ADICIONAIS.forEach((sm) => {
+      itens.push({
+        codigo: `manual_${sm.id}`,
+        servico: sm.nome,
+        valor: Number(sm.valor || 0),
+        observacao: sm.tipo === "Pontual" ? "Serviço pontual" : "Mensal",
+        descricao: sm.descricao || "",
+        topicosPersonalizados: sm.descricao ? [sm.descricao] : [],
+      });
     });
   }
 
@@ -1419,12 +1419,20 @@ function capturarEstadoCompletoFormulario() {
       estado[el.id] = el.value;
     }
   });
+  estado.__servicosManuais = SERVICOS_MANUAIS_ADICIONAIS || [];
   return estado;
 }
 
 function restaurarEstadoFormulario(estado) {
   if (!estado || typeof estado !== "object") return;
   Object.keys(estado).forEach((id) => {
+    if (id === "__servicosManuais") {
+      if (Array.isArray(estado.__servicosManuais)) {
+        SERVICOS_MANUAIS_ADICIONAIS = [...estado.__servicosManuais];
+        if (typeof renderizarServicosManuais === "function") renderizarServicosManuais();
+      }
+      return;
+    }
     const el = document.getElementById(id);
     if (!el) {
       const radio = document.querySelector(`input[name="${id}"][value="${estado[id]}"]`);
@@ -1446,6 +1454,22 @@ function restaurarEstadoFormulario(estado) {
       el.dispatchEvent(new Event("change"));
     }
   });
+
+  // Atualiza player de áudio se houver áudio salvo
+  const inputAudio = document.getElementById("audioPitchBase64");
+  const playerAudio = document.getElementById("audioPitchPlayer");
+  const playerDiv = document.getElementById("playerAudioPitchPreview");
+  const btnExcluirAudio = document.getElementById("btnExcluirAudioPitch");
+  if (inputAudio && inputAudio.value) {
+    if (playerAudio) playerAudio.src = inputAudio.value;
+    if (playerDiv) playerDiv.style.display = "block";
+    if (btnExcluirAudio) btnExcluirAudio.style.display = "inline-flex";
+  }
+
+  // Sincroniza faturamento mensal/anual
+  if (typeof sincronizarFaturamentoAnualParaMensal === "function") {
+    sincronizarFaturamentoAnualParaMensal();
+  }
 }
 
 async function salvarRascunhoServidor(mostrarNotificacao = true) {
@@ -2254,6 +2278,10 @@ document.addEventListener("DOMContentLoaded", () => {
       input.addEventListener("input", atualizarEnderecoCompleto);
     }
   });
+
+  if (typeof sincronizarFaturamentoAnualParaMensal === "function") {
+    sincronizarFaturamentoAnualParaMensal();
+  }
 
   // Mostrar banner de rascunho se existir dados salvos
   const rascunho = localStorage.getItem("qmax_proposta_rascunho");
@@ -3452,25 +3480,41 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// 💰 CONTROLE DE FATURAMENTO RÁPIDO & EQUIVALENTE MENSAL
+// 💰 CONTROLE DE FATURAMENTO MENSAL E ANUAL SINCRONIZADOS
+window.sincronizarFaturamentoMensalParaAnual = function() {
+  const mensalEl = document.getElementById("faturamentoMensal");
+  const anualEl = document.getElementById("faturamento");
+  if (!mensalEl || !anualEl) return;
+  const mensal = Number(mensalEl.value || 0);
+  anualEl.value = mensal > 0 ? (mensal * 12).toFixed(2).replace(/\.00$/, '') : 0;
+};
+
+window.sincronizarFaturamentoAnualParaMensal = function() {
+  const mensalEl = document.getElementById("faturamentoMensal");
+  const anualEl = document.getElementById("faturamento");
+  if (!mensalEl || !anualEl) return;
+  const anual = Number(anualEl.value || 0);
+  mensalEl.value = anual > 0 ? (anual / 12).toFixed(2).replace(/\.00$/, '') : 0;
+};
+
+window.definirFaturamento = function(valorMensal) {
+  const mensalEl = document.getElementById("faturamentoMensal");
+  const anualEl = document.getElementById("faturamento");
+  if (mensalEl) mensalEl.value = valorMensal;
+  if (anualEl) anualEl.value = valorMensal * 12;
+  if (typeof gerarProposta === "function") gerarProposta();
+};
+
 window.definirFaturamentoAnual = function(valorAnual) {
-  const el = document.getElementById("faturamento");
-  if (el) {
-    el.value = valorAnual;
-    atualizarEquivalenteMensal();
-    if (typeof gerarProposta === "function") gerarProposta();
-  }
+  const mensalEl = document.getElementById("faturamentoMensal");
+  const anualEl = document.getElementById("faturamento");
+  if (anualEl) anualEl.value = valorAnual;
+  if (mensalEl) mensalEl.value = (valorAnual / 12).toFixed(2).replace(/\.00$/, '');
+  if (typeof gerarProposta === "function") gerarProposta();
 };
 
 window.atualizarEquivalenteMensal = function() {
-  const el = document.getElementById("faturamento");
-  const elEquiv = document.getElementById("faturamentoMensalEquivalente");
-  if (!el || !elEquiv) return;
-
-  const valorAnual = Number(el.value || 0);
-  const mensal = valorAnual / 12;
-  const moedaFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-  elEquiv.textContent = `(~ ${moedaFmt.format(mensal)}/mês)`;
+  sincronizarFaturamentoAnualParaMensal();
 };
 
 // 🤖 ANÁLISE PREDITIVA DE PROBABILIDADE DE FECHAMENTO POR IA
@@ -3820,22 +3864,141 @@ window.toggleGravacaoAudioPitch = async function() {
   }
 };
 
+window.anexarArquivoAudioPitch = function(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const validTypes = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/m4a", "audio/x-m4a", "audio/aac", "audio/webm"];
+  const isValidExt = /\.(mp3|wav|ogg|m4a|aac|webm)$/i.test(file.name);
+  if (!file.type.startsWith("audio/") && !isValidExt) {
+    alert("Por favor, selecione um arquivo de áudio válido (.mp3, .wav, .m4a, .ogg, .aac).");
+    return;
+  }
+
+  if (file.size > 20 * 1024 * 1024) {
+    alert("O arquivo de áudio excede o limite máximo de 20MB.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const base64 = evt.target.result;
+    const inputHidden = document.getElementById("audioPitchBase64");
+    const player = document.getElementById("audioPitchPlayer");
+    const playerDiv = document.getElementById("playerAudioPitchPreview");
+    const btnExcluir = document.getElementById("btnExcluirAudioPitch");
+    const labelNome = document.getElementById("nomeArquivoAudioAnexado");
+
+    if (inputHidden) inputHidden.value = base64;
+    if (player) player.src = base64;
+    if (playerDiv) playerDiv.style.display = "block";
+    if (btnExcluir) btnExcluir.style.display = "inline-flex";
+    if (labelNome) {
+      labelNome.textContent = `📎 ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+      labelNome.style.display = "block";
+    }
+    if (window.showToast) window.showToast("Áudio anexado com sucesso!", "success");
+  };
+  reader.readAsDataURL(file);
+};
+
 window.excluirAudioPitch = function() {
   const btn = document.getElementById("btnGravarAudioPitch");
   const btnExcluir = document.getElementById("btnExcluirAudioPitch");
   const playerDiv = document.getElementById("playerAudioPitchPreview");
   const player = document.getElementById("audioPitchPlayer");
   const inputHidden = document.getElementById("audioPitchBase64");
+  const inputFile = document.getElementById("inputArquivoAudioPitch");
+  const labelNome = document.getElementById("nomeArquivoAudioAnexado");
 
   if (inputHidden) inputHidden.value = "";
   if (player) player.src = "";
   if (playerDiv) playerDiv.style.display = "none";
   if (btnExcluir) btnExcluir.style.display = "none";
+  if (inputFile) inputFile.value = "";
+  if (labelNome) {
+    labelNome.textContent = "";
+    labelNome.style.display = "none";
+  }
   if (btn) {
-    btn.innerText = "Gravar Áudio";
+    btn.innerText = "🎙️ Gravar Áudio";
     btn.style.background = "#ef4444";
   }
 };
+
+// ==========================================
+// GESTÃO DE SERVIÇOS ADICIONAIS MANUAIS
+// ==========================================
+let SERVICOS_MANUAIS_ADICIONAIS = [];
+
+window.adicionarServicoManual = function() {
+  const nomeEl = document.getElementById("novoManualNome");
+  const tipoEl = document.getElementById("novoManualTipo");
+  const valorEl = document.getElementById("novoManualValor");
+  const descEl = document.getElementById("novoManualDescricao");
+
+  const nome = (nomeEl?.value || "").trim();
+  const tipo = tipoEl?.value || "Mensal";
+  const valor = parseFloat(valorEl?.value) || 0;
+  const descricao = (descEl?.value || "").trim();
+
+  if (!nome) {
+    alert("Por favor, informe o nome do serviço adicional.");
+    nomeEl?.focus();
+    return;
+  }
+  if (valor <= 0) {
+    alert("Por favor, informe um valor maior que zero para o serviço.");
+    valorEl?.focus();
+    return;
+  }
+
+  const id = Date.now();
+  SERVICOS_MANUAIS_ADICIONAIS.push({
+    id,
+    nome,
+    tipo,
+    valor,
+    descricao
+  });
+
+  if (nomeEl) nomeEl.value = "";
+  if (valorEl) valorEl.value = "";
+  if (descEl) descEl.value = "";
+
+  renderizarServicosManuais();
+  if (typeof gerarProposta === "function") gerarProposta();
+  if (window.showToast) window.showToast(`Serviço "${nome}" incluído na proposta!`, "success");
+};
+
+window.removerServicoManual = function(id) {
+  SERVICOS_MANUAIS_ADICIONAIS = SERVICOS_MANUAIS_ADICIONAIS.filter((s) => s.id !== id);
+  renderizarServicosManuais();
+  if (typeof gerarProposta === "function") gerarProposta();
+};
+
+function renderizarServicosManuais() {
+  const container = document.getElementById("listaServicosManuaisAdicionados");
+  if (!container) return;
+  if (!SERVICOS_MANUAIS_ADICIONAIS.length) {
+    container.innerHTML = "";
+    return;
+  }
+  container.innerHTML = SERVICOS_MANUAIS_ADICIONAIS.map((s) => `
+    <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px;">
+      <div>
+        <strong style="font-size:13px; color:#1e293b;">${escapeHTML(s.nome)}</strong>
+        <span style="display:inline-block; margin-left:6px; font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px; background:${s.tipo === 'Mensal' ? '#eff6ff' : '#fef3c7'}; color:${s.tipo === 'Mensal' ? '#1d4ed8' : '#b45309'};">${s.tipo}</span>
+        ${s.descricao ? `<small style="display:block; color:#64748b; font-size:11.5px; margin-top:2px;">${escapeHTML(s.descricao)}</small>` : ''}
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <strong style="font-size:13px; color:#0f172a;">${formatador.format(s.valor)}</strong>
+        <button type="button" onclick="removerServicoManual(${s.id})" style="background:#fee2e2; color:#ef4444; border:1px solid #fecdd3; border-radius:8px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="Remover serviço">🗑</button>
+      </div>
+    </div>
+  `).join("");
+}
+window.renderizarServicosManuais = renderizarServicosManuais;
 
 // ⌨️ ATALHOS DE TECLADO DE ALTA PRODUTIVIDADE (MODO TURBO)
 document.addEventListener("keydown", (e) => {
