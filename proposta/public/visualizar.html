@@ -465,8 +465,8 @@
       </main>
     </div>
 
-    <!-- PITCH ODONTO: só propostas FINORA / QMAX Contábil (body.seg-odonto) -->
-    <section id="secaoOdonto" class="secao-odonto" aria-labelledby="secaoOdontoTitulo">
+    <!-- PITCH ODONTO: só propostas FINORA (body.seg-odonto) -->
+    <section id="secaoOdonto" class="secao-odonto" aria-labelledby="secaoOdontoTitulo" style="display:none;">
       <div class="secao-odonto-topo">
         <svg class="secao-odonto-icone" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3C4.5 3 3 5 3 7.5c0 2 .7 3.3 1.3 4.8.6 1.6.8 3.6 1.2 5.6.3 1.6.8 3.1 1.9 3.1 1.3 0 1.5-2.2 1.9-4 .3-1.5.9-2.5 2.7-2.5s2.4 1 2.7 2.5c.4 1.8.6 4 1.9 4 1.1 0 1.6-1.5 1.9-3.1.4-2 .6-4 1.2-5.6.6-1.5 1.3-2.8 1.3-4.8C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>
         <div>
@@ -668,10 +668,10 @@
           GARANTIA DE CONFORMIDADE TRIBUTÁRIA & FISCAL
         </span>
         <h2 id="certClinicaNome" style="font-size:24px; font-weight:900; color:#0f172a; margin:8px 0 14px 0;">
-          Clínica Odontológica
+          Empresa Contratante
         </h2>
         <p style="color:#475569; font-size:13.5px; line-height:1.6; max-width:540px; margin:0 auto 20px;">
-          Atestamos que a assessoria contratada prevê o enquadramento fiscal no <strong>Fator R (Anexo III - 6%)</strong>, gestão rigorosa do Pró-labore dos sócios e regularidade cadastral nos termos das normativas da <strong>Receita Federal do Brasil</strong> e dos Conselhos Regionais (<span data-odonto="CRO">CRO/CRF</span>).
+          Atestamos que a assessoria contratada prevê o enquadramento fiscal no <strong>Fator R (Anexo III - 6%)</strong>, gestão rigorosa do Pró-labore dos sócios e regularidade cadastral nos termos das normativas da <strong>Receita Federal do Brasil</strong> e dos Conselhos Competentes (<span id="certConselhoRegional" data-odonto="CRO">CRC/Fisco</span>).
         </p>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; text-align:left;">
@@ -1221,14 +1221,20 @@
       }
     }
 
-    // Produto é vendido quase só para clínicas odontológicas: FINORA / QMAX Contábil = odonto
+    // Segmento exclusivo odonto: apenas FINORA
     function ehOdonto(p) {
-      return ["finora", "contabil"].includes(String(p.tipo_proposta || "").toLowerCase());
+      return String(p?.tipo_proposta || p?.empresa || "").toLowerCase() === "finora";
     }
 
     function aplicarSegmentoOdonto(p) {
-      if (!ehOdonto(p)) return;
+      const secao = document.getElementById('secaoOdonto');
+      if (!ehOdonto(p)) {
+        if (secao) secao.style.display = 'none';
+        document.body.classList.remove('seg-odonto');
+        return;
+      }
       document.body.classList.add('seg-odonto');
+      if (secao) secao.style.display = 'block';
       document.querySelectorAll('[data-odonto]').forEach(el => { el.textContent = el.dataset.odonto; });
       const metricas = [];
       if (Number(p.cadeiras) > 0) metricas.push(`<strong>${esc(p.cadeiras)}</strong> cadeiras`);
@@ -1447,8 +1453,11 @@
     function abrirModalCertificadoBlindagem() {
       const modal = document.getElementById('modalCertificadoBlindagem');
       const elNome = document.getElementById('certClinicaNome');
+      const elConselho = document.getElementById('certConselhoRegional');
       const p = window.dadosPropostaAtual || {};
-      if (elNome) elNome.innerText = p.nome_clinica || "Clínica";
+      const odonto = ehOdonto(p);
+      if (elNome) elNome.innerText = p.nome_clinica || (odonto ? "Clínica" : "Empresa");
+      if (elConselho) elConselho.innerText = odonto ? "CRO" : "CRC / Fisco";
       if (modal) modal.style.display = 'flex';
     }
 
@@ -1689,15 +1698,15 @@
             </p>
             <div style="display:inline-flex; gap:16px; background:rgba(255,255,255,0.06); padding:12px 24px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
               <div><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Faturamento Estimado</span><strong style="color:#38bdf8; font-size:16px;">${faturamento}/mês</strong></div>
-              <div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">${odonto ? 'Cadeiras' : 'Cadeiras Odonto'}</span><strong style="color:#fff; font-size:16px;">${esc(p.cadeiras || 2)}</strong></div>
-              <div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Equipe</span><strong style="color:#fff; font-size:16px;">${esc(p.funcionarios || 2)} funcionários</strong></div>
+              ${odonto && Number(p.cadeiras) > 0 ? `<div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Cadeiras</span><strong style="color:#fff; font-size:16px;">${esc(p.cadeiras)}</strong></div>` : ''}
+              <div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Equipe</span><strong style="color:#fff; font-size:16px;">${esc(p.funcionarios || 0)} colaboradores</strong></div>
             </div>
           </div>
         `;
       } else if (idx === 1) {
         elConteudo.innerHTML = `
           <div style="animation: fadeIn 0.4s ease;">
-                        <h2 style="font-size:28px; font-weight:900; margin:0 0 10px; color:#ffffff;">O Que a FINORA Assume ${odonto ? 'no Seu Consultório' : 'na Sua Clínica'}</h2>
+            <h2 style="font-size:28px; font-weight:900; margin:0 0 10px; color:#ffffff;">O Que a ${odonto ? 'FINORA' : (p.empresa_proposta || 'Assessoria')} Assume ${odonto ? 'no Seu Consultório' : 'na Sua Empresa'}</h2>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; text-align:left; margin-top:20px;">
               <div style="background:rgba(255,255,255,0.06); padding:18px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
                 <strong style="color:#38bdf8; font-size:15px; display:block; margin-bottom:4px;">BPO Financeiro Completo</strong>

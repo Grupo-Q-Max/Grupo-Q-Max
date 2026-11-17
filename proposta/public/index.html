@@ -1288,7 +1288,7 @@
 
                     <!-- Dados Cadastrais Resumidos -->
                     <div class="review-grid" style="grid-template-columns:1fr; gap:6px; font-size:12px; margin-bottom:18px;">
-                        <div class="review-item" style="padding:8px 12px;"><span>Cliente / Clínica</span><strong id="reviewCliente">Não informado</strong></div>
+                        <div class="review-item" style="padding:8px 12px;"><span id="reviewLabelCliente">Cliente / Clínica</span><strong id="reviewCliente">Não informado</strong></div>
                         <div class="review-item" style="padding:8px 12px;"><span>Documento Principal</span><strong id="reviewDocumento">Não informado</strong></div>
                         <div class="review-item" style="padding:8px 12px;"><span>Sócio Responsável</span><strong id="reviewSocioResp">Não informado</strong></div>
                         <div class="review-item" style="padding:8px 12px;"><span>Equipe & Sócios</span><strong id="reviewEquipe">1 sócio(s) • 0 func.</strong></div>
@@ -1953,10 +1953,26 @@
                     setValPadrao('proLabore', 'Não');
                     setValPadrao('regimeHibrido', 'Não');
                 } else {
+                    const tipoProposta = (byId('tipoProposta')?.value || 'finora').toLowerCase();
                     const elCadeiras = document.getElementById('cadeiras');
-                    if (elCadeiras && elCadeiras.value === '0') elCadeiras.value = '2';
+                    if (elCadeiras && elCadeiras.value === '0' && tipoProposta === 'finora') elCadeiras.value = '2';
                     const elMetragem = document.getElementById('metragem');
                     if (elMetragem && elMetragem.value === '0') elMetragem.value = '50';
+                }
+
+                // Garantir ocultação estrita de campos odontológicos quando não for Finora
+                const ehFinoraEmp = ((byId('tipoProposta')?.value || 'finora')).toLowerCase() === 'finora';
+                if (byId('grupoDentistasParceiros')) byId('grupoDentistasParceiros').style.display = ehFinoraEmp ? 'block' : 'none';
+                if (byId('grupoCadeiras')) byId('grupoCadeiras').style.display = ehFinoraEmp ? 'block' : 'none';
+                if (byId('grupoTemCRO')) byId('grupoTemCRO').style.display = ehFinoraEmp ? 'block' : 'none';
+                if (byId('boxVencimentoCRO') && !ehFinoraEmp) byId('boxVencimentoCRO').style.display = 'none';
+                if (!ehFinoraEmp) {
+                    const setValFim = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+                    setValFim('dentistasParceiros', '0');
+                    setValFim('cadeiras', '0');
+                    setValFim('temCRO', 'Sim');
+                    const vencCRO = document.getElementById('vencimentoCRO');
+                    if (vencCRO) vencCRO.value = '';
                 }
             }
 
@@ -1965,26 +1981,28 @@
             const labelNomeResp = document.getElementById("labelNomeResponsavel");
             const campoNomeResp = document.getElementById("nomeSocio");
             const labelCpfResp = document.getElementById("labelCpfResponsavel");
+            const tipoPropostaAtual = ((byId('tipoProposta')?.value || 'finora')).toLowerCase();
+            const ehFinoraAtual = tipoPropostaAtual === 'finora';
 
             if (isHibrida) {
-                if (labelNomeEmpresa) labelNomeEmpresa.innerText = "Nome da Clínica / Consultório";
-                if (campoNomeEmpresa) campoNomeEmpresa.placeholder = "Ex.: Consultório Odontológico Silva";
+                if (labelNomeEmpresa) labelNomeEmpresa.innerText = ehFinoraAtual ? "Nome da Clínica / Consultório" : "Nome da Empresa / Estabelecimento";
+                if (campoNomeEmpresa) campoNomeEmpresa.placeholder = ehFinoraAtual ? "Ex.: Consultório Odontológico Silva" : "Ex.: Empresa Exemplo Ltda.";
                 if (labelNomeResp) labelNomeResp.style.display = "block";
                 if (campoNomeResp) campoNomeResp.style.display = "block";
                 if (labelCpfResp) labelCpfResp.innerText = "CPF do Profissional / Sócio";
             } else if (isPj) {
                 if (labelNomeEmpresa) {
-                    labelNomeEmpresa.innerText = (tipoProposta === 'finora') ? "Nome da Clínica" : "Nome da Empresa";
+                    labelNomeEmpresa.innerText = ehFinoraAtual ? "Nome da Clínica" : "Nome da Empresa";
                 }
                 if (campoNomeEmpresa) {
-                    campoNomeEmpresa.placeholder = (tipoProposta === 'finora') ? "Ex.: Clínica Sorriso Perfeito" : "Ex.: Empresa Exemplo Ltda.";
+                    campoNomeEmpresa.placeholder = ehFinoraAtual ? "Ex.: Clínica Sorriso Perfeito" : "Ex.: Empresa Exemplo Ltda.";
                 }
                 if (labelNomeResp) labelNomeResp.style.display = "block";
                 if (campoNomeResp) campoNomeResp.style.display = "block";
                 if (labelCpfResp) labelCpfResp.innerText = "CPF do Sócio Responsável";
             } else {
-                if (labelNomeEmpresa) labelNomeEmpresa.innerText = "Nome Completo (Profissional)";
-                if (campoNomeEmpresa) campoNomeEmpresa.placeholder = "Ex.: Dr. João da Silva";
+                if (labelNomeEmpresa) labelNomeEmpresa.innerText = ehFinoraAtual ? "Nome Completo (Profissional)" : "Nome Completo / Razão Individual";
+                if (campoNomeEmpresa) campoNomeEmpresa.placeholder = ehFinoraAtual ? "Ex.: Dr. João da Silva" : "Ex.: João da Silva";
                 if (labelNomeResp) labelNomeResp.style.display = "none";
                 if (campoNomeResp) {
                     campoNomeResp.style.display = "none";
@@ -2198,7 +2216,10 @@
             }
 
             // 2. Preencher Dados no Grid de Revisão
+            const isFinoraEmp = String(emp || 'finora').toLowerCase() === 'finora';
             set('reviewCliente', value('nomeClinica'));
+            const lblCli = byId('reviewLabelCliente');
+            if (lblCli) lblCli.textContent = isFinoraEmp ? 'Cliente / Clínica' : 'Cliente / Empresa';
             
             let docExibicao = 'Não informado';
             if (tipo === 'PF') {
@@ -2212,7 +2233,11 @@
             
             set('reviewSocioResp', value('nomeSocio') || (tipo === 'PF' ? value('nomeClinica') : 'Não informado'));
             set('reviewSocios', `${byId('quantidadeSociosDetalhados')?.value || '1'} sócio(s)`);
-            set('reviewDentistas', `${byId('dentistasParceiros')?.value || '0'} parceiro(s)`);
+            if (isFinoraEmp) {
+                set('reviewDentistas', `${byId('dentistasParceiros')?.value || '0'} parceiro(s)`);
+            } else {
+                set('reviewDentistas', 'Não aplicável');
+            }
             
             const numFunc = byId('funcionarios')?.value || '0';
             const numEstag = byId('estagiarios')?.value || '0';

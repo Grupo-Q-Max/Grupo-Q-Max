@@ -455,11 +455,13 @@ window.toggleVencimentoItem = toggleVencimentoItem;
 function obterDadosOnboardingV2() {
   const arquivo = document.getElementById("arquivoCertificadoDigital")?.files?.[0];
   const elCnpjEst = document.getElementById("cnpjEstabelecido");
+  const tipoProposta = valorCampo("tipoProposta");
+  const ehFinora = (tipoProposta || "finora").toLowerCase() === "finora";
   return {
     tipoPessoa: tipoPessoaSelecionado(),
     cnpjEstabelecido: elCnpjEst ? elCnpjEst.value : "Sim",
     proLabore: document.getElementById("proLabore")?.value || "Não",
-    dentistasParceiros: Number(document.getElementById("dentistasParceiros")?.value || 0),
+    dentistasParceiros: ehFinora ? Number(document.getElementById("dentistasParceiros")?.value || 0) : 0,
     quantidadeSocios: Number(document.getElementById("quantidadeSociosDetalhados")?.value || 0),
     sociosDetalhados: obterSociosDetalhadosSeguro(),
     certificadoDigitalStatus: document.getElementById("certificadoDigital")?.value || "Não",
@@ -471,7 +473,7 @@ function obterDadosOnboardingV2() {
     vencimentoAlvara: document.getElementById("vencimentoAlvara")?.value || "",
     vencimentoVigilancia: document.getElementById("vencimentoVigilancia")?.value || "",
     vencimentoAVCB: document.getElementById("vencimentoAVCB")?.value || "",
-    vencimentoCRO: document.getElementById("vencimentoCRO")?.value || "",
+    vencimentoCRO: ehFinora ? (document.getElementById("vencimentoCRO")?.value || "") : "",
     vencimentosRegularizacoes: {
       certificado: {
         status: document.getElementById("certificadoDigital")?.value || "Não",
@@ -490,8 +492,8 @@ function obterDadosOnboardingV2() {
         dataVencimento: document.getElementById("vencimentoAVCB")?.value || null
       },
       cro: {
-        status: document.getElementById("temCRO")?.value || "Sim",
-        dataVencimento: document.getElementById("vencimentoCRO")?.value || null
+        status: ehFinora ? (document.getElementById("temCRO")?.value || "Sim") : "Sim",
+        dataVencimento: ehFinora ? (document.getElementById("vencimentoCRO")?.value || null) : null
       }
     }
   };
@@ -766,17 +768,19 @@ function obterItensCalculados() {
 
   const itens = [];
   const regimeFiscal = valorCampo("regimeFiscal");
-  const cadeiras = numeroCampo("cadeiras");
+  const tipoProposta = valorCampo("tipoProposta");
+  const ehFinora = (tipoProposta || "finora").toLowerCase() === "finora";
+  const cadeiras = ehFinora ? numeroCampo("cadeiras") : 0;
   const faturamento = numeroCampo("faturamento");
   const regimeHibrido = valorCampo("regimeHibrido");
   const funcionarios = numeroCampo("funcionarios");
   const socios = numeroCampo("socios");
   const metragem = numeroCampo("metragem");
   const distanciaKm = numeroCampo("distanciaKm");
-  const tipoProposta = valorCampo("tipoProposta");
 
   const contexto = {
     cadeiras,
+    dentistasParceiros: ehFinora ? numeroCampo("dentistasParceiros") : 0,
     faturamento,
     regimeHibrido,
     funcionarios,
@@ -784,8 +788,6 @@ function obterItensCalculados() {
     metragem,
     distanciaKm,
   };
-
-  const ehFinora = (tipoProposta || "finora").toLowerCase() === "finora";
 
   if (regimeFiscal !== "Lucro Real") {
     document
@@ -913,7 +915,7 @@ function obterItensCalculados() {
   }
 
   const croStatus = valorCampo("temCRO");
-  if (ehContabilidade && (croStatus === "Não" || croStatus === "Vencido")) {
+  if (ehFinora && (croStatus === "Não" || croStatus === "Vencido")) {
     itens.push({
       servico: croStatus === "Vencido" ? "Regularização CRO (Renovação)" : "Inscrição CRO",
       valor: calcularValorConfigurado("cro", contexto, BASE.cro),
@@ -2666,17 +2668,21 @@ window.sugerirJustificativaIA = function() {
   const nome = (document.getElementById("nomeClinica")?.value || "").trim() || "o cliente";
   const responsavel = (document.getElementById("nomeSocio")?.value || "").trim();
   const faturamentoNum = Number(document.getElementById("faturamento")?.value || 0);
-  const cadeiras = document.getElementById("cadeiras")?.value || "2";
   const empCod = (document.getElementById("tipoProposta")?.value || "finora").toUpperCase();
+  const ehFinora = empCod === "FINORA";
+  const cadeiras = ehFinora ? (document.getElementById("cadeiras")?.value || "2") : "0";
   const percDesconto = document.getElementById("descontoGlobalInput")?.value || "25";
 
   const faturamentoFmt = faturamentoNum > 0
     ? `faturamento declarado de ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(faturamentoNum)}/mês`
     : "alto volume operacional";
 
+  const estruturaTexto = ehFinora ? `Estrutura com ${cadeiras} cadeira(s) e ${faturamentoFmt}` : `Operação com ${faturamentoFmt}`;
+  const contatoTratamento = responsavel ? (ehFinora ? `Dr(a). ${responsavel}` : responsavel) : "gestão";
+
   const sugestoes = [
-    `Parceria estratégica com ${nome}. Estrutura com ${cadeiras} cadeira(s) e ${faturamentoFmt}. A aplicação de ${percDesconto}% de desconto viabiliza o fechamento imediato do contrato anual de 12 meses no ecossistema ${empCod}, garantindo retenção a longo prazo.`,
-    `Negociação competitiva com ${nome} (${responsavel ? `Dr(a). ${responsavel}` : 'gestão'}). O cliente solicitou condição de entrada diferenciada para migração contábil e implantação dos serviços. O desconto de ${percDesconto}% assegura o fechamento nesta semana.`,
+    `Parceria estratégica com ${nome}. ${estruturaTexto}. A aplicação de ${percDesconto}% de desconto viabiliza o fechamento imediato do contrato anual de 12 meses no ecossistema ${empCod}, garantindo retenção a longo prazo.`,
+    `Negociação competitiva com ${nome} (${contatoTratamento}). O cliente solicitou condição de entrada diferenciada para migração contábil e implantação dos serviços. O desconto de ${percDesconto}% assegura o fechamento nesta semana.`,
     `Cliente de alto potencial na praça. A concessão do desconto de ${percDesconto}% foi acordada mediante compromisso de contratação de serviços adicionais e fidelidade contratual no ecossistema ${empCod}.`
   ];
 
@@ -2822,25 +2828,47 @@ if (labelNomeEmpresa && inputNomeEmpresa) {
 
   // Controle de visibilidade de campos por empresa
   document.getElementById("grupoDistanciaKm").style.display = "block";
-  document.getElementById("grupoCadeiras").style.display = ehContabil ? "none" : "block";
+  const elGrupoCadeiras = document.getElementById("grupoCadeiras");
+  if (elGrupoCadeiras) elGrupoCadeiras.style.display = ehFinora ? "block" : "none";
+
+  const elGrupoDentistas = document.getElementById("grupoDentistasParceiros");
+  if (elGrupoDentistas) elGrupoDentistas.style.display = ehFinora ? "block" : "none";
+
+  const elGrupoTemCRO = document.getElementById("grupoTemCRO");
+  if (elGrupoTemCRO) elGrupoTemCRO.style.display = ehFinora ? "block" : "none";
+
+  const elBoxVencCRO = document.getElementById("boxVencimentoCRO");
+  if (elBoxVencCRO && !ehFinora) elBoxVencCRO.style.display = "none";
+
+  const labelMetragem = document.querySelector('label[for="metragem"]');
+  if (labelMetragem) {
+    labelMetragem.textContent = ehFinora ? "Tamanho da Clínica (m²)" : "Área da Empresa (m²)";
+  }
+
   document.getElementById("grupoMetragem").style.display = ehContabil ? "none" : "block";
   document.getElementById("grupoRegimeHibrido").style.display = ehContabil ? "none" : "block";
 
   // Resetar valores ocultados para não influenciarem nos cálculos (distanciaKm é mantida)
   const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
 
-  if (ehContabil) {
+  // Exclusivo Finora: campos odontológicos são zerados/desativados para todas as demais empresas
+  if (!ehFinora) {
     setVal("cadeiras", "0");
+    setVal("dentistasParceiros", "0");
+    setVal("temCRO", "Sim");
+    const elVencCRO = document.getElementById("vencimentoCRO");
+    if (elVencCRO) elVencCRO.value = "";
+  }
+
+  if (ehContabil) {
     setVal("metragem", "0");
     setVal("regimeHibrido", "Não");
-    setVal("temCRO", "Sim");
     setVal("temAlvara", "Sim");
     setVal("temAVCB", "Sim");
     setVal("temVigilancia", "Sim");
   }
 
-  if (ehFinora || ehLagerhaus) {
-    setVal("temCRO", "Sim");
+  if (ehLagerhaus) {
     setVal("temAlvara", "Sim");
     setVal("temAVCB", "Sim");
     setVal("temVigilancia", "Sim");
@@ -3307,13 +3335,14 @@ window.abrirModalPitchVendas = function() {
   const modal = document.getElementById("modalPitchVendas");
   if (!modal) return;
 
-  const nomeClinica = (document.getElementById("nomeClinica")?.value || "").trim() || "sua clínica";
-  const responsavel = (document.getElementById("nomeSocio")?.value || "").trim() || "Dr(a)";
+  const empCod = (document.getElementById("tipoProposta")?.value || "finora").toUpperCase();
+  const ehFinora = empCod === "FINORA";
+  const nomeClinica = (document.getElementById("nomeClinica")?.value || "").trim() || (ehFinora ? "sua clínica" : "sua empresa");
+  const responsavel = (document.getElementById("nomeSocio")?.value || "").trim() || (ehFinora ? "Dr(a)" : "Prezado(a)");
   // #faturamento é anual; o roteiro fala em valores mensais
   const faturamentoAnual = Number(document.getElementById("faturamento")?.value || 0);
   const faturamento = faturamentoAnual > 0 ? faturamentoAnual / 12 : 35000;
-  const cadeiras = document.getElementById("cadeiras")?.value || "2";
-  const empCod = (document.getElementById("tipoProposta")?.value || "finora").toUpperCase();
+  const cadeiras = ehFinora ? (document.getElementById("cadeiras")?.value || "2") : "0";
   const totalMensal = document.getElementById("totalMensal")?.textContent || "R$ 0,00";
   const faturamentoFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(faturamento);
   const ecoMensalFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(faturamento * 0.05);
@@ -3327,13 +3356,16 @@ window.abrirModalPitchVendas = function() {
   };
   const empNomeFmt = empresaNomes[empCod] || "Q-MAX";
 
-  document.getElementById("pitchAbertura").innerHTML = `
-    "Olá, <strong>${responsavel}</strong>! Analisamos a estrutura da <strong>${nomeClinica}</strong> (${cadeiras} cadeiras e faturamento em torno de ${faturamentoFmt} por mês). Identificamos que a clínica tem um potencial gigante de expansão, mas hoje está vulnerável a pagar mais impostos do que deveria e a perder tempo com burocracias fiscais."
-  `;
+  const aberturaTexto = ehFinora
+    ? `"Olá, <strong>${responsavel}</strong>! Analisamos a estrutura da <strong>${nomeClinica}</strong> (${cadeiras} cadeiras e faturamento em torno de ${faturamentoFmt} por mês). Identificamos que a clínica tem um potencial gigante de expansão, mas hoje está vulnerável a pagar mais impostos do que deveria e a perder tempo com burocracias fiscais."`
+    : `"Olá, <strong>${responsavel}</strong>! Analisamos a operação da <strong>${nomeClinica}</strong> (faturamento em torno de ${faturamentoFmt} por mês). Identificamos que a empresa tem um potencial gigante de crescimento e rentabilidade, mas pode otimizar consideravelmente sua gestão fiscal e contábil."`;
 
-  document.getElementById("pitchValor").innerHTML = `
-    "Com a parceria do ecossistema <strong>${empNomeFmt}</strong>, nós assumimos 100% da sua rotina contábil, tributária, departamento pessoal e regularizações. Você e sua equipe médica focam apenas no atendimento aos pacientes, com a certeza de que a clínica está blindada e operando no regime mais econômico da lei."
-  `;
+  const valorTexto = ehFinora
+    ? `"Com a parceria do ecossistema <strong>${empNomeFmt}</strong>, nós assumimos 100% da sua rotina contábil, tributária, departamento pessoal e regularizações. Você e sua equipe médica focam apenas no atendimento aos pacientes, com a certeza de que a clínica está blindada e operando no regime mais econômico da lei."`
+    : `"Com a parceria do ecossistema <strong>${empNomeFmt}</strong>, nós assumimos as rotinas estratégicas e fiscais da sua empresa. Você e seu time focam no core business e no crescimento das vendas, com a certeza de que o negócio está blindado e operando com máxima eficiência tributária."`;
+
+  document.getElementById("pitchAbertura").innerHTML = aberturaTexto;
+  document.getElementById("pitchValor").innerHTML = valorTexto;
 
   document.getElementById("pitchPreco").innerHTML = `
     "Aqui está o principal diferencial: nossa assessoria especializada gera uma economia fiscal estimada em <strong>~${ecoMensalFmt} por mês</strong> com a aplicação correta do Fator R e enquadramentos societários. Ou seja, nosso investimento mensal de <strong>${totalMensal}</strong> se paga integralmente e ainda coloca dinheiro limpo no caixa da sua empresa todo mês."

@@ -4,9 +4,9 @@ const fs = require("fs");
 // Contratada configurável por marca (admin); padrão = texto que já ia para o D4Sign
 const { textoContratada, contratadaPadrao } = require("./contratadaService");
 
-// Não há coluna de segmento: FINORA e QMAX Contábil são vendidos para clínicas odontológicas
+// Segmento exclusivo odonto: apenas FINORA atende odontologia / dentistas
 function ehOdonto(dados) {
-  return ["finora", "contabil"].includes(String(dados?.tipoProposta || dados?.tipo_proposta || "").toLowerCase());
+  return String(dados?.tipoProposta || dados?.tipo_proposta || "").toLowerCase() === "finora";
 }
 
 // Ícone de dente em vetor (caixa 24x24), desenhado centralizado em (x, y)
