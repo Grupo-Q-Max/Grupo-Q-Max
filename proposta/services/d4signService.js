@@ -405,6 +405,9 @@ async function iniciarAssinaturaProposta(proposta, pdfBuffer) {
     try {
       if (typeof proposta.sociosDetalhados === "object") sociosDetalhados = proposta.sociosDetalhados;
       else if (proposta.socios_detalhados_json) sociosDetalhados = typeof proposta.socios_detalhados_json === "string" ? JSON.parse(proposta.socios_detalhados_json) : proposta.socios_detalhados_json;
+      if (sociosDetalhados && !Array.isArray(sociosDetalhados) && Array.isArray(sociosDetalhados.socios)) {
+        sociosDetalhados = sociosDetalhados.socios;
+      }
     } catch {}
 
     if (Array.isArray(sociosDetalhados)) {

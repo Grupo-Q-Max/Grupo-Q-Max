@@ -19,6 +19,215 @@ let FILTRO_VISUALIZACAO_DASHBOARD = "";
 let FILTRO_OBSERVACAO_DASHBOARD = "";
 let FILTRO_DESCONTO_DASHBOARD = "";
 let FILTRO_TERMOMETRO_DASHBOARD = "";
+let FILTRO_VENCIMENTO_DASHBOARD = false;
+
+window.filtroVencimentosDashboard = function(botao) {
+  const filtroStatus = document.getElementById("filtroStatus");
+  if (filtroStatus) {
+    filtroStatus.value = "";
+  }
+  FILTRO_VISUALIZACAO_DASHBOARD = "";
+  FILTRO_OBSERVACAO_DASHBOARD = "";
+  FILTRO_DESCONTO_DASHBOARD = "";
+  FILTRO_TERMOMETRO_DASHBOARD = "";
+  FILTRO_VENCIMENTO_DASHBOARD = false;
+  FILTRO_VENCIMENTO_DASHBOARD = !FILTRO_VENCIMENTO_DASHBOARD;
+
+  if (FILTRO_VENCIMENTO_DASHBOARD) {
+    destacarFiltroSelecionado(botao);
+  } else {
+    document.querySelectorAll("#filtrosRapidosDashboard button").forEach((btn) => btn.classList.remove("filtro-ativo"));
+  }
+  aplicarFiltrosDashboard();
+};
+
+function extrairDadosVencimentos(p) {
+  let v = {};
+  if (p && p.socios_detalhados_json) {
+    try {
+      const obj = typeof p.socios_detalhados_json === "string" ? JSON.parse(p.socios_detalhados_json) : p.socios_detalhados_json;
+      if (obj && typeof obj === "object") {
+        if (obj.vencimentosRegularizacoes) {
+          v = obj.vencimentosRegularizacoes;
+        } else if (obj.formState && obj.formState.vencimentosRegularizacoes) {
+          v = obj.formState.vencimentosRegularizacoes;
+        } else {
+          v = {
+            certificado: {
+              status: obj.certificadoDigital || obj.certificado_status || (obj.vencimentoCertificadoDigital ? "Sim" : (p.certificado_status || "Não")),
+              dataVencimento: obj.vencimentoCertificadoDigital || null
+            },
+            alvara: {
+              status: obj.temAlvara || (obj.vencimentoAlvara ? "Sim" : "Não"),
+              dataVencimento: obj.vencimentoAlvara || null
+            },
+            vigilancia: {
+              status: obj.temVigilancia || (obj.vencimentoVigilancia ? "Sim" : "Não"),
+              dataVencimento: obj.vencimentoVigilancia || null
+            },
+            avcb: {
+              status: obj.temAVCB || (obj.vencimentoAVCB ? "Sim" : "Não"),
+              dataVencimento: obj.vencimentoAVCB || null
+            },
+            cro: {
+              status: obj.temCRO || (obj.vencimentoCRO ? "Sim" : "Não"),
+              dataVencimento: obj.vencimentoCRO || null
+            }
+          };
+        }
+      }
+    } catch {}
+  }
+  return v;
+}
+
+function calcularAlertasVencimento(p) {
+  const v = extrairDadosVencimentos(p);
+  const alertas = [];
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const itens = [
+    { chave: "certificado", nome: "Certificado Digital" },
+    { chave: "alvara", nome: "Alvará de Funcionamento" },
+    { chave: "vigilancia", nome: "Vigilância Sanitária (AVS)" },
+    { chave: "avcb", nome: "AVCB (Bombeiros)" },
+    { chave: "cro", nome: "Regularização CRO" }
+  ];
+
+  for (const item of itens) {
+    const dadosItem = v[item.chave];
+    if (!dadosItem) continue;
+
+    const status = String(dadosItem.status || "");
+    const dataVenc = dadosItem.dataVencimento;
+
+    if (status === "Vencido") {
+      let diasVencido = 0;
+      let dataFmt = "Vencido";
+      if (dataVenc) {
+        const d = new Date(dataVenc + "T00:00:00");
+        if (!isNaN(d.getTime())) {
+          diasVencido = Math.max(1, Math.round((hoje.getTime() - d.getTime()) / (1000 * 60 * 60 * 24)));
+          dataFmt = d.toLocaleDateString("pt-BR");
+        }
+      }
+      alertas.push({
+        item: item.chave,
+        nome: item.nome,
+        tipo: "vencido",
+        data: dataVenc,
+        dataFmt,
+        dias: diasVencido,
+        mensagem: diasVencido > 0 ? `Vencido há ${diasVencido} dia(s)` : "Vencido",
+        waMsg: `Olá! Notamos que o ${item.nome} da ${p.nome_clinica || 'clínica'} está VENCIDO (${dataFmt}). É urgente providenciarmos a regularização/renovação para evitar autuações e paralisações!`
+      });
+    } else if (dataVenc) {
+      const d = new Date(dataVenc + "T00:00:00");
+      if (!isNaN(d.getTime())) {
+        const diffDias = Math.ceil((d.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        const dataFmt = d.toLocaleDateString("pt-BR");
+        if (diffDias < 0) {
+          alertas.push({
+            item: item.chave,
+            nome: item.nome,
+            tipo: "vencido",
+            data: dataVenc,
+            dataFmt,
+            dias: Math.abs(diffDias),
+            mensagem: `Vencido há ${Math.abs(diffDias)} dia(s)`,
+            waMsg: `Olá! Notamos que o ${item.nome} da ${p.nome_clinica || 'clínica'} venceu em ${dataFmt}. É urgente providenciarmos a renovação para manter a clínica 100% regularizada!`
+          });
+        } else if (diffDias <= 30) {
+          alertas.push({
+            item: item.chave,
+            nome: item.nome,
+            tipo: "a_vencer",
+            data: dataVenc,
+            dataFmt,
+            dias: diffDias,
+            mensagem: diffDias === 0 ? "Vence hoje!" : `Vence em ${diffDias} dia(s)`,
+            waMsg: `Olá! Passando para avisar que o ${item.nome} da ${p.nome_clinica || 'clínica'} está próximo do vencimento (${dataFmt} - faltam ${diffDias} dias). Vamos providenciar a renovação com antecedência?`
+          });
+        }
+      }
+    }
+  }
+
+  return alertas;
+}
+
+function renderTabelaVencimentos(p, vencimentosObj) {
+  const itens = [
+    { chave: "certificado", nome: "Certificado Digital" },
+    { chave: "alvara", nome: "Alvará de Funcionamento" },
+    { chave: "vigilancia", nome: "Vigilância Sanitária (AVS)" },
+    { chave: "avcb", nome: "AVCB (Bombeiros)" },
+    { chave: "cro", nome: "Regularização CRO" }
+  ];
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const linhas = itens.map(item => {
+    const reg = vencimentosObj && vencimentosObj[item.chave] ? vencimentosObj[item.chave] : null;
+    const status = reg?.status || "Não informado";
+    const dataVenc = reg?.dataVencimento || null;
+
+    let statusBadge = `<span style="background:#f1f5f9; color:#64748b; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">Não informado</span>`;
+    let acaoWa = "";
+
+    if (status === "Não") {
+      statusBadge = `<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">Não Possui (Emitir)</span>`;
+    } else if (status === "Vencido") {
+      let dataFmt = dataVenc ? new Date(dataVenc + "T00:00:00").toLocaleDateString("pt-BR") : "";
+      statusBadge = `<span style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; padding:2px 8px; border-radius:6px; font-weight:800; font-size:11px;">🚨 VENCIDO ${dataFmt ? `(${dataFmt})` : ""}</span>`;
+      if (p.telefone) {
+        const msg = encodeURIComponent(`Olá! Notamos que o ${item.nome} da ${p.nome_clinica || 'clínica'} está VENCIDO. Precisamos providenciar a regularização/renovação imediatamente!`);
+        acaoWa = `<a href="https://wa.me/55${String(p.telefone).replace(/\D/g, '')}?text=${msg}" target="_blank" onclick="event.stopPropagation()" style="background:#25d366; color:#fff; text-decoration:none; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px;">Falar com Cliente 💬</a>`;
+      }
+    } else if (status === "Sim") {
+      if (dataVenc) {
+        const d = new Date(dataVenc + "T00:00:00");
+        const dataFmt = !isNaN(d.getTime()) ? d.toLocaleDateString("pt-BR") : dataVenc;
+        const diffDias = Math.ceil((d.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDias < 0) {
+          statusBadge = `<span style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; padding:2px 8px; border-radius:6px; font-weight:800; font-size:11px;">🚨 VENCIDO (${dataFmt})</span>`;
+          if (p.telefone) {
+            const msg = encodeURIComponent(`Olá! Notamos que o ${item.nome} da ${p.nome_clinica || 'clínica'} venceu em ${dataFmt}. Vamos providenciar a renovação?`);
+            acaoWa = `<a href="https://wa.me/55${String(p.telefone).replace(/\D/g, '')}?text=${msg}" target="_blank" onclick="event.stopPropagation()" style="background:#25d366; color:#fff; text-decoration:none; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px;">Renovar WhatsApp 💬</a>`;
+          }
+        } else if (diffDias <= 30) {
+          statusBadge = `<span style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; padding:2px 8px; border-radius:6px; font-weight:800; font-size:11px;">⏳ Vence em ${diffDias} dias (${dataFmt})</span>`;
+          if (p.telefone) {
+            const msg = encodeURIComponent(`Olá! Passando para avisar que o ${item.nome} da ${p.nome_clinica || 'clínica'} está próximo do vencimento (${dataFmt} - faltam ${diffDias} dias). Vamos providenciar a renovação?`);
+            acaoWa = `<a href="https://wa.me/55${String(p.telefone).replace(/\D/g, '')}?text=${msg}" target="_blank" onclick="event.stopPropagation()" style="background:#25d366; color:#fff; text-decoration:none; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px;">Avisar Cliente 💬</a>`;
+          }
+        } else {
+          statusBadge = `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">✅ Válido até ${dataFmt} (${diffDias} dias)</span>`;
+        }
+      } else {
+        statusBadge = `<span style="background:#f0fdf4; color:#15803d; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">✅ Possui (Válido)</span>`;
+      }
+    }
+
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9; gap:10px;">
+        <span style="font-weight:600; color:#1e293b; font-size:12px;">${item.nome}</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          ${statusBadge}
+          ${acaoWa}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-top:6px;">
+      ${linhas}
+    </div>
+  `;
+}
 
 function atualizarVisibilidadeCardsEmpresa() {
   const empresa = document.getElementById("filtroEmpresa")?.value || "FINORA";
@@ -74,6 +283,7 @@ function filtroRapidoDashboard(status, botao) {
   FILTRO_OBSERVACAO_DASHBOARD = "";
   FILTRO_DESCONTO_DASHBOARD = "";
   FILTRO_TERMOMETRO_DASHBOARD = "";
+  FILTRO_VENCIMENTO_DASHBOARD = false;
 
   destacarFiltroSelecionado(botao);
   aplicarFiltrosDashboard();
@@ -228,6 +438,9 @@ function aplicarFiltrosDashboard() {
       !FILTRO_TERMOMETRO_DASHBOARD ||
       termometro.label.toLowerCase().includes(FILTRO_TERMOMETRO_DASHBOARD.toLowerCase());
 
+    const alertasVenc = calcularAlertasVencimento(p);
+    const passaVencimento = !FILTRO_VENCIMENTO_DASHBOARD || alertasVenc.length > 0;
+
     return (
       passaEmpresa &&
       passaStatus &&
@@ -235,7 +448,8 @@ function aplicarFiltrosDashboard() {
       passaVisualizacao &&
       passaObservacao &&
       passaDesconto &&
-      passaTermometro
+      passaTermometro &&
+      passaVencimento
     );
   });
 
@@ -285,13 +499,17 @@ function aplicarFiltrosDashboard() {
       !FILTRO_TERMOMETRO_DASHBOARD ||
       termometro.label.toLowerCase().includes(FILTRO_TERMOMETRO_DASHBOARD.toLowerCase());
 
+    const alertasVenc = calcularAlertasVencimento(p);
+    const passaVencimento = !FILTRO_VENCIMENTO_DASHBOARD || alertasVenc.length > 0;
+
     return (
       passaStatus &&
       passaBusca &&
       passaVisualizacao &&
       passaObservacao &&
       passaDesconto &&
-      passaTermometro
+      passaTermometro &&
+      passaVencimento
     );
   });
 
@@ -384,6 +602,9 @@ function renderizarTabelaDashboard(propostas) {
       }
     }
 
+    const alertasVenc = calcularAlertasVencimento(p);
+    const vencimentosObj = extrairDadosVencimentos(p);
+
     const linhaHtml = `
       <tr>
         <td>
@@ -405,6 +626,22 @@ function renderizarTabelaDashboard(propostas) {
           <small>${escapeHTML(p.email || "-")}</small><br>
           <small>Criado por: ${escapeHTML(p.criador || "-")}</small>
           ${temDesconto ? `<br><small style="color:#ef4444;font-weight:700;">Com desconto</small>` : ""}
+          ${alertasVenc.length > 0 ? `
+            <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+              ${alertasVenc.map(a => `
+                <div style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <span style="background:${a.tipo === 'vencido' ? '#fee2e2' : '#fef3c7'}; color:${a.tipo === 'vencido' ? '#991b1b' : '#92400e'}; border:1px solid ${a.tipo === 'vencido' ? '#fca5a5' : '#fcd34d'}; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+                    ${a.tipo === 'vencido' ? '🚨' : '⏳'} ${a.nome}: ${a.mensagem}
+                  </span>
+                  ${p.telefone ? `
+                    <a href="https://wa.me/55${String(p.telefone).replace(/\D/g, '')}?text=${encodeURIComponent(a.waMsg)}" target="_blank" onclick="event.stopPropagation()" style="background:#25d366; color:#fff; text-decoration:none; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px;" title="Avisar cliente no WhatsApp sobre ${a.nome}">
+                      Avisar 💬
+                    </a>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
           <div id="ultimaObs-${p.id}" class="ultima-observacao">
             ${
               p.ultima_observacao
@@ -486,7 +723,7 @@ function renderizarTabelaDashboard(propostas) {
         <td>
           <div class="acoes-proposta">
             ${ehRascunho ? `
-              <a href="${APP_BASE_PATH}/index.html?rascunhoId=${p.id}" class="btn-action-icon" style="background:#0284c7; color:#fff; text-decoration:none; padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:4px; border:none;" title="Continuar preenchendo proposta">
+              <a href="${APP_BASE_PATH}/index.html?rascunhoId=${p.id}" class="btn-continuar-rascunho" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; text-decoration: none; padding: 0 14px; border-radius: 8px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none; white-space: nowrap; height: 34px; line-height: 34px; box-shadow: 0 2px 6px rgba(2,132,199,0.3); transition: all 0.2s ease;" title="Continuar preenchendo proposta">
                 Continuar ➔
               </a>
               <button class="btn-action-icon btn-action-detail" onclick="toggleDetalhes(${p.id}, this)" title="Ver Detalhes">
@@ -551,6 +788,19 @@ function renderizarTabelaDashboard(propostas) {
               <h4>Parâmetros da Proposta</h4>
               <div class="infos-proposta-grid">
                 ${paramsHtml}
+              </div>
+            </div>
+
+            <div class="proposta-box" style="border-left: 4px solid ${alertasVenc.length > 0 ? '#ef4444' : '#10b981'};">
+              <h4 style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <span>Controle de Vencimentos & Renovações</span>
+                ${alertasVenc.length > 0
+                  ? `<span style="background:#fef2f2; color:#b91c1c; border:1px solid #fecdd3; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:800;">⚠️ ${alertasVenc.length} atenção necessária</span>`
+                  : `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:800;">Regular</span>`
+                }
+              </h4>
+              <div style="font-size:12px; line-height:1.6;">
+                ${renderTabelaVencimentos(p, vencimentosObj)}
               </div>
             </div>
 

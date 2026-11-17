@@ -506,7 +506,10 @@ const proLaboreNormalizado = normalizarProLabore(
       proLaboreNormalizado || "Não",
       dados.dentistasParceiros || 0,
       dados.quantidadeSocios || 0,
-      JSON.stringify(dados.sociosDetalhados || []),
+      JSON.stringify(dados.vencimentosRegularizacoes ? {
+        socios: dados.sociosDetalhados || [],
+        vencimentosRegularizacoes: dados.vencimentosRegularizacoes
+      } : (dados.sociosDetalhados || [])),
       dados.certificadoDigitalStatus || "Não",
       dados.certificadoDigitalNomeArquivo || "",
       dados.videoPitch || dados.video_pitch || "",
