@@ -211,6 +211,9 @@ export function Footer() {
             >
               FINORA
             </a>
+            <a href="/#diagnostico">
+              Simulador Tributário
+            </a>
           </div>
 
           <div>

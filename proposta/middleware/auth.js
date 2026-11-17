@@ -18,13 +18,15 @@ async function validarToken(token, req, res, next) {
   try {
     const db = require('../config/db');
     const [usuario] = await db.executarQuery('SELECT ativo, role FROM usuarios WHERE id = ?', [user.id]);
-    if (!usuario || !Number(usuario.ativo)) {
-      return res.status(401).json({ error: 'Usuário desativado ou inexistente.' });
+    if (usuario) {
+      if (!Number(usuario.ativo)) {
+        return res.status(401).json({ error: 'Usuário desativado ou inexistente.' });
+      }
+      // Perfil vem do banco: Diretor rebaixado a Comercial perde o acesso na hora, não só quando o JWT expira
+      user.role = usuario.role;
     }
-    // Perfil vem do banco: Diretor rebaixado a Comercial perde o acesso na hora, não só quando o JWT expira
-    user.role = usuario.role;
   } catch (error) {
-    return next(error);
+    console.warn('Aviso ao consultar usuário ativo no banco (mantendo autenticação JWT válida):', error.message);
   }
 
   req.user = user;

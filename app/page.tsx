@@ -26,7 +26,7 @@ export default function Home() {
       <DeferredCinematicScroll />
       <HashScrollFix />
 
-      <main>
+      <main id="main-content">
         <Hero />
         <SegmentsMarquee />
         <ScrollReveal animation="fade-up"><Story /></ScrollReveal>

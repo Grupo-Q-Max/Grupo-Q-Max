@@ -209,6 +209,157 @@ router.post("/api/propostas/preview", verificarToken, async (req, res, next) => 
   }
 });
 
+// --- SALVAR RASCUNHO DA PROPOSTA (COMERCIAL E DIRETORIA) ---
+router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) => {
+  try {
+    const dados = req.body || {};
+    const rascunhoId = dados.id || dados.rascunhoId;
+    const nomeClinica = dados.nomeClinica || dados.nome_clinica || "Rascunho de Proposta";
+    const email = dados.email || "rascunho@temp.com";
+    const itens = Array.isArray(dados.itens) ? dados.itens : [];
+    const valorTotal = Number(dados.valorTotal || dados.valor_total || 0);
+
+    const agora = new Date();
+    agora.setUTCHours(agora.getUTCHours() - 3);
+    const ano = agora.getUTCFullYear();
+    const mes = String(agora.getUTCMonth() + 1).padStart(2, "0");
+    const dia = String(agora.getUTCDate()).padStart(2, "0");
+    const dataProposta = `${ano}-${mes}-${dia}`;
+
+    const estadoCompletoJson = JSON.stringify(dados);
+
+    if (rascunhoId) {
+      // Atualiza rascunho existente
+      const [existente] = await db.executarQuery(
+        "SELECT id, criado_por, status FROM propostas WHERE id = ?",
+        [rascunhoId]
+      );
+
+      if (existente) {
+        if (req.user.role === "Comercial" && Number(existente.criado_por) !== Number(req.user.id)) {
+          return res.status(403).json({ error: "Você só pode editar seus próprios rascunhos." });
+        }
+
+        await db.executarQuery(
+          `UPDATE propostas SET 
+            nome_clinica = ?, razao_social = ?, cnpj = ?, nome_socio = ?, cpf_socio = ?,
+            email = ?, telefone = ?, endereco_clinica = ?, cadeiras = ?, funcionarios = ?,
+            socios = ?, faturamento = ?, regime_fiscal = ?, regime_hibrido = ?, distancia_km = ?,
+            metragem = ?, valor_total = ?, itens_json = ?, empresa_proposta = ?, tipo_proposta = ?,
+            tipo_pessoa = ?, pro_labore = ?, dentistas_parceiros = ?, quantidade_socios = ?,
+            socios_detalhados_json = ?
+          WHERE id = ? AND status = 'Rascunho'`,
+          [
+            nomeClinica, dados.razaoSocial || null, dados.cnpj || null, dados.nomeSocio || null, dados.cpfSocio || null,
+            email, dados.telefone || null, dados.enderecoClinica || null, Number(dados.cadeiras || 0), Number(dados.funcionarios || 0),
+            Number(dados.socios || 0), Number(dados.faturamento || 0), dados.regimeFiscal || null, dados.regimeHibrido || null, Number(dados.distanciaKm || 0),
+            Number(dados.metragem || 0), valorTotal, JSON.stringify(itens), (dados.tipoProposta || "FINORA").toUpperCase(), dados.tipoProposta || "finora",
+            dados.tipoPessoa || "PJ", dados.proLabore || "Não", Number(dados.dentistasParceiros || 0), Number(dados.quantidadeSocios || 0),
+            estadoCompletoJson, rascunhoId
+          ]
+        );
+
+        return res.json({
+          success: true,
+          id: rascunhoId,
+          message: "Rascunho atualizado com sucesso!",
+        });
+      }
+    }
+
+    // Cria novo rascunho
+    const tokenAcesso = crypto.randomBytes(20).toString("hex");
+    const numRandom = Math.floor(1000 + Math.random() * 9000);
+    const numeroProposta = `RASC-${ano}${mes}-${numRandom}`;
+
+    const [resultado] = await db.execute(
+      `INSERT INTO propostas (
+        token_acesso, numero_proposta, data_proposta, nome_clinica, razao_social, cnpj,
+        nome_socio, cpf_socio, email, telefone, endereco_clinica, cadeiras, funcionarios,
+        socios, faturamento, regime_fiscal, regime_hibrido, distancia_km, metragem,
+        valor_total, itens_json, status, criado_por, empresa_proposta, tipo_proposta,
+        tipo_pessoa, pro_labore, dentistas_parceiros, quantidade_socios, socios_detalhados_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Rascunho', ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        tokenAcesso, numeroProposta, dataProposta, nomeClinica, dados.razaoSocial || null, dados.cnpj || null,
+        dados.nomeSocio || null, dados.cpfSocio || null, email, dados.telefone || null, dados.enderecoClinica || null,
+        Number(dados.cadeiras || 0), Number(dados.funcionarios || 0), Number(dados.socios || 0), Number(dados.faturamento || 0),
+        dados.regimeFiscal || null, dados.regimeHibrido || null, Number(dados.distanciaKm || 0), Number(dados.metragem || 0),
+        valorTotal, JSON.stringify(itens), req.user.id, (dados.tipoProposta || "FINORA").toUpperCase(),
+        dados.tipoProposta || "finora", dados.tipoPessoa || "PJ", dados.proLabore || "Não",
+        Number(dados.dentistasParceiros || 0), Number(dados.quantidadeSocios || 0), estadoCompletoJson
+      ]
+    );
+
+    res.json({
+      success: true,
+      id: resultado.insertId,
+      numero_proposta: numeroProposta,
+      message: "Rascunho salvo com sucesso no sistema!",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- OBTER DADOS DO RASCUNHO PARA CONTINUAR ---
+router.get("/api/propostas/:id/rascunho", verificarToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const [prop] = await db.executarQuery(
+      "SELECT * FROM propostas WHERE id = ? AND status = 'Rascunho'",
+      [id]
+    );
+
+    if (!prop) {
+      return res.status(404).json({ error: "Rascunho não encontrado." });
+    }
+
+    if (req.user.role === "Comercial" && Number(prop.criado_por) !== Number(req.user.id)) {
+      return res.status(403).json({ error: "Você só pode abrir seus próprios rascunhos." });
+    }
+
+    let payload = null;
+    try {
+      payload = JSON.parse(prop.socios_detalhados_json);
+    } catch {
+      payload = null;
+    }
+
+    res.json({
+      success: true,
+      proposta: prop,
+      dadosRestauracao: payload || prop,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- EXCLUIR RASCUNHO ---
+router.delete("/api/propostas/rascunho/:id", verificarToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const [prop] = await db.executarQuery(
+      "SELECT id, criado_por, status FROM propostas WHERE id = ? AND status = 'Rascunho'",
+      [id]
+    );
+
+    if (!prop) {
+      return res.status(404).json({ error: "Rascunho não encontrado ou já finalizado." });
+    }
+
+    if (req.user.role === "Comercial" && Number(prop.criado_por) !== Number(req.user.id)) {
+      return res.status(403).json({ error: "Você só pode excluir seus próprios rascunhos." });
+    }
+
+    await db.executarQuery("DELETE FROM propostas WHERE id = ?", [id]);
+    res.json({ success: true, message: "Rascunho removido com sucesso." });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // --- CREATE --- (With Transaction)
 router.post("/api/propostas", verificarToken, async (req, res, next) => {
   // Dentro do try: falha ao pegar conexão vira erro tratado, não promise rejeitada sem resposta

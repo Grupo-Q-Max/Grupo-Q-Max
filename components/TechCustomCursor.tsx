@@ -8,14 +8,20 @@ export function TechCustomCursor() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // Desativa em celulares, tablets e dispositivos com toque (evita cursor congelado)
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+
     setIsMounted(true);
 
     let requestRef: number;
     let isHovering = false;
 
-    // Force visibility initially just in case
-    if (dotRef.current) dotRef.current.style.opacity = "1";
-    if (glowRef.current) glowRef.current.style.opacity = "1";
+    const setVisible = (visible: boolean) => {
+      const opacity = visible ? "1" : "0";
+      if (dotRef.current) dotRef.current.style.opacity = opacity;
+      if (glowRef.current) glowRef.current.style.opacity = opacity;
+    };
 
     const updateMousePosition = (e: MouseEvent) => {
       cancelAnimationFrame(requestRef);
@@ -30,15 +36,23 @@ export function TechCustomCursor() {
     };
 
     const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const interactive =
         target.tagName.toLowerCase() === "a" ||
         target.tagName.toLowerCase() === "button" ||
+        target.tagName.toLowerCase() === "input" ||
+        target.tagName.toLowerCase() === "textarea" ||
+        target.tagName.toLowerCase() === "select" ||
+        target.getAttribute("role") === "button" ||
         target.closest("a") ||
         target.closest("button") ||
         target.closest(".tech-card") ||
-        target.closest(".tech-product-card")
-      ) {
+        target.closest(".tech-product-card") ||
+        target.closest(".cursor-pointer");
+
+      if (interactive) {
         isHovering = true;
         if (glowRef.current) {
           glowRef.current.style.backgroundColor = "rgba(0, 255, 255, 0.4)";
@@ -51,12 +65,19 @@ export function TechCustomCursor() {
       }
     };
 
-    window.addEventListener("mousemove", updateMousePosition);
-    window.addEventListener("mouseover", handleMouseOver);
+    const handleMouseEnter = () => setVisible(true);
+    const handleMouseLeave = () => setVisible(false);
+
+    window.addEventListener("mousemove", updateMousePosition, { passive: true });
+    window.addEventListener("mouseover", handleMouseOver, { passive: true });
+    document.addEventListener("mouseenter", handleMouseEnter);
+    document.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
       window.removeEventListener("mouseover", handleMouseOver);
+      document.removeEventListener("mouseenter", handleMouseEnter);
+      document.removeEventListener("mouseleave", handleMouseLeave);
       cancelAnimationFrame(requestRef);
     };
   }, []);
@@ -73,10 +94,10 @@ export function TechCustomCursor() {
           left: 0,
           top: 0,
           pointerEvents: "none",
-          transform: `translate3d(-100px, -100px, 0)`,
+          transform: "translate3d(-100px, -100px, 0)",
           transition: "opacity 0.2s ease",
           zIndex: 100000,
-          opacity: 1
+          opacity: 0,
         }}
       />
       <div
@@ -87,11 +108,11 @@ export function TechCustomCursor() {
           left: 0,
           top: 0,
           pointerEvents: "none",
-          transform: `translate3d(-100px, -100px, 0) scale(1)`,
+          transform: "translate3d(-100px, -100px, 0) scale(1)",
           backgroundColor: "rgba(11, 21, 217, 0.3)",
           transition: "transform 0.15s ease-out, background-color 0.2s ease, opacity 0.2s ease",
           zIndex: 99999,
-          opacity: 1
+          opacity: 0,
         }}
       />
     </>

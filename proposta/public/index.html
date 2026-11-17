@@ -653,6 +653,9 @@
                 <p>Selecione a empresa, preencha os dados do cliente e acompanhe o investimento em tempo real.</p>
             </div>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <button type="button" onclick="salvarRascunhoServidor(true)" class="btn-primary" id="btnSalvarRascunhoTop" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 13px; font-weight: 800; padding: 8px 16px; border-radius: 999px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);" title="Salvar rascunho incompleto para continuar mais tarde">
+                    💾 Salvar Rascunho
+                </button>
                 <div style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:999px; font-size:11px; font-weight:700;" title="Atalhos: Ctrl+Enter (Gerar), Ctrl+S (Salvar), Esc (Fechar), Alt+1..6 (Passos)">
                     Atalhos: <span style="background:#e2e8f0; color:#0f172a; padding:1px 6px; border-radius:4px; font-family:monospace;">Ctrl+Enter</span> / <span style="background:#e2e8f0; color:#0f172a; padding:1px 6px; border-radius:4px; font-family:monospace;">Ctrl+S</span>
                 </div>
@@ -678,7 +681,7 @@
                 <div class="proposal-step" data-step-indicator="2">2. Endereço</div>
                 <div class="proposal-step" data-step-indicator="3">3. Sócios</div>
                 <div class="proposal-step" data-step-indicator="4">4. Operação</div>
-                <div class="proposal-step" data-step-indicator="5">5. Serviços</div>
+                <div class="proposal-step" data-step-indicator="5">5. Outros serviços</div>
                 <div class="proposal-step" data-step-indicator="6">6. Revisão</div>
             </div>
         </section>
@@ -1004,7 +1007,7 @@
                                 Voltar: Sócios
                             </button>
                             <button type="button" class="btn-primary" style="width: auto; padding: 0 20px;" onclick="irParaPasso(5)">
-                                Avançar: Serviços ➔
+                                Avançar: Outros serviços ➔
                             </button>
                         </div>
                     </div>
@@ -1012,13 +1015,13 @@
 
                 <section class="card wizard-card" id="secaoServicos" data-wizard-step="5">
                     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <h2>5. Escopo de Serviços</h2>
+                        <h2>5. Outros serviços</h2>
                     </div>
                     <div class="card-body">
                         <!-- Barra de Busca Rápida e Filtros de Serviços -->
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; grid-column: 1 / -1;">
                             <div style="position:relative; flex:1; min-width:200px;">
-                                <input type="text" id="filtroBuscaServico" placeholder="Pesquisar serviço no escopo..." oninput="filtrarServicosPorTexto(this.value)" style="height:38px; border-radius:10px; font-size:13px; width:100%; border:1px solid #cbd5e1; padding:0 12px;">
+                                <input type="text" id="filtroBuscaServico" placeholder="Pesquisar outros serviços..." oninput="filtrarServicosPorTexto(this.value)" style="height:38px; border-radius:10px; font-size:13px; width:100%; border:1px solid #cbd5e1; padding:0 12px;">
                             </div>
                             <div style="display:flex; gap:6px;">
                                 <button type="button" class="btn-mini filtro-servico-btn filtro-ativo" onclick="filtrarCategoriaServicos('TODOS', this)">Todos</button>
@@ -1028,11 +1031,11 @@
                         </div>
 
                         <div class="checkbox-grid" id="listaServicosDinamicos">
-                            <small style="color:#64748b;">Carregando serviços...</small>
+                            <small style="color:#64748b;">Carregando outros serviços...</small>
                         </div>
                         <div id="boxOutrosServicos" style="grid-column:1/-1; margin-top:18px;"> <strong
                                 style="display:block; color:#0f172a; margin-bottom:8px;">
-                                Outros serviços
+                                Serviço sob Demanda / Personalizado
                             </strong>
 
                             <div class="checkbox-grid">
@@ -1416,9 +1419,12 @@ Conclusões
                     <!-- PAINEL DE AÇÕES COMERCIAIS ORGANIZADO -->
                     <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
                         <!-- Bloco 1: Ações Principais -->
-                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
                             <button type="button" class="btn-primary" id="btnEnviar" style="font-size: 14px; padding: 14px 20px; font-weight: 800; border-radius: 12px;" onclick="salvarEEnviarProposta()">
                                 Salvar e Enviar Proposta
+                            </button>
+                            <button type="button" class="btn-secondary" id="btnSalvarRascunhoBottom" style="font-size: 13px; padding: 10px 16px; font-weight: 800; border-radius: 12px; border: 1.5px solid #d97706; color: #b45309; background: #fffbeb; cursor: pointer;" onclick="salvarRascunhoServidor(true)">
+                                💾 Salvar como Rascunho / Incompleta
                             </button>
                         </div>
 

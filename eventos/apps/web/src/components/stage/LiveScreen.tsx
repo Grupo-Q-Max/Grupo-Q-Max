@@ -186,7 +186,7 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
           <ol className="flex flex-col gap-6">
             {[
               "Aponte a câmera para o QR Code",
-              "Confirme pelo link no WhatsApp",
+              "Seu giro é liberado imediatamente no estande",
               isCofre ? "Abra o cofre aqui no estande e leve um brinde" : "Gire aqui no estande e leve um brinde",
             ].map((t, i) => (
               <li key={t} className="grid grid-cols-[72px_minmax(0,1fr)] items-center gap-6 text-[40px] font-semibold">

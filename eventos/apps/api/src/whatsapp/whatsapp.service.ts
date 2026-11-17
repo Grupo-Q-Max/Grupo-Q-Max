@@ -67,18 +67,22 @@ export class WhatsappService {
     return stats;
   }
 
-  async getQueueHistory(eventId?: number, limit = 50) {
+  async getQueueHistory(eventId?: number, limit = 200) {
     const where = eventId ? { event_id: eventId } : {};
 
     return this.prisma.message_queue.findMany({
       where,
-      orderBy: { created_at: 'desc' },
-      take: limit,
+      orderBy: [{ next_attempt_at: 'asc' }, { id: 'asc' }],
+      take: Math.min(limit, 500),
       select: {
         id: true,
         phone: true,
+        message: true,
+        media_url: true,
+        media_type: true,
         status: true,
         attempts: true,
+        next_attempt_at: true,
         error_reason: true,
         created_at: true,
         updated_at: true,
@@ -529,6 +533,7 @@ export class WhatsappService {
         if (!url || typeof url !== 'string') return false;
         const trimmed = url.trim();
         if (trimmed.includes('...')) return false;
+        if (trimmed.startsWith('data:image/') || trimmed.startsWith('data:application/')) return true;
         try {
           const parsed = new URL(trimmed);
           return parsed.protocol === 'http:' || parsed.protocol === 'https:';

@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarCheck, CheckCircle2, LoaderCircle } from "lucide-react";
+import { AlertCircle, CalendarCheck, CheckCircle2, LoaderCircle, Users } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/api-client";
 import Link from "next/link";
 import { StepBar } from "@/components/brand/Brand";
 import { Alert, Check, Field, PaperHeading, Segmented, StickyActions, primaryButton } from "@/components/form/Paper";
@@ -87,19 +88,47 @@ function createDeviceId() {
   return generated;
 }
 
+type ClinicPrefill = {
+  clinicName?: string;
+  chairsCount?: number | null;
+  croState?: string;
+};
+
 // "Novo cadastro" depois de salvar offline: remonta o formulário zerado (sem navegar, a rede pode estar fora).
 export default function ClinicorpRegistrationForm(props: Props) {
   const [round, setRound] = useState(0);
-  return <RegistrationForm key={round} {...props} onReset={() => setRound((r) => r + 1)} />;
+  const [prefill, setPrefill] = useState<ClinicPrefill | null>(null);
+
+  return (
+    <RegistrationForm
+      key={round}
+      {...props}
+      initialPrefill={prefill}
+      onReset={() => {
+        setPrefill(null);
+        setRound((r) => r + 1);
+      }}
+      onResetWithClinic={(data) => {
+        setPrefill(data);
+        setRound((r) => r + 1);
+      }}
+    />
+  );
 }
 
 function RegistrationForm({
   onReset,
+  onResetWithClinic,
+  initialPrefill,
   eventId,
   eventName: _eventName,
   initialVipCode = "",
   route = "invictus",
-}: Props & { onReset: () => void }) {
+}: Props & {
+  onReset: () => void;
+  onResetWithClinic: (data: ClinicPrefill) => void;
+  initialPrefill?: ClinicPrefill | null;
+}) {
   const router = useRouter();
 
   const [deviceId, setDeviceId] = useState("");
@@ -107,11 +136,63 @@ function RegistrationForm({
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [clinicName, setClinicName] = useState("");
+  const [clinicName, setClinicName] = useState(initialPrefill?.clinicName || "");
   const [cro, setCro] = useState("");
-  const [croState, setCroState] = useState("SP");
-  const [chairsCount, setChairsCount] = useState<number | null>(null);
+  const [croState, setCroState] = useState(initialPrefill?.croState || "SP");
+  const [chairsCount, setChairsCount] = useState<number | null>(initialPrefill?.chairsCount ?? null);
   const [vipCode, setVipCode] = useState(initialVipCode.toUpperCase());
+  const [vipStatus, setVipStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [vipMessage, setVipMessage] = useState<string>("");
+
+  useEffect(() => {
+    const clean = vipCode.trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (!clean) {
+      setVipStatus("idle");
+      setVipMessage("");
+      return;
+    }
+
+    if (clean.length < 4) {
+      setVipStatus("invalid");
+      setVipMessage("Código VIP incompleto.");
+      return;
+    }
+
+    let active = true;
+    setVipStatus("checking");
+
+    const timer = setTimeout(async () => {
+      try {
+        const apiUrl = getApiBaseUrl();
+        const res = await fetch(`${apiUrl}/vip-codes/event/${eventId}/validate/${encodeURIComponent(clean)}`, {
+          cache: "no-store",
+        });
+        if (!active) return;
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.valid) {
+            setVipStatus("valid");
+            setVipMessage("Código VIP Validado com Sucesso!");
+          } else {
+            setVipStatus("invalid");
+            setVipMessage(data.message || "Código VIP não encontrado ou já utilizado.");
+          }
+        } else {
+          setVipStatus("invalid");
+          setVipMessage("Código VIP não encontrado para este evento.");
+        }
+      } catch {
+        if (!active) return;
+        setVipStatus("idle");
+      }
+    }, 350);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [vipCode, eventId]);
   // LGPD: consentimento nunca vem pré-marcado.
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptMarketing, setAcceptMarketing] = useState(false);
@@ -209,8 +290,8 @@ function RegistrationForm({
           id: participation.id,
           name: fullName.trim() || result.participant?.fullName || "Participante",
           autoBookedSlot: result.autoBookedSlot || null,
-          isVip: Boolean(result.vip || participation.vip || participation.vip_codes || result.participation?.vip || vipCode.trim()),
-          vipCode: result.participation?.vipCode || participation.vipCode || vipCode.trim() || undefined,
+          isVip: Boolean(result.vip || participation.vip || participation.vip_codes || result.participation?.vipCode || (vipStatus === "valid" && !result.error)),
+          vipCode: result.participation?.vipCode || participation.vipCode || (vipStatus === "valid" ? vipCode.trim() : undefined),
           alreadyRegistered: Boolean(result.alreadyRegistered),
           hasDrawn: Boolean(result.participation?.hasDrawn),
           drawnPrize: result.participation?.drawnPrize || null,
@@ -257,7 +338,7 @@ function RegistrationForm({
         : nameParts[0] || "Participante";
 
     return (
-      <div className="flex flex-1 flex-col pb-6">
+      <div className="flex flex-1 flex-col pb-6 overscroll-y-contain">
         <PaperHeading
           eyebrow={
             <>
@@ -371,10 +452,20 @@ function RegistrationForm({
                   Apresente seu código para a nossa equipe liberar seu giro no tablet da roleta!
                 </span>
               </div>
+              {clinicName && (
+                <button
+                  type="button"
+                  onClick={() => onResetWithClinic({ clinicName, chairsCount, croState })}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-button bg-accent/15 border border-accent/40 py-2.5 text-[14px] font-bold text-accent hover:bg-accent/25 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                >
+                  <Users size={16} />
+                  Cadastrar Colega da Clínica {clinicName}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onReset}
-                className="inline-flex w-full items-center justify-center rounded-button py-2.5 text-[14px] font-medium text-text-2 hover:text-text transition-colors"
+                className="inline-flex w-full items-center justify-center rounded-button py-2 text-[13px] font-medium text-text-2 hover:text-text transition-colors"
               >
                 Cadastrar Outro Participante
               </button>
@@ -403,7 +494,7 @@ function RegistrationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
+    <form onSubmit={handleSubmit} className="flex flex-1 flex-col overscroll-y-contain">
       <PaperHeading
         eyebrow={<><StepBar step={1} total={2} /><span className="mt-2.5 block">Passo 1 de 2 · leva 1 minuto</span></>}
         title="Seus dados para girar a roleta"
@@ -411,6 +502,29 @@ function RegistrationForm({
 
       <div className="flex flex-1 flex-col gap-4.5 px-5 pt-2 pb-6">
         {error && <Alert>{error}</Alert>}
+
+        {initialVipCode && (
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-100/90 via-amber-50 to-amber-100/60 p-3.5 shadow-sm text-amber-950 animate-pop-burst">
+            <span className="text-2xl">👑</span>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-xs uppercase tracking-wider text-amber-900">
+                Passe VIP Identificado via QR Code
+              </span>
+              <span className="text-xs font-semibold text-amber-800">
+                Bilhete <strong className="font-mono font-black text-amber-950">#{vipCode}</strong> ativado! Seus prêmios exclusivos já estão liberados.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {initialPrefill?.clinicName && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-accent/40 bg-accent/15 px-3.5 py-2.5 text-xs text-slate-200 animate-pop-burst">
+            <Users size={16} className="text-accent flex-none" />
+            <span>
+              Cadastrando colega de <strong>{initialPrefill.clinicName}</strong>. Dados da clínica pré-preenchidos!
+            </span>
+          </div>
+        )}
 
         <Field id="c-nome" label="Nome completo" autoComplete="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
         <Field
@@ -449,13 +563,29 @@ function RegistrationForm({
           onChange={(e) => setVipCode(e.target.value.toUpperCase())}
         />
 
-        {vipCode.trim() && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/70 p-3 text-xs font-bold text-amber-900 shadow-xs">
-            <span className="text-lg">👑</span>
+        {vipStatus === "checking" && (
+          <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/40 p-2.5 text-xs text-slate-300">
+            <LoaderCircle size={14} className="animate-spin text-accent" />
+            <span>Verificando autenticidade do código VIP...</span>
+          </div>
+        )}
+
+        {vipStatus === "valid" && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/70 p-3 text-xs font-bold text-amber-900 shadow-xs animate-pop-burst">
+            <span className="text-xl">👑</span>
             <div>
-              <p className="font-extrabold text-amber-900">Bilhete Dourado Ativo!</p>
+              <p className="font-extrabold text-amber-900">
+                {initialVipCode ? `Bilhete VIP #${vipCode} Ativado via QR Code!` : `Bilhete VIP #${vipCode} Validado!`}
+              </p>
               <p className="text-[11px] text-amber-800 font-medium">Seu cadastro terá acesso liberado ao Pool de Prêmios VIP exclusivos no estande.</p>
             </div>
+          </div>
+        )}
+
+        {vipStatus === "invalid" && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-rose-400/40 bg-rose-500/10 p-2.5 text-xs text-rose-300">
+            <AlertCircle size={15} className="text-rose-400 flex-none" />
+            <span>{vipMessage || "Código VIP não encontrado ou já utilizado. Deixe em branco caso não possua cartão VIP."}</span>
           </div>
         )}
 
@@ -489,10 +619,14 @@ function RegistrationForm({
       </div>
 
       <StickyActions>
-        <button type="submit" disabled={loading || (cpf.length === 14 && !isCpfValid)} className={primaryButton}>
+        <button
+          type="submit"
+          disabled={loading || (cpf.length === 14 && !isCpfValid) || vipStatus === "checking" || vipStatus === "invalid"}
+          className={primaryButton}
+        >
           {loading ? (
             <><LoaderCircle size={20} className="animate-spin" /> Liberando giro…</>
-          ) : vipCode.trim() ? (
+          ) : vipStatus === "valid" ? (
             "👑 Liberar Giro VIP na Roleta 🌟"
           ) : (
             "Liberar Meu Giro na Roleta 🎯"

@@ -95,7 +95,7 @@ export function canAccessAdminApi(
     return (
       (upperMethod === "GET" || upperMethod === "HEAD") &&
       !/^admin-users(\/|$)/.test(relativePath) &&
-      !/\/export-(crm-)?csv$/.test(relativePath)
+      !/\/export-(crm-|commercial-)?csv$/.test(relativePath)
     );
   }
 

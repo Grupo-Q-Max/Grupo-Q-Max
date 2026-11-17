@@ -51,6 +51,11 @@ jobs:
       FINORA_ADMIN_SESSION_TOKEN: ${{ secrets.FINORA_ADMIN_SESSION_TOKEN }}
       # Controle de Fechamento (PHP App Service URL)
       FECHAMENTO_URL: ${{ secrets.FECHAMENTO_URL }}
+      # WhatsApp Z-API credentials
+      ZAPI_INSTANCE_ID: ${{ secrets.ZAPI_INSTANCE_ID }}
+      ZAPI_TOKEN: ${{ secrets.ZAPI_TOKEN }}
+      ZAPI_CLIENT_TOKEN: ${{ secrets.ZAPI_CLIENT_TOKEN }}
+      DISABLE_WHATSAPP: ${{ secrets.DISABLE_WHATSAPP }}
 
     steps:
       - name: Checkout Repository
@@ -61,6 +66,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            eventos/package-lock.json
+            proposta/package-lock.json
 
       - name: Install Dependencies
         run: |
@@ -97,6 +106,17 @@ jobs:
       - name: Robô de Testes Automatizados
         continue-on-error: true
         run: node test-db.js
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .qmax-next/cache
+            eventos/apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json', 'eventos/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json', 'eventos/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-
 
       - name: Build Next.js
         run: |
@@ -149,12 +169,16 @@ jobs:
           echo "MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID}" >> deploy/.env
           echo "MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}" >> deploy/.env
           echo "MICROSOFT_ALLOWED_DOMAINS=${MICROSOFT_ALLOWED_DOMAINS}" >> deploy/.env
-          echo "DISABLE_WHATSAPP='true'" >> deploy/.env
+          if [ -n "${DISABLE_WHATSAPP}" ]; then
+            echo "DISABLE_WHATSAPP='${DISABLE_WHATSAPP}'" >> deploy/.env
+          else
+            echo "DISABLE_WHATSAPP='false'" >> deploy/.env
+          fi
           # Aspas simples: QXBACK_STAGES/QXBACK_FIELDS são JSON; secret vazio = variável fora do .env (node --env-file)
           for name in AUTH_SECRET ADMIN_PASSWORD ADMIN_EMAILS QXBACK_TOKEN QXBACK_STAGES QXBACK_FIELDS QXBACK_WEBHOOK_URL QXBACK_WEBHOOK_SECRET \
             QXSIGN_TOKEN QXSIGN_STAGES QXSIGN_WEBHOOK_URL QXSIGN_WEBHOOK_SECRET \
             EVENTOS_DATABASE_URL EVENTOS_JWT_SECRET EVENTOS_CPF_HASH_SECRET EVENTOS_DATA_ENCRYPTION_KEY FINORA_ADMIN_API_KEY FINORA_ADMIN_SESSION_TOKEN \
-            FECHAMENTO_URL; do
+            FECHAMENTO_URL ZAPI_INSTANCE_ID ZAPI_TOKEN ZAPI_CLIENT_TOKEN; do
             if [ -n "${!name}" ]; then echo "${name}='${!name}'" >> deploy/.env; fi
           done
           # Se EVENTOS_DATABASE_URL for vazio ou contiver o IP legado 74.249.25.198, garante o banco correto da Azure
@@ -178,6 +202,15 @@ jobs:
           fi
           if [ -z "${FECHAMENTO_URL}" ] || [[ "${FECHAMENTO_URL}" == *"grupoqmax.com.br/controle_fechamento"* ]]; then
             echo "FECHAMENTO_URL='http://127.0.0.1:8002'" >> deploy/.env
+          fi
+          if [ -z "${ZAPI_INSTANCE_ID}" ]; then
+            echo "ZAPI_INSTANCE_ID='3F89F6D486DE607670FCC6875DDA7AD5'" >> deploy/.env
+          fi
+          if [ -z "${ZAPI_TOKEN}" ]; then
+            echo "ZAPI_TOKEN='B6484C6CC1E7F0C99EAAD46C'" >> deploy/.env
+          fi
+          if [ -z "${ZAPI_CLIENT_TOKEN}" ]; then
+            echo "ZAPI_CLIENT_TOKEN='F3c0fad77fa1b4aa485ee6d6ff93b4bbbS'" >> deploy/.env
           fi
 
           echo ""
@@ -212,7 +245,8 @@ jobs:
             mkdir -p deploy/proposta
             cp -R proposta/. deploy/proposta/
             rm -rf deploy/proposta/.git deploy/proposta/*.docx deploy/proposta/*.docx.txt deploy/proposta/*.zip deploy/proposta/storage/propostas_pdf/* deploy/proposta/.git_backup deploy/proposta/*.sql
-            # node_modules ja foi copiado com proposta/
+            # node_modules ja foi copiado com proposta, podar dependencias dev
+            (cd deploy/proposta && npm prune --omit=dev 2>/dev/null || true)
 
             echo "Criando .env da Proposta..."
             echo "PORT=3005" > deploy/proposta/.env
@@ -297,6 +331,22 @@ jobs:
           "
 
           echo ""
+          echo "6.1. Otimizando tamanho do pacote para acelerar descompactacao na Azure..."
+          echo "Arquivos no deploy ANTES da limpeza: $(find deploy -type f | wc -l)"
+          # Deletar source maps e lixo pesado
+          find deploy -type f \( -name "*.map" -o -name "*.flow" -o -name "*.tsbuildinfo" \) -delete 2>/dev/null || true
+          # Deletar documentacoes e changelogs soltos
+          find deploy -type f \( -name "*.md" -o -name "*.markdown" \) ! -name "README.md" -delete 2>/dev/null || true
+          # Deletar pastas de testes e docs dentro de node_modules
+          find deploy -type d \( -name "__tests__" -o -name "docs" -o -name "examples" -o -name ".github" \) -prune -exec rm -rf {} + 2>/dev/null || true
+          echo "Arquivos no deploy APOS a limpeza: $(find deploy -type f | wc -l)"
+
+          echo ""
+          echo "6.2. Desativando build redundante do Oryx/Kudu na Azure..."
+          # Sem command para que o Kudu execute o KuduSync e copie todos os arquivos para /home/site/wwwroot
+          printf "[config]\nSCM_DO_BUILD_DURING_DEPLOYMENT = false\n" > deploy/.deployment
+
+          echo ""
           echo "7. Criando ZIP..."
           cd deploy
           zip -1 -q -r ../site.zip .
@@ -309,6 +359,7 @@ jobs:
           unzip -l site.zip | grep "public/brands/brand-talents.png"
           unzip -l site.zip | grep "public/brands/brand-technology.png"
           unzip -l site.zip | grep "public/brands/brand-lagerhaus.png"
+          unzip -l site.zip | grep ".deployment"
           unzip -l site.zip | grep "runner.js"
           unzip -l site.zip | grep "eventos-api/dist/src/main.js"
           unzip -l site.zip | grep "eventos-web/apps/web/server.js"
@@ -369,6 +420,19 @@ jobs:
               Authorization = "Basic $base64"
           }
 
+          Write-Host "Configurando Kudu Settings para desativar Oryx build na nuvem..."
+          try {
+              $kuduSettingsUrl = "$kuduBase/api/settings"
+              $settingsPayload = @{
+                  SCM_DO_BUILD_DURING_DEPLOYMENT = "false"
+                  ENABLE_ORYX_BUILD = "false"
+              } | ConvertTo-Json
+              Invoke-RestMethod -Uri $kuduSettingsUrl -Method Post -Headers $headers -Body $settingsPayload -ContentType "application/json" -TimeoutSec 30
+              Write-Host "Kudu settings atualizadas com sucesso: SCM_DO_BUILD_DURING_DEPLOYMENT=false e ENABLE_ORYX_BUILD=false"
+          } catch {
+              Write-Host "Aviso ao atualizar Kudu settings: $($_.Exception.Message)"
+          }
+
           # Async: O endpoint oficial do Kudu para deploy assincrono via ZIP e /api/zipdeploy?isAsync=true.
           # Ele aceita o upload do ZIP e retorna HTTP 202 imediatamente com o header Location para acompanhamento,
           # evitando qualquer timeout (504 GatewayTimeout) do proxy do Azure App Service.
@@ -403,11 +467,26 @@ jobs:
 
           $deadline = (Get-Date).AddMinutes(30)
           $deployment = $null
+          $seenLogs = @{}
           do {
               Start-Sleep -Seconds 10
               try {
                   $deployment = Invoke-RestMethod -Uri $statusUrl -Headers $headers -TimeoutSec 60
                   Write-Host "Deploy: status=$($deployment.status) ($($deployment.status_text)) complete=$($deployment.complete)"
+                  
+                  if ($deployment.id) {
+                      try {
+                          $logUrl = "$kuduBase/api/deployments/$($deployment.id)/log"
+                          $logs = Invoke-RestMethod -Uri $logUrl -Headers $headers -TimeoutSec 20
+                          foreach ($entry in $logs) {
+                              $key = "$($entry.id)-$($entry.message)"
+                              if (-not $seenLogs.ContainsKey($key)) {
+                                  $seenLogs[$key] = $true
+                                  Write-Host "  > [KUDU] $($entry.message)"
+                              }
+                          }
+                      } catch {}
+                  }
               } catch {
                   Write-Host "Aguardando status do deploy: $($_.Exception.Message)"
               }
@@ -421,6 +500,30 @@ jobs:
           }
 
           Write-Host "Deploy concluido com sucesso."
+
+          Write-Host "Reiniciando processos e aquecendo a aplicacao no Azure..."
+          try {
+              # Reciclar processo para subir com os novos arquivos atualizados
+              Invoke-RestMethod -Uri "$kuduBase/api/processes/0" -Method Delete -Headers $headers -TimeoutSec 30
+              Write-Host "Reciclagem do processo disparada."
+          } catch {
+              Write-Host "Processo ja estava reiniciando: $($_.Exception.Message)"
+          }
+
+          Write-Host "Aguardando 15s para o runner subir os servicos..."
+          Start-Sleep -Seconds 15
+
+          Write-Host "Aquecendo site (warm-up)..."
+          for ($i = 1; $i -le 6; $i++) {
+              try {
+                  $siteResp = Invoke-WebRequest -Uri "https://grupoqmax.com.br" -UseBasicParsing -TimeoutSec 15
+                  Write-Host "Resposta: HTTP $($siteResp.StatusCode)"
+                  if ($siteResp.StatusCode -eq 200) { break }
+              } catch {
+                  Write-Host "Aguardando site responder ($i/6): $($_.Exception.Message)"
+                  Start-Sleep -Seconds 5
+              }
+          }
 
       - name: Finalizar
         run: |

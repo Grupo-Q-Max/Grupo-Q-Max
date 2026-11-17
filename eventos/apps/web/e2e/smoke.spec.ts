@@ -22,7 +22,7 @@ test("cadastro → validação → agendamento → roleta → prêmio", async ({
   await page.getByRole("checkbox", { name: /Aceito o regulamento/ }).check();
 
   const registerResponse = page.waitForResponse((r) => r.url().includes("/participants/register") && r.request().method() === "POST");
-  await page.getByRole("button", { name: /Receber link no WhatsApp/i }).click();
+  await page.getByRole("button", { name: /Liberar.*Giro|Receber link/i }).click();
   const registered = await (await registerResponse).json();
   expect(registered.success, JSON.stringify(registered)).toBe(true);
 

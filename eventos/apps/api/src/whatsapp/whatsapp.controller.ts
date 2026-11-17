@@ -69,7 +69,7 @@ export class WhatsappController {
   ) {
     return this.whatsappService.getQueueHistory(
       eventId ? Number(eventId) : undefined,
-      limit ? Number(limit) : 50,
+      limit ? Number(limit) : 200,
     );
   }
 
@@ -180,16 +180,6 @@ export class WhatsappController {
       videoUrl: body?.videoUrl,
       includeNameFallback: true,
     });
-  }
-
-  @Post('trigger-broadcast')
-  async triggerBroadcast() {
-    const { exec } = require('child_process');
-    exec('npx ts-node scripts/broadcast-hugo.ts', { cwd: process.cwd() }, (error: any, stdout: string) => {
-      if (error) console.error(`Erro no disparo do Excel:`, error);
-      else console.log(`Disparo do Excel finalizado:\n`, stdout);
-    });
-    return { success: true, message: 'Disparo iniciado em background!' };
   }
 
   @Post('event/:eventId/analyze-contacts')

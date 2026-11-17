@@ -46,6 +46,24 @@ export async function POST(req: NextRequest) {
     await prisma.contactLead.create({
       data: { ...data, consentAt: new Date(), privacyVersion: legal.privacyVersion },
     });
+
+    // Injeta automaticamente no primeiro estágio do funil do CRM
+    const defaultStage = await prisma.crmStage.findFirst({
+      orderBy: { order: "asc" },
+      select: { id: true },
+    });
+    if (defaultStage) {
+      await prisma.crmCard.create({
+        data: {
+          title: data.company ? `${data.name} (${data.company})` : data.name,
+          stageId: defaultStage.id,
+          source: "Site Oficial Grupo Q-Max",
+          sourceInfo: data.message || undefined,
+          referredBy: data.phone || undefined,
+          comment: `Lead captado no site oficial.\nE-mail: ${data.email}\nTelefone: ${data.phone}\nEmpresa: ${data.company || "Não informada"}\nMensagem: ${data.message || "Sem mensagem adicional"}`,
+        },
+      }).catch((err) => console.error("Falha ao registrar card automático no CRM:", err));
+    }
   } catch (error) {
     console.error("Error creating lead:", error);
     return NextResponse.json({ error: "Failed to save lead" }, { status: 500 });

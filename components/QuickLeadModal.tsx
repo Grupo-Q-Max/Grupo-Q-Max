@@ -15,7 +15,14 @@ const companies = [
 
 export function QuickLeadModal() {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState(companies[0]);
+  const [selectedCompany, setSelectedCompany] = useState(() => {
+    if (typeof window !== "undefined") {
+      const p = window.location.pathname.toLowerCase();
+      const match = companies.find((comp) => p.includes(comp.id));
+      if (match) return match;
+    }
+    return companies[0];
+  });
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [phone, setPhone] = useState("");
@@ -25,8 +32,35 @@ export function QuickLeadModal() {
   const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const handleOpen = () => {
+    const handleOpen = (e: Event) => {
       openerRef.current = document.activeElement as HTMLElement | null;
+      const customEvent = e as CustomEvent<{ company?: string; unit?: string }>;
+      const requested = customEvent.detail?.company || customEvent.detail?.unit;
+
+      const currentPath = typeof window !== "undefined" ? window.location.pathname.toLowerCase() : "";
+      const targetSlug =
+        requested ||
+        (currentPath.includes("auditoria")
+          ? "auditoria"
+          : currentPath.includes("contabil")
+          ? "contabil"
+          : currentPath.includes("talents")
+          ? "talents"
+          : currentPath.includes("technology")
+          ? "technology"
+          : currentPath.includes("lagerhaus")
+          ? "lagerhaus"
+          : null);
+
+      if (targetSlug) {
+        const found = companies.find(
+          (comp) => comp.id === targetSlug.toLowerCase() || comp.name.toLowerCase().includes(targetSlug.toLowerCase())
+        );
+        if (found) {
+          setSelectedCompany(found);
+        }
+      }
+
       setIsOpen(true);
     };
     window.addEventListener("open-qmax-modal", handleOpen);

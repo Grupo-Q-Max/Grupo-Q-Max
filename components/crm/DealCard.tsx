@@ -1,4 +1,5 @@
-import { Archive, Calendar, Check, Clock, CornerDownRight, ListChecks, ListTodo, ListTree, Lock } from "lucide-react";
+import { Archive, Calendar, Check, Clock, CornerDownRight, Gift, ListChecks, ListTodo, ListTree, Lock, MessageSquare } from "lucide-react";
+import { formatWhatsAppUrl } from "@/lib/crm-whatsapp";
 import { dueAt } from "@/lib/crm-due";
 import { Avatar } from "./deal/ui";
 import { CardTimer } from "./deal/DealTaskTools";
@@ -85,6 +86,9 @@ export function DealCard({
     deal.status === "OPEN" &&
     (isQxback || (!deal.activities?.length && !isTask));
 
+  const rawPhone = customData.phone || customData.whatsapp || (deal as any).referredBy || null;
+  const waUrl = formatWhatsAppUrl(rawPhone, deal.contactName || deal.title, deal.source, customData);
+
   const createdAtFormatted = deal.createdAt
     ? new Date(deal.createdAt).toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -135,6 +139,29 @@ export function DealCard({
             <span className="kanban-card__unopened-dot" />
             NÃO ABERTA · NOVA
           </span>
+        </div>
+      )}
+      {customData.prizeName && (
+        <div
+          className="crm-prize-badge"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            padding: "3px 8px",
+            borderRadius: 6,
+            background: "linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.1))",
+            border: "1px solid rgba(245, 158, 11, 0.4)",
+            color: "#fbbf24",
+            fontSize: "0.72rem",
+            fontWeight: 600,
+            marginBottom: 6,
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
+          }}
+          title={`Prêmio ganho na roleta: ${customData.prizeName}`}
+        >
+          <Gift size={12} style={{ color: "#fbbf24" }} />
+          <span>{customData.prizeName}</span>
         </div>
       )}
       <h3 className="kanban-card__title">{deal.title}</h3>
@@ -219,6 +246,31 @@ export function DealCard({
           </span>
         )}
         {isTask && !taskDone && selected === undefined && <CardTimer cardId={deal.id} running={deal.runningTimers ?? []} />}
+        {waUrl && (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            title={`Chamar no WhatsApp: ${rawPhone}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 22,
+              height: 22,
+              borderRadius: 4,
+              background: "rgba(16, 185, 129, 0.15)",
+              border: "1px solid rgba(16, 185, 129, 0.35)",
+              color: "#10b981",
+              textDecoration: "none",
+              marginRight: 6,
+              flexShrink: 0,
+            }}
+          >
+            <MessageSquare size={12} />
+          </a>
+        )}
         <span className="kanban-card__date">
           {[
             pendingCount > 0 &&

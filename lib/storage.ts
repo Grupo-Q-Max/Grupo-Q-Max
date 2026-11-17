@@ -61,7 +61,7 @@ export function findUploadedFile(fileName: string): string | null {
   for (const dir of dirs) {
     if (!fs.existsSync(/*turbopackIgnore: true*/ dir)) continue;
     const match = fs.readdirSync(/*turbopackIgnore: true*/ dir).find((f) => f.toLowerCase() === lower);
-    if (match) return path.join(dir, match);
+    if (match) return path.join(/*turbopackIgnore: true*/ dir, match);
   }
   return null;
 }

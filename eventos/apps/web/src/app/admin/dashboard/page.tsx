@@ -11,6 +11,7 @@ import {
   Users,
   Layers,
   Sparkles,
+  FileSpreadsheet,
 } from "lucide-react";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
@@ -231,6 +232,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            <a
+              href={`/finora-experience/api/admin-proxy/participants/event/${eventId}/export-commercial-csv`}
+              download={`leads-comercial-segmentado-evento-${eventId}.csv`}
+              className="flex h-10 items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-950/30 px-4 text-sm font-semibold text-emerald-300 transition-all hover:border-emerald-500/80 hover:bg-emerald-900/40 hover:text-white shadow-xs"
+              title="Baixar planilha de leads segmentada por prioridade comercial (1-Clique)"
+            >
+              <FileSpreadsheet size={15} className="text-emerald-400" />
+              <span>Exportar Comercial</span>
+            </a>
             <a
               href={`/finora-experience/${eventSlug}/telao`}
               target="_blank"

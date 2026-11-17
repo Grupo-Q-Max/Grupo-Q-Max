@@ -190,7 +190,7 @@ function aplicarFiltrosDashboard() {
     `.toLowerCase();
 
     const passaEmpresa = !empresa || empresaProposta === empresa;
-    const passaStatus = !status || statusProposta === status;
+    const passaStatus = !status || (status === "Rascunho" ? (statusProposta === "Rascunho" || statusProposta === "Incompleta") : statusProposta === status);
     const passaBusca = !busca || textoBusca.includes(busca);
     const totalVisualizacoes = Number(p.total_visualizacoes || 0);
 
@@ -247,7 +247,7 @@ function aplicarFiltrosDashboard() {
       ${p.numero_proposta || ""}
     `.toLowerCase();
 
-    const passaStatus = !status || statusProposta === status;
+    const passaStatus = !status || (status === "Rascunho" ? (statusProposta === "Rascunho" || statusProposta === "Incompleta") : statusProposta === status);
     const passaBusca = !busca || textoBusca.includes(busca);
     const totalVisualizacoes = Number(p.total_visualizacoes || 0);
 
@@ -355,6 +355,7 @@ function renderizarTabelaDashboard(propostas) {
     const ehTech = empresaProposta === "TECH";
     const ehContabil = empresaProposta === "CONTABIL" || empresaProposta === "QMAX";
     const ehAuditoria = empresaProposta === "AUDITORIA";
+    const ehRascunho = p.status === "Rascunho" || p.status === "Incompleta";
 
     let paramsHtml = `
       <div><span>Razão Social</span><strong>${escapeHTML(p.razao_social || "-")}</strong></div>
@@ -388,9 +389,15 @@ function renderizarTabelaDashboard(propostas) {
         <td>
           <strong>${p.numero_proposta}</strong><br>
           <small>${formatarData(p.data_proposta)}</small><br>
-          <a class="btn-ver-olhinho" target="_blank" href="${APP_BASE_PATH}/visualizar.html?token=${p.token_acesso}" title="Visualizar Proposta">
-            Ver
-          </a>
+          ${ehRascunho ? `
+            <a class="btn-ver-olhinho" href="${APP_BASE_PATH}/index.html?rascunhoId=${p.id}" title="Continuar Editando Rascunho" style="background:#0284c7; color:#fff; border-color:#0284c7;">
+              Editar
+            </a>
+          ` : `
+            <a class="btn-ver-olhinho" target="_blank" href="${APP_BASE_PATH}/visualizar.html?token=${p.token_acesso}" title="Visualizar Proposta">
+              Ver
+            </a>
+          `}
         </td>
 
         <td>
@@ -412,13 +419,24 @@ function renderizarTabelaDashboard(propostas) {
         <td><strong>${formatador.format(totalPontual)}</strong></td>
 
         <td>
-          <span class="status-badge status-${String(p.status || "").replace(/\s/g, "-")}">
-            ${escapeHTML(p.status)}
-          </span>
+          ${ehRascunho ? `
+            <span class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-weight:700;">
+              📝 Rascunho
+            </span>
+          ` : `
+            <span class="status-badge status-${String(p.status || "").replace(/\s/g, "-")}">
+              ${escapeHTML(p.status)}
+            </span>
+          `}
         </td>
 
-        <td onclick="abrirModalVisualizacoes(${p.id})" style="cursor: pointer;" title="Clique para ver o histórico detalhado de acessos">
-          ${(() => {
+        <td ${ehRascunho ? '' : `onclick="abrirModalVisualizacoes(${p.id})" style="cursor: pointer;" title="Clique para ver o histórico detalhado de acessos"`}>
+          ${ehRascunho ? `
+            <div style="display:inline-flex; align-items:center; gap:4px; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:700;">
+              📝 Em elaboração
+            </div>
+            <small style="color:#64748b; font-size:10px; margin-top:3px; display:inline-block;">Rascunho / Incompleta</small>
+          ` : (() => {
             const horasDesdeCriacao = (Date.now() - new Date(p.criado_em || p.data_proposta || Date.now()).getTime()) / (3600 * 1000);
             const precisaFollowUp = p.status === "Pendente" && horasDesdeCriacao >= 48;
             const linkWaFollowUp = `https://wa.me/55${(p.telefone || '').replace(/\D/g, '')}?text=${encodeURIComponent('Olá, tudo bem? Passando para saber se conseguiu analisar a proposta que enviamos para a ' + (p.nome_clinica || 'clínica') + '!')}`;
@@ -467,39 +485,51 @@ function renderizarTabelaDashboard(propostas) {
 
         <td>
           <div class="acoes-proposta">
-            <button class="btn-action-icon btn-action-detail" onclick="toggleDetalhes(${p.id}, this)" title="Ver Detalhes">
-              ▼
-            </button>
+            ${ehRascunho ? `
+              <a href="${APP_BASE_PATH}/index.html?rascunhoId=${p.id}" class="btn-action-icon" style="background:#0284c7; color:#fff; text-decoration:none; padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:4px; border:none;" title="Continuar preenchendo proposta">
+                Continuar ➔
+              </a>
+              <button class="btn-action-icon btn-action-detail" onclick="toggleDetalhes(${p.id}, this)" title="Ver Detalhes">
+                ▼
+              </button>
+              <button class="btn-action-icon" onclick="excluirRascunhoProposta(${p.id})" title="Excluir Rascunho" style="background:#fee2e2; color:#ef4444; border:1px solid #fecdd3;">
+                🗑
+              </button>
+            ` : `
+              <button class="btn-action-icon btn-action-detail" onclick="toggleDetalhes(${p.id}, this)" title="Ver Detalhes">
+                ▼
+              </button>
 
-            <button class="btn-action-icon" onclick="abrirModalDescontoItens(propostaPorId(${Number(p.id)}))" title="Aplicar Desconto">
-              ％
-            </button>
+              <button class="btn-action-icon" onclick="abrirModalDescontoItens(propostaPorId(${Number(p.id)}))" title="Aplicar Desconto">
+                ％
+              </button>
 
-            <button class="btn-action-icon" onclick="abrirModalObservacoes(${p.id})" title="Observações">
-              ✎
-            </button>
+              <button class="btn-action-icon" onclick="abrirModalObservacoes(${p.id})" title="Observações">
+                ✎
+              </button>
 
-            <button class="btn-action-icon" onclick="abrirLinhaDoTempo(${p.id})" title="Linha do Tempo / Histórico">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-            </button>
+              <button class="btn-action-icon" onclick="abrirLinhaDoTempo(${p.id})" title="Linha do Tempo / Histórico">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              </button>
 
-            <button class="btn-action-icon" onclick="abrirRaioXProposta('${p.numero_proposta}', ${p.total_visualizacoes || 1}, ${p.tempo_total_segundos || 75})" title="Raio-X de Engajamento & Atenção" style="background:#f0fdf4; border-color:#86efac;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
+              <button class="btn-action-icon" onclick="abrirRaioXProposta('${p.numero_proposta}', ${p.total_visualizacoes || 1}, ${p.tempo_total_segundos || 75})" title="Raio-X de Engajamento & Atenção" style="background:#f0fdf4; border-color:#86efac;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
 
-            <button class="btn-action-icon btn-action-whatsapp" onclick="compartilharWhatsAppPorId(${Number(p.id)})" title="Enviar por WhatsApp">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
-                <path d="M13.601 2.326A7.882 7.882 0 0 0 8 0C3.58 0 .005 3.525 0 7.92c-.004 1.4.368 2.765 1.07 3.97L0 16l4.22-1.088A7.87 7.87 0 0 0 8 16c4.417 0 7.994-3.525 8-7.92a7.882 7.882 0 0 0-2.399-5.754H13.6zM8 14.707a6.68 6.68 0 0 1-3.39-.922l-.24-.143-2.52.65.666-2.433-.156-.251a6.69 6.69 0 0 1-1.007-3.505C1.353 3.513 5.487 1.352 8.01 1.352c3.55 0 6.44 2.89 6.446 6.44a6.45 6.45 0 0 1-1.913 4.562 6.4 6.4 0 0 1-4.561 1.91zM11.536 9.47c-.194-.097-1.146-.566-1.324-.631-.178-.065-.307-.097-.437.097-.13.194-.501.631-.614.76-.113.13-.226.146-.42.049-.194-.097-.82-.303-1.562-.962-.577-.515-.967-1.15-1.08-1.346-.113-.194-.012-.299.085-.396.088-.088.194-.226.29-.339.097-.113.13-.194.194-.323.065-.13.032-.243-.016-.34-.049-.097-.437-1.053-.6-1.44-.158-.38-.34-.33-.467-.33H4.9c-.13 0-.34.049-.518.243-.178.194-.68.663-.68 1.617 0 .955.696 1.876.793 2.006.097.13 1.37 2.1 3.32 2.946.464.2.827.321 1.11.41.467.15 0 .257-.156.243-.346-.013-1.146-.47-1.324-1.262-.178-.793-.178-1.472-.13-1.617.049-.146.178-.226.372-.323z"/>
-              </svg>
-            </button>
+              <button class="btn-action-icon btn-action-whatsapp" onclick="compartilharWhatsAppPorId(${Number(p.id)})" title="Enviar por WhatsApp">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
+                  <path d="M13.601 2.326A7.882 7.882 0 0 0 8 0C3.58 0 .005 3.525 0 7.92c-.004 1.4.368 2.765 1.07 3.97L0 16l4.22-1.088A7.87 7.87 0 0 0 8 16c4.417 0 7.994-3.525 8-7.92a7.882 7.882 0 0 0-2.399-5.754H13.6zM8 14.707a6.68 6.68 0 0 1-3.39-.922l-.24-.143-2.52.65.666-2.433-.156-.251a6.69 6.69 0 0 1-1.007-3.505C1.353 3.513 5.487 1.352 8.01 1.352c3.55 0 6.44 2.89 6.446 6.44a6.45 6.45 0 0 1-1.913 4.562 6.4 6.4 0 0 1-4.561 1.91zM11.536 9.47c-.194-.097-1.146-.566-1.324-.631-.178-.065-.307-.097-.437.097-.13.194-.501.631-.614.76-.113.13-.226.146-.42.049-.194-.097-.82-.303-1.562-.962-.577-.515-.967-1.15-1.08-1.346-.113-.194-.012-.299.085-.396.088-.088.194-.226.29-.339.097-.113.13-.194.194-.323.065-.13.032-.243-.016-.34-.049-.097-.437-1.053-.6-1.44-.158-.38-.34-.33-.467-.33H4.9c-.13 0-.34.049-.518.243-.178.194-.68.663-.68 1.617 0 .955.696 1.876.793 2.006.097.13 1.37 2.1 3.32 2.946.464.2.827.321 1.11.41.467.15 0 .257-.156.243-.346-.013-1.146-.47-1.324-1.262-.178-.793-.178-1.472-.13-1.617.049-.146.178-.226.372-.323z"/>
+                </svg>
+              </button>
 
-            <button class="btn-action-icon" onclick="reenviarProposta(${p.id})" title="Reenviar por E-mail">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 7l9 6 9-6"/></svg>
-            </button>
-            ${p.status === "Pendente" && propostaVencidaFront(p) ? `
-            <button class="btn-action-icon" onclick="renovarValidadeProposta(${Number(p.id)})" title="Validade vencida: renovar por mais 10 dias" aria-label="Renovar validade da proposta" style="background:#fffbeb; border-color:#fcd34d;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
-            </button>` : ""}
+              <button class="btn-action-icon" onclick="reenviarProposta(${p.id})" title="Reenviar por E-mail">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 7l9 6 9-6"/></svg>
+              </button>
+              ${p.status === "Pendente" && propostaVencidaFront(p) ? `
+              <button class="btn-action-icon" onclick="renovarValidadeProposta(${Number(p.id)})" title="Validade vencida: renovar por mais 10 dias" aria-label="Renovar validade da proposta" style="background:#fffbeb; border-color:#fcd34d;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+              </button>` : ""}
+            `}
           </div>
         </td>
       </tr>
@@ -610,6 +640,27 @@ function propostaVencidaFront(p) {
   const base = p.validade_inicia_em || p.criado_em;
   return Boolean(base) && Date.now() > new Date(base).getTime() + 10 * 24 * 60 * 60 * 1000;
 }
+
+async function excluirRascunhoProposta(id) {
+  if (!confirm("Tem certeza que deseja excluir este rascunho de proposta?")) return;
+  try {
+    const res = await fetch(`/api/propostas/rascunho/${id}`, {
+      method: "DELETE",
+      headers: authHeaders
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || "Erro ao excluir rascunho.");
+      return;
+    }
+    alert(data.message || "Rascunho excluído com sucesso.");
+    carregarPropostas();
+  } catch (err) {
+    console.error(err);
+    alert("Erro de conexão ao excluir rascunho.");
+  }
+}
+window.excluirRascunhoProposta = excluirRascunhoProposta;
 
 async function renovarValidadeProposta(id) {
   if (!confirm("Renovar a validade desta proposta por mais 10 dias? O cliente poderá aprovar de novo pelo mesmo link.")) return;

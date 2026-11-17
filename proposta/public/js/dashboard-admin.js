@@ -164,8 +164,164 @@ async function criarUsuario() {
   const data = await res.json();
   alert(data.message || data.error);
 
-  if (res.ok) fecharModal("modalUsuario");
+  if (res.ok) {
+    fecharModal("modalUsuario");
+    if (typeof carregarUsuarios === "function") carregarUsuarios();
+  }
 }
+
+// ==========================================
+// GESTÃO COMPLETA DE USUÁRIOS (DIRETORIA)
+// ==========================================
+let LISTA_USUARIOS_CACHE = [];
+
+async function abrirModalGerenciarUsuarios() {
+  abrirModal("modalGerenciarUsuarios");
+  await carregarUsuarios();
+}
+window.abrirModalGerenciarUsuarios = abrirModalGerenciarUsuarios;
+
+async function carregarUsuarios() {
+  const tbody = document.getElementById("corpoTabelaUsuarios");
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">Carregando usuários...</td></tr>`;
+
+  try {
+    const res = await fetch("/api/usuarios", { headers: authHeaders });
+    if (!res.ok) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #ef4444;">Erro ao carregar lista de usuários.</td></tr>`;
+      return;
+    }
+    const usuarios = await res.json();
+    LISTA_USUARIOS_CACHE = usuarios;
+
+    if (!usuarios || usuarios.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">Nenhum usuário cadastrado encontrado.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = usuarios.map(u => {
+      const ehAtivo = Number(u.ativo) === 1;
+      const roleColor = u.role === "Diretor" ? "#4f46e5" : "#0284c7";
+      const roleBg = u.role === "Diretor" ? "#eef2ff" : "#f0f9ff";
+      const statusBadge = ehAtivo
+        ? `<span style="display:inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">Ativo</span>`
+        : `<span style="display:inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;">Inativo</span>`;
+
+      return `
+        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s ease;">
+          <td style="padding: 14px; font-weight: 700; color: #1e293b;">${escapeHTML(u.nome || "-")}</td>
+          <td style="padding: 14px; color: #475569;">${escapeHTML(u.email || "-")}</td>
+          <td style="padding: 14px; color: #475569;">${escapeHTML(u.telefone || "-")}</td>
+          <td style="padding: 14px;">
+            <span style="display:inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; background: ${roleBg}; color: ${roleColor};">
+              ${escapeHTML(u.role || "Comercial")}
+            </span>
+          </td>
+          <td style="padding: 14px; text-align: center;">${statusBadge}</td>
+          <td style="padding: 14px; text-align: right;">
+            <div style="display: inline-flex; gap: 8px; justify-content: flex-end;">
+              <button class="btn-mini btn-mini-light" onclick="abrirEditarUsuario(${u.id})" style="font-weight: 700; cursor: pointer;" title="Editar dados">
+                ✏️ Editar
+              </button>
+              <button class="btn-mini" onclick="alternarStatusUsuario(${u.id}, ${ehAtivo ? 1 : 0})" style="font-weight: 700; cursor: pointer; background: ${ehAtivo ? '#fff1f2' : '#f0fdf4'}; color: ${ehAtivo ? '#e11d48' : '#16a34a'}; border: 1px solid ${ehAtivo ? '#fecdd3' : '#bbf7d0'};">
+                ${ehAtivo ? 'Desativar' : 'Reativar'}
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  } catch (err) {
+    console.error("Erro ao carregar usuários:", err);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #ef4444;">Erro de conexão ao carregar usuários.</td></tr>`;
+  }
+}
+window.carregarUsuarios = carregarUsuarios;
+
+function abrirEditarUsuario(id) {
+  const u = LISTA_USUARIOS_CACHE.find(item => Number(item.id) === Number(id));
+  if (!u) {
+    alert("Usuário não encontrado.");
+    return;
+  }
+
+  document.getElementById("editUsuarioId").value = u.id;
+  document.getElementById("editUsuarioNome").value = u.nome || "";
+  document.getElementById("editUsuarioEmail").value = u.email || "";
+  document.getElementById("editUsuarioTelefone").value = u.telefone || "";
+  document.getElementById("editUsuarioRole").value = u.role || "Comercial";
+  document.getElementById("editUsuarioAtivo").value = Number(u.ativo) === 1 ? "1" : "0";
+  document.getElementById("editUsuarioSenha").value = "";
+
+  abrirModal("modalEditarUsuario");
+}
+window.abrirEditarUsuario = abrirEditarUsuario;
+
+async function salvarEdicaoUsuario() {
+  const id = document.getElementById("editUsuarioId").value;
+  const nome = document.getElementById("editUsuarioNome").value.trim();
+  const email = document.getElementById("editUsuarioEmail").value.trim();
+  const telefone = document.getElementById("editUsuarioTelefone").value.trim();
+  const role = document.getElementById("editUsuarioRole").value;
+  const ativo = parseInt(document.getElementById("editUsuarioAtivo").value, 10);
+  const senha = document.getElementById("editUsuarioSenha").value;
+
+  if (!nome || !email) {
+    alert("Por favor, preencha Nome e E-mail.");
+    return;
+  }
+
+  const payload = { nome, email, telefone, role, ativo };
+  if (senha && senha.trim() !== "") {
+    payload.senha = senha.trim();
+  }
+
+  try {
+    const res = await fetch(`/api/usuarios/${id}`, {
+      method: "PUT",
+      headers: authHeaders,
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Erro ao atualizar usuário.");
+      return;
+    }
+    alert(data.message || "Usuário atualizado com sucesso!");
+    fecharModal("modalEditarUsuario");
+    carregarUsuarios();
+  } catch (err) {
+    console.error("Erro ao salvar usuário:", err);
+    alert("Erro de conexão ao salvar usuário.");
+  }
+}
+window.salvarEdicaoUsuario = salvarEdicaoUsuario;
+
+async function alternarStatusUsuario(id, statusAtual) {
+  const novoStatus = statusAtual === 1 ? 0 : 1;
+  const acao = novoStatus === 1 ? "reativar" : "desativar";
+  if (!confirm(`Deseja realmente ${acao} este usuário?`)) return;
+
+  try {
+    const res = await fetch(`/api/usuarios/${id}`, {
+      method: novoStatus === 0 ? "DELETE" : "PUT",
+      headers: authHeaders,
+      body: novoStatus === 1 ? JSON.stringify({ ativo: 1 }) : undefined
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || `Erro ao ${acao} usuário.`);
+      return;
+    }
+    alert(data.message || `Usuário alterado com sucesso.`);
+    carregarUsuarios();
+  } catch (err) {
+    console.error("Erro ao alternar status do usuário:", err);
+    alert("Erro de conexão com o servidor.");
+  }
+}
+window.alternarStatusUsuario = alternarStatusUsuario;
 
 function abrirModalDescontoItens(proposta) {
   propostaSelecionadaDesconto = proposta;
@@ -673,24 +829,75 @@ async function abrirModalTabelaPrecos() {
   await carregarTabelaPrecos();
 }
 
+const CATALOGO_SERVICOS_PADRAO_ADMIN = [
+  // FINORA
+  { id: 1, codigo: 'contabil', nome: 'Assessoria Contábil/Fiscal PJ', tipo: 'Mensal', valor_base: 1800, valor_base_pf: null, valor_base_pj: 1800, valor_base_hibrido: 2200, ativo: 1, empresa: 'FINORA', descricao: 'Assessoria Contábil e Fiscal completa para Pessoa Jurídica' },
+  { id: 2, codigo: 'fiscal', nome: 'Assessoria Contábil/Fiscal PF', tipo: 'Mensal', valor_base: 1800, valor_base_pf: 1800, valor_base_pj: null, valor_base_hibrido: 2200, ativo: 1, empresa: 'FINORA', descricao: 'Assessoria Contábil e Livro Caixa para Pessoa Física' },
+  { id: 3, codigo: 'bpo', nome: 'BPO Financeiro', tipo: 'Mensal', valor_base: 2200, valor_base_pf: 2000, valor_base_pj: 2200, valor_base_hibrido: 2500, ativo: 1, empresa: 'FINORA', descricao: 'Gestão financeira e conciliação bancária' },
+  { id: 4, codigo: 'diagnostico', nome: 'Diagnóstico Tributário', tipo: 'Pontual', valor_base: 2500, valor_base_pf: 2000, valor_base_pj: 2500, valor_base_hibrido: 2800, ativo: 1, empresa: 'FINORA', descricao: 'Análise profunda e cruzamento tributário' },
+  { id: 13, codigo: 'AVS', nome: 'Alvará Vigilância Sanitária', tipo: 'Pontual', valor_base: 1500, valor_base_pf: 1200, valor_base_pj: 1500, valor_base_hibrido: 1500, ativo: 1, empresa: 'FINORA', descricao: 'Obtenção e renovação de Alvará Sanitário' },
+  { id: 40, codigo: 'declaracao_irpf', nome: 'Declaração IRPF', tipo: 'Mensal', valor_base: 250, valor_base_pf: 250, valor_base_pj: 350, valor_base_hibrido: 350, ativo: 1, empresa: 'FINORA', descricao: 'Declaração anual do imposto de renda' },
+  { id: 41, codigo: 'diagnostico_obrigacoes', nome: 'Diagnóstico Obrigações Tributárias', tipo: 'Pontual', valor_base: 1500, valor_base_pf: 1200, valor_base_pj: 1500, valor_base_hibrido: 1500, ativo: 1, empresa: 'FINORA', descricao: 'Auditoria de obrigações acessórias' },
+  { id: 42, codigo: 'regularizacao_cro', nome: 'Regularização CRO', tipo: 'Pontual', valor_base: 800, valor_base_pf: 600, valor_base_pj: 800, valor_base_hibrido: 800, ativo: 1, empresa: 'FINORA', descricao: 'Regularização cadastral junto ao conselho' },
+  { id: 43, codigo: 'regularizacao_prefeitura', nome: 'Regularização Prefeitura', tipo: 'Pontual', valor_base: 1000, valor_base_pf: 800, valor_base_pj: 1000, valor_base_hibrido: 1000, ativo: 1, empresa: 'FINORA', descricao: 'Alvará de funcionamento e licenças municipais' },
+  { id: 44, codigo: 'diagnostico_tributario_financeiro', nome: 'Diagnóstico Tributário/Financeiro', tipo: 'Pontual', valor_base: 2500, valor_base_pf: 2000, valor_base_pj: 2500, valor_base_hibrido: 2800, ativo: 1, empresa: 'FINORA', descricao: 'Revisão financeira e tributária integrada' },
+  { id: 45, codigo: 'alvara', nome: 'Alvará', tipo: 'Pontual', valor_base: 1200, valor_base_pf: 1000, valor_base_pj: 1200, valor_base_hibrido: 1200, ativo: 1, empresa: 'FINORA', descricao: 'Emissão e renovação de alvarás' },
+
+  // CONTABIL / Q-MAX
+  { id: 23, codigo: 'contabil_contabil', nome: 'Assessoria Contábil/Fiscal PJ', tipo: 'Mensal', valor_base: 1800, ativo: 1, empresa: 'CONTABIL', descricao: 'Assessoria contábil completa Q-MAX' },
+  { id: 24, codigo: 'fiscal_contabil', nome: 'Assessoria Contábil/Fiscal PF', tipo: 'Mensal', valor_base: 1800, ativo: 1, empresa: 'CONTABIL', descricao: 'Assessoria contábil para dentistas PF' },
+  { id: 25, codigo: 'bpo_contabil', nome: 'BPO Financeiro', tipo: 'Mensal', valor_base: 2200, ativo: 1, empresa: 'CONTABIL', descricao: 'Gestão financeira Q-MAX' },
+  { id: 26, codigo: 'diagnostico_contabil', nome: 'Diagnóstico Tributário', tipo: 'Pontual', valor_base: 2500, ativo: 1, empresa: 'CONTABIL', descricao: 'Diagnóstico contábil e fiscal completo' },
+  { id: 35, codigo: 'AVS_contabil', nome: 'Alvará Vigilância Sanitária', tipo: 'Pontual', valor_base: 1500, ativo: 1, empresa: 'CONTABIL', descricao: 'Alvará de vigilância sanitária' },
+
+  // AUDITORIA
+  { id: 46, codigo: 'auditoria_clinica', nome: 'Auditoria de Processos Clínicos e Conformidade', tipo: 'Pontual', valor_base: 3500, ativo: 1, empresa: 'AUDITORIA', descricao: 'Auditoria e conformidade clínica' },
+  { id: 47, codigo: 'auditoria_tributaria', nome: 'Auditoria Tributária e Fiscal', tipo: 'Pontual', valor_base: 4500, ativo: 1, empresa: 'AUDITORIA', descricao: 'Auditoria fiscal aprofundada' },
+  { id: 48, codigo: 'auditoria_contabil', nome: 'Auditoria Contábil e Balanço', tipo: 'Pontual', valor_base: 5000, ativo: 1, empresa: 'AUDITORIA', descricao: 'Auditoria de balanços e demonstrações' },
+  { id: 49, codigo: 'auditoria_recorrente', nome: 'Auditoria Contínua & Compliance', tipo: 'Mensal', valor_base: 2500, ativo: 1, empresa: 'AUDITORIA', descricao: 'Compliance contínuo mensal' },
+
+  // LAGERHAUS
+  { id: 50, codigo: 'lagerhaus_coworking', nome: 'Locação de Estação Coworking Premium', tipo: 'Mensal', valor_base: 900, ativo: 1, empresa: 'LAGERHAUS', descricao: 'Estação individual de trabalho coworking' },
+  { id: 51, codigo: 'lagerhaus_sala_privativa', nome: 'Locação de Sala Privativa Executiva', tipo: 'Mensal', valor_base: 2500, ativo: 1, empresa: 'LAGERHAUS', descricao: 'Sala exclusiva com ar condicionado e mobiliário' },
+  { id: 52, codigo: 'lagerhaus_galpao_logistico', nome: 'Módulo Galpão Logístico Inteligente', tipo: 'Mensal', valor_base: 6500, ativo: 1, empresa: 'LAGERHAUS', descricao: 'Galpão climatizado para armazenagem' },
+  { id: 53, codigo: 'lagerhaus_endereco_fiscal', nome: 'Endereço Fiscal e Comercial', tipo: 'Mensal', valor_base: 250, ativo: 1, empresa: 'LAGERHAUS', descricao: 'Domicílio tributário e gestão de correspondências' },
+  { id: 54, codigo: 'lagerhaus_taxa_adesao', nome: 'Taxa de Implantação e Credenciamento', tipo: 'Pontual', valor_base: 500, ativo: 1, empresa: 'LAGERHAUS', descricao: 'Taxa única de cadastro e setup' },
+
+  // TECH
+  { id: 101, codigo: 'essencial', nome: 'Plano Tech Essencial', tipo: 'Mensal', valor_base: 1037, ativo: 1, empresa: 'TECH', descricao: 'Presença digital e gestão básica' },
+  { id: 102, codigo: 'performance', nome: 'Plano Tech Performance', tipo: 'Mensal', valor_base: 1727, ativo: 1, empresa: 'TECH', descricao: 'Marketing de alta conversão e automação' },
+  { id: 103, codigo: 'autoridade', nome: 'Plano Tech Autoridade', tipo: 'Mensal', valor_base: 2487, ativo: 1, empresa: 'TECH', descricao: 'Domínio de mercado e escala' }
+];
+
 async function carregarTabelaPrecos() {
   const lista = document.getElementById("listaTabelaPrecos");
+  if (!lista) return;
 
   lista.innerHTML = `<p style="color:#64748b;">Carregando produtos...</p>`;
 
-  const res = await fetch("/api/regras-precificacao", {
-    headers: authHeaders,
-  });
-
-  const regras = await res.json();
-
-  if (!res.ok) {
-    lista.innerHTML = `<p style="color:#ef4444;">Erro ao carregar produtos.</p>`;
-    return;
+  let regras = [];
+  try {
+    const res = await fetch("/api/regras-precificacao", {
+      headers: authHeaders,
+    });
+    if (res.ok) {
+      regras = await res.json();
+    }
+  } catch (err) {
+    console.warn("Aviso ao carregar regras de precificação:", err);
   }
 
-  // Filter based on the selected company (including plano_ and mensalidade_ rules so the user can edit all)
-  const itens = regras.filter((r) => (r.empresa || "FINORA") === empresaPrecoSelecionada);
+  if (!Array.isArray(regras) || regras.length === 0) {
+    regras = CATALOGO_SERVICOS_PADRAO_ADMIN;
+  }
+
+  const normalizarEmpresa = (emp) => {
+    const e = String(emp || "FINORA").toUpperCase();
+    if (e === "QMAX" || e === "CONTABIL" || e === "CONTÁBIL") return "CONTABIL";
+    return e;
+  };
+
+  const itens = regras.filter((r) => normalizarEmpresa(r.empresa) === normalizarEmpresa(empresaPrecoSelecionada));
 
   const cores = {
     FINORA: "#663399",
@@ -709,6 +916,21 @@ async function carregarTabelaPrecos() {
 
   const cor = cores[empresaPrecoSelecionada] || "#663399";
   const titulo = titulos[empresaPrecoSelecionada] || empresaPrecoSelecionada;
+
+  if (itens.length === 0) {
+    lista.innerHTML = `
+      <div style="margin-bottom:26px;">
+        <h3 style="color:${cor}; margin-bottom:12px;">Serviços cadastrados (${titulo})</h3>
+        <div style="background:#f8fafc; border:1.5px dashed #cbd5e1; border-radius:14px; padding:32px; text-align:center;">
+          <p style="color:#64748b; font-weight:700; margin:0 0 12px 0;">Nenhum produto cadastrado para ${titulo}.</p>
+          <button class="btn-primary" style="width:auto;" onclick="abrirNovoServicoPreco()">
+            + Cadastrar Primeiro Serviço
+          </button>
+        </div>
+      </div>
+    `;
+    return;
+  }
 
   lista.innerHTML = `
     <div style="margin-bottom:26px;">

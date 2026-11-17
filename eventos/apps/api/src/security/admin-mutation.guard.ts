@@ -21,8 +21,10 @@ const PUBLIC_ROUTES: Array<[method: string, pattern: RegExp]> = [
   ['GET', /^\/api\/v1\/meetings\/event\/\d+\/available-slots\/?$/],
   ['POST', /^\/api\/v1\/meetings\/event\/\d+\/book\/?$/],
   ['GET', /^\/api\/v1\/whatsapp\/status\/?$/],
+  ['GET', /^\/api\/v1\/whatsapp\/queue-stats\/?$/],
   ['GET', /^\/api\/v1\/dashboard\/event\/\d+\/public\/?$/],
   ['GET', /^\/api\/v1\/live\/event\/\d+\/?$/],
+  ['GET', /^\/api\/v1\/vip-codes\/event\/\d+\/validate\/[^\/]+\/?$/],
 ];
 
 export function isPublicRoute(method: string, url: string): boolean {

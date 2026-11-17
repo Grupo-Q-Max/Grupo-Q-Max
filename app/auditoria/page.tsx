@@ -38,6 +38,21 @@ export const metadata: Metadata = {
       "Auditoria, controles internos, compliance e inteligência para organizações que buscam decisões mais consistentes.",
     url: "/auditoria",
     type: "website",
+    siteName: "Grupo Q-Max",
+    images: [
+      {
+        url: "/brands/auditoria-branco.png",
+        width: 1200,
+        height: 630,
+        alt: "Q-Max Auditoria",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Q-Max Auditoria | Confiança para decidir",
+    description: "Auditoria independente, controles internos, compliance e LGPD pelo Grupo Q-Max.",
+    images: ["/brands/auditoria-branco.png"],
   },
 };
 

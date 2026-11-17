@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, CircleAlert, Crown, LoaderCircle, LogOut, Maximize, Minimize, Play, Search, Sparkles, UserRound, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowRight, Check, CircleAlert, Crown, LoaderCircle, LogOut, Maximize, Minimize, Play, Search, Sparkles, Target, UserRound, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { playChimeSound, playSlowdownSound, playTickSound, playWinFanfare, speakWinner, triggerHaptic } from "@/lib/audio";
@@ -59,6 +59,53 @@ type Phase = "LOADING" | "READY" | "DRAWING" | "RESULT" | "ERROR";
 const SPIN_MS = 5000;
 const RESULT_RESET_S = 15;
 
+function startPhysicsTicker(
+  durationMs: number,
+  soundEnabled: boolean,
+  onTick?: () => void,
+): () => void {
+  let isRunning = true;
+  const startTime = Date.now();
+
+  function scheduleNextTick() {
+    if (!isRunning) return;
+    const elapsed = Date.now() - startTime;
+    if (elapsed >= durationMs) return;
+
+    const progress = elapsed / durationMs;
+
+    // Desaceleração física natural e progressiva (curva exponencial):
+    // 0% a 30%: 40ms a 55ms (alta rotação inicial com som rápido de catraca)
+    // 30% a 65%: 60ms a 140ms (desaceleração natural)
+    // 65% a 85%: 150ms a 280ms (fase de suspense)
+    // 85% a 98%: 300ms a 680ms (cliques finais lentos e dramáticos)
+    let nextDelay: number;
+    if (progress > 0.85) {
+      nextDelay = 280 + Math.pow((progress - 0.85) / 0.15, 2.2) * 400;
+    } else if (progress > 0.65) {
+      nextDelay = 140 + ((progress - 0.65) / 0.2) * 140;
+    } else if (progress > 0.3) {
+      nextDelay = 55 + ((progress - 0.3) / 0.35) * 85;
+    } else {
+      nextDelay = 38 + Math.random() * 8;
+    }
+
+    if (soundEnabled) {
+      const pitch = 740 + Math.random() * 140;
+      playTickSound(pitch);
+    }
+    onTick?.();
+
+    setTimeout(scheduleNextTick, nextDelay);
+  }
+
+  scheduleNextTick();
+
+  return () => {
+    isRunning = false;
+  };
+}
+
 const code = (id: number | null | undefined) => `#${String(id ?? 0).padStart(4, "0")}`;
 
 function minutesAgo(iso?: string | null) {
@@ -75,53 +122,14 @@ function eventAccent() {
 }
 
 function fireVictoryCelebration(accent: string, rarityColor: string) {
-  const colors = [accent, rarityColor, "#FFD700", "#FFFFFF", "#00F0FF", "#FF3366"];
-
-  // Explosão central massiva
+  // Comemoração ultra-leve de 40 partículas (desempenho máximo para celular/mobile)
   confetti({
-    particleCount: 140,
-    spread: 100,
-    origin: { x: 0.5, y: 0.52 },
-    colors,
+    particleCount: 40,
+    spread: 70,
+    origin: { x: 0.5, y: 0.5 },
+    colors: [accent, rarityColor, "#FFD700", "#FFFFFF"],
     disableForReducedMotion: true,
   });
-
-  // Canhão estádio esquerdo
-  setTimeout(() => {
-    confetti({
-      particleCount: 90,
-      angle: 60,
-      spread: 75,
-      origin: { x: 0.05, y: 0.8 },
-      colors,
-      disableForReducedMotion: true,
-    });
-  }, 180);
-
-  // Canhão estádio direito
-  setTimeout(() => {
-    confetti({
-      particleCount: 90,
-      angle: 120,
-      spread: 75,
-      origin: { x: 0.95, y: 0.8 },
-      colors,
-      disableForReducedMotion: true,
-    });
-  }, 360);
-
-  // Cascata de estrelas douradas
-  setTimeout(() => {
-    confetti({
-      particleCount: 80,
-      spread: 120,
-      origin: { x: 0.5, y: 0.25 },
-      colors: ["#FFE066", "#FFD700", "#FFF", "#38BDF8"],
-      ticks: 200,
-      gravity: 0.85,
-      disableForReducedMotion: true,
-    });
-  }, 580);
 }
 
 type ClinicorpRouletteExperienceProps = {
@@ -150,7 +158,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   const [participantInfo, setParticipantInfo] = useState<string>("");
   const [rotation, setRotation] = useState<number>(0);
   const [result, setResult] = useState<DrawResponse | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isDemoSpin, setIsDemoSpin] = useState<boolean>(false);
   // false = operador vendo a ficha; true = tablet entregue ao visitante.
@@ -169,10 +177,21 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   const [pendingList, setPendingList] = useState<PendingParticipant[]>([]);
   const [queueError, setQueueError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [queueSortOrder, setQueueSortOrder] = useState<"FIFO" | "RECENT">("FIFO");
 
   const rotationRef = useRef<number>(0);
-  const spinSoundIntervalRef = useRef<number | null>(null);
+  const stopTickerRef = useRef<(() => void) | null>(null);
+  const [tickerCount, setTickerCount] = useState<number>(0);
   const prevPendingCountRef = useRef<number>(0);
+
+  useEffect(() => {
+    return () => {
+      if (stopTickerRef.current) {
+        stopTickerRef.current();
+        stopTickerRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -311,7 +330,9 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
             const partRes = await fetch(`${getAdminProxyUrl()}/participants/${queryPartId}/public`, { cache: "no-store" });
             if (partRes.ok) {
               const partData = await partRes.json();
-              const isVipUser = Boolean(partData.isVip || queryVip || partData.vipCode);
+              // VIP only from the API: a ?vip= URL parameter must not grant it
+              const isVipUser = Boolean(partData.isVip || partData.vipCode);
+              // The public endpoint returns only the first name (LGPD)
               const displayName = partData.participant.firstName || "Participante";
 
               if (partData.draw) {
@@ -454,16 +475,11 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     setError(null);
     triggerHaptic();
 
-    if (soundEnabled) {
-      spinSoundIntervalRef.current = window.setInterval(() => playTickSound(), 70);
-    }
-
     try {
       let targetPrizeId: number;
       let drawResponseData: DrawResponse;
 
       if (isDemoSpin || !participationId) {
-        await new Promise((resolve) => setTimeout(resolve, 800));
         const demoPrize = wheelPrizes[Math.floor(Math.random() * wheelPrizes.length)];
         targetPrizeId = demoPrize.id;
         drawResponseData = {
@@ -489,15 +505,22 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
       // Fatia i é centrada em i * sliceDeg; precisa terminar sob o ponteiro (0°).
       const targetDeg = (360 - prizeIndex * sliceDeg) % 360;
       const current = ((rotationRef.current % 360) + 360) % 360;
-      const finalRotation = rotationRef.current + 6 * 360 + ((targetDeg - current + 360) % 360);
+      const finalRotation = rotationRef.current + 8 * 360 + ((targetDeg - current + 360) % 360);
 
       rotationRef.current = finalRotation;
       setRotation(finalRotation);
 
+      if (stopTickerRef.current) {
+        stopTickerRef.current();
+      }
+      stopTickerRef.current = startPhysicsTicker(SPIN_MS, soundEnabled, () => {
+        setTickerCount((c) => c + 1);
+      });
+
       setTimeout(() => {
-        if (spinSoundIntervalRef.current) {
-          clearInterval(spinSoundIntervalRef.current);
-          spinSoundIntervalRef.current = null;
+        if (stopTickerRef.current) {
+          stopTickerRef.current();
+          stopTickerRef.current = null;
         }
 
         if (soundEnabled) {
@@ -513,9 +536,9 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         setPhase("RESULT");
       }, SPIN_MS);
     } catch (err) {
-      if (spinSoundIntervalRef.current) {
-        clearInterval(spinSoundIntervalRef.current);
-        spinSoundIntervalRef.current = null;
+      if (stopTickerRef.current) {
+        stopTickerRef.current();
+        stopTickerRef.current = null;
       }
       setError(err instanceof Error ? err.message : "Erro ao processar giro.");
       setPhase("READY");
@@ -524,17 +547,25 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
 
   const filteredPending = useMemo(() => {
     const q = searchQuery.trim().toLowerCase().replace(/^#/, "");
-    if (!q) return pendingList;
-    return pendingList.filter(
-      (p) =>
-        p.fullName.toLowerCase().includes(q) ||
-        p.phone.includes(q) ||
-        p.cpfLastDigits.includes(q) ||
-        String(p.participantId).padStart(4, "0").includes(q) ||
-        String(p.participationId).includes(q) ||
-        (p.clinicName && p.clinicName.toLowerCase().includes(q)),
-    );
-  }, [pendingList, searchQuery]);
+    let list = pendingList;
+    if (q) {
+      list = pendingList.filter(
+        (p) =>
+          p.fullName.toLowerCase().includes(q) ||
+          p.phone.includes(q) ||
+          p.cpfLastDigits.includes(q) ||
+          String(p.participantId).padStart(4, "0").includes(q) ||
+          String(p.participationId).includes(q) ||
+          (p.clinicName && p.clinicName.toLowerCase().includes(q)),
+      );
+    }
+
+    return [...list].sort((a, b) => {
+      const timeA = new Date(a.createdAt || 0).getTime() || a.participationId;
+      const timeB = new Date(b.createdAt || 0).getTime() || b.participationId;
+      return queueSortOrder === "FIFO" ? timeA - timeB : timeB - timeA;
+    });
+  }, [pendingList, searchQuery, queueSortOrder]);
 
   function toggleFullscreen() {
     if (!document.fullscreenElement) {
@@ -600,9 +631,12 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     const image = result.prize.imageUrl || result.prize.image_url;
     return (
       <div className="relative h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between items-center px-4 py-3 sm:py-5 select-none text-center">
-        {/* Fundo com grade cibernética e aura de vitória */}
+        {/* Fundo com grade cibernética e aura de vitória leve */}
         <div className="cyber-grid-overlay pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-accent/15 rounded-full blur-[140px] pointer-events-none" />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full pointer-events-none opacity-40"
+          style={{ background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 70%)" }}
+        />
 
         {/* Topo Compacto */}
         <div className="flex-none w-full max-w-4xl flex items-center justify-between z-10 px-2">
@@ -677,9 +711,12 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     const spinning = phase === "DRAWING";
     return (
       <div className="relative h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between items-center px-4 py-2.5 sm:py-4 select-none landscape:grid landscape:grid-cols-[minmax(0,56%)_minmax(0,1fr)] landscape:items-center landscape:gap-10 landscape:px-12 landscape:py-6">
-        {/* Efeito de ambiente futurista */}
+        {/* Efeito de ambiente futurista leve */}
         <div className="cyber-grid-overlay pointer-events-none opacity-40" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-accent/15 rounded-full blur-[140px] pointer-events-none" />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full pointer-events-none opacity-30"
+          style={{ background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 70%)" }}
+        />
 
         {/* Barra superior: Logotipo, Identificação do Participante e Controles */}
         <div className="flex-none w-full max-w-5xl h-10 sm:h-11 flex items-center justify-between z-20 px-1">
@@ -738,12 +775,16 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         {/* Coluna da Roleta: Perfeitamente Centralizada e Proporcionada */}
         <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative my-auto z-10 px-2 py-1 landscape:h-full">
           <div className="relative flex items-center justify-center w-full aspect-square max-w-[min(90vw,calc(100dvh-175px),520px)] landscape:max-w-[min(720px,84dvh)]">
-            <div className="absolute -inset-8 rounded-full bg-gradient-to-r from-accent/25 via-blue-500/20 to-accent/25 blur-3xl pointer-events-none" />
+            <div
+              className="absolute -inset-4 rounded-full pointer-events-none opacity-30"
+              style={{ background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 75%)" }}
+            />
             <Wheel
               names={wheelPrizes.map((p) => p.name)}
               rotation={rotation}
               spinning={spinning}
               durationMs={SPIN_MS}
+              tickerCount={tickerCount}
               onSpin={handleSpin}
             />
           </div>
@@ -858,6 +899,17 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
             {operatorUser?.name || "Operador"} · {event?.label}
           </span>
         </div>
+
+        <div className="hidden lg:flex items-center gap-3 rounded-full border border-ink-line/80 bg-ink-800/80 px-4 py-1.5 shadow-inner">
+          <Target size={15} className="text-accent" />
+          <span className="font-mono text-xs font-bold text-slate-200">
+            Aguardando Giro: <span className="text-accent font-extrabold">{pendingList.length}</span>
+          </span>
+          <span className="h-3 w-px bg-ink-line" />
+          <span className="font-mono text-xs text-slate-300">
+            Prêmios no Pool: <span className="text-white font-bold">{prizes.length}</span>
+          </span>
+        </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => setSoundEnabled(!soundEnabled)} aria-label={soundEnabled ? "Desligar som" : "Ligar som"} className={iconButton}>
             {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
@@ -913,17 +965,41 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
           </div>
 
           <div className="mt-2 flex flex-col">
-            <div className="flex items-center justify-between border-b border-ink-line pb-2 mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-line pb-2 mb-2">
               <span className="font-mono text-xs tracking-[0.08em] text-ink-text-2 uppercase font-semibold">
-                VALIDADOS, AGUARDANDO GIRO · {pendingList.length}
+                FILA DE GIRO · {pendingList.length}
               </span>
-              <button
-                type="button"
-                onClick={startDemoMode}
-                className="text-xs font-mono font-bold text-accent hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Play size={12} fill="currentColor" /> Fazer giro de teste
-              </button>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex rounded-lg bg-ink-950 p-0.5 border border-ink-line text-[11px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setQueueSortOrder("FIFO")}
+                    title="Quem chegou primeiro na fila física gira primeiro (Ordem de chegada)"
+                    className={`px-2 py-0.5 rounded font-bold transition-colors cursor-pointer ${
+                      queueSortOrder === "FIFO" ? "bg-accent text-ink-950 shadow-sm" : "text-ink-text-2 hover:text-white"
+                    }`}
+                  >
+                    Ordem de Chegada
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQueueSortOrder("RECENT")}
+                    title="Quem acabou de se cadastrar aparece no topo"
+                    className={`px-2 py-0.5 rounded font-bold transition-colors cursor-pointer ${
+                      queueSortOrder === "RECENT" ? "bg-accent text-ink-950 shadow-sm" : "text-ink-text-2 hover:text-white"
+                    }`}
+                  >
+                    Mais Recentes
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={startDemoMode}
+                  className="text-xs font-mono font-bold text-accent hover:underline flex items-center gap-1 cursor-pointer ml-1"
+                >
+                  <Play size={12} fill="currentColor" /> Teste
+                </button>
+              </div>
             </div>
 
             {queueError && <p className="py-3 text-[#FF8FA3]">{queueError}</p>}

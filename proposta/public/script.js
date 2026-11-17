@@ -18,20 +18,77 @@ let BASE = {
   certificado: 220,
 };
 
+const CATALOGO_SERVICOS_PADRAO = [
+  // FINORA - Mensais
+  { id: 1, codigo: 'contabil', nome: 'Assessoria Contábil/Fiscal PJ', tipo: 'Mensal', valor_base: 1800, valor_base_pf: null, valor_base_pj: 1800, valor_base_hibrido: 2200, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 2, codigo: 'fiscal', nome: 'Assessoria Contábil/Fiscal PF', tipo: 'Mensal', valor_base: 1800, valor_base_pf: 1800, valor_base_pj: null, valor_base_hibrido: 2200, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 3, codigo: 'bpo', nome: 'BPO Financeiro', tipo: 'Mensal', valor_base: 2200, valor_base_pf: 2000, valor_base_pj: 2200, valor_base_hibrido: 2500, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 40, codigo: 'declaracao_irpf', nome: 'Declaração IRPF', tipo: 'Mensal', valor_base: 250, valor_base_pf: 250, valor_base_pj: 350, valor_base_hibrido: 350, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+
+  // FINORA - Pontuais
+  { id: 4, codigo: 'diagnostico', nome: 'Diagnóstico Tributário', tipo: 'Pontual', valor_base: 2500, valor_base_pf: 2000, valor_base_pj: 2500, valor_base_hibrido: 2800, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 13, codigo: 'AVS', nome: 'Alvará Vigilância Sanitária', tipo: 'Pontual', valor_base: 1500, valor_base_pf: 1200, valor_base_pj: 1500, valor_base_hibrido: 1500, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 41, codigo: 'diagnostico_obrigacoes', nome: 'Diagnóstico Obrigações Tributárias', tipo: 'Pontual', valor_base: 1500, valor_base_pf: 1200, valor_base_pj: 1500, valor_base_hibrido: 1500, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 42, codigo: 'regularizacao_cro', nome: 'Regularização CRO', tipo: 'Pontual', valor_base: 800, valor_base_pf: 600, valor_base_pj: 800, valor_base_hibrido: 800, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 43, codigo: 'regularizacao_prefeitura', nome: 'Regularização Prefeitura', tipo: 'Pontual', valor_base: 1000, valor_base_pf: 800, valor_base_pj: 1000, valor_base_hibrido: 1000, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 44, codigo: 'diagnostico_tributario_financeiro', nome: 'Diagnóstico Tributário/Financeiro', tipo: 'Pontual', valor_base: 2500, valor_base_pf: 2000, valor_base_pj: 2500, valor_base_hibrido: 2800, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+  { id: 45, codigo: 'alvara', nome: 'Alvará', tipo: 'Pontual', valor_base: 1200, valor_base_pf: 1000, valor_base_pj: 1200, valor_base_hibrido: 1200, ativo: 1, categoria: 'Servico', empresa: 'FINORA' },
+
+  // FINORA - Base Auxiliar
+  { id: 5, codigo: 'dpAte20', nome: 'Departamento Pessoal até 20 funcionários', tipo: 'Mensal', valor_base: 70, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 6, codigo: 'dp21a40', nome: 'Departamento Pessoal de 21 a 40 funcionários', tipo: 'Mensal', valor_base: 65, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 7, codigo: 'dpAcima40', nome: 'Departamento Pessoal acima de 40 funcionários', tipo: 'Mensal', valor_base: 60, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 8, codigo: 'proLabore', nome: 'Pró-labore', tipo: 'Mensal', valor_base: 70, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 9, codigo: 'cro', nome: 'Inscrição CRO', tipo: 'Pontual', valor_base: 400, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 10, codigo: 'regulatorio', nome: 'Serviços Regulatórios', tipo: 'Pontual', valor_base: 1500, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+  { id: 11, codigo: 'certificado', nome: 'Certificado Digital', tipo: 'Mensal', valor_base: 220, ativo: 1, categoria: 'Base Auxiliar', empresa: 'FINORA' },
+
+  // CONTABIL
+  { id: 23, codigo: 'contabil_contabil', nome: 'Assessoria Contábil/Fiscal PJ', tipo: 'Mensal', valor_base: 1800, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+  { id: 24, codigo: 'fiscal_contabil', nome: 'Assessoria Contábil/Fiscal PF', tipo: 'Mensal', valor_base: 1800, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+  { id: 25, codigo: 'bpo_contabil', nome: 'BPO Financeiro', tipo: 'Mensal', valor_base: 2200, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+  { id: 26, codigo: 'diagnostico_contabil', nome: 'Diagnóstico Tributário', tipo: 'Pontual', valor_base: 2500, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+  { id: 35, codigo: 'AVS_contabil', nome: 'Alvará Vigilância Sanitária', tipo: 'Pontual', valor_base: 1500, ativo: 1, categoria: 'Servico', empresa: 'CONTABIL' },
+
+  // AUDITORIA
+  { id: 46, codigo: 'auditoria_clinica', nome: 'Auditoria de Processos Clínicos e Conformidade', tipo: 'Pontual', valor_base: 3500, ativo: 1, categoria: 'Servico', empresa: 'AUDITORIA' },
+  { id: 47, codigo: 'auditoria_tributaria', nome: 'Auditoria Tributária e Fiscal', tipo: 'Pontual', valor_base: 4500, ativo: 1, categoria: 'Servico', empresa: 'AUDITORIA' },
+  { id: 48, codigo: 'auditoria_contabil', nome: 'Auditoria Contábil e Balanço', tipo: 'Pontual', valor_base: 5000, ativo: 1, categoria: 'Servico', empresa: 'AUDITORIA' },
+  { id: 49, codigo: 'auditoria_recorrente', nome: 'Auditoria Contínua & Compliance', tipo: 'Mensal', valor_base: 2500, ativo: 1, categoria: 'Servico', empresa: 'AUDITORIA' },
+
+  // LAGERHAUS
+  { id: 50, codigo: 'lagerhaus_coworking', nome: 'Locação de Estação Coworking Premium', tipo: 'Mensal', valor_base: 900, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+  { id: 51, codigo: 'lagerhaus_sala_privativa', nome: 'Locação de Sala Privativa Executiva', tipo: 'Mensal', valor_base: 2500, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+  { id: 52, codigo: 'lagerhaus_galpao_logistico', nome: 'Módulo Galpão Logístico Inteligente', tipo: 'Mensal', valor_base: 6500, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+  { id: 53, codigo: 'lagerhaus_endereco_fiscal', nome: 'Endereço Fiscal e Comercial', tipo: 'Mensal', valor_base: 250, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+  { id: 54, codigo: 'lagerhaus_taxa_adesao', nome: 'Taxa de Implantação e Credenciamento', tipo: 'Pontual', valor_base: 500, ativo: 1, categoria: 'Servico', empresa: 'LAGERHAUS' },
+];
+
+const PLANOS_TECH_PADRAO = [
+  { id: 1, codigo: 'essencial', nome: 'Plano Essencial', valor_implantacao: 5470.00, valor_mensalidade: 1037.00, ativo: 1 },
+  { id: 2, codigo: 'performance', nome: 'Plano Performance', valor_implantacao: 8470.00, valor_mensalidade: 1727.00, ativo: 1 },
+  { id: 3, codigo: 'autoridade', nome: 'Plano Autoridade', valor_implantacao: 11470.00, valor_mensalidade: 2487.00, ativo: 1 },
+];
+
 let SERVICOS_DINAMICOS = [];
-let REGRAS_PRECIFICACAO = [];
-let PLANOS_TECH = [];
+let REGRAS_PRECIFICACAO = [...CATALOGO_SERVICOS_PADRAO];
+let PLANOS_TECH = [...PLANOS_TECH_PADRAO];
+
 async function carregarPlanosTech() {
   try {
-    const response = await fetchAuth("/api/tech-planos");
+    const response = await fetchAuth("/api/tech-planos").catch(() => null);
 
-    if (!response.ok) return;
-
-    PLANOS_TECH = await response.json();
+    if (response && response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data) && data.length) {
+        PLANOS_TECH = data;
+      }
+    }
 
     renderizarPlanosTech();
   } catch (error) {
-    console.warn("Erro ao carregar planos Tech.", error);
+    console.warn("Erro ao carregar planos Tech da API.", error);
+    renderizarPlanosTech();
   }
 }
 
@@ -49,23 +106,13 @@ function renderizarPlanosTech() {
 
   atualizarPlanoTech();
 }
+
 async function carregarServicosDinamicos(servicosBase = null) {
   try {
     let servicos = servicosBase || REGRAS_PRECIFICACAO;
 
     if (!servicos || !servicos.length) {
-      const container = document.getElementById("listaServicosDinamicos");
-      if (container) {
-        container.innerHTML = `
-          <div class="skeleton-box" style="height: 48px; margin-bottom: 12px; border-radius: 15px; grid-column: 1/-1;"></div>
-          <div class="skeleton-box" style="height: 48px; margin-bottom: 12px; border-radius: 15px; grid-column: 1/-1;"></div>
-        `;
-      }
-      const response = await fetchAuth("/api/regras-precificacao");
-
-      if (!response.ok) return;
-
-      servicos = await response.json();
+      servicos = CATALOGO_SERVICOS_PADRAO;
       REGRAS_PRECIFICACAO = servicos;
     }
 
@@ -98,8 +145,8 @@ async function carregarServicosDinamicos(servicosBase = null) {
 
       if (Number(s.ativo) !== 1) return false;
       if (s.categoria === "Base Auxiliar") return false;
-      if (s.codigo.startsWith("plano_")) return false;
-      if (s.codigo.startsWith("mensalidade_")) return false;
+      if (s.codigo && s.codigo.startsWith("plano_")) return false;
+      if (s.codigo && s.codigo.startsWith("mensalidade_")) return false;
 
       if (tipoAtual === "tech") return empresa === "TECH";
       if (tipoAtual === "contabil") return empresa === "CONTABIL";
@@ -112,6 +159,7 @@ async function carregarServicosDinamicos(servicosBase = null) {
     renderizarServicosDinamicos();
   } catch (error) {
     console.warn("Erro ao carregar serviços dinâmicos.", error);
+    renderizarServicosDinamicos();
   }
 }
 function deslogarSessao() {
@@ -153,11 +201,22 @@ function renderizarServicosDinamicos() {
     return;
   }
 
-  const mensais = SERVICOS_DINAMICOS.filter((s) => s.tipo === "Mensal");
-  const pontuais = SERVICOS_DINAMICOS.filter((s) => String(s.tipo || "").toLowerCase() === "pontual");
-
   const radioPessoa = document.querySelector('input[name="tipoPessoa"]:checked');
   const tipoPessoa = radioPessoa ? radioPessoa.value : 'PJ';
+  const tipoAtual = (valorCampo("tipoProposta") || "finora").toLowerCase();
+  const ehFinora = tipoAtual === "finora";
+
+  // Na Finora, o Honorário Contábil é adicionado automaticamente e não pode ser removido:
+  // Se PF: 'fiscal' (Assessoria Contábil/Fiscal PF)
+  // Se PJ ou Híbrida: 'contabil' (Assessoria Contábil/Fiscal PJ)
+  const codigoHonorarioObrigatorio = ehFinora ? (tipoPessoa === "PF" ? "fiscal" : "contabil") : null;
+  const codigoHonorarioOcultar = ehFinora ? (tipoPessoa === "PF" ? "contabil" : "fiscal") : null;
+
+  const mensais = SERVICOS_DINAMICOS
+    .filter((s) => s.tipo === "Mensal")
+    .filter((s) => !(ehFinora && s.codigo === codigoHonorarioOcultar));
+
+  const pontuais = SERVICOS_DINAMICOS.filter((s) => String(s.tipo || "").toLowerCase() === "pontual");
 
   function obterValorDinamico(servico) {
     let val = Number(servico.valor_base || 0);
@@ -185,19 +244,43 @@ function renderizarServicosDinamicos() {
             .map(
               (servico) => {
                 const valorAtual = obterValorDinamico(servico);
-                const badgeValor = valorAtual > 0 ? `<span style="margin-left:auto; font-size:11px; font-weight:700; color:var(--accent, #14b8a6); background:rgba(20,184,166,0.08); padding:2px 8px; border-radius:10px;">${moeda.format(valorAtual)}</span>` : '';
+                const isObrigatorio = ehFinora && servico.codigo === codigoHonorarioObrigatorio;
+
+                const badgeValor = valorAtual > 0 ? `<span style="font-size:11px; font-weight:700; color:var(--accent, #14b8a6); background:rgba(20,184,166,0.08); padding:2px 8px; border-radius:10px;">${moeda.format(valorAtual)}</span>` : '';
+                const badgeObrigatorio = isObrigatorio
+                  ? `<span style="font-size:10px; font-weight:800; color:#0f766e; background:#ccfbf1; padding:2px 8px; border-radius:6px; letter-spacing:0.5px;">INCLUSO / OBRIGATÓRIO</span>`
+                  : "";
+
+                const labelStyle = isObrigatorio
+                  ? `display:flex; align-items:center; width:100%; background:#f0fdfa; border:1.5px solid #99f6e4; border-radius:10px; padding:10px 14px; cursor:default;`
+                  : `display:flex; align-items:center; width:100%;`;
+
+                const inputAttrs = isObrigatorio
+                  ? `checked onclick="event.preventDefault(); return false;" onkeydown="event.preventDefault(); return false;" style="pointer-events:none; accent-color:#0d9488;" data-obrigatorio="true"`
+                  : `onchange="gerarProposta()"`;
+
+                const labelOnClick = isObrigatorio ? `onclick="event.preventDefault(); return false;"` : "";
+
+                const nomeExibicao = isObrigatorio
+                  ? `<span style="flex-grow:1; font-weight:700; color:#0f766e;">Honorário Contábil <small style="font-weight:400; color:#475569;">(${servico.nome})</small></span>`
+                  : `<span style="flex-grow:1;">${servico.nome}</span>`;
+
                 return `
-            <label class="checkbox-label" style="display:flex; align-items:center; width:100%;">
+            <label class="checkbox-label" style="${labelStyle}" ${labelOnClick} ${isObrigatorio ? 'title="Honorário contábil obrigatório e incluso automaticamente na proposta Finora."' : ''}>
               <input 
                 type="checkbox"
                 data-servico-dinamico="true"
                 data-codigo="${servico.codigo}"
                 data-nome="${servico.nome}"
                 data-tipo="${servico.tipo}"
-                onchange="gerarProposta()"
+                data-alias="Honorário Contábil Assessoria Contábil Fiscal"
+                ${inputAttrs}
               />
-              <span style="flex-grow:1;">${servico.nome}</span>
-              ${badgeValor}
+              ${nomeExibicao}
+              <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                ${badgeObrigatorio}
+                ${badgeValor}
+              </span>
             </label>
           `;
               },
@@ -257,51 +340,61 @@ function aplicarFiltrosServicosDinamicos() {
 
     const nome = (input.dataset.nome || "").toLowerCase();
     const codigo = (input.dataset.codigo || "").toLowerCase();
+    const alias = (input.dataset.alias || "").toLowerCase();
     const tipo = input.dataset.tipo || "Mensal";
 
-    const matchTexto = !filtroTextoServicoAtual || nome.includes(filtroTextoServicoAtual) || codigo.includes(filtroTextoServicoAtual);
-    const matchCategoria = filtroCategoriaServicoAtual === "TODOS" || String(tipo).toLowerCase() === filtroCategoriaServicoAtual.toLowerCase();
+    const matchTexto =
+      !filtroTextoServicoAtual ||
+      nome.includes(filtroTextoServicoAtual) ||
+      codigo.includes(filtroTextoServicoAtual) ||
+      alias.includes(filtroTextoServicoAtual);
+    const matchCategoria =
+      filtroCategoriaServicoAtual === "TODOS" ||
+      String(tipo).toLowerCase() === filtroCategoriaServicoAtual.toLowerCase();
 
     lbl.style.display = matchTexto && matchCategoria ? "flex" : "none";
   });
 }
 async function carregarRegrasPrecificacao() {
   try {
+    // 1. Renderiza imediatamente com os serviços padrão para nunca travar a tela em skeleton
+    await carregarServicosDinamicos(REGRAS_PRECIFICACAO);
+    renderizarPlanosTech();
+    gerarProposta();
+
+    // 2. Busca regras atualizadas no backend com timeout seguro
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
     const response = await fetchAuth("/api/regras-precificacao", {
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${localStorage.getItem("finora_token")}`,
       },
+    }).catch((err) => {
+      console.warn("Aviso: Requisição de regras demorou ou falhou, mantendo catálogo padrão.", err.message);
+      return null;
     });
 
-    if (!response.ok) {
-      console.warn(
-        "Não foi possível carregar regras do banco. Usando valores padrão.",
-      );
-      return;
+    clearTimeout(timeoutId);
+
+    if (response && response.ok) {
+      const regras = await response.json();
+      if (Array.isArray(regras) && regras.length > 0) {
+        REGRAS_PRECIFICACAO = regras;
+
+        regras.forEach((regra) => {
+          if (regra.codigo) BASE[regra.codigo] = Number(regra.valor_base || 0);
+        });
+
+        await carregarServicosDinamicos(regras);
+      }
     }
-
-    const regras = await response.json();
-    REGRAS_PRECIFICACAO = regras;
-
-    regras.forEach((regra) => {
-      BASE[regra.codigo] = Number(regra.valor_base || 0);
-    });
-
-    await carregarServicosDinamicos(regras);
+  } catch (error) {
+    console.warn("Aviso ao sincronizar regras de precificação (mantendo catálogo ativo):", error);
+  } finally {
     await carregarPlanosTech();
     gerarProposta();
-  } catch (error) {
-    console.warn("Erro ao carregar regras:", error);
-
-    const container = document.getElementById("listaServicosDinamicos");
-    if (container) {
-      container.innerHTML = `
-      <div class="alerta">
-        Não foi possível carregar os serviços agora. 
-        Atualize a página ou tente novamente em alguns instantes.
-      </div>
-    `;
-    }
   }
 }
 
@@ -661,6 +754,8 @@ function obterItensCalculados() {
     distanciaKm,
   };
 
+  const ehFinora = (tipoProposta || "finora").toLowerCase() === "finora";
+
   if (regimeFiscal !== "Lucro Real") {
     document
       .querySelectorAll('[data-servico-dinamico="true"]:checked')
@@ -668,6 +763,7 @@ function obterItensCalculados() {
         const codigo = input.dataset.codigo;
         const nome = input.dataset.nome;
         const tipo = input.dataset.tipo;
+        const isObrigatorio = input.dataset.obrigatorio === "true";
         const servicoConfig =
           SERVICOS_DINAMICOS.find((s) => s.codigo === codigo) || {};
 
@@ -677,14 +773,50 @@ function obterItensCalculados() {
         );
 
         itens.push({
-          servico: nome,
+          codigo,
+          servico: isObrigatorio ? `Honorário Contábil (${nome})` : nome,
           valor:
             calcularValorConfigurado(codigo, contexto, BASE[codigo]) *
             multiplicador,
-          observacao: String(tipo || "").toLowerCase() === "pontual" ? "Serviço pontual" : "Mensal",
+          observacao: isObrigatorio ? "Honorário mensal (Obrigatório Finora)" : (String(tipo || "").toLowerCase() === "pontual" ? "Serviço pontual" : "Mensal"),
           regrasAplicadas: explicarRegrasAplicadas(servicoConfig, contexto),
         });
       });
+
+    // Garantia absoluta: na proposta Finora, o Honorário Contábil é obrigatório e nunca pode faltar
+    if (ehFinora) {
+      const radioPessoa = document.querySelector('input[name="tipoPessoa"]:checked');
+      const tipoPessoa = radioPessoa ? radioPessoa.value : "PJ";
+      const codigoHonorario = tipoPessoa === "PF" ? "fiscal" : "contabil";
+
+      const jaTemHonorario = itens.some((it) =>
+        it.codigo === codigoHonorario ||
+        (it.servico && (
+          it.servico.includes("Contábil") ||
+          it.servico.includes("Fiscal") ||
+          it.servico.includes("Honorário")
+        ))
+      );
+
+      if (!jaTemHonorario) {
+        const servicoConfig =
+          SERVICOS_DINAMICOS.find((s) => s.codigo === codigoHonorario) ||
+          CATALOGO_SERVICOS_PADRAO.find((s) => s.codigo === codigoHonorario) ||
+          {};
+
+        const multiplicador = calcularMultiplicadorServico(servicoConfig, contexto);
+        const valorBaseHonorario = BASE[codigoHonorario] || 1800;
+        const nomeBase = servicoConfig.nome || (tipoPessoa === "PF" ? "Assessoria Contábil/Fiscal PF" : "Assessoria Contábil/Fiscal PJ");
+
+        itens.unshift({
+          codigo: codigoHonorario,
+          servico: `Honorário Contábil (${nomeBase})`,
+          valor: calcularValorConfigurado(codigoHonorario, contexto, valorBaseHonorario) * multiplicador,
+          observacao: "Honorário mensal (Obrigatório Finora)",
+          regrasAplicadas: explicarRegrasAplicadas(servicoConfig, contexto),
+        });
+      }
+    }
   }
 
   if (tipoProposta === "auditoria" && itens.length === 0) {
@@ -1267,6 +1399,232 @@ async function salvarEEnviarProposta() {
     }
   }
 }
+
+// ==========================================
+// GESTÃO DE RASCUNHOS & PROPOSTAS INCOMPLETAS
+// ==========================================
+let RASCUNHO_ID_ATUAL = null;
+
+function capturarEstadoCompletoFormulario() {
+  const form = document.getElementById("propostaForm") || document.body;
+  const inputs = form.querySelectorAll("input, select, textarea");
+  const estado = {};
+  inputs.forEach((el) => {
+    if (!el.id) return;
+    if (el.type === "checkbox") {
+      estado[el.id] = el.checked;
+    } else if (el.type === "radio") {
+      if (el.checked) estado[el.name || el.id] = el.value;
+    } else {
+      estado[el.id] = el.value;
+    }
+  });
+  return estado;
+}
+
+function restaurarEstadoFormulario(estado) {
+  if (!estado || typeof estado !== "object") return;
+  Object.keys(estado).forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) {
+      const radio = document.querySelector(`input[name="${id}"][value="${estado[id]}"]`);
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event("change"));
+      }
+      return;
+    }
+    if (el.type === "checkbox") {
+      el.checked = Boolean(estado[id]);
+      el.dispatchEvent(new Event("change"));
+    } else if (el.type === "radio") {
+      el.checked = Boolean(estado[id]);
+      el.dispatchEvent(new Event("change"));
+    } else {
+      el.value = estado[id];
+      el.dispatchEvent(new Event("input"));
+      el.dispatchEvent(new Event("change"));
+    }
+  });
+}
+
+async function salvarRascunhoServidor(mostrarNotificacao = true) {
+  try {
+    const itens = (typeof aplicarDescontoNosItens === "function" && typeof obterItensCalculados === "function")
+      ? aplicarDescontoNosItens(obterItensCalculados())
+      : [];
+    const { totalMensal, totalPontual, totalGeral } = (typeof separarTotais === "function")
+      ? separarTotais(itens)
+      : { totalMensal: 0, totalPontual: 0, totalGeral: 0 };
+
+    const payload = {
+      id: RASCUNHO_ID_ATUAL,
+      dataProposta: valorCampo("dataProposta") || new Date().toISOString().split("T")[0],
+      nomeClinica: valorCampo("nomeClinica") || "Rascunho Em Elaboração",
+      razaoSocial: valorCampo("razaoSocial"),
+      cnpj: valorCampo("cnpj"),
+      nomeSocio: valorCampo("nomeSocio"),
+      cpfSocio: valorCampo("cpfSocio"),
+      email: valorCampo("email"),
+      telefone: valorCampo("telefone"),
+      videoPitch: valorCampo("videoPitch"),
+      audioPitch: document.getElementById("audioPitchBase64")?.value || "",
+      enderecoClinica: valorCampo("enderecoClinica"),
+      cadeiras: numeroCampo("cadeiras"),
+      funcionarios: numeroCampo("funcionarios"),
+      socios: numeroCampo("socios"),
+      faturamento: numeroCampo("faturamento"),
+      regimeFiscal: valorCampo("regimeFiscal"),
+      regimeHibrido: valorCampo("regimeHibrido"),
+      distanciaKm: numeroCampo("distanciaKm"),
+      metragem: numeroCampo("metragem"),
+      ...(typeof obterDadosOnboardingV2 === "function" ? obterDadosOnboardingV2() : {}),
+      tipoProposta: valorCampo("tipoProposta") || "finora",
+      empresaProposta:
+        valorCampo("tipoProposta") === "tech"
+          ? "TECH"
+          : valorCampo("tipoProposta") === "contabil"
+            ? "QMAX"
+            : valorCampo("tipoProposta") === "auditoria"
+              ? "AUDITORIA"
+              : valorCampo("tipoProposta") === "lagerhaus"
+                ? "LAGERHAUS"
+                : "FINORA",
+      itens,
+      totalMensal,
+      totalPontual,
+      total: totalGeral,
+      justificativaDesconto: valorCampo("justificativaDesconto") || "",
+      formState: capturarEstadoCompletoFormulario()
+    };
+
+    const token = localStorage.getItem("finora_token");
+    const res = await fetch("/api/propostas/rascunho", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      if (mostrarNotificacao) alert(data.error || "Erro ao salvar rascunho.");
+      return;
+    }
+
+    if (data.id) {
+      RASCUNHO_ID_ATUAL = data.id;
+      const url = new URL(window.location);
+      url.searchParams.set("rascunhoId", data.id);
+      window.history.replaceState({}, "", url);
+    }
+
+    const indic = document.getElementById("autoSaveIndicator");
+    const indicTxt = document.getElementById("autoSaveText");
+    if (indic && indicTxt) {
+      indicTxt.innerText = `Rascunho salvo às ${new Date().toLocaleTimeString().slice(0, 5)}`;
+      indic.style.borderColor = "#f59e0b";
+      indic.style.color = "#b45309";
+      indic.style.background = "#fef3c7";
+      setTimeout(() => {
+        indicTxt.innerText = "Auto-save ativo";
+        indic.style.borderColor = "rgba(16,185,129,0.3)";
+        indic.style.color = "#059669";
+        indic.style.background = "rgba(16,185,129,0.12)";
+      }, 4000);
+    }
+
+    if (mostrarNotificacao) {
+      if (window.showToast) {
+        window.showToast(`Rascunho ${data.numeroProposta || ''} salvo com sucesso!`, "success");
+      } else {
+        alert(`Rascunho salvo com sucesso! (Nº ${data.numeroProposta || ''})\nVocê pode continuar preenchendo agora ou acessá-lo pelo Dashboard a qualquer momento.`);
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao salvar rascunho:", err);
+    if (mostrarNotificacao) alert("Erro de conexão ao salvar rascunho.");
+  }
+}
+window.salvarRascunhoServidor = salvarRascunhoServidor;
+
+async function carregarRascunhoPorId(rascunhoId) {
+  try {
+    const token = localStorage.getItem("finora_token");
+    const res = await fetch(`/api/propostas/${rascunhoId}/rascunho`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      console.warn("Rascunho não encontrado ou sem autorização.");
+      return;
+    }
+    const data = await res.json();
+    const p = data.proposta;
+    if (!p) return;
+
+    RASCUNHO_ID_ATUAL = p.id;
+
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && val !== undefined && val !== null) {
+        el.value = val;
+        el.dispatchEvent(new Event("input"));
+        el.dispatchEvent(new Event("change"));
+      }
+    };
+
+    setVal("nomeClinica", p.nome_clinica);
+    setVal("razaoSocial", p.razao_social);
+    setVal("cnpj", p.cnpj);
+    setVal("nomeSocio", p.nome_socio);
+    setVal("cpfSocio", p.cpf_socio);
+    setVal("email", p.email);
+    setVal("telefone", p.telefone);
+    setVal("enderecoClinica", p.endereco_clinica);
+    setVal("faturamento", p.faturamento);
+    setVal("regimeFiscal", p.regime_fiscal);
+    setVal("regimeHibrido", p.regime_hibrido);
+    setVal("cadeiras", p.cadeiras);
+    setVal("funcionarios", p.funcionarios);
+    setVal("socios", p.socios);
+    setVal("metragem", p.metragem);
+    setVal("distanciaKm", p.distancia_km);
+    setVal("videoPitch", p.video_pitch);
+    setVal("justificativaDesconto", p.justificativa_desconto);
+
+    if (p.tipo_proposta) {
+      setVal("tipoProposta", p.tipo_proposta.toLowerCase());
+      if (typeof window.selecionarEmpresa === "function") {
+        window.selecionarEmpresa(p.tipo_proposta.toLowerCase());
+      }
+    }
+
+    if (data.formState) {
+      restaurarEstadoFormulario(data.formState);
+    }
+
+    if (typeof recalcularProposta === "function") {
+      recalcularProposta();
+    }
+
+    if (window.showToast) {
+      window.showToast(`Rascunho ${p.numero_proposta} carregado para continuação!`, "info");
+    }
+  } catch (err) {
+    console.error("Erro ao carregar rascunho:", err);
+  }
+}
+window.carregarRascunhoPorId = carregarRascunhoPorId;
+
+// Atalho global Ctrl+S para salvar rascunho
+window.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+    e.preventDefault();
+    salvarRascunhoServidor(true);
+  }
+});
 // Inicia o cálculo na tela
 carregarRegrasPrecificacao();
 
@@ -1859,6 +2217,12 @@ window.descartarRascunho = function() {
 
 document.addEventListener("DOMContentLoaded", () => {
   preencherDataProposta();
+
+  // Garante a exibição imediata dos outros serviços
+  const containerServicos = document.getElementById("listaServicosDinamicos");
+  if (containerServicos && (!containerServicos.children.length || containerServicos.querySelector(".skeleton-box"))) {
+    carregarServicosDinamicos(REGRAS_PRECIFICACAO);
+  }
   const campos = [
     { id: "cpfSocio", formatador: formatarCPF },
     { id: "cnpj", formatador: formatarCNPJ },
@@ -1903,6 +2267,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     } catch (e) {}
+  }
+
+  // Se houver rascunhoId na URL, carregar do servidor
+  const urlParams = new URLSearchParams(window.location.search);
+  const rascunhoUrlId = urlParams.get("rascunhoId");
+  if (rascunhoUrlId) {
+    setTimeout(() => {
+      carregarRascunhoPorId(rascunhoUrlId);
+    }, 400);
   }
 
   // Monitorar alterações no formulário

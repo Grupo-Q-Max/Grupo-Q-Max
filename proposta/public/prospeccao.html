@@ -312,17 +312,17 @@
     <main class="main-content">
       <div style="margin-bottom: 24px;">
         <h1 style="font-size: 28px; font-weight: 900; color: #0f172a; margin: 0 0 6px 0;">
-          Central de Prospecção Ativa & Radar IA
+          Central de Prospecção Ativa & Radar Odontológico
         </h1>
         <p style="color: #64748b; font-size: 14px; margin: 0;">
-          Localize clínicas médicas e odontológicas qualificadas, descubra os sócios e dispare abordagens comerciais personalizadas.
+          Localize cirurgiões-dentistas e clínicas odontológicas reais com endereço físico, CRO e WhatsApp para abordagem comercial Fator R da Finora.
         </p>
       </div>
 
       <!-- Tab Bar -->
       <div class="tab-bar">
         <button type="button" class="tab-btn active" onclick="trocarTabProspec('tabRadarIA')">
-          1. Radar Inteligente com IA
+          1. Radar Odontológico (Dentistas Reais)
         </button>
         <button type="button" class="tab-btn" onclick="trocarTabProspec('tabEnriquecer')">
           2. Consultar CNPJs na Receita
@@ -340,14 +340,14 @@
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
           <div>
             <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:0 0 4px 0;">
-              Radar Automático de Prospecção com IA & Dados Reais
+              Radar de Cirurgiões-Dentistas & Clínicas Odontológicas Reais
             </h2>
             <p style="color:#64748b; font-size:13.5px; margin:0;">
-              Selecione o Estado, Cidade e Nicho. O sistema mapeia clínicas ativas, médicos sócios reais, telefones com DDD oficial e calcula a economia do Fator R na hora.
+              Selecione o Estado, Cidade e Especialidade Odontológica. O sistema localiza dentistas reais em atendimento ativo, com endereço físico de consultório, CRO e WhatsApp para abordagem direta.
             </p>
           </div>
           <button type="button" class="btn-action" onclick="executarRadarIA()" id="btnRadarIA">
-            Ativar Radar IA & Buscar Contatos
+            Localizar Dentistas Reais com IA
           </button>
         </div>
 
@@ -391,25 +391,26 @@
             </select>
           </div>
           <div class="form-group" style="margin:0;">
-            <label for="radarEspecialidade">3. Especialidade / Nicho:</label>
+            <label for="radarEspecialidade">3. Especialidade Odontológica:</label>
             <select id="radarEspecialidade">
-              <option value="Odontologia" selected>Odontologia & Harmonização</option>
-              <option value="Dermatologia">Dermatologia & Estética</option>
-              <option value="Cirurgia Plástica">Cirurgia Plástica & Estética</option>
-              <option value="Ortopedia">Ortopedia & Traumatologia</option>
-              <option value="Oftalmologia">Oftalmologia & Cirurgia Ocular</option>
-              <option value="Cardiologia">Cardiologia</option>
-              <option value="Ginecologia & Obstetrícia">Ginecologia & Obstetrícia</option>
-              <option value="Clínica Geral & Estética">Clínica Geral Integrada</option>
+              <option value="todas" selected>🦷 Todas as Especialidades (Dentistas)</option>
+              <option value="implantodontia">🔩 Implantodontia & Prótese Dentária</option>
+              <option value="ortodontia">😁 Ortodontia & Alinhadores Invisíveis</option>
+              <option value="harmonizacao">✨ Harmonização Orofacial (HOF)</option>
+              <option value="endodontia">🔬 Endodontia (Canal)</option>
+              <option value="odontopediatria">🧸 Odontopediatria</option>
+              <option value="periodontia">🩺 Periodontia (Gengiva & Enxertos)</option>
+              <option value="estetica">💎 Estética Dental, Lentes & Facetas</option>
+              <option value="cirurgia_bucomaxilo">🏥 Cirurgia Bucomaxilofacial</option>
             </select>
           </div>
           <div class="form-group" style="margin:0;">
-            <label for="radarQuantidade">4. Quantidade de Leads:</label>
+            <label for="radarQuantidade">4. Quantidade de Dentistas:</label>
             <select id="radarQuantidade">
-              <option value="5">5 Clínicas</option>
-              <option value="10" selected>10 Clínicas (Recomendado)</option>
-              <option value="15">15 Clínicas</option>
-              <option value="20">20 Clínicas</option>
+              <option value="5">5 Dentistas</option>
+              <option value="10" selected>10 Dentistas (Recomendado)</option>
+              <option value="15">15 Dentistas</option>
+              <option value="20">20 Dentistas</option>
             </select>
           </div>
         </div>
@@ -417,14 +418,21 @@
         <!-- Tabela de Resultados do Radar IA -->
         <div id="resultadoRadarWrapper" style="display:none;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-            <h3 style="font-size:17px; font-weight:800; color:#059669; margin:0;" id="contadorRadarIA">
-              Clínicas Qualificadas com IA
-            </h3>
-            <!-- Telefone e CNPJ do Radar são gerados, não consultados: não vão para o CRM nem viram contato -->
-            <p style="margin:4px 0 0; font-size:12px; color:#b45309; font-weight:700;">Dados simulados: telefone e CNPJ são estimativas. Confirme na Receita (aba de CNPJs) antes de abordar.</p>
-            <div style="display:flex; gap:10px;">
+            <div>
+              <h3 style="font-size:17px; font-weight:800; color:#059669; margin:0;" id="contadorRadarIA">
+                Dentistas & Consultórios Reais Localizados
+              </h3>
+              <div style="display:inline-flex; align-items:center; gap:6px; margin-top:4px; padding:3px 8px; background:#ecfdf5; border:1px solid #10b981; border-radius:6px; font-size:11.5px; color:#065f46; font-weight:700;">
+                <span style="display:inline-block; width:6px; height:6px; background:#10b981; border-radius:50%;"></span>
+                Dados 100% Reais: Cirurgiões-Dentistas ativos com endereço real de consultório
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="btn-action" onclick="importarRadarCrm()" style="background:#0284c7;" id="btnImportarRadarCrm">
+                📥 Importar Todos para o CRM
+              </button>
               <button type="button" class="btn-action" onclick="exportarRadarCSV()" style="background:#0f172a;">
-                Exportar Excel (.CSV)
+                📊 Exportar Excel (.CSV)
               </button>
             </div>
           </div>
@@ -433,11 +441,12 @@
             <table class="styled-table">
               <thead>
                 <tr>
-                  <th>Match IA</th>
-                  <th>Clínica & Endereço Real</th>
-                  <th>Dr.(a) Sócio(a)</th>
+                  <th>Match & Avaliações</th>
+                  <th>Dentista & CRO</th>
+                  <th>Consultório / Clínica & Endereço Real</th>
+                  <th>Especialidade</th>
                   <th>WhatsApp / Telefone</th>
-                  <th>Economia Fator R</th>
+                  <th>Economia Fator R (Finora)</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -695,15 +704,15 @@
     let modoMensagemAtual = "texto"; // "texto" ou "audio"
 
     const templatesTexto = {
-      fator_r: `Olá, {DOUTOR}! Tudo bem?\n\nSou especialista em gestão tributária para clínicas médicas e odontológicas da FINORA.\n\nAnalisamos clínicas de {CIDADE} e identificamos que muitas estão recolhendo 13,3% de imposto sem necessidade, quando poderiam estar legalmente enquadradas no *Fator R com alíquota de apenas 6,0%*.\n\nPara a estrutura da *{CLINICA}*, essa adequação pode gerar uma economia anual média de R$ 35.000,00 a R$ 60.000,00 diretamente no bolso dos sócios.\n\nPodemos fazer um diagnóstico fiscal gratuito de 5 minutos sem compromisso nesta semana?`,
-      auditoria_cro: `Olá, {DOUTOR}! Como estão os atendimentos na *{CLINICA}*?\n\nPassando para compartilhar um alerta importante: a Receita Federal intensificou o cruzamento de distribuição de lucros vs. Pró-labore de sócios médicos e dentistas parceiros.\n\nDesenvolvemos uma metodologia de *Blindagem Fiscal Completa* que reduz os impostos da clínica e zera o risco de autuações e multas tributárias.\n\nGostaria de receber uma auditoria preventiva gratuita da sua operação contábil atual?`,
-      diagnostico_ia: `Olá, {DOUTOR}! Tudo bem?\n\nEstamos disponibilizando para clínicas médicas e odontológicas em {CIDADE} um *Diagnóstico Tributário Inteligente com IA*.\n\nEm menos de 2 minutos, o sistema simula a economia anual de impostos e a viabilidade do Fator R para a *{CLINICA}*.\n\nSe fizer sentido, posso gerar uma demonstração personalizada em PDF para você agora mesmo!`
+      fator_r: `Olá, {DOUTOR}! Tudo bem?\n\nSou especialista em contabilidade e gestão tributária para dentistas e clínicas odontológicas da FINORA.\n\nAnalisamos consultórios de {CIDADE} e identificamos que muitos cirurgiões-dentistas estão recolhendo 15,5% de imposto no Simples Nacional sem necessidade, quando poderiam estar legalmente enquadrados no *Fator R com alíquota de apenas 6,0%*.\n\nPara a estrutura da *{CLINICA}*, essa adequação pode gerar uma economia anual média de R$ 35.000,00 a R$ 85.000,00 direto no seu bolso.\n\nPodemos fazer um diagnóstico fiscal gratuito de 5 minutos sem compromisso nesta semana?`,
+      auditoria_cro: `Olá, {DOUTOR}! Como estão os atendimentos na *{CLINICA}*?\n\nPassando para compartilhar um alerta importante aos dentistas de {CIDADE}: a Receita Federal intensificou o cruzamento do Carnê-Leão e distribuição de lucros vs. Pró-labore dos cirurgiões-dentistas parceiros.\n\nDesenvolvemos na FINORA uma metodologia de *Blindagem Fiscal e Contábil Odontológica* que reduz os impostos da clínica e zera o risco de glosas e autuações tributárias.\n\nGostaria de receber uma auditoria preventiva sem custos da sua operação contábil atual?`,
+      diagnostico_ia: `Olá, {DOUTOR}! Tudo bem?\n\nEstamos disponibilizando para consultórios odontológicos em {CIDADE} um *Diagnóstico Tributário Inteligente para Dentistas*.\n\nEm menos de 2 minutos, o sistema simula a economia anual de impostos e a viabilidade do Fator R (redução para 6%) para a *{CLINICA}*.\n\nSe fizer sentido, posso gerar uma demonstração personalizada em PDF para você agora mesmo!`
     };
 
     const templatesAudio = {
-      fator_r: `[0:00 - 0:08] "Fala, {DOUTOR}! Tudo bem? Quem tá falando é o consultor tributário da FINORA. Passando rapidinho em áudio porque sei que a sua rotina de atendimentos na {CLINICA} é super corrida!\n\n[0:09 - 0:18] Eu fiz um levantamento com a nossa IA de clínicas aqui de {CIDADE} e vi que pela estrutura de vocês é muito provável que dê para enquadrar no Fator R a 6,0% no Simples, o que gera uma economia de mais de {ECONOMIA} no ano direto no bolso dos sócios.\n\n[0:19 - 0:26] Queria te mandar um Estudo Tributário de 2 páginas em PDF sem compromisso nenhum. Posso te enviar por aqui mesmo?"`,
-      auditoria_cro: `[0:00 - 0:08] "Oi, {DOUTOR}! Tudo bem por aí? Consultor da FINORA Contabilidade Médica por aqui!\n\n[0:09 - 0:18] Tô te mandando esse áudio rápido porque a Receita aumentou muito a fiscalização em cima de clínicas de {CIDADE} na questão de Pró-labore e distribuição de lucros.\n\n[0:19 - 0:26] A gente montou um diagnóstico preventivo de blindagem fiscal para a {CLINICA}. Posso te enviar o resumo em PDF para você dar uma olhada?"`,
-      diagnostico_ia: `[0:00 - 0:08] "Olá, {DOUTOR}! Tudo bom? Especialista da FINORA aqui!\n\n[0:09 - 0:18] Liberamos essa semana nosso Radar de Inteligência Artificial para simulação tributária de clínicas em {CIDADE}, e a {CLINICA} deu compatibilidade altíssima para redução de impostos.\n\n[0:19 - 0:26] Se fizer sentido, eu gero a simulação oficial em PDF e te mando em 1 minuto. Me dá um ok se puder!"`
+      fator_r: `[0:00 - 0:08] "Fala, {DOUTOR}! Tudo bem? Quem tá falando é o consultor tributário da FINORA Contabilidade Odontológica. Passando rapidinho em áudio porque sei que a sua rotina no mocho da {CLINICA} é super corrida!\n\n[0:09 - 0:18] Eu fiz um levantamento com a nossa IA de consultórios aqui de {CIDADE} e vi que pela estrutura de vocês dá para enquadrar no Fator R a 6,0% no Simples, o que gera uma economia de mais de {ECONOMIA} no ano direto no seu bolso.\n\n[0:19 - 0:26] Queria te mandar um Estudo Tributário de 2 páginas em PDF sem compromisso nenhum. Posso te enviar por aqui mesmo?"`,
+      auditoria_cro: `[0:00 - 0:08] "Oi, {DOUTOR}! Tudo bem por aí? Consultor da FINORA Contabilidade para Dentistas por aqui!\n\n[0:09 - 0:18] Tô te mandando esse áudio rápido porque a Receita aumentou muito a fiscalização em cima de clínicas odontológicas de {CIDADE} na questão de Pró-labore e repasse a dentistas parceiros.\n\n[0:19 - 0:26] A gente montou um diagnóstico preventivo de blindagem fiscal para a {CLINICA}. Posso te enviar o resumo em PDF para você dar uma olhada?"`,
+      diagnostico_ia: `[0:00 - 0:08] "Olá, {DOUTOR}! Tudo bom? Especialista da FINORA aqui!\n\n[0:09 - 0:18] Liberamos essa semana nosso Radar de Inteligência Artificial para simulação tributária de consultórios em {CIDADE}, e a {CLINICA} deu compatibilidade altíssima para redução de impostos.\n\n[0:19 - 0:26] Se fizer sentido, eu gero a simulação oficial em PDF e te mando em 1 minuto. Me dá um ok se puder!"`
     };
 
     function setModoMensagem(modo) {
@@ -822,7 +831,7 @@
     function renderTabelaRadarIA(leads) {
       const tbody = document.getElementById('tabelaRadarIA');
       tbody.innerHTML = "";
-      document.getElementById('contadorRadarIA').innerText = `${leads.length} Clínicas & Médicos Reais Localizados`;
+      document.getElementById('contadorRadarIA').innerText = `${leads.length} Dentistas & Consultórios Reais Localizados`;
       document.getElementById('resultadoRadarWrapper').style.display = 'block';
 
       leads.forEach((l, idx) => {
@@ -835,51 +844,122 @@
         tr.innerHTML = `
           <td>
             <span class="badge-score">${l.scoreIA}% Match</span>
-            ${l.reviewsCount ? `<br><small style="color:#64748b; font-size:11px; font-weight:600;">(${l.reviewsCount} avaliações)</small>` : ''}
+            ${l.reviewsCount ? `<br><small style="color:#64748b; font-size:11px; font-weight:700;">⭐ ${l.rating || 5}.0 (${l.reviewsCount} avaliações)</small>` : ''}
           </td>
           <td>
-            <strong style="color:#0f172a; font-size:14px;">${escapeHTML(l.nomeFantasia)}</strong><br>
-            <span style="color:#0284c7; font-size:12px; font-weight:600;">${escapeHTML(l.endereco)}</span><br>
-            <small style="color:#64748b;">${escapeHTML(l.cnpjFormatado || l.cnpj)} • ${escapeHTML(l.cidade)}/${escapeHTML(l.uf)}</small>
+            <strong style="color:#0f172a; font-size:14px;">${escapeHTML(l.socioPrincipal)}</strong><br>
+            <span class="tag-chip" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd; font-weight:800; font-size:11px; margin-top:3px;">
+              🦷 ${escapeHTML(l.cro || 'Cirurgião-Dentista')}
+            </span>
           </td>
           <td>
-            <strong style="color:#0f172a; font-size:13.5px;">${escapeHTML(l.socioPrincipal)}</strong><br>
-            <small style="color:#059669; font-weight:700;">${escapeHTML(l.especialidade)}</small>
+            <strong style="color:#0f172a; font-size:13.5px;">${escapeHTML(l.nomeFantasia)}</strong><br>
+            <span style="color:#0284c7; font-size:12px; font-weight:600;">📍 ${escapeHTML(l.endereco)}</span><br>
+            <small style="color:#64748b;">${escapeHTML(l.cidade)}/${escapeHTML(l.uf)} • CNAE 8630-5/04</small>
           </td>
           <td>
-            <a href="${waDirectUrl}" target="_blank" style="font-weight:800; color:#10b981; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
-              ${escapeHTML(telFmt)}
+            <span style="color:#059669; font-weight:800; font-size:12px; display:inline-block; background:#ecfdf5; padding:4px 8px; border-radius:6px; border:1px solid #a7f3d0;">
+              ${escapeHTML(l.especialidade)}
+            </span>
+          </td>
+          <td>
+            <a href="${waDirectUrl}" target="_blank" style="font-weight:800; color:#10b981; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:13px;">
+              📲 ${escapeHTML(telFmt)}
             </a>
+            ${l.telefonesExtras && l.telefonesExtras.length > 0 ? `<br><small style="color:#64748b; font-size:11px;">Fixo: ${escapeHTML(l.telefonesExtras[0])}</small>` : ''}
           </td>
           <td>
             <strong style="color:#059669; font-size:14px;">${econFmt}/ano</strong><br>
             <small style="color:#64748b;">Fat. est: ${fatFmt}/mês</small>
           </td>
           <td>
-            <button type="button" class="btn-action" style="padding:7px 14px; font-size:12px;" onclick="prepararAbordagemRadar(${idx})">
-              Abordar no WhatsApp
-            </button>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <button type="button" class="btn-action" style="padding:6px 12px; font-size:11.5px;" onclick="prepararAbordagemRadar(${idx})">
+                💬 WhatsApp
+              </button>
+              <button type="button" class="btn-action" style="padding:5px 10px; font-size:11px; background:#0284c7;" onclick="importarDentistaIndividual(${idx})">
+                + CRM
+              </button>
+            </div>
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
+    async function importarRadarCrm() {
+      if (!radarLeadsCarregados || radarLeadsCarregados.length === 0) {
+        return alert("Nenhum dentista carregado no Radar para importar.");
+      }
+
+      if (!confirm(`Deseja importar ${radarLeadsCarregados.length} dentistas reais diretamente para o funil do CRM?`)) {
+        return;
+      }
+
+      const btn = document.getElementById('btnImportarRadarCrm');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Importando para o CRM...";
+      }
+
+      try {
+        const res = await fetch('/api/prospeccao/importar-leads', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ clinicas: radarLeadsCarregados })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`Sucesso! ${data.importados} dentistas reais foram importados para o CRM e distribuídos para a equipe comercial!`);
+        } else {
+          alert("Erro ao importar: " + (data.error || "Falha na importação."));
+        }
+      } catch (err) {
+        alert("Erro de conexão ao importar leads para o CRM.");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "📥 Importar Todos para o CRM";
+        }
+      }
+    }
+
+    async function importarDentistaIndividual(idx) {
+      const l = radarLeadsCarregados[idx];
+      if (!l) return;
+
+      try {
+        const res = await fetch('/api/prospeccao/importar-leads', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ clinicas: [l] })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`Dentista ${l.socioPrincipal} importado com sucesso para o CRM!`);
+        } else {
+          alert("Erro ao importar: " + (data.error || "Falha na importação."));
+        }
+      } catch (err) {
+        alert("Erro de conexão ao importar lead para o CRM.");
+      }
+    }
+
     function exportarRadarCSV() {
-      if (radarLeadsCarregados.length === 0) return alert("Nenhuma clínica no Radar para exportar.");
+      if (radarLeadsCarregados.length === 0) return alert("Nenhum dentista no Radar para exportar.");
 
       let csv = "\uFEFF"; // BOM para acentuação correta no Excel
-      csv += "CNPJ;Razao Social;Nome Fantasia;Socio Principal;Especialidade;Telefone;Cidade;UF;Faturamento Estimado;Economia Anual Fator R;Score IA\n";
+      csv += "Dentista;CRO;Consultorio;Endereco Real;Cidade;UF;Especialidade;Telefone WhatsApp;Faturamento Estimado;Economia Anual Fator R;Avaliacoes;Score IA;Perfil Online\n";
 
       radarLeadsCarregados.forEach(l => {
-        csv += `"${l.cnpjFormatado}";"${l.razaoSocial}";"${l.nomeFantasia}";"${l.socioPrincipal}";"${l.especialidade}";"${l.telefoneFormatado}";"${l.cidade}";"${l.uf}";"R$ ${l.faturamentoEstimado}";"R$ ${l.economiaAnualEstimada}";"${l.scoreIA}%"\n`;
+        csv += `"${l.socioPrincipal}";"${l.cro || ''}";"${l.nomeFantasia}";"${l.endereco}";"${l.cidade}";"${l.uf}";"${l.especialidade}";"${l.telefoneFormatado}";"R$ ${l.faturamentoEstimado}";"R$ ${l.economiaAnualEstimada}";"${l.reviewsCount || 0}";"${l.scoreIA}%";"${l.perfilUrl || ''}"\n`;
       });
 
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `leads-prospeccao-radar-ia-${new Date().toISOString().slice(0,10)}.csv`;
+      a.download = `leads-dentistas-reais-radar-${new Date().toISOString().slice(0,10)}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

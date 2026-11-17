@@ -36,6 +36,21 @@ export const metadata: Metadata = {
       "Atração de talentos, desenvolvimento humano e gestão estratégica de RH.",
     url: "/talents",
     type: "website",
+    siteName: "Grupo Q-Max",
+    images: [
+      {
+        url: "/brands/talents-branco.png",
+        width: 1200,
+        height: 630,
+        alt: "Q-Max Talents",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Q-Max Talents | Pessoas que Transformam Negócios",
+    description: "Atração de talentos, desenvolvimento humano e gestão estratégica de RH.",
+    images: ["/brands/talents-branco.png"],
   },
 };
 

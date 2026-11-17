@@ -45,27 +45,6 @@ export class ParticipantsController {
     });
   }
 
-  @Post('clinicorp/register')
-  registerClinicorp(
-    @Body()
-    dto: RegisterParticipantDto,
-
-    @Ip()
-    ipAddress: string,
-
-    @Headers('user-agent')
-    userAgent?: string,
-
-    @Headers('origin')
-    origin?: string,
-  ) {
-    return this.participantsService.register(dto, {
-      ipAddress,
-      userAgent: userAgent ?? null,
-      origin: origin ?? null,
-    });
-  }
-
   @Get('event/:eventId')
   findByEvent(
     @Param('eventId', ParseIntPipe)
@@ -100,6 +79,22 @@ export class ParticipantsController {
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="leads-crm-rdstation-evento-${eventId}.csv"`,
+    );
+    return res.send(csvContent);
+  }
+
+  @Get('event/:eventId/export-commercial-csv')
+  async exportCommercialCsv(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Res() res: Response,
+    @Query('segment') segment?: string,
+  ) {
+    const csvContent = await this.participantsService.exportCommercialCsv(eventId, segment);
+    const suffix = segment && segment !== 'all' ? `-${segment}` : '';
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="leads-comercial-segmentado-evento-${eventId}${suffix}.csv"`,
     );
     return res.send(csvContent);
   }

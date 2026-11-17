@@ -28,6 +28,7 @@ import {
   Menu,
   X,
   Printer,
+  Send,
   type LucideIcon,
 } from "lucide-react";
 
@@ -41,6 +42,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "/admin/placa-stand": Printer,
   "/admin/antifraude": ShieldAlert,
   "/admin/comunicacao": MessageSquare,
+  "/admin/disparos": Send,
   "/admin/mensagens": Mail,
   "/admin/sorteio-final": Sparkles,
   "/admin/participantes": Users,
@@ -69,7 +71,8 @@ const GROUPS: { title: string; items: MenuItem[] }[] = [
   {
     title: "COMUNICAÇÃO",
     items: [
-      { label: "Disparos WhatsApp", href: "/admin/comunicacao" },
+      { label: "Acompanhar Disparos", href: "/admin/disparos" },
+      { label: "Fila WhatsApp", href: "/admin/comunicacao" },
       { label: "Modelos de mensagem", href: "/admin/mensagens" },
     ],
   },
