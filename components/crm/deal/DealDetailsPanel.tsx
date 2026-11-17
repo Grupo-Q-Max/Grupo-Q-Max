@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Archive, ArchiveRestore, BookmarkPlus, Check, Copy, Link2, Mail, MessageSquare, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, BookmarkPlus, Check, Copy, Link2, Mail, MessageSquare, Pencil, Phone, RotateCcw, Trash2, X, FileText } from "lucide-react";
 import { DealGeneralForm, DealProductsEditor } from "./DealGeneralForm";
 import { DealTimeline } from "./DealTimeline";
 import { DealAttachments } from "./DealAttachments";
@@ -487,6 +487,15 @@ function ContactActions({ deal }: { deal: DealDetails }) {
         title={email ? `Enviar e-mail para ${email}` : "Nenhum e-mail cadastrado"}
       >
         <Mail size={16} />
+      </a>
+      <a
+        className="deal-icon-btn deal-icon-btn--boxed text-blue-500 hover:text-blue-400"
+        href={`/proposta/index.html?nomeClinica=${encodeURIComponent(deal.company?.name || deal.title)}&nomeSocio=${encodeURIComponent(contact?.name || '')}&email=${encodeURIComponent(email || '')}&telefone=${encodeURIComponent(phone || '')}&faturamento=${deal.value || ''}&dealId=${deal.id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Gerar Proposta Comercial Oficial (Finora / Q-Max)"
+      >
+        <FileText size={16} />
       </a>
     </>
   );

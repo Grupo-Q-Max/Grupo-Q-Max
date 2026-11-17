@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lock, Mail, Phone, Plus, Trash2, X } from "lucide-react";
+import { Lock, Mail, Phone, Plus, Trash2, X, FileText, ExternalLink } from "lucide-react";
 import {
   CURRENCIES,
   DEAL_TYPES,
@@ -753,6 +753,42 @@ export function DealGeneralForm(props: Props) {
             </Select>
           </div>
         </Field>
+      </Section>
+
+      <Section title="Proposta Comercial Oficial">
+        <div style={{ background: "linear-gradient(135deg, #f0f9ff, #e0f2fe)", border: "1px solid #bae6fd", borderRadius: "10px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontWeight: 700, fontSize: "13px", color: "#0369a1", display: "flex", alignItems: "center", gap: "6px" }}>
+              <FileText size={16} /> Finora / Q-MAX Propostas
+            </span>
+            <span style={{ fontSize: "11px", background: "#0284c7", color: "#fff", padding: "2px 8px", borderRadius: "10px", fontWeight: 800 }}>
+              Integrado
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: "12px", color: "#0c4a6e", lineHeight: 1.4 }}>
+            Gere uma proposta interativa oficial com precificação inteligente, opções tributárias, honorários e envio direto via WhatsApp com assinatura D4Sign.
+          </p>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "2px" }}>
+            <a
+              href={`/proposta/index.html?nomeClinica=${encodeURIComponent(company.name || draft.title)}&nomeSocio=${encodeURIComponent(contacts[0]?.name || '')}&email=${encodeURIComponent(contacts[0]?.email || company.email || '')}&telefone=${encodeURIComponent(contacts[0]?.phone || company.phone || '')}&faturamento=${draft.value || ''}&dealId=${deal.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary"
+              style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", padding: "6px 14px", borderRadius: "8px" }}
+            >
+              <FileText size={14} /> Gerar Proposta Comercial ➔
+            </a>
+            <a
+              href={`/proposta/dashboard.html?busca=${encodeURIComponent(company.name || draft.title)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary"
+              style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", padding: "6px 14px", borderRadius: "8px" }}
+            >
+              <ExternalLink size={14} /> Ver no Dashboard
+            </a>
+          </div>
+        </div>
       </Section>
 
       <CustomFieldsSection deal={deal} draft={draft} onChange={onChange} />

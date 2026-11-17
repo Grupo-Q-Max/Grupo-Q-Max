@@ -2358,6 +2358,51 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       carregarRascunhoPorId(rascunhoUrlId);
     }, 400);
+  } else {
+    // Pré-preenchimento automático a partir do CRM Q-MAX
+    const paramClinica = urlParams.get("nomeClinica") || urlParams.get("clinica") || urlParams.get("empresa");
+    const paramRazao = urlParams.get("razaoSocial") || urlParams.get("razao");
+    const paramCnpj = urlParams.get("cnpj") || urlParams.get("documento");
+    const paramSocio = urlParams.get("nomeSocio") || urlParams.get("socio") || urlParams.get("contato");
+    const paramEmail = urlParams.get("email");
+    const paramTelefone = urlParams.get("telefone") || urlParams.get("phone") || urlParams.get("whatsapp");
+    const paramTipo = urlParams.get("tipoProposta") || urlParams.get("tipo");
+    const paramFat = urlParams.get("faturamento");
+    const paramDealId = urlParams.get("dealId");
+
+    if (paramClinica) { const el = document.getElementById("nomeClinica"); if (el) el.value = paramClinica; }
+    if (paramRazao) { const el = document.getElementById("razaoSocial"); if (el) el.value = paramRazao; }
+    if (paramCnpj) { const el = document.getElementById("cnpj"); if (el) el.value = paramCnpj; }
+    if (paramSocio) { const el = document.getElementById("nomeSocio"); if (el) el.value = paramSocio; }
+    if (paramEmail) { const el = document.getElementById("email"); if (el) el.value = paramEmail; }
+    if (paramTelefone) { const el = document.getElementById("telefone"); if (el) el.value = paramTelefone; }
+    if (paramTipo) {
+      const el = document.getElementById("tipoProposta");
+      if (el) {
+        el.value = paramTipo;
+        if (typeof trocarTipoProposta === "function") trocarTipoProposta();
+      }
+    }
+    if (paramFat) {
+      const numFat = Number(paramFat);
+      if (!isNaN(numFat) && numFat > 0) {
+        const elFat = document.getElementById("faturamento");
+        if (elFat) elFat.value = numFat;
+        const elFatMensal = document.getElementById("faturamentoMensal");
+        if (elFatMensal) elFatMensal.value = (numFat / 12).toFixed(2);
+      }
+    }
+    if (paramDealId) {
+      const elObs = document.getElementById("justificativaDesconto");
+      if (elObs && !elObs.value) {
+        elObs.value = `Proposta originada do Deal #${paramDealId} do Q-Max CRM.`;
+      }
+    }
+    if (paramClinica || paramEmail) {
+      setTimeout(() => {
+        if (typeof gerarProposta === "function") gerarProposta();
+      }, 300);
+    }
   }
 
   // Monitorar alterações no formulário

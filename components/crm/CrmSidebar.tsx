@@ -4,7 +4,7 @@ import { Suspense, startTransition, useEffect, useId, useOptimistic, useState, t
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LookupInput } from "./deal/ui";
-import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package, ListChecks, CalendarCheck, FolderPlus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { LayoutDashboard, Handshake, Users, Settings, PieChart, Menu, X, LogOut, Lightbulb, Package, ListChecks, CalendarCheck, FolderPlus, MoreHorizontal, Pencil, Trash2, FileText, Layers, Target, Flame, Sliders } from "lucide-react";
 import { alertDialog, confirmDialog, promptDialog } from "@/components/ui/Dialogs";
 import { CrmNotificationBell } from "./CrmNotificationBell";
 import { useCan } from "./CrmAccess";
@@ -320,6 +320,30 @@ export function CrmSidebar({ spaces }: { spaces: SidebarSpace[] }) {
             <Lightbulb size={18} />
             Pedidos
           </Link>
+
+          <div style={{ padding: "14px 14px 4px", fontSize: "10.5px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#64748b" }}>
+            Propostas Comerciais
+          </div>
+          <a href="/proposta/index.html" className="crm-nav__item" title="Criar Nova Proposta Comercial">
+            <FileText size={18} />
+            Nova Proposta
+          </a>
+          <a href="/proposta/dashboard.html" className="crm-nav__item" title="Dashboard Geral de Propostas e Assinaturas">
+            <Layers size={18} />
+            Dashboard Propostas
+          </a>
+          <a href="/proposta/prospeccao.html" className="crm-nav__item" title="Radar IA de Clínicas e Dentistas">
+            <Target size={18} />
+            Prospecção Ativa
+          </a>
+          <a href="/proposta/crm.html" className="crm-nav__item" title="Funil SDR Rápido de Leads">
+            <Flame size={18} />
+            Funil SDR Leads
+          </a>
+          <a href="/proposta/crm-config.html" className="crm-nav__item" title="Configurações de Fila, Funis e Webhooks">
+            <Sliders size={18} />
+            Configurações CRM
+          </a>
           {canSettings && (
             <Link href="/crm/settings" className={navClass("/crm/settings")} style={{ marginTop: "auto" }}>
               <Settings size={18} />
