@@ -152,6 +152,27 @@ async function carregarFunis() {
       selector.innerHTML = funis.map(f => `<option value="${escapeHTML(f.id)}">${escapeHTML(f.nome)}</option>`).join("");
       selector.value = currentFunilId;
     }
+
+    // Renderizar Pílulas Rápidas de Seleção de Funil / Pipeline
+    const quickPills = document.getElementById("pipelineQuickPills");
+    if (quickPills) {
+      quickPills.innerHTML = funis.map(f => {
+        const isSelected = Number(f.id) === Number(currentFunilId);
+        const isPropostas = Number(f.id) === 3 || f.nome.toLowerCase().includes("proposta");
+        const icon = isPropostas ? "⚡" : "📊";
+        const badgeStyle = isSelected
+          ? "background: #0f172a; color: #38bdf8; border-color: #38bdf8; font-weight: 700; box-shadow: 0 4px 12px rgba(15,23,42,0.18);"
+          : "background: white; color: #475569; border-color: #cbd5e1; font-weight: 600;";
+        
+        return `
+          <button type="button" onclick="alterarFunil(${Number(f.id)})" class="pipeline-pill-btn" style="${badgeStyle} padding: 6px 14px; border-radius: 10px; font-size: 12px; border: 1.5px solid; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+            <span>${icon}</span>
+            <span>${escapeHTML(f.nome)}</span>
+            ${isPropostas ? `<span style="font-size: 10px; background: rgba(56,189,248,0.2); color: ${isSelected ? '#38bdf8' : '#0284c7'}; padding: 1px 6px; border-radius: 999px; font-weight: 800;">PROPOSTAS</span>` : ""}
+          </button>
+        `;
+      }).join("");
+    }
   } catch (error) {
     console.error("Erro em carregarFunis:", error);
   }
@@ -160,6 +181,9 @@ async function carregarFunis() {
 async function alterarFunil(funil_id) {
   currentFunilId = funil_id;
   localStorage.setItem('finora_funil_id', funil_id);
+  const selector = document.getElementById("funilSelector");
+  if (selector) selector.value = funil_id;
+  await carregarFunis();
   await carregarEtapasCRM();
   await carregarLeads();
 }
@@ -234,15 +258,19 @@ function renderizarKanban() {
     const listLeads = colunas[etapa.nome] || [];
     const statusId = etapa.nome;
     const cor = etapa.cor || "#94a3b8";
+    const valorTotalEtapa = listLeads.reduce((acc, l) => acc + Number(l.valor_estimado || l.proposta_valor_total || 0), 0);
 
     return `
       <div class="kanban-column" data-status="${escapeHTML(statusId)}" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropLead(event)">
         <div class="kanban-column-header">
-          <span class="kanban-column-title" style="display:flex; align-items:center; gap:8px;">
-            <span class="kanban-column-title-dot" style="background:${escapeHTML(cor)}; box-shadow: 0 0 8px ${escapeHTML(cor)};"></span>
-            <span style="font-weight:700;">${escapeHTML(etapa.nome)}</span>
-            <span class="edit-col-cog" onclick="abrirModalEditarColuna(${Number(etapa.id)})" style="cursor:pointer; font-size:11px; opacity:0.5; margin-left:4px;" title="Editar coluna"></span>
-          </span>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <span class="kanban-column-title" style="display:flex; align-items:center; gap:8px;">
+              <span class="kanban-column-title-dot" style="background:${escapeHTML(cor)}; box-shadow: 0 0 8px ${escapeHTML(cor)};"></span>
+              <span style="font-weight:700;">${escapeHTML(etapa.nome)}</span>
+              <span class="edit-col-cog" onclick="abrirModalEditarColuna(${Number(etapa.id)})" style="cursor:pointer; font-size:11px; opacity:0.5; margin-left:4px;" title="Editar coluna"></span>
+            </span>
+            <span style="font-size:11px; font-weight:700; color:#64748b; margin-left:14px;">${moeda.format(valorTotalEtapa)}</span>
+          </div>
           <span class="kanban-column-count">${listLeads.length}</span>
         </div>
         <div class="kanban-cards-container" id="container-${escapeHTML(statusId.replace(/\s+/g, '-'))}">
@@ -270,6 +298,43 @@ function renderizarKanban() {
                  </div>`
               : "";
 
+            // Badges e informações da Proposta / D4Sign
+            const temProposta = Boolean(lead.proposta_id);
+            const numProposta = lead.proposta_numero || (lead.proposta_id ? `P-${lead.proposta_id}` : "");
+            const statusProposta = lead.proposta_status || (lead.status === "Assinada" ? "Aprovada" : lead.status);
+            const temD4Sign = Boolean(lead.d4sign_uuid);
+
+            let statusPropostaBadge = "";
+            if (temProposta) {
+              let bg = "#f1f5f9", textCor = "#475569", borderCor = "#cbd5e1", icone = "📄";
+              const s = (statusProposta || "").toLowerCase();
+              if (s.includes("rascunho")) {
+                bg = "#fef9c3"; textCor = "#a16207"; borderCor = "#fde047"; icone = "✏️";
+              } else if (s.includes("visualiz")) {
+                bg = "#f3e8ff"; textCor = "#7e22ce"; borderCor = "#d8b4fe"; icone = "👁️";
+              } else if (s.includes("assinatura") || s.includes("d4sign")) {
+                bg = "#fef3c7"; textCor = "#b45309"; borderCor = "#fde68a"; icone = "✍️";
+              } else if (s.includes("aprovad") || s.includes("assinad") || s.includes("ganh")) {
+                bg = "#dcfce7"; textCor = "#15803d"; borderCor = "#86efac"; icone = "✅";
+              } else if (s.includes("declin") || s.includes("perdid")) {
+                bg = "#fee2e2"; textCor = "#b91c1c"; borderCor = "#fca5a5"; icone = "❌";
+              } else {
+                bg = "#e0f2fe"; textCor = "#0369a1"; borderCor = "#7dd3fc"; icone = "📤";
+              }
+
+              statusPropostaBadge = `
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                  <span style="font-size:10.5px; font-weight:700; background:#0f172a; color:#38bdf8; padding:2px 6px; border-radius:6px; cursor:pointer;" onclick="abrirDetailsComAba(${lead.id}, 'd4sign')" title="Proposta #${escapeHTML(numProposta)}">#${escapeHTML(numProposta)}</span>
+                  <span style="font-size:10.5px; font-weight:700; background:${bg}; color:${textCor}; border:1px solid ${borderCor}; padding:2px 7px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                    ${icone} ${escapeHTML(statusProposta)}
+                  </span>
+                  ${temD4Sign ? `<span style="font-size:10px; font-weight:700; background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; padding:2px 6px; border-radius:6px;" title="Integrado com D4Sign">✍️ D4Sign</span>` : ""}
+                </div>
+              `;
+            }
+
+            const valorExibir = Number(lead.valor_estimado || lead.proposta_valor_total || 0);
+
             return `
               <div class="lead-card" id="lead-${lead.id}" draggable="true" ondragstart="dragLeadStart(event, ${lead.id})" ondragend="dragLeadEnd(event)" style="border-left: 3px solid ${escapeHTML(cor)}; display: flex; flex-direction: column; gap: 4px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -279,8 +344,9 @@ function renderizarKanban() {
                 <div class="lead-card-subtitle">${escapeHTML(lead.nome_clinica || "Empresa não informada")}</div>
                 
                 ${clinicaInfoBadge}
+                ${statusPropostaBadge}
                 
-                <div class="lead-card-value" style="margin-top: 4px;">${moeda.format(Number(lead.valor_estimado || 0))}</div>
+                <div class="lead-card-value" style="margin-top: 4px;">${moeda.format(valorExibir)}</div>
                 
                 <div class="lead-card-footer" style="margin-top: 10px; border-top: 1px dashed #f1f5f9; padding-top: 8px; display:flex; align-items:center; justify-content:space-between;">
                   <span class="lead-card-badge ${tagClass}">${escapeHTML(lead.origem || "Outro")}</span>
@@ -293,8 +359,14 @@ function renderizarKanban() {
                   </div>
                 </div>
                 
-                <div style="margin-top: 8px; display: flex; justify-content: flex-end; gap: 6px;">
-                  <button class="btn-mini-light" onclick="abrirDetails(${lead.id})" style="border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid #cbd5e1; background: white;">Detalhes & Notes</button>
+                <div style="margin-top: 8px; display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap;">
+                  ${temProposta && lead.token_acesso ? `
+                    <a href="/proposta/p/${encodeURIComponent(lead.token_acesso)}" target="_blank" class="btn-mini-light" style="border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid #38bdf8; background: #f0f9ff; color: #0284c7; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="Visualizar proposta pública">Ver ↗</a>
+                  ` : ""}
+                  ${temProposta ? `
+                    <button class="btn-mini-light" onclick="abrirDetailsComAba(${lead.id}, 'd4sign')" style="border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid #cbd5e1; background: #fafafa; color: #334155; font-weight: 700;">✍️ Signatários</button>
+                  ` : ""}
+                  <button class="btn-mini-light" onclick="abrirDetails(${lead.id})" style="border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid #cbd5e1; background: white;">Detalhes</button>
                 </div>
               </div>
             `;
@@ -835,6 +907,66 @@ async function abrirDetails(leadId) {
     }
     camposPersonalizadosEdicao = campos;
     renderizarCamposPersonalizados();
+
+    // Preencher Banner Hero Surreal da Proposta se houver proposta vinculada
+    const heroBanner = document.getElementById("proposalHeroBanner");
+    const tabHeaderD4Sign = document.getElementById("tabHeaderD4Sign");
+    if (heroBanner) {
+      if (leadSelecionado.proposta_id) {
+        const numP = leadSelecionado.proposta_numero || (leadSelecionado.proposta_id ? `P-${leadSelecionado.proposta_id}` : "");
+        const statusP = leadSelecionado.proposta_status || leadSelecionado.status || "Enviada";
+        const tokenP = leadSelecionado.token_acesso || "";
+        const urlPublica = tokenP ? `${window.location.origin}/proposta/p/${tokenP}` : "";
+        const valorP = Number(leadSelecionado.proposta_valor_total || leadSelecionado.valor_estimado || 0);
+        const fatP = leadSelecionado.proposta_faturamento ? Number(leadSelecionado.proposta_faturamento) : null;
+        const temD4 = Boolean(leadSelecionado.d4sign_uuid);
+
+        heroBanner.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px;">
+            <div style="flex:1; min-width:260px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                <span style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:#93c5fd; font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+                  ⚡ PROPOSTA VINCULADA
+                </span>
+                <span style="background:rgba(212,175,55,0.25); color:#fde047; border:1px solid rgba(212,175,55,0.5); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:800;">
+                  #${escapeHTML(numP)}
+                </span>
+                <span style="background:rgba(255,255,255,0.15); color:#f8fafc; font-size:11px; padding:2px 8px; border-radius:999px; font-weight:700;">
+                  ${escapeHTML(statusP)}
+                </span>
+                ${temD4 ? `<span style="background:rgba(34,197,94,0.25); color:#86efac; border:1px solid rgba(34,197,94,0.4); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:800;">✍️ D4Sign Conectado</span>` : ""}
+              </div>
+              <div style="font-size:17px; font-weight:800; color:#ffffff; line-height:1.2;">
+                ${escapeHTML(leadSelecionado.nome_clinica || leadSelecionado.nome_cliente)}
+              </div>
+              <div style="font-size:12.5px; color:#cbd5e1; margin-top:4px; display:flex; gap:12px; flex-wrap:wrap;">
+                <span>Valor: <strong style="color:#facc15;">${moeda.format(valorP)}</strong></span>
+                ${fatP ? `<span>Faturamento: <strong style="color:#e2e8f0;">${moeda.format(fatP)}</strong></span>` : ""}
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              ${urlPublica ? `
+                <a href="${urlPublica}" target="_blank" style="background:#2563eb; color:white; font-size:12px; font-weight:700; padding:8px 14px; border-radius:10px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(37,99,235,0.35); transition:background 0.2s;">
+                  Ver Proposta ↗
+                </a>
+                <button type="button" onclick="copiarLinkPublicoProposta('${escapeHTML(tokenP)}')" style="background:rgba(255,255,255,0.12); color:#ffffff; border:1px solid rgba(255,255,255,0.25); font-size:12px; font-weight:600; padding:8px 12px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                  📋 Copiar Link
+                </button>
+              ` : ""}
+              <button type="button" onclick="switchDetailsTab('d4sign')" style="background:linear-gradient(135deg, #059669 0%, #10b981 100%); color:white; border:0; font-size:12px; font-weight:700; padding:8px 14px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(16,185,129,0.35);">
+                ✍️ Ver Signatários D4Sign
+              </button>
+            </div>
+          </div>
+        `;
+        heroBanner.style.display = "block";
+        if (tabHeaderD4Sign) tabHeaderD4Sign.style.display = "inline-flex";
+      } else {
+        heroBanner.style.display = "none";
+        if (tabHeaderD4Sign) tabHeaderD4Sign.style.display = "none";
+      }
+    }
 
     // Proposta Vinculada
     const detProposta = document.getElementById("detProposta");
@@ -1564,26 +1696,243 @@ async function salvarLeadComoPerdido(e) {
 function switchDetailsTab(tab) {
   const tabTimeline = document.getElementById("tabContentTimeline");
   const tabActivities = document.getElementById("tabContentActivities");
+  const tabD4Sign = document.getElementById("tabContentD4Sign");
   const headerTimeline = document.getElementById("tabHeaderTimeline");
   const headerActivities = document.getElementById("tabHeaderActivities");
+  const headerD4Sign = document.getElementById("tabHeaderD4Sign");
 
   if (!tabTimeline || !tabActivities || !headerTimeline || !headerActivities) return;
 
   if (tab === "timeline") {
     tabTimeline.style.display = "block";
     tabActivities.style.display = "none";
+    if (tabD4Sign) tabD4Sign.style.display = "none";
     headerTimeline.classList.add("active");
     headerActivities.classList.remove("active");
-  } else {
+    if (headerD4Sign) headerD4Sign.classList.remove("active");
+  } else if (tab === "activities") {
     tabTimeline.style.display = "none";
     tabActivities.style.display = "block";
+    if (tabD4Sign) tabD4Sign.style.display = "none";
     headerTimeline.classList.remove("active");
     headerActivities.classList.add("active");
+    if (headerD4Sign) headerD4Sign.classList.remove("active");
     
     // Focar no agendamento se necessário
     if (leadSelecionado) {
       carregarAtividades(leadSelecionado.id);
     }
+  } else if (tab === "d4sign") {
+    tabTimeline.style.display = "none";
+    tabActivities.style.display = "none";
+    if (tabD4Sign) tabD4Sign.style.display = "block";
+    headerTimeline.classList.remove("active");
+    headerActivities.classList.remove("active");
+    if (headerD4Sign) headerD4Sign.classList.add("active");
+
+    if (leadSelecionado) {
+      carregarStatusD4Sign(leadSelecionado.id);
+    }
+  }
+}
+
+// Abrir modal de detalhes diretamente em uma aba específica
+async function abrirDetailsComAba(leadId, aba = "timeline") {
+  await abrirDetails(leadId);
+  switchDetailsTab(aba);
+}
+
+// Copiar link público da proposta
+function copiarLinkPublicoProposta(token) {
+  if (!token) return;
+  const link = `${window.location.origin}/proposta/p/${token}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(() => {
+      mostrarToast("Link público da proposta copiado!", "success");
+    }).catch(() => {
+      prompt("Copie o link da proposta:", link);
+    });
+  } else {
+    prompt("Copie o link da proposta:", link);
+  }
+}
+
+// Carregar e monitorar status das assinaturas no D4Sign em tempo real
+async function carregarStatusD4Sign(leadId, forcar = false) {
+  const container = document.getElementById("d4signLiveWidget");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; text-align: center; color: #64748b;">
+      <div style="font-size: 24px; margin-bottom: 8px;">⏳</div>
+      <div style="font-weight: 700; font-size: 13.5px; color: #0f172a;">Sincronizando com D4Sign em tempo real...</div>
+      <div style="font-size: 12px; margin-top: 4px;">Consultando signatários e status jurídicos na API oficial.</div>
+    </div>
+  `;
+
+  try {
+    const res = await fetchAuth(`/api/leads/${leadId}/d4sign-status`);
+    if (!res.ok) throw new Error("Erro ao consultar status D4Sign");
+    const data = await res.json();
+
+    if (!data.temProposta) {
+      container.innerHTML = `
+        <div style="background: #fff; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 28px; text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 8px;">📑</div>
+          <div style="font-weight: 700; font-size: 14px; color: #334155;">Nenhuma Proposta Vinculada</div>
+          <p style="font-size: 12.5px; color: #64748b; margin: 6px 0 16px 0;">Este lead ainda não tem uma proposta gerada para envio ao D4Sign.</p>
+          <button type="button" class="btn-primary" onclick="converterLeadEmProposta()" style="padding: 8px 16px; font-size: 12.5px; border-radius: 10px;">Gerar Proposta Comercial</button>
+        </div>
+      `;
+      return;
+    }
+
+    if (!data.temDocumento) {
+      const urlPublica = data.tokenAcesso ? `${window.location.origin}/proposta/p/${data.tokenAcesso}` : "";
+      container.innerHTML = `
+        <div style="background: #fff; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 28px; text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 8px;">✍️</div>
+          <div style="font-weight: 800; font-size: 14.5px; color: #0f172a;">Proposta #${escapeHTML(data.numeroProposta || data.propostaId)} Pronta</div>
+          <p style="font-size: 12.5px; color: #64748b; margin: 6px auto 16px auto; max-width: 440px;">
+            A proposta está criada mas ainda não foi despachada para o fluxo de assinatura digital do D4Sign. Quando o cliente aprovar ou você enviar para assinatura, o rastreamento em tempo real será ativado automaticamente aqui.
+          </p>
+          <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+            ${urlPublica ? `
+              <a href="${urlPublica}" target="_blank" class="btn-primary" style="padding: 8px 16px; font-size: 12.5px; border-radius: 10px; text-decoration:none;">Abrir Proposta ↗</a>
+              <button type="button" class="btn-secondary" onclick="copiarLinkPublicoProposta('${escapeHTML(data.tokenAcesso)}')" style="padding: 8px 16px; font-size: 12.5px; border-radius: 10px;">Copiar Link da Proposta</button>
+            ` : ""}
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Caso possua documento no D4Sign
+    const isFinal = String(data.statusId) === "4" || data.statusDoc?.toLowerCase().includes("finaliz") || data.progresso === 100;
+    const isCancelado = String(data.statusId) === "6";
+    
+    let statusBadgeHTML = "";
+    if (isFinal) {
+      statusBadgeHTML = `<span style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">✅ Finalizado (100% Assinado)</span>`;
+    } else if (isCancelado) {
+      statusBadgeHTML = `<span style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">❌ Cancelado</span>`;
+    } else {
+      statusBadgeHTML = `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">⏳ ${escapeHTML(data.statusDoc || "Aguardando Assinaturas")}</span>`;
+    }
+
+    const signatariosHTML = (data.signatarios && data.signatarios.length > 0)
+      ? data.signatarios.map(s => {
+          const assinado = Boolean(s.assinado);
+          let dataHoraAss = "";
+          if (assinado && s.dataAssinatura) {
+            try {
+              const d = new Date(s.dataAssinatura);
+              dataHoraAss = `em ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+            } catch {
+              dataHoraAss = "";
+            }
+          }
+
+          return `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1px solid ${assinado ? '#bbf7d0' : '#e2e8f0'}; border-radius:12px; padding:12px 16px; gap:12px; flex-wrap:wrap; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:50%; background:${assinado ? '#dcfce7' : '#f1f5f9'}; color:${assinado ? '#166534' : '#64748b'}; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; flex-shrink:0;">
+                  ${assinado ? '✓' : '✍'}
+                </div>
+                <div>
+                  <div style="font-weight:700; font-size:13.5px; color:#0f172a; display:flex; align-items:center; gap:6px;">
+                    ${escapeHTML(s.nome)}
+                    <span style="font-size:10.5px; font-weight:600; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:999px;">${escapeHTML(s.papel || "Signatário")}</span>
+                  </div>
+                  <div style="font-size:12px; color:#64748b; margin-top:2px;">${escapeHTML(s.email)}</div>
+                </div>
+              </div>
+
+              <div>
+                ${assinado ? `
+                  <div style="text-align:right;">
+                    <span style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; padding:4px 10px; border-radius:8px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                      ✅ Assinado
+                    </span>
+                    ${dataHoraAss ? `<div style="font-size:10.5px; color:#166534; margin-top:3px; font-weight:500;">${dataHoraAss}</div>` : ""}
+                  </div>
+                ` : `
+                  <span style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:4px 10px; border-radius:8px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                    ⏳ Aguardando assinatura
+                  </span>
+                `}
+              </div>
+            </div>
+          `;
+        }).join("")
+      : `<p style="color:#64748b; font-size:12.5px; font-style:italic;">Nenhum signatário listado.</p>`;
+
+    container.innerHTML = `
+      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px -2px rgba(15,23,42,0.05); display:flex; flex-direction:column; gap:16px;">
+        <!-- Topo: Status & Sincronização -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:16px; font-weight:800; color:#0f172a;">Contrato D4Sign</span>
+              ${statusBadgeHTML}
+            </div>
+            <div style="font-size:11.5px; color:#64748b; margin-top:4px; display:flex; align-items:center; gap:6px;">
+              <span>UUID:</span>
+              <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:monospace; color:#334155;">${escapeHTML(data.uuid)}</code>
+            </div>
+          </div>
+
+          <button type="button" onclick="carregarStatusD4Sign(${leadId}, true)" class="btn-secondary" style="font-size:12px; font-weight:700; padding:6px 14px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+            🔄 Sincronizar Agora
+          </button>
+        </div>
+
+        <!-- Barra de Progresso de Assinaturas -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:12px; font-weight:700;">
+            <span style="color:#334155;">Progresso das Assinaturas</span>
+            <span style="color:${isFinal ? '#15803d' : '#0284c7'}; font-size:13px;">${data.assinados || 0} de ${data.total || 0} (${data.progresso || 0}%)</span>
+          </div>
+          <div style="width:100%; height:10px; background:#e2e8f0; border-radius:999px; overflow:hidden;">
+            <div style="width:${data.progresso || 0}%; height:100%; background:${isFinal ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #38bdf8, #2563eb)'}; transition:width 0.4s ease; border-radius:999px;"></div>
+          </div>
+        </div>
+
+        ${isFinal ? `
+          <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #86efac; border-radius: 12px; padding: 12px 16px; color: #166534; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🎉</span>
+            <span>Documento 100% assinado por todas as partes! Venda confirmada e formalizada juridicamente.</span>
+          </div>
+        ` : ""}
+
+        <!-- Lista de Signatários -->
+        <div>
+          <div style="font-size:12.5px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">Signatários Vinculados</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            ${signatariosHTML}
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (forcar) {
+      mostrarToast("Status D4Sign atualizado com sucesso!", "success");
+      if (leadSelecionado) {
+        leadSelecionado.d4sign_uuid = data.uuid;
+        if (isFinal) leadSelecionado.proposta_status = "Aprovada";
+        atualizarAssinaturaTracker(leadSelecionado);
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao carregarStatusD4Sign:", error);
+    container.innerHTML = `
+      <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:14px; padding:20px; text-align:center; color:#be123c;">
+        <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
+        <div style="font-weight:700; font-size:13.5px;">Falha ao comunicar com o servidor D4Sign</div>
+        <div style="font-size:12px; margin-top:4px; color:#9f1239;">${escapeHTML(error.message || "Erro desconhecido")}</div>
+        <button type="button" onclick="carregarStatusD4Sign(${leadId}, true)" class="btn-secondary" style="margin-top:12px; font-size:12px; padding:6px 14px; border-radius:8px;">Tentar Novamente</button>
+      </div>
+    `;
   }
 }
 
@@ -1939,36 +2288,64 @@ async function dbLogComentarioManual(texto) {
 
 // Atualizar passos do ciclo de assinatura do contrato
 function atualizarAssinaturaTracker(lead) {
-  const steps = ["criado", "proposta", "visualizado", "ganho"];
+  const steps = ["criado", "proposta", "visualizado", "assinatura", "ganho"];
   
   steps.forEach(step => {
-    document.getElementById(`step-${step}`).classList.remove("active");
+    const el = document.getElementById(`step-${step}`);
+    if (el) el.classList.remove("active");
   });
   
   const lines = document.querySelectorAll(".signature-tracker-container .tracker-line");
   lines.forEach(l => l.classList.remove("active"));
 
-  const status = lead.status;
-  
+  const status = (lead.status || "").toLowerCase();
+  const pStatus = (lead.proposta_status || "").toLowerCase();
+  const temProposta = Boolean(lead.proposta_id);
+  const temD4Sign = Boolean(lead.d4sign_uuid);
+
   // Passo 1: Lead Criado (sempre ativo)
-  document.getElementById("step-criado").classList.add("active");
+  const stepCriado = document.getElementById("step-criado");
+  if (stepCriado) stepCriado.classList.add("active");
 
   // Passo 2: Proposta Enviada
-  if (lead.proposta_id || status === "Proposta Enviada" || status === "Ganho") {
-    document.getElementById("step-proposta").classList.add("active");
+  const foiEnviada = temProposta && (
+    pStatus.includes("enviad") || pStatus.includes("visualiz") || pStatus.includes("assinat") || pStatus.includes("aprovad") ||
+    status.includes("proposta enviada") || status.includes("visualiz") || status.includes("em assinatura") || status.includes("assinad") || status.includes("ganho")
+  );
+  if (foiEnviada) {
+    const stepProp = document.getElementById("step-proposta");
+    if (stepProp) stepProp.classList.add("active");
     if (lines[0]) lines[0].classList.add("active");
   }
 
-  // Passo 3: Visualizado (simulação inteligente baseada em possuir proposta)
-  if (lead.proposta_id && (status === "Proposta Enviada" || status === "Ganho")) {
-    document.getElementById("step-visualizado").classList.add("active");
+  // Passo 3: Visualizada
+  const foiVisualizada = temProposta && (
+    pStatus.includes("visualiz") || pStatus.includes("assinat") || pStatus.includes("aprovad") ||
+    status.includes("visualizada") || status.includes("em assinatura") || status.includes("assinad") || status.includes("ganho")
+  );
+  if (foiVisualizada) {
+    const stepVis = document.getElementById("step-visualizado");
+    if (stepVis) stepVis.classList.add("active");
     if (lines[1]) lines[1].classList.add("active");
   }
 
-  // Passo 4: Contrato Assinado / Ganho
-  if (status === "Ganho") {
-    document.getElementById("step-ganho").classList.add("active");
+  // Passo 4: Em Assinatura (D4Sign)
+  const emAssinatura = temProposta && (
+    temD4Sign || pStatus.includes("assinat") || pStatus.includes("aprovad") ||
+    status.includes("em assinatura") || status.includes("assinad") || status.includes("ganho")
+  );
+  if (emAssinatura) {
+    const stepAss = document.getElementById("step-assinatura");
+    if (stepAss) stepAss.classList.add("active");
     if (lines[2]) lines[2].classList.add("active");
+  }
+
+  // Passo 5: Contrato Assinado / Ganho
+  const foiAssinado = pStatus.includes("aprovad") || status.includes("assinad") || status.includes("ganho");
+  if (foiAssinado) {
+    const stepGanho = document.getElementById("step-ganho");
+    if (stepGanho) stepGanho.classList.add("active");
+    if (lines[3]) lines[3].classList.add("active");
   }
 }
 

@@ -353,6 +353,12 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
           ip: req.ip
         });
 
+        // Sincronizar na pipeline de propostas no CRM
+        try {
+          const crmPipelineService = require("../services/crmPipelineService");
+          crmPipelineService.sincronizarPropostaNoCRM(rascunhoId, "Rascunho").catch(() => {});
+        } catch (e) {}
+
         return res.json({
           success: true,
           id: rascunhoId,
@@ -398,6 +404,12 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
       dados_novos: { numeroProposta, total: valorTotal, itens },
       ip: req.ip
     });
+
+    // Sincronizar na pipeline de propostas no CRM
+    try {
+      const crmPipelineService = require("../services/crmPipelineService");
+      crmPipelineService.sincronizarPropostaNoCRM(resultado.insertId, "Rascunho").catch(() => {});
+    } catch (e) {}
 
     res.json({
       success: true,
@@ -734,6 +746,12 @@ const proLaboreNormalizado = normalizarProLabore(
       console.warn("[WhatsApp Auto] Erro no envio automático:", e.message);
     });
 
+    // Sincronizar na pipeline própria de propostas no CRM
+    try {
+      const crmPipelineService = require("../services/crmPipelineService");
+      crmPipelineService.sincronizarPropostaNoCRM(propostaId).catch(() => {});
+    } catch (e) {}
+
     return res.status(200).json({
       success: true,
       message: emailEnviado ? "Proposta gerada!" : `Proposta gerada! ${AVISO_EMAIL_NAO_ENVIADO}`,
@@ -895,6 +913,12 @@ router.get("/api/propostas/:token/publica", async (req, res, next) => {
       dispositivo,
       ip: req.ip || req.socket?.remoteAddress || ""
     }).catch(() => {});
+
+    // Gatilho automático no CRM: move o card para 'Visualizada / Em Análise'
+    try {
+      const crmPipelineService = require("../services/crmPipelineService");
+      crmPipelineService.tratarAberturaProposta(proposta.id, req.ip || "", req.headers["user-agent"] || "").catch(() => {});
+    } catch (e) {}
 
     let itens = [];
     if (proposta.itens_json) {
@@ -2060,12 +2084,58 @@ router.post("/api/d4sign/webhook", express.urlencoded({ extended: true }), async
     if (!uuid) console.warn(`[D4Sign Webhook] Evento sem uuid (Content-Type: ${tipoConteudo || "nenhum"}).`);
 
     // type_post "1" = finalizado (todos assinaram), "3" = cancelado (inclui prazo expirado),
-    // "2" = e-mail não entregue ao signatário. "4" = um signatário assinou: não fecha a proposta e não dispara avisos.
+    // "2" = e-mail não entregue ao signatário. "4" = um signatário assinou
     const eventos = { 1: "finalizado", 2: "nao_entregue", 3: "cancelado" };
     if (uuid && eventos[String(type_post)]) {
       await d4signService.processarDocumentoD4Sign(uuid, eventos[String(type_post)], message);
+    } else if (uuid && String(type_post) === "4") {
+      try {
+        const crmPipelineService = require("../services/crmPipelineService");
+        await crmPipelineService.tratarAssinaturaParcialD4Sign(uuid, { nome: message || "Signatário" });
+      } catch (partialErr) {
+        console.warn("[D4Sign Webhook] Erro ao registrar assinatura parcial:", partialErr.message);
+      }
     }
     return res.status(200).send("Webhook recebido com sucesso.");
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- CONSULTAR STATUS D4SIGN & SIGNATÁRIOS AO VIVO ---
+router.get("/api/propostas/:id/d4sign-status", verificarToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const propostas = await db.executarQuery(
+      "SELECT id, numero_proposta, status, ip_assinatura, nome_clinica, nome_socio, email, data_decisao FROM propostas WHERE id = ? LIMIT 1",
+      [id]
+    );
+
+    if (propostas.length === 0) {
+      return res.status(404).json({ error: "Proposta não encontrada." });
+    }
+
+    const proposta = propostas[0];
+    const uuid = proposta.ip_assinatura;
+
+    if (!uuid) {
+      return res.json({
+        temDocumento: false,
+        statusProposta: proposta.status,
+        mensagem: "Documento ainda não enviado para o D4Sign.",
+        signatarios: [],
+      });
+    }
+
+    const statusDetalhado = await d4signService.consultarSignatariosDocumento(uuid);
+
+    res.json({
+      temDocumento: true,
+      propostaId: proposta.id,
+      numeroProposta: proposta.numero_proposta,
+      statusProposta: proposta.status,
+      ...statusDetalhado,
+    });
   } catch (error) {
     next(error);
   }

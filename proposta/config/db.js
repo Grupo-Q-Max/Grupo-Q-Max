@@ -4,8 +4,11 @@ const envTestPath = path.resolve(process.cwd(), ".env.test");
 const useTestEnv = process.env.NODE_ENV === "test" && fs.existsSync(envTestPath);
 
 require("dotenv").config({
-  path: useTestEnv ? envTestPath : path.resolve(process.cwd(), ".env")
+  path: useTestEnv ? envTestPath : (fs.existsSync(path.resolve(process.cwd(), ".env")) ? path.resolve(process.cwd(), ".env") : path.resolve(__dirname, "../.env"))
 });
+if (!process.env.DB_HOST && fs.existsSync(path.resolve(__dirname, "../.env"))) {
+  require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+}
 
 const mysql = require("mysql2/promise");
 

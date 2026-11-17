@@ -112,19 +112,26 @@
         <main class="main-content">
             <div class="dashboard-container">
         <!-- CRM Header Bar -->
-        <div class="crm-header-bar">
-            <div>
-                <div style="display: flex; align-items: center; gap: 10px; max-width: 500px; flex-wrap: wrap;">
-                    <select id="funilSelector" onchange="alterarFunil(this.value)" style="font-size: 24px; font-weight: 800; border: none; background: transparent; color: var(--text); padding: 0; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 20px; background-image: url('data:image/svg+xml;utf8,<svg fill=%22black%22 height=%2224%22 viewBox=%220 0 24 24%22 width=%2224%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-repeat: no-repeat; background-position-x: 100%; background-position-y: 50%; max-width: 320px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
-                        <option value="1">Carregando...</option>
-                    </select>
-                    <button class="btn-secondary" onclick="abrirModalGerenciarFunis()" style="padding: 4px 10px; font-size: 12px; border-radius: 8px;">Gerenciar</button>
+        <div class="crm-header-bar" style="background: white; padding: 20px 24px; border-radius: 20px; border: 1px solid rgba(15, 23, 42, 0.08); box-shadow: 0 4px 20px -2px rgba(0,0,0,0.04); margin-bottom: 20px;">
+            <div style="flex: 1; min-width: 280px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <div style="position: relative; display: inline-flex; align-items: center;">
+                        <select id="funilSelector" onchange="alterarFunil(this.value)" style="font-size: 22px; font-weight: 800; border: 1px solid #e2e8f0; background: #f8fafc; color: var(--text); padding: 8px 36px 8px 14px; border-radius: 14px; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=%22%23475569%22 height=%2220%22 viewBox=%220 0 24 24%22 width=%2220%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-repeat: no-repeat; background-position: right 12px center; max-width: 380px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                            <option value="1">Carregando...</option>
+                        </select>
+                    </div>
+                    <div id="pipelineQuickPills" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <!-- Injetado dinamicamente com as pipelines -->
+                    </div>
+                    <button class="btn-secondary" onclick="abrirModalGerenciarFunis()" style="padding: 6px 12px; font-size: 12px; border-radius: 10px; font-weight: 700; border: 1px solid #cbd5e1; background: white; cursor: pointer;">⚙️ Gerenciar</button>
                 </div>
-                <p style="color: var(--muted); font-size: 13px; margin: 4px 0 0 0;">Acompanhe o andamento dos contatos comerciais e gere propostas com 1 clique.</p>
+                <p style="color: var(--muted); font-size: 13px; margin: 6px 0 0 0;">Pipeline automatizada com tracking de abertura de proposta e coleta de assinaturas digitais via D4Sign.</p>
             </div>
-            <button class="btn-primary" onclick="abrirModalCriarLead()" style="display: flex; align-items: center; gap: 8px; border-radius: 12px; height: 42px;">
-                Novo Lead
-            </button>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button class="btn-primary" onclick="abrirModalCriarLead()" style="display: flex; align-items: center; gap: 8px; border-radius: 14px; height: 42px; font-weight: 700; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
+                    ➕ Novo Lead
+                </button>
+            </div>
         </div>
 
         <!-- Toggle de Visualização e Botões de Controle -->
@@ -461,26 +468,36 @@
             </div>
 
             <!-- Visual Contract Lifecycle Signature Tracker -->
-            <div class="signature-tracker-container">
+            <div class="signature-tracker-container" style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 12px 18px; border-radius: 14px; border: 1px solid #e2e8f0; margin: 12px 0 14px 0;">
                 <div class="tracker-step" id="step-criado">
-                    
-                    <span class="tracker-label">Lead Criado</span>
+                    <span class="tracker-dot"></span>
+                    <span class="tracker-label">1. Criado</span>
                 </div>
                 <div class="tracker-line"></div>
                 <div class="tracker-step" id="step-proposta">
-                    
-                    <span class="tracker-label">Proposta Enviada</span>
+                    <span class="tracker-dot"></span>
+                    <span class="tracker-label">2. Proposta Enviada</span>
                 </div>
                 <div class="tracker-line"></div>
                 <div class="tracker-step" id="step-visualizado">
-                    
-                    <span class="tracker-label">Visualizado</span>
+                    <span class="tracker-dot"></span>
+                    <span class="tracker-label">3. Visualizada</span>
+                </div>
+                <div class="tracker-line"></div>
+                <div class="tracker-step" id="step-assinatura">
+                    <span class="tracker-dot"></span>
+                    <span class="tracker-label">4. Em Assinatura (D4Sign)</span>
                 </div>
                 <div class="tracker-line"></div>
                 <div class="tracker-step" id="step-ganho">
-                    
-                    <span class="tracker-label">Contrato Fechado</span>
+                    <span class="tracker-dot"></span>
+                    <span class="tracker-label">5. Contrato Assinado 🎉</span>
                 </div>
+            </div>
+
+            <!-- Banner Hero Proposta & D4Sign -->
+            <div id="proposalHeroBanner" style="display: none; margin: 0 0 16px 0; padding: 16px 20px; border-radius: 16px; background: linear-gradient(135deg, #0b1329 0%, #172554 100%); color: #f8fafc; border: 1px solid rgba(212,175,55,0.45); box-shadow: 0 12px 30px -6px rgba(11,19,41,0.25);">
+                <!-- Preenchido dinamicamente via JS -->
             </div>
 
             <!-- Modal Split Layout -->
@@ -650,12 +667,15 @@
                 <!-- Timeline & Activities Split Section -->
                 <div class="lead-timeline-container" style="display: flex; flex-direction: column;">
                     <!-- Tabs Headers -->
-                    <div class="details-tab-headers" style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
+                    <div class="details-tab-headers" style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap;">
                         <button id="tabHeaderTimeline" class="details-tab-btn active" onclick="switchDetailsTab('timeline')" style="background: transparent; border: 0; padding: 6px 12px; font-weight: 700; cursor: pointer; color: var(--brand-primary); font-size: 14px; border-bottom: 2px solid var(--brand-primary); margin-bottom: -10px;">
-                            Timeline & Histórico
+                            💬 Linha do Tempo & Histórico
+                        </button>
+                        <button id="tabHeaderD4Sign" class="details-tab-btn" onclick="switchDetailsTab('d4sign')" style="background: transparent; border: 0; padding: 6px 12px; font-weight: 700; cursor: pointer; color: var(--muted); font-size: 14px; margin-bottom: -10px; display: inline-flex; align-items: center; gap: 6px;">
+                            ✍️ D4Sign & Signatários
                         </button>
                         <button id="tabHeaderActivities" class="details-tab-btn" onclick="switchDetailsTab('activities')" style="background: transparent; border: 0; padding: 6px 12px; font-weight: 700; cursor: pointer; color: var(--muted); font-size: 14px; margin-bottom: -10px;">
-                            Atividades & Lembretes
+                            📅 Atividades & Lembretes
                         </button>
                     </div>
 
@@ -704,6 +724,11 @@
                                     Confirmar Agendamento
                                 </button>
                             </form>
+                        </div>
+                    <!-- TAB 3: D4SIGN & ASSINATURAS DIGITAIS -->
+                    <div id="tabContentD4Sign" class="details-tab-content" style="display: none;">
+                        <div id="d4signLiveWidget" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Injetado dinamicamente -->
                         </div>
                     </div>
                 </div>

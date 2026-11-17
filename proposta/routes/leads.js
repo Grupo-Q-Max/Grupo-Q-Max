@@ -41,7 +41,14 @@ router.get("/api/leads", verificarToken, async (req, res, next) => {
         u_criador.nome AS criador_nome,
         u_vendedor.nome AS vendedor_nome,
         p.numero_proposta AS proposta_numero,
-        p.token_acesso AS token_acesso, -- link da proposta no CRM (o lead só aparece para o dono)
+        p.token_acesso AS token_acesso,
+        p.status AS proposta_status,
+        p.ip_assinatura AS d4sign_uuid,
+        p.valor_total AS proposta_valor_total,
+        p.faturamento AS proposta_faturamento, -- link da proposta no CRM (o lead só aparece para o dono)
+        p.status AS proposta_status,
+        p.ip_assinatura AS d4sign_uuid,
+        p.valor_total AS proposta_valor_total,
         (SELECT COUNT(*) FROM lead_comentarios lc WHERE lc.lead_id = l.id) AS total_comentarios,
         (
           SELECT lc.comentario 
@@ -174,7 +181,11 @@ router.get("/api/leads/:id", verificarToken, donoLead, async (req, res, next) =>
         u_criador.nome AS criador_nome,
         u_vendedor.nome AS vendedor_nome,
         p.numero_proposta AS proposta_numero,
-        p.token_acesso AS token_acesso
+        p.token_acesso AS token_acesso,
+        p.status AS proposta_status,
+        p.ip_assinatura AS d4sign_uuid,
+        p.valor_total AS proposta_valor_total,
+        p.faturamento AS proposta_faturamento
       FROM leads l
       LEFT JOIN usuarios u_criador ON l.criado_por = u_criador.id
       LEFT JOIN usuarios u_vendedor ON l.vendedor_id = u_vendedor.id
@@ -199,6 +210,62 @@ router.get("/api/leads/:id", verificarToken, donoLead, async (req, res, next) =>
     res.json({
       lead: leads[0],
       timeline
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- CONSULTAR STATUS D4SIGN & SIGNATÁRIOS DO LEAD ---
+router.get("/api/leads/:id/d4sign-status", verificarToken, donoLead, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const leads = await db.executarQuery(
+      `SELECT l.id, l.nome_cliente, l.nome_clinica, l.proposta_id, p.numero_proposta, p.status as proposta_status, p.ip_assinatura as d4sign_uuid, p.token_acesso 
+       FROM leads l
+       LEFT JOIN propostas p ON l.proposta_id = p.id
+       WHERE l.id = ? LIMIT 1`,
+      [id]
+    );
+
+    if (leads.length === 0) {
+      return res.status(404).json({ error: "Lead não encontrado." });
+    }
+
+    const lead = leads[0];
+    if (!lead.proposta_id) {
+      return res.json({
+        temProposta: false,
+        mensagem: "Lead não possui proposta comercial vinculada.",
+      });
+    }
+
+    const d4signService = require("../services/d4signService");
+    const uuid = lead.d4sign_uuid;
+
+    if (!uuid) {
+      return res.json({
+        temProposta: true,
+        temDocumento: false,
+        propostaId: lead.proposta_id,
+        numeroProposta: lead.numero_proposta,
+        statusProposta: lead.proposta_status,
+        tokenAcesso: lead.token_acesso,
+        mensagem: "Contrato ainda não enviado para assinatura no D4Sign.",
+        signatarios: [],
+      });
+    }
+
+    const d4status = await d4signService.consultarSignatariosDocumento(uuid);
+
+    res.json({
+      temProposta: true,
+      temDocumento: true,
+      propostaId: lead.proposta_id,
+      numeroProposta: lead.numero_proposta,
+      statusProposta: lead.proposta_status,
+      tokenAcesso: lead.token_acesso,
+      ...d4status,
     });
   } catch (error) {
     next(error);

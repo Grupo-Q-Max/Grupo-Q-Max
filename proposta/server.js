@@ -213,4 +213,14 @@ app.listen(PORT, () => {
   const d4signService = require("./services/d4signService");
   d4signService.verificarAssinaturasPendentes();
   setInterval(() => d4signService.verificarAssinaturasPendentes(), 30 * 60 * 1000);
+
+  // Inicializar e Sincronizar Pipeline Própria de Propostas no CRM
+  try {
+    const crmPipelineService = require("./services/crmPipelineService");
+    crmPipelineService.obterIdFunilPropostas().then(() => {
+      crmPipelineService.sincronizarTodasPropostasExistentes();
+    }).catch((e) => console.warn("[CRM Pipeline] Inicialização:", e.message));
+  } catch (error) {
+    console.error("Erro ao inicializar pipeline de propostas no CRM:", error.message);
+  }
 });
