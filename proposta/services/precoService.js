@@ -172,7 +172,17 @@ async function calcularPrecosReferencia(dados) {
     for (const s of regras) {
       if ((s.empresa || "FINORA").toUpperCase() !== empresa || s.categoria === "Base Auxiliar") continue;
       if (s.codigo.startsWith("plano_") || s.codigo.startsWith("mensalidade_")) continue;
-      ref.set(s.nome, valorConfigurado(regras, s.codigo, ctx) * multiplicador(s, ctx));
+      const val = valorConfigurado(regras, s.codigo, ctx) * multiplicador(s, ctx);
+      ref.set(s.nome, val);
+      if (s.codigo === "contabil") {
+        ref.set("Honorário Contábil", val);
+        ref.set("Honorários Contábeis", val);
+        ref.set("Honorário Contábil (Assessoria Contábil/Fiscal PJ)", val);
+      }
+      if (s.codigo === "fiscal") {
+        ref.set("Honorário Contábil PF", val);
+        ref.set("Honorário Contábil (Assessoria Contábil/Fiscal PF)", val);
+      }
     }
   }
 

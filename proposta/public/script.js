@@ -201,11 +201,22 @@ function renderizarServicosDinamicos() {
     return;
   }
 
-  const mensais = SERVICOS_DINAMICOS.filter((s) => s.tipo === "Mensal");
-  const pontuais = SERVICOS_DINAMICOS.filter((s) => String(s.tipo || "").toLowerCase() === "pontual");
-
   const radioPessoa = document.querySelector('input[name="tipoPessoa"]:checked');
   const tipoPessoa = radioPessoa ? radioPessoa.value : 'PJ';
+  const tipoAtual = (valorCampo("tipoProposta") || "finora").toLowerCase();
+  const ehFinora = tipoAtual === "finora";
+
+  // Na Finora, o Honorário Contábil é adicionado automaticamente e não pode ser removido:
+  // Se PF: 'fiscal' (Assessoria Contábil/Fiscal PF)
+  // Se PJ ou Híbrida: 'contabil' (Assessoria Contábil/Fiscal PJ)
+  const codigoHonorarioObrigatorio = ehFinora ? (tipoPessoa === "PF" ? "fiscal" : "contabil") : null;
+  const codigoHonorarioOcultar = ehFinora ? (tipoPessoa === "PF" ? "contabil" : "fiscal") : null;
+
+  const mensais = SERVICOS_DINAMICOS
+    .filter((s) => s.tipo === "Mensal")
+    .filter((s) => !(ehFinora && s.codigo === codigoHonorarioOcultar));
+
+  const pontuais = SERVICOS_DINAMICOS.filter((s) => String(s.tipo || "").toLowerCase() === "pontual");
 
   function obterValorDinamico(servico) {
     let val = Number(servico.valor_base || 0);
@@ -233,19 +244,43 @@ function renderizarServicosDinamicos() {
             .map(
               (servico) => {
                 const valorAtual = obterValorDinamico(servico);
-                const badgeValor = valorAtual > 0 ? `<span style="margin-left:auto; font-size:11px; font-weight:700; color:var(--accent, #14b8a6); background:rgba(20,184,166,0.08); padding:2px 8px; border-radius:10px;">${moeda.format(valorAtual)}</span>` : '';
+                const isObrigatorio = ehFinora && servico.codigo === codigoHonorarioObrigatorio;
+
+                const badgeValor = valorAtual > 0 ? `<span style="font-size:11px; font-weight:700; color:var(--accent, #14b8a6); background:rgba(20,184,166,0.08); padding:2px 8px; border-radius:10px;">${moeda.format(valorAtual)}</span>` : '';
+                const badgeObrigatorio = isObrigatorio
+                  ? `<span style="font-size:10px; font-weight:800; color:#0f766e; background:#ccfbf1; padding:2px 8px; border-radius:6px; letter-spacing:0.5px;">INCLUSO / OBRIGATÓRIO</span>`
+                  : "";
+
+                const labelStyle = isObrigatorio
+                  ? `display:flex; align-items:center; width:100%; background:#f0fdfa; border:1.5px solid #99f6e4; border-radius:10px; padding:10px 14px; cursor:default;`
+                  : `display:flex; align-items:center; width:100%;`;
+
+                const inputAttrs = isObrigatorio
+                  ? `checked onclick="event.preventDefault(); return false;" onkeydown="event.preventDefault(); return false;" style="pointer-events:none; accent-color:#0d9488;" data-obrigatorio="true"`
+                  : `onchange="gerarProposta()"`;
+
+                const labelOnClick = isObrigatorio ? `onclick="event.preventDefault(); return false;"` : "";
+
+                const nomeExibicao = isObrigatorio
+                  ? `<span style="flex-grow:1; font-weight:700; color:#0f766e;">Honorário Contábil <small style="font-weight:400; color:#475569;">(${servico.nome})</small></span>`
+                  : `<span style="flex-grow:1;">${servico.nome}</span>`;
+
                 return `
-            <label class="checkbox-label" style="display:flex; align-items:center; width:100%;">
+            <label class="checkbox-label" style="${labelStyle}" ${labelOnClick} ${isObrigatorio ? 'title="Honorário contábil obrigatório e incluso automaticamente na proposta Finora."' : ''}>
               <input 
                 type="checkbox"
                 data-servico-dinamico="true"
                 data-codigo="${servico.codigo}"
                 data-nome="${servico.nome}"
                 data-tipo="${servico.tipo}"
-                onchange="gerarProposta()"
+                data-alias="Honorário Contábil Assessoria Contábil Fiscal"
+                ${inputAttrs}
               />
-              <span style="flex-grow:1;">${servico.nome}</span>
-              ${badgeValor}
+              ${nomeExibicao}
+              <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                ${badgeObrigatorio}
+                ${badgeValor}
+              </span>
             </label>
           `;
               },
@@ -305,10 +340,17 @@ function aplicarFiltrosServicosDinamicos() {
 
     const nome = (input.dataset.nome || "").toLowerCase();
     const codigo = (input.dataset.codigo || "").toLowerCase();
+    const alias = (input.dataset.alias || "").toLowerCase();
     const tipo = input.dataset.tipo || "Mensal";
 
-    const matchTexto = !filtroTextoServicoAtual || nome.includes(filtroTextoServicoAtual) || codigo.includes(filtroTextoServicoAtual);
-    const matchCategoria = filtroCategoriaServicoAtual === "TODOS" || String(tipo).toLowerCase() === filtroCategoriaServicoAtual.toLowerCase();
+    const matchTexto =
+      !filtroTextoServicoAtual ||
+      nome.includes(filtroTextoServicoAtual) ||
+      codigo.includes(filtroTextoServicoAtual) ||
+      alias.includes(filtroTextoServicoAtual);
+    const matchCategoria =
+      filtroCategoriaServicoAtual === "TODOS" ||
+      String(tipo).toLowerCase() === filtroCategoriaServicoAtual.toLowerCase();
 
     lbl.style.display = matchTexto && matchCategoria ? "flex" : "none";
   });
@@ -712,6 +754,8 @@ function obterItensCalculados() {
     distanciaKm,
   };
 
+  const ehFinora = (tipoProposta || "finora").toLowerCase() === "finora";
+
   if (regimeFiscal !== "Lucro Real") {
     document
       .querySelectorAll('[data-servico-dinamico="true"]:checked')
@@ -719,6 +763,7 @@ function obterItensCalculados() {
         const codigo = input.dataset.codigo;
         const nome = input.dataset.nome;
         const tipo = input.dataset.tipo;
+        const isObrigatorio = input.dataset.obrigatorio === "true";
         const servicoConfig =
           SERVICOS_DINAMICOS.find((s) => s.codigo === codigo) || {};
 
@@ -728,14 +773,50 @@ function obterItensCalculados() {
         );
 
         itens.push({
-          servico: nome,
+          codigo,
+          servico: isObrigatorio ? `Honorário Contábil (${nome})` : nome,
           valor:
             calcularValorConfigurado(codigo, contexto, BASE[codigo]) *
             multiplicador,
-          observacao: String(tipo || "").toLowerCase() === "pontual" ? "Serviço pontual" : "Mensal",
+          observacao: isObrigatorio ? "Honorário mensal (Obrigatório Finora)" : (String(tipo || "").toLowerCase() === "pontual" ? "Serviço pontual" : "Mensal"),
           regrasAplicadas: explicarRegrasAplicadas(servicoConfig, contexto),
         });
       });
+
+    // Garantia absoluta: na proposta Finora, o Honorário Contábil é obrigatório e nunca pode faltar
+    if (ehFinora) {
+      const radioPessoa = document.querySelector('input[name="tipoPessoa"]:checked');
+      const tipoPessoa = radioPessoa ? radioPessoa.value : "PJ";
+      const codigoHonorario = tipoPessoa === "PF" ? "fiscal" : "contabil";
+
+      const jaTemHonorario = itens.some((it) =>
+        it.codigo === codigoHonorario ||
+        (it.servico && (
+          it.servico.includes("Contábil") ||
+          it.servico.includes("Fiscal") ||
+          it.servico.includes("Honorário")
+        ))
+      );
+
+      if (!jaTemHonorario) {
+        const servicoConfig =
+          SERVICOS_DINAMICOS.find((s) => s.codigo === codigoHonorario) ||
+          CATALOGO_SERVICOS_PADRAO.find((s) => s.codigo === codigoHonorario) ||
+          {};
+
+        const multiplicador = calcularMultiplicadorServico(servicoConfig, contexto);
+        const valorBaseHonorario = BASE[codigoHonorario] || 1800;
+        const nomeBase = servicoConfig.nome || (tipoPessoa === "PF" ? "Assessoria Contábil/Fiscal PF" : "Assessoria Contábil/Fiscal PJ");
+
+        itens.unshift({
+          codigo: codigoHonorario,
+          servico: `Honorário Contábil (${nomeBase})`,
+          valor: calcularValorConfigurado(codigoHonorario, contexto, valorBaseHonorario) * multiplicador,
+          observacao: "Honorário mensal (Obrigatório Finora)",
+          regrasAplicadas: explicarRegrasAplicadas(servicoConfig, contexto),
+        });
+      }
+    }
   }
 
   if (tipoProposta === "auditoria" && itens.length === 0) {
