@@ -29,7 +29,8 @@ const {
   lerJson,
   proximoNumeroProposta,
   ehUuidD4Sign,
-  propostaVencida
+  propostaVencida,
+  mascararCpf
 } = require("../services/proposalHelpers");
 
 const APP_BASE_PATH = process.env.APP_BASE_PATH || "/proposta";
@@ -1133,7 +1134,8 @@ router.post("/api/propostas/:token/aprovar", async (req, res, next) => {
     // Quem assinou na tela de aceite (a assinatura com validade é a do D4Sign; o desenho não é guardado)
     const texto = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
     const nomeSignatario = texto(req.body?.nomeSignatario, 150);
-    const cpfSignatario = texto(req.body?.cpfSignatario, 20);
+    // LGPD: CPF completo segue só para o D4Sign; aqui fica mascarado (IP e data_decisao seguem como evidência)
+    const cpfSignatario = mascararCpf(texto(req.body?.cpfSignatario, 20));
     if (nomeSignatario || cpfSignatario) {
       await db.execute(
         "INSERT INTO proposta_observacoes (proposta_id, usuario_id, observacao) VALUES (?, ?, ?)",

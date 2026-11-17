@@ -195,6 +195,14 @@ app.listen(PORT, () => {
     console.error("Erro ao inicializar serviço de limpeza de PDFs:", error.message);
   }
 
+  // LGPD: retenção de documentos de onboarding (recusadas/vencidas há mais de 90 dias)
+  try {
+    const documentosRetencaoService = require("./services/documentosRetencaoService");
+    documentosRetencaoService.inicializarAgendamentoRetencao();
+  } catch (error) {
+    console.error("Erro ao inicializar retenção de documentos de onboarding:", error.message);
+  }
+
   // Inicializar lembretes de atividades do CRM
   try {
     const reminderService = require("./services/reminderService");
