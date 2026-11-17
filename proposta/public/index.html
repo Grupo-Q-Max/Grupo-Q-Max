@@ -653,17 +653,9 @@
                 <p>Selecione a empresa, preencha os dados do cliente e acompanhe o investimento em tempo real.</p>
             </div>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <button type="button" onclick="salvarRascunhoServidor(true)" class="btn-primary" id="btnSalvarRascunhoTop" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 13px; font-weight: 800; padding: 8px 16px; border-radius: 999px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);" title="Salvar rascunho incompleto para continuar mais tarde">
+                <button type="button" onclick="salvarRascunhoServidor(true)" class="btn-primary" id="btnSalvarRascunhoTop" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 13px; font-weight: 800; padding: 9px 18px; border-radius: 999px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);" title="Salvar rascunho incompleto para continuar mais tarde">
                     💾 Salvar Rascunho
                 </button>
-                <div style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:999px; font-size:11px; font-weight:700;" title="Atalhos: Ctrl+Enter (Gerar), Ctrl+S (Salvar), Esc (Fechar), Alt+1..6 (Passos)">
-                    Atalhos: <span style="background:#e2e8f0; color:#0f172a; padding:1px 6px; border-radius:4px; font-family:monospace;">Ctrl+Enter</span> / <span style="background:#e2e8f0; color:#0f172a; padding:1px 6px; border-radius:4px; font-family:monospace;">Ctrl+S</span>
-                </div>
-                <div id="autoSaveIndicator" style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.12); color:#059669; border:1px solid rgba(16,185,129,0.3); padding:8px 14px; border-radius:999px; font-size:12px; font-weight:800; backdrop-filter:blur(8px);">
-                    <span style="width:8px; height:8px; background:#10b981; border-radius:50%; display:inline-block; box-shadow:0 0 8px #10b981;"></span>
-                    <span id="autoSaveText">Auto-save ativo</span>
-                </div>
-                <div class="hero-badge" style="margin:0;">Proposta Dinâmica</div>
             </div>
         </section>
 
@@ -817,19 +809,24 @@
                         <div class="input-group span-2" style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:14px; padding:14px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                                 <div>
-                                    <strong style="font-size:13px; color:#0f172a; display:block;">Mensagem de Voz do Consultor (Opcional)</strong>
-                                    <small style="color:#64748b; font-size:11.5px;">Grave um áudio de 20 a 30 segundos falando diretamente com o cliente.</small>
+                                    <strong style="font-size:13px; color:#0f172a; display:block;">Mensagem de Áudio do Consultor (Opcional)</strong>
+                                    <small style="color:#64748b; font-size:11.5px;">Grave pelo microfone ou anexe um arquivo de áudio (MP3, WAV, M4A, OGG) para o cliente ouvir na proposta.</small>
                                 </div>
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <button type="button" id="btnGravarAudioPitch" onclick="toggleGravacaoAudioPitch()" style="background:#ef4444; color:#fff; border:none; padding:6px 14px; border-radius:999px; font-weight:800; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-                                        Gravar Áudio
+                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                    <input type="file" id="inputArquivoAudioPitch" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" style="display:none;" onchange="anexarArquivoAudioPitch(event)" />
+                                    <button type="button" onclick="document.getElementById('inputArquivoAudioPitch').click()" style="background:#0284c7; color:#fff; border:none; padding:7px 14px; border-radius:999px; font-weight:800; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                                        📎 Anexar Áudio
                                     </button>
-                                    <button type="button" id="btnExcluirAudioPitch" onclick="excluirAudioPitch()" style="display:none; background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:6px 12px; border-radius:999px; font-size:12px; cursor:pointer;">
+                                    <button type="button" id="btnGravarAudioPitch" onclick="toggleGravacaoAudioPitch()" style="background:#ef4444; color:#fff; border:none; padding:7px 14px; border-radius:999px; font-weight:800; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                                        🎙️ Gravar Áudio
+                                    </button>
+                                    <button type="button" id="btnExcluirAudioPitch" onclick="excluirAudioPitch()" style="display:none; background:#fee2e2; color:#ef4444; border:1px solid #fecdd3; padding:7px 12px; border-radius:999px; font-size:12px; font-weight:700; cursor:pointer;">
                                         Excluir
                                     </button>
                                 </div>
                             </div>
                             <div id="playerAudioPitchPreview" style="display:none; margin-top:10px;">
+                                <div id="nomeArquivoAudioAnexado" style="display:none; font-size:12px; font-weight:700; color:#0f766e; margin-bottom:6px;"></div>
                                 <audio id="audioPitchPlayer" controls style="width:100%; height:36px;"></audio>
                             </div>
                             <input type="hidden" id="audioPitchBase64" />
@@ -933,18 +930,24 @@
                         <h2>4. Parâmetros Operacionais</h2>
                     </div>
                     <div class="card-body grid-2">
-                        <div class="input-group" id="grupoFaturamento">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <label for="faturamento">Faturamento Anual (R$)</label>
-                                <span id="faturamentoMensalEquivalente" style="font-size:11.5px; font-weight:800; color:#0d9488;">(~ R$ 0,00/mês)</span>
+                        <div class="input-group span-2" id="grupoFaturamento">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+                                <div>
+                                    <label for="faturamentoMensal">Faturamento Médio Mensal (R$)</label>
+                                    <input id="faturamentoMensal" type="number" min="0" value="0" placeholder="0.00" oninput="sincronizarFaturamentoMensalParaAnual(); if(typeof gerarProposta === 'function') gerarProposta();" />
+                                </div>
+                                <div>
+                                    <label for="faturamento">Faturamento Anual (R$)</label>
+                                    <input id="faturamento" type="number" min="0" value="0" placeholder="0.00" oninput="sincronizarFaturamentoAnualParaMensal(); if(typeof gerarProposta === 'function') gerarProposta();" />
+                                </div>
                             </div>
-                            <input id="faturamento" type="number" min="0" value="0" oninput="atualizarEquivalenteMensal(); if(typeof gerarProposta === 'function') gerarProposta();" />
-                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
-                                <button type="button" onclick="definirFaturamentoAnual(360000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">30k/mês</button>
-                                <button type="button" onclick="definirFaturamentoAnual(720000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">60k/mês</button>
-                                <button type="button" onclick="definirFaturamentoAnual(1200000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">100k/mês</button>
-                                <button type="button" onclick="definirFaturamentoAnual(2400000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">200k/mês</button>
-                                <button type="button" onclick="definirFaturamentoAnual(4800000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">400k/mês</button>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center;">
+                                <span style="font-size:11px; font-weight:700; color:#64748b;">Atalhos:</span>
+                                <button type="button" onclick="definirFaturamento(30000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">30k/mês (360k/ano)</button>
+                                <button type="button" onclick="definirFaturamento(60000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">60k/mês (720k/ano)</button>
+                                <button type="button" onclick="definirFaturamento(100000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">100k/mês (1.2M/ano)</button>
+                                <button type="button" onclick="definirFaturamento(200000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">200k/mês (2.4M/ano)</button>
+                                <button type="button" onclick="definirFaturamento(400000)" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-weight:700; color:#334155; padding:3px 8px; cursor:pointer; transition:all 0.2s ease;">400k/mês (4.8M/ano)</button>
                             </div>
                         </div>
                         <div class="input-group span-2" id="grupoRegimeFiscal">
@@ -1018,7 +1021,87 @@
                         <h2>5. Outros serviços</h2>
                     </div>
                     <div class="card-body">
-                        <!-- Barra de Busca Rápida e Filtros de Serviços -->
+                        <!-- 1. Proposta Personalizada (Lá em cimão) -->
+                        <div id="boxOutrosServicos" style="grid-column:1/-1; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                <div>
+                                    <strong style="display:block; color:#0f172a; font-size:14px;">
+                                        ✨ Proposta Personalizada Sob Demanda
+                                    </strong>
+                                    <small style="color:#64748b; font-size:12px;">Defina um escopo customizado ou projeto sob medida para este cliente.</small>
+                                </div>
+                                <label class="checkbox-label" style="margin:0; padding:6px 14px; background:#f0fdf4; border:1px solid #86efac; border-radius:999px; font-weight:800; color:#15803d; cursor:pointer;">
+                                    <input type="checkbox" id="servicoPersonalizado" onchange="toggleServicoEspecial(); gerarProposta()">
+                                    Ativar Proposta Personalizada
+                                </label>
+                            </div>
+
+                            <div id="boxServicosEspeciais" style="display:none; margin-top:14px; padding-top:14px; border-top:1px dashed #cbd5e1;">
+                                <div id="boxPersonalizado" style="display:none;">
+                                    <div class="acoes-template" style="display:flex; gap:8px; margin-bottom:12px;">
+                                        <button type="button" class="btn-template" onclick="usarTemplatePersonalizado()">
+                                            Modelo Completo
+                                        </button>
+                                        <button type="button" class="btn-template" onclick="limparTopicos('topicosPersonalizados')">
+                                            Limpar
+                                        </button>
+                                    </div>
+
+                                    <div class="input-group">
+                                        <label for="valorPersonalizado">Valor da Proposta Personalizada (R$)</label>
+                                        <input id="valorPersonalizado" type="number" min="0" value="1500" onchange="gerarProposta()">
+                                    </div>
+
+                                    <div class="input-group" style="margin-top:10px;">
+                                        <label for="topicosPersonalizados">Tópicos e Entregáveis do Escopo Personalizado</label>
+                                        <textarea id="topicosPersonalizados" style="min-height:140px;" placeholder="Diagnóstico Inicial&#10;- Levantamento de informações&#10;- Entrevistas&#10;&#10;Escopo&#10;- Revisão de processos&#10;- Planejamento&#10;&#10;Entregáveis&#10;- Relatório&#10;- Plano de ação"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Adicionar Serviços Extras Manuais -->
+                        <div id="boxAdicionarServicoManual" style="grid-column:1/-1; background:#f8fafc; border:1.5px dashed #cbd5e1; border-radius:14px; padding:16px; margin-bottom:18px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                                <div>
+                                    <strong style="color:#0f172a; font-size:14px; display:block;">➕ Adicionar Outro Serviço Manualmente</strong>
+                                    <small style="color:#64748b; font-size:12px;">Adicione qualquer serviço avulso ou específico preenchendo nome, cobrança, valor e descrição.</small>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                                <div class="input-group">
+                                    <label for="novoManualNome" style="font-size:11.5px; font-weight:700;">Nome do Serviço</label>
+                                    <input type="text" id="novoManualNome" placeholder="Ex: Consultoria de Gestão Odontológica">
+                                </div>
+                                <div class="input-group">
+                                    <label for="novoManualTipo" style="font-size:11.5px; font-weight:700;">Cobrança</label>
+                                    <select id="novoManualTipo">
+                                        <option value="Mensal">Mensal</option>
+                                        <option value="Pontual">Pontual</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="novoManualValor" style="font-size:11.5px; font-weight:700;">Valor (R$)</label>
+                                    <input type="number" id="novoManualValor" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <div class="input-group" style="margin-bottom:12px;">
+                                <label for="novoManualDescricao" style="font-size:11.5px; font-weight:700;">Descrição / Detalhes do Serviço</label>
+                                <textarea id="novoManualDescricao" style="min-height:55px; font-size:12.5px;" placeholder="Informe detalhes, escopo ou observações deste serviço manual."></textarea>
+                            </div>
+
+                            <div style="display:flex; justify-content:flex-end;">
+                                <button type="button" class="btn-primary" style="width:auto; padding:8px 18px; font-size:12.5px; font-weight:800;" onclick="adicionarServicoManual()">
+                                    + Incluir Serviço na Proposta
+                                </button>
+                            </div>
+
+                            <div id="listaServicosManuaisAdicionados" style="margin-top:10px;"></div>
+                        </div>
+
+                        <!-- 3. Catálogo de Outros Serviços -->
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; grid-column: 1 / -1;">
                             <div style="position:relative; flex:1; min-width:200px;">
                                 <input type="text" id="filtroBuscaServico" placeholder="Pesquisar outros serviços..." oninput="filtrarServicosPorTexto(this.value)" style="height:38px; border-radius:10px; font-size:13px; width:100%; border:1px solid #cbd5e1; padding:0 12px;">
@@ -1032,112 +1115,6 @@
 
                         <div class="checkbox-grid" id="listaServicosDinamicos">
                             <small style="color:#64748b;">Carregando outros serviços...</small>
-                        </div>
-                        <div id="boxOutrosServicos" style="grid-column:1/-1; margin-top:18px;"> <strong
-                                style="display:block; color:#0f172a; margin-bottom:8px;">
-                                Serviço sob Demanda / Personalizado
-                            </strong>
-
-                            <div class="checkbox-grid">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="servicoPersonalizado"
-                                        onchange="toggleServicoEspecial(); gerarProposta()">
-                                    Proposta Personalizada
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="boxSecaoAuditoria" style="grid-column:1/-1; margin-top:18px;"> <strong
-                                style="display:block; color:#0f172a; margin-bottom:8px;">
-                                Auditoria
-                            </strong>
-
-                            <div class="checkbox-grid">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="servicoAuditoria"
-                                        onchange="toggleServicoEspecial(); gerarProposta()">
-                                    Solicitar Serviço de Auditoria
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="boxServicosEspeciais" style="display:none; margin-top:16px;">
-
-
-                            <div id="boxPersonalizado" style="display:none;">
-                                <div class="service-card-title">Proposta Personalizada</div>
-
-                                <div class="acoes-template">
-                                    <button type="button" class="btn-template" onclick="usarTemplatePersonalizado()">
-                                        Modelo Completo
-                                    </button>
-
-                                    <button type="button" class="btn-template"
-                                        onclick="limparTopicos('topicosPersonalizados')">
-                                        Limpar
-                                    </button>
-                                </div>
-
-                                <div class="input-group">
-                                    <label for="valorPersonalizado">Valor Personalizado</label>
-                                    <input id="valorPersonalizado" type="number" min="0" value="1500"
-                                        onchange="gerarProposta()">
-                                </div>
-
-                                <div class="input-group">
-                                    <label for="topicosPersonalizados">Tópicos da Proposta Personalizada</label>
-                                    <textarea id="topicosPersonalizados" style="min-height:180px;" placeholder="Diagnóstico Inicial
-- Levantamento de informações
-- Entrevistas
-
-Escopo
-- Revisão de processos
-- Planejamento
-
-Entregáveis
-- Relatório
-- Plano de ação"></textarea>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <div id="boxAuditoriaContainer" style="display:none; margin-top:16px;">
-                            <div id="boxAuditoria" style="display:block;">
-                                <div class="service-card-title">Auditoria</div>
-
-                                <div class="acoes-template">
-                                    <button type="button" class="btn-template" onclick="usarTemplateAuditoria()">
-                                        Modelo Auditoria
-                                    </button>
-
-                                    <button type="button" class="btn-template"
-                                        onclick="limparTopicos('topicosAuditoria')">
-                                        Limpar
-                                    </button>
-                                </div>
-
-                                <div class="input-group">
-                                    <label for="valorAuditoria">Valor Auditoria</label>
-                                    <input id="valorAuditoria" type="number" min="0" value="2500"
-                                        onchange="gerarProposta()">
-                                </div>
-
-                                <div class="input-group">
-                                    <label for="topicosAuditoria">Tópicos da Auditoria</label>
-                                    <textarea id="topicosAuditoria" style="min-height:180px;" placeholder="Auditoria Financeira
-- Fluxo de Caixa
-- DRE
-
-Auditoria Tributária
-- Simples Nacional
-- Obrigações fiscais
-
-Conclusões
-- Relatório final
-- Recomendações"></textarea>
-                                </div>
-                            </div>
                         </div>
                         <div id="boxTech" style="display:none; margin-top:20px;">
                             <div class="service-card-title">Soluções Q-MAX Tech</div>
@@ -1365,36 +1342,6 @@ Conclusões
                     <div class="total-box total-geral">
                         <span>Total Geral</span>
                         <div id="totalProposta">R$ 0,00</div>
-                    </div>
-
-                    <!-- CARD DE ESTIMATIVA DE ROI & LUCRO LÍQUIDO DO CLIENTE -->
-                    <div id="boxRoiEstimado" style="margin-top:14px; background:linear-gradient(135deg, #f0fdf4, #dcfce7); border:1.5px solid #86efac; border-radius:18px; padding:14px 16px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <div style="font-size:11px; font-weight:800; color:#166534; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:6px;">
-                                Inteligência Financeira & ROI
-                            </div>
-                            <span style="font-size:10px; font-weight:800; background:#16a34a; color:#fff; padding:2px 8px; border-radius:999px;">
-                                Retorno Positivo
-                            </span>
-                        </div>
-                        
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
-                            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:10px; padding:8px 10px;">
-                                <span style="font-size:10px; color:#166534; font-weight:700; display:block;">Economia Tributária</span>
-                                <strong id="roiEconomiaMensal" style="font-size:13px; color:#15803d;">+ R$ 1.500,00/mês</strong>
-                            </div>
-                            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:10px; padding:8px 10px;">
-                                <span style="font-size:10px; color:#166534; font-weight:700; display:block;">Ganho Líquido Real</span>
-                                <strong id="roiGanhoLiquido" style="font-size:13px; color:#0f766e;">+ R$ 650,00/mês</strong>
-                            </div>
-                        </div>
-
-                        <strong id="textoRoiEstimado" style="font-size:13px; color:#15803d; display:block; line-height:1.4;">
-                            ~ R$ 18.000,00 / ano em otimização fiscal
-                        </strong>
-                        <small style="font-size:11px; color:#166534; display:block; margin-top:3px;">
-                            A assessoria se paga integralmente e gera sobra líquida no caixa da clínica.
-                        </small>
                     </div>
 
                     <!-- WIDGET DE VALIDADE & CONDIÇÕES DE PAGAMENTO -->
