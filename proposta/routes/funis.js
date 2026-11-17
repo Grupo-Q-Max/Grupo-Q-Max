@@ -69,5 +69,23 @@ router.put("/api/crm/funis/:id", verificarToken, verificarRole(['Diretor']), asy
   }
 });
 
+// Desativar / Excluir funil
+router.delete("/api/crm/funis/:id", verificarToken, verificarRole(['Diretor']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (Number(id) === 1) {
+      return res.status(400).json({ error: "O funil principal padrão (ID 1) não pode ser desativado." });
+    }
+
+    const resultado = await db.executarQuery(
+      "UPDATE crm_funis SET ativo = 0 WHERE id = ?",
+      [id]
+    );
+    if (resultado.affectedRows === 0) return res.status(404).json({ error: "Funil não encontrado." });
+    res.json({ success: true, message: "Funil desativado com sucesso!" });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;

@@ -765,11 +765,11 @@ router.post("/api/leads/importar", verificarToken, async (req, res, next) => {
   }
 });
 
-// --- GET COMERCIAIS & FILA ROUND-ROBIN (Admin Only) ---
+// --- GET COMERCIAIS & FILA ROUND-ROBIN (Admin / Comercial) ---
 router.get("/api/comerciais/fila", verificarToken, async (req, res, next) => {
   try {
-    if (req.user.role !== "Diretor") {
-      return res.status(403).json({ error: "Acesso negado. Apenas diretores e sócios podem ver as configurações do CRM." });
+    if (req.user.role !== "Diretor" && req.user.role !== "Comercial") {
+      return res.status(403).json({ error: "Acesso negado. Apenas diretores e comerciais podem ver as configurações do CRM." });
     }
 
     const fila = await db.executarQuery(`

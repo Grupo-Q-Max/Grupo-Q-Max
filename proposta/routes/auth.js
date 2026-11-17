@@ -308,13 +308,15 @@ router.delete(
   }
 );
 
-// Telefone/WhatsApp do consultor (aparece para o cliente na página da proposta). Diretor edita.
+// Telefone/WhatsApp do consultor (aparece para o cliente na página da proposta). Diretor ou próprio usuário edita.
 router.put(
   "/api/usuarios/:id/telefone",
   verificarToken,
-  verificarRole(["Diretor"]),
   async (req, res, next) => {
     try {
+      if (req.user.role !== "Diretor" && Number(req.user.id) !== Number(req.params.id)) {
+        return res.status(403).json({ error: "Você só pode alterar seu próprio telefone." });
+      }
       const telefone = normalizarTelefone(req.body.telefone);
       if (telefone === false) {
         return res.status(400).json({ error: "Telefone inválido. Use DDD + número (10 ou 11 dígitos)." });

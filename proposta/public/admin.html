@@ -953,12 +953,16 @@
             if (pathName.includes("admin.html")) document.getElementById("navAdmin")?.classList.add("active");
             if (pathName.includes("crm-config.html")) document.getElementById("navCrmConfig")?.classList.add("active");
 
-            // Exibir links adicionais para Diretores
+            // Links de Gestão e CRM
+            const navCrmConfig = document.getElementById("navCrmConfig");
+            const secGestaoTitle = document.getElementById("secGestaoTitle");
+            if (navCrmConfig) navCrmConfig.style.display = "flex";
+            if (secGestaoTitle) secGestaoTitle.style.display = "block";
+
+            // Painel exclusivo da Diretoria
             if (userRole === "Diretor") {
                 const navAdmin = document.getElementById("navAdmin");
-                const navCrmConfig = document.getElementById("navCrmConfig");
                 if (navAdmin) navAdmin.style.display = "flex";
-                if (navCrmConfig) navCrmConfig.style.display = "flex";
             }
 
             if (window.aplicarTemaEmpresa) {
