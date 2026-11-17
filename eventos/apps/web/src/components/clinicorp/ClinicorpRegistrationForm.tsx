@@ -412,11 +412,22 @@ function RegistrationForm({
             </div>
           )}
 
+          {/* Confirmação do Grande Sorteio Geral */}
+          <div className="flex flex-col gap-2 rounded-2xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/15 to-amber-500/20 p-4 text-amber-200 shadow-lg animate-pop-burst">
+            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
+              <span className="text-lg">🎉</span>
+              <span>Inscrição Confirmada no Grande Sorteio Geral (19/11)!</span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+              Além de girar a roleta e retirar seu brinde exclusivo no estande Finora, <strong>seu número de cadastro está automaticamente concorrendo ao Grande Sorteio Geral no dia 19/11</strong>! Fique atento às transmissões no telão.
+            </p>
+          </div>
+
           {!hasDrawn && (
             <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 text-[14px]">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-2">
                 <CheckCircle2 size={16} className="text-emerald-500" />
-                <span>Giro Liberado no Estande</span>
+                <span>Passo a Passo das Próximas Etapas</span>
               </div>
               <ol className="flex flex-col gap-2.5 text-text">
                 <li className="flex items-center gap-3">
@@ -425,11 +436,11 @@ function RegistrationForm({
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-accent/20 text-xs font-mono font-bold text-accent">2</span>
-                  <span>Apresente seu código ou nome para o operador.</span>
+                  <span>Apresente seu código para o operador, gire a roleta e retire seu prêmio.</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-accent/20 text-xs font-mono font-bold text-accent">3</span>
-                  <span>Gire a roleta e retire seu prêmio imediatamente!</span>
+                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-amber-400/30 text-xs font-mono font-bold text-amber-300">3</span>
+                  <span><strong>Dia 19/11:</strong> Acompanhe a apuração ao vivo do Grande Sorteio Geral!</span>
                 </li>
               </ol>
             </div>
@@ -494,11 +505,59 @@ function RegistrationForm({
     <form onSubmit={handleSubmit} className="flex flex-1 flex-col overscroll-y-contain">
       <PaperHeading
         eyebrow={<><StepBar step={1} total={2} /><span className="mt-2.5 block">Passo 1 de 2 · leva 1 minuto</span></>}
-        title="Seus dados para girar a roleta"
+        title="Cadastro · Roleta de Prêmios & Sorteio Geral"
       />
 
       <div className="flex flex-1 flex-col gap-4.5 px-5 pt-2 pb-6">
         {error && <Alert>{error}</Alert>}
+
+        {/* Card Passo a Passo & Grande Sorteio Geral 19/11 */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-accent/40 bg-gradient-to-b from-slate-900/95 to-slate-950 p-4.5 shadow-lg">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/20 px-3 py-1 font-mono text-[11px] font-extrabold uppercase tracking-wider text-accent border border-accent/30">
+              ⚡ Passo a Passo
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-[11.5px] font-bold text-amber-300 border border-amber-400/40">
+              🎁 Grande Sorteio Geral dia 19/11
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+            <div className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-900/70 p-2.5">
+              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent/25 text-xs font-mono font-black text-accent">
+                1
+              </span>
+              <div className="flex flex-col">
+                <strong className="text-xs font-bold text-white">Preencha o Cadastro</strong>
+                <span className="text-[11px] text-slate-300 leading-tight">Insira seus dados rápidos abaixo para gerar seu código.</span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-900/70 p-2.5">
+              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent/25 text-xs font-mono font-black text-accent">
+                2
+              </span>
+              <div className="flex flex-col">
+                <strong className="text-xs font-bold text-white">Gire a Roleta no Estande</strong>
+                <span className="text-[11px] text-slate-300 leading-tight">Apresente seu código no estande Finora e retire brindes na hora.</span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/40 bg-amber-950/30 p-2.5">
+              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-amber-400 text-slate-950 text-xs font-mono font-black">
+                3
+              </span>
+              <div className="flex flex-col">
+                <strong className="text-xs font-bold text-amber-200">Grande Sorteio Geral</strong>
+                <span className="text-[11px] text-amber-300/90 leading-tight">Concorra automaticamente ao sorteio oficial no dia 19/11!</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/20 to-amber-500/15 px-3.5 py-2.5 text-center text-xs font-semibold text-amber-200 shadow-xs">
+            📢 <strong>Atenção:</strong> Ao concluir o cadastro, você garante seu brinde na roleta e <strong>estará concorrendo oficialmente ao Grande Sorteio Geral no dia 19/11</strong>!
+          </div>
+        </div>
 
         {initialVipCode && (
           <div className="flex items-center gap-3 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-100/90 via-amber-50 to-amber-100/60 p-3.5 shadow-sm text-amber-950 animate-pop-burst">
@@ -629,7 +688,7 @@ function RegistrationForm({
             "Liberar Meu Giro na Roleta 🎯"
           )}
         </button>
-        <span className="text-center text-[13px] text-slate-400">Giro liberado imediatamente no estande · Sem fila e sem espera</span>
+        <span className="text-center text-[13px] text-slate-400">Giro liberado no estande · Participação garantida no Grande Sorteio Geral dia 19/11</span>
       </StickyActions>
     </form>
   );
