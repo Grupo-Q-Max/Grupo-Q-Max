@@ -1986,3 +1986,201 @@ async function limparLogsSistema() {
   }
 }
 
+// === REGISTRO GERAL DE PROPOSTAS & AUDITORIA (DIRETORIA) ===
+function abrirModalRegistroPropostas() {
+  abrirModal("modalRegistroPropostas");
+  carregarLogsAuditoriaPropostas();
+}
+
+async function carregarLogsAuditoriaPropostas() {
+  const container = document.getElementById("containerLogsAuditoriaPropostas");
+  if (!container) return;
+
+  const termo = (document.getElementById("inputBuscaAuditoriaPropostas")?.value || "").trim();
+  const acao = document.getElementById("selectFiltroAcaoAuditoria")?.value || "todos";
+
+  container.innerHTML = `
+    <div style="text-align: center; padding: 32px; color: #94a3b8;">
+      <div class="loading-spinner" style="margin: 0 auto 10px;"></div>
+      Carregando registros de auditoria das propostas...
+    </div>
+  `;
+
+  try {
+    const params = new URLSearchParams();
+    if (termo) params.append("busca", termo);
+    if (acao && acao !== "todos") params.append("acao", acao);
+    params.append("limite", "100");
+
+    const res = await fetch(`/api/admin/propostas/logs?${params.toString()}`, { headers: authHeaders });
+    if (!res.ok) {
+      container.innerHTML = `<div style="text-align: center; padding: 24px; color: #f87171;">Erro ao carregar registros (${res.status}).</div>`;
+      return;
+    }
+
+    const data = await res.json();
+    renderizarLogsAuditoriaPropostas(data);
+  } catch (err) {
+    console.error("Erro ao carregar logs de auditoria:", err);
+    container.innerHTML = `<div style="text-align: center; padding: 24px; color: #f87171;">Erro de conexão ao buscar registros.</div>`;
+  }
+}
+
+function renderizarLogsAuditoriaPropostas(data) {
+  const container = document.getElementById("containerLogsAuditoriaPropostas");
+  if (!container) return;
+
+  const logs = data?.logs || [];
+  const total = data?.total || 0;
+
+  if (logs.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">
+        <div style="font-size: 28px; margin-bottom: 8px;">📋</div>
+        <strong style="color: #fff; font-size: 14px;">Nenhum registro de proposta encontrado</strong>
+        <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">Tente ajustar os termos de busca ou o filtro de ação.</p>
+      </div>
+    `;
+    return;
+  }
+
+  let linhas = "";
+  logs.forEach(log => {
+    const dataFormatada = new Date(log.criado_em).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    let roleTag = "";
+    if (log.usuario_role === "Diretor") {
+      roleTag = `<span style="background:#581c87; color:#f3e8ff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px;">👑 DIRETOR</span>`;
+    } else if (log.usuario_role === "Comercial") {
+      roleTag = `<span style="background:#065f46; color:#d1fae5; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px;">💼 COMERCIAL</span>`;
+    } else if (log.usuario_role === "Cliente") {
+      roleTag = `<span style="background:#1e3a8a; color:#dbeafe; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px;">👤 CLIENTE</span>`;
+    } else {
+      roleTag = `<span style="background:#334155; color:#f1f5f9; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px;">⚙️ SISTEMA</span>`;
+    }
+
+    let acaoBadgeCor = "#38bdf8";
+    let acaoBadgeBg = "rgba(56, 189, 248, 0.1)";
+    const acaoUpper = String(log.acao || "").toUpperCase();
+
+    if (acaoUpper.includes("CRIACAO")) {
+      acaoBadgeCor = "#4ade80";
+      acaoBadgeBg = "rgba(74, 222, 128, 0.1)";
+    } else if (acaoUpper.includes("EDICAO")) {
+      acaoBadgeCor = "#fbbf24";
+      acaoBadgeBg = "rgba(251, 191, 36, 0.1)";
+    } else if (acaoUpper.includes("DESCONTO_APROVADO") || acaoUpper.includes("APROVACAO")) {
+      acaoBadgeCor = "#34d399";
+      acaoBadgeBg = "rgba(52, 211, 153, 0.1)";
+    } else if (acaoUpper.includes("RECUSA") || acaoUpper.includes("RECUSADO")) {
+      acaoBadgeCor = "#f87171";
+      acaoBadgeBg = "rgba(248, 113, 113, 0.1)";
+    } else if (acaoUpper.includes("ASSINATURA")) {
+      acaoBadgeCor = "#a78bfa";
+      acaoBadgeBg = "rgba(167, 139, 250, 0.1)";
+    }
+
+    // Diff interativo
+    let diffHtml = "";
+    const temDiff = (log.dados_anteriores && Object.keys(log.dados_anteriores).length > 0) ||
+                    (log.dados_novos && Object.keys(log.dados_novos).length > 0);
+    if (temDiff) {
+      const diffId = `diff-admin-${log.id || Math.random().toString(36).substr(2, 6)}`;
+      let linhasDiff = "";
+      const chaves = Array.from(new Set([
+        ...Object.keys(log.dados_anteriores || {}),
+        ...Object.keys(log.dados_novos || {})
+      ]));
+
+      chaves.forEach(chave => {
+        let vAnt = log.dados_anteriores ? log.dados_anteriores[chave] : "-";
+        let vNov = log.dados_novos ? log.dados_novos[chave] : "-";
+        if (typeof vAnt === "object") vAnt = JSON.stringify(vAnt);
+        if (typeof vNov === "object") vNov = JSON.stringify(vNov);
+
+        linhasDiff += `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 11px;">
+            <td style="padding: 5px 8px; font-weight: 700; color: #94a3b8; text-transform: capitalize;">${escapeHTML(chave.replace(/_/g, " "))}</td>
+            <td style="padding: 5px 8px; color: #f87171; background: rgba(248, 113, 113, 0.08);">${escapeHTML(String(vAnt || "-"))}</td>
+            <td style="padding: 5px 8px; color: #4ade80; background: rgba(74, 222, 128, 0.08); font-weight: 600;">${escapeHTML(String(vNov || "-"))}</td>
+          </tr>
+        `;
+      });
+
+      diffHtml = `
+        <div style="margin-top: 6px;">
+          <button type="button" onclick="const el=document.getElementById('${diffId}'); el.style.display=el.style.display==='none'?'block':'none';" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 3px 8px; font-size: 10.5px; cursor: pointer; color: #38bdf8; font-weight: 600;">
+            🔍 Inspecionar Alterações (Antes / Depois)
+          </button>
+          <div id="${diffId}" style="display: none; margin-top: 6px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; background: #090d16;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+              <thead style="background: rgba(255,255,255,0.04); font-size: 10px; text-transform: uppercase; color: #64748b;">
+                <tr>
+                  <th style="padding: 5px 8px;">Campo</th>
+                  <th style="padding: 5px 8px;">Antes</th>
+                  <th style="padding: 5px 8px;">Depois</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${linhasDiff}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    linhas += `
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px;">
+        <td style="padding: 12px 14px; white-space: nowrap; color: #94a3b8; font-weight: 500;">
+          ${dataFormatada}
+        </td>
+        <td style="padding: 12px 14px;">
+          <div style="font-weight: 700; color: #fff;">#${escapeHTML(log.numero_proposta || String(log.proposta_id))}</div>
+          <div style="font-size: 11px; color: #94a3b8;">${escapeHTML(log.nome_clinica || "Clínica")}</div>
+        </td>
+        <td style="padding: 12px 14px;">
+          <div style="color: #e2e8f0; font-weight: 600;">${escapeHTML(log.usuario_nome || "Sistema")}</div>
+          <div style="margin-top: 3px;">${roleTag}</div>
+        </td>
+        <td style="padding: 12px 14px;">
+          <span style="background: ${acaoBadgeBg}; color: ${acaoBadgeCor}; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; display: inline-block;">
+            ${escapeHTML(log.titulo || log.acao)}
+          </span>
+        </td>
+        <td style="padding: 12px 14px; color: #cbd5e1; max-width: 320px; line-height: 1.5;">
+          ${escapeHTML(log.detalhes || "-")}
+          ${diffHtml}
+        </td>
+      </tr>
+    `;
+  });
+
+  container.innerHTML = `
+    <div style="padding: 10px 14px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 11.5px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+      <span>Total de registros encontrados: <strong style="color: #fff;">${total}</strong></span>
+      <span>Exibindo os ${logs.length} mais recentes</span>
+    </div>
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead style="background: rgba(255,255,255,0.04); font-size: 11px; text-transform: uppercase; color: #64748b;">
+        <tr>
+          <th style="padding: 10px 14px;">Data/Hora</th>
+          <th style="padding: 10px 14px;">Proposta & Clínica</th>
+          <th style="padding: 10px 14px;">Responsável</th>
+          <th style="padding: 10px 14px;">Ação</th>
+          <th style="padding: 10px 14px;">Detalhes do que foi feito</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${linhas}
+      </tbody>
+    </table>
+  `;
+}
+

@@ -17,6 +17,7 @@ const teamsService = require("../services/teamsService");
 const emailService = require("../services/emailService");
 const whatsappService = require("../services/whatsappService");
 const discountService = require("../services/discountService");
+const auditService = require("../services/auditService");
 const { LIMITE_DESCONTO_COMERCIAL, calcularPrecosReferencia, aplicarDescontoReal } = require("../services/precoService");
 const { z } = require("zod");
 const { propostaSchema, itemPropostaSchema } = require("../validations/propostaValidation");
@@ -208,6 +209,81 @@ router.post("/api/propostas/preview", verificarToken, async (req, res, next) => 
   }
 });
 
+function calcularDiferencasProposta(antiga, novosDados) {
+  const alteracoes = [];
+  const anterior = {};
+  const novo = {};
+
+  const faturamentoAntigo = Number(antiga.faturamento || 0);
+  const faturamentoNovo = Number(novosDados.faturamento || 0);
+  if (faturamentoAntigo !== faturamentoNovo) {
+    alteracoes.push(`Faturamento: R$ ${faturamentoAntigo.toLocaleString("pt-BR")} ➔ R$ ${faturamentoNovo.toLocaleString("pt-BR")}`);
+    anterior.faturamento = faturamentoAntigo;
+    novo.faturamento = faturamentoNovo;
+  }
+
+  const valorTotalAntigo = Number(antiga.valor_total || 0);
+  const valorTotalNovo = Number(novosDados.valorTotal || novosDados.valor_total || 0);
+  if (Math.abs(valorTotalAntigo - valorTotalNovo) > 0.01) {
+    alteracoes.push(`Valor Total: R$ ${valorTotalAntigo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ➔ R$ ${valorTotalNovo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`);
+    anterior.valor_total = valorTotalAntigo;
+    novo.valor_total = valorTotalNovo;
+  }
+
+  const cadeirasAntigas = Number(antiga.cadeiras || 0);
+  const cadeirasNovas = Number(novosDados.cadeiras || 0);
+  if (cadeirasAntigas !== cadeirasNovas) {
+    alteracoes.push(`Cadeiras: ${cadeirasAntigas} ➔ ${cadeirasNovas}`);
+    anterior.cadeiras = cadeirasAntigas;
+    novo.cadeiras = cadeirasNovas;
+  }
+
+  const funcAntigos = Number(antiga.funcionarios || 0);
+  const funcNovos = Number(novosDados.funcionarios || 0);
+  if (funcAntigos !== funcNovos) {
+    alteracoes.push(`Funcionários: ${funcAntigos} ➔ ${funcNovos}`);
+    anterior.funcionarios = funcAntigos;
+    novo.funcionarios = funcNovos;
+  }
+
+  const sociosAntigos = Number(antiga.socios || 0);
+  const sociosNovos = Number(novosDados.socios || 0);
+  if (sociosAntigos !== sociosNovos) {
+    alteracoes.push(`Sócios: ${sociosAntigos} ➔ ${sociosNovos}`);
+    anterior.socios = sociosAntigos;
+    novo.socios = sociosNovos;
+  }
+
+  if (novosDados.regimeFiscal && antiga.regime_fiscal !== novosDados.regimeFiscal) {
+    alteracoes.push(`Regime Fiscal: "${antiga.regime_fiscal || 'Não definido'}" ➔ "${novosDados.regimeFiscal}"`);
+    anterior.regime_fiscal = antiga.regime_fiscal;
+    novo.regime_fiscal = novosDados.regimeFiscal;
+  }
+
+  let itensAntigos = [];
+  try {
+    itensAntigos = typeof antiga.itens_json === "string" ? JSON.parse(antiga.itens_json) : (antiga.itens_json || []);
+  } catch (e) { itensAntigos = []; }
+  const itensNovos = Array.isArray(novosDados.itens) ? novosDados.itens : [];
+
+  const nomesAntigos = itensAntigos.map(i => i.servico || i.nome || i.titulo || "").filter(Boolean);
+  const nomesNovos = itensNovos.map(i => i.servico || i.nome || i.titulo || "").filter(Boolean);
+
+  const adicionados = nomesNovos.filter(n => !nomesAntigos.includes(n));
+  const removidos = nomesAntigos.filter(n => !nomesNovos.includes(n));
+
+  if (adicionados.length > 0) {
+    alteracoes.push(`Serviços adicionados: ${adicionados.join(", ")}`);
+    novo.servicos_adicionados = adicionados;
+  }
+  if (removidos.length > 0) {
+    alteracoes.push(`Serviços removidos: ${removidos.join(", ")}`);
+    anterior.servicos_removidos = removidos;
+  }
+
+  return { alteracoes, anterior, novo };
+}
+
 // --- SALVAR RASCUNHO DA PROPOSTA (COMERCIAL E DIRETORIA) ---
 router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) => {
   try {
@@ -230,7 +306,7 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
     if (rascunhoId) {
       // Atualiza rascunho existente
       const [existente] = await db.executarQuery(
-        "SELECT id, criado_por, status FROM propostas WHERE id = ?",
+        "SELECT * FROM propostas WHERE id = ?",
         [rascunhoId]
       );
 
@@ -238,6 +314,8 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
         if (req.user.role === "Comercial" && Number(existente.criado_por) !== Number(req.user.id)) {
           return res.status(403).json({ error: "Você só pode editar seus próprios rascunhos." });
         }
+
+        const diff = calcularDiferencasProposta(existente, dados);
 
         await db.executarQuery(
           `UPDATE propostas SET 
@@ -257,6 +335,23 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
             estadoCompletoJson, dados.videoPitch || dados.video_pitch || "", dados.audioPitch || dados.audio_pitch || "", rascunhoId
           ]
         );
+
+        const descDetalhes = diff.alteracoes.length > 0
+          ? diff.alteracoes.join(" • ")
+          : "Rascunho atualizado sem modificações estruturais";
+
+        await auditService.registrarLogProposta({
+          proposta_id: rascunhoId,
+          usuario_id: req.user.id,
+          usuario_nome: req.user.nome || "Consultor",
+          usuario_role: req.user.role || "Comercial",
+          acao: "EDICAO_RASCUNHO",
+          titulo: "Rascunho da Proposta Editado",
+          detalhes: descDetalhes,
+          dados_anteriores: diff.anterior,
+          dados_novos: diff.novo,
+          ip: req.ip
+        });
 
         return res.json({
           success: true,
@@ -291,6 +386,18 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
         dados.videoPitch || dados.video_pitch || "", dados.audioPitch || dados.audio_pitch || ""
       ]
     );
+
+    await auditService.registrarLogProposta({
+      proposta_id: resultado.insertId,
+      usuario_id: req.user.id,
+      usuario_nome: req.user.nome || "Consultor",
+      usuario_role: req.user.role || "Comercial",
+      acao: "CRIACAO_RASCUNHO",
+      titulo: "Rascunho Iniciado",
+      detalhes: `Rascunho #${numeroProposta} criado para "${nomeClinica}". Total: R$ ${valorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (${itens.length} serviços).`,
+      dados_novos: { numeroProposta, total: valorTotal, itens },
+      ip: req.ip
+    });
 
     res.json({
       success: true,
@@ -520,12 +627,30 @@ const proLaboreNormalizado = normalizarProLabore(
     const [resultadoProposta] = await connection.execute(querySQL, values);
     const propostaId = resultadoProposta.insertId;
 
-    // LOG DE AUDITORIA COMERCIAL (IDEIA 3)
+    // LOG DE AUDITORIA COMERCIAL
     const logDesc = `Proposta #${dados.numeroProposta} criada por ${req.user.nome || 'Vendedor'} (Perfil: ${dados.tipoPessoa || 'PJ'}, Total: R$ ${Number(dados.total || 0).toFixed(2)})`;
     await connection.execute(
       `INSERT INTO proposta_observacoes (proposta_id, usuario_id, observacao) VALUES (?, ?, ?)`,
       [propostaId, req.user.id, logDesc]
     ).catch(e => console.warn('Erro ao gravar log de auditoria:', e));
+
+    auditService.registrarLogProposta({
+      proposta_id: propostaId,
+      usuario_id: req.user.id,
+      usuario_nome: req.user.nome || "Consultor",
+      usuario_role: req.user.role || "Comercial",
+      acao: "CRIACAO",
+      titulo: `Proposta #${dados.numeroProposta} Criada`,
+      detalhes: `Proposta oficial gerada para "${dados.nomeClinica}" (${dados.tipoPessoa || "PJ"}). Faturamento: R$ ${Number(dados.faturamento || 0).toLocaleString("pt-BR")}. Total: R$ ${Number(dados.total || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} com ${dados.itens?.length || 0} serviços configurados.`,
+      dados_novos: {
+        numeroProposta: dados.numeroProposta,
+        total: dados.total,
+        faturamento: dados.faturamento,
+        tipoPessoa: dados.tipoPessoa,
+        itens: dados.itens
+      },
+      ip: req.ip
+    }).catch(e => console.warn("Erro ao auditar criação de proposta:", e.message));
 
     for (const item of dados.itens) {
       const obs = (item.observacao || "").toLowerCase();
@@ -748,6 +873,16 @@ router.get("/api/propostas/:token/publica", async (req, res, next) => {
     const ehReabertura = totalViews > 1;
 
     const tipoEventoTeams = ehReabertura ? "reaberta" : "visualizada";
+
+    auditService.registrarLogProposta({
+      proposta_id: proposta.id,
+      usuario_nome: "Cliente (Portal)",
+      usuario_role: "Cliente",
+      acao: ehReabertura ? "REABERTURA_CLIENTE" : "VISUALIZACAO_CLIENTE",
+      titulo: ehReabertura ? "Proposta Reaberta pelo Cliente" : "Proposta Visualizada pelo Cliente",
+      detalhes: `Acesso realizado via ${dispositivo}. IP: ${req.ip || "não identificado"}. Total de acessos: ${totalViews}.`,
+      ip: req.ip || ""
+    }).catch(e => console.warn("Erro ao registrar visualização no audit log:", e.message));
 
     teamsService.enviarNotificacaoTeams(tipoEventoTeams, {
       id: proposta.id,
@@ -1297,6 +1432,17 @@ router.post("/api/propostas/:token/aprovar", async (req, res, next) => {
       ).catch((e) => console.warn("[Aprovação] Erro ao registrar signatário:", e.message));
     }
 
+    auditService.registrarLogProposta({
+      proposta_id: prop.id,
+      usuario_nome: nomeSignatario || "Cliente (Portal)",
+      usuario_role: "Cliente",
+      acao: "APROVACAO_CLIENTE",
+      titulo: "Proposta Aprovada pelo Cliente",
+      detalhes: `Aceite formalizado via portal por ${nomeSignatario || "Cliente"} ${cpfSignatario ? "(CPF " + cpfSignatario + ")" : ""}. Valor total: R$ ${Number(prop.valor_total || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}. IP: ${ipCliente}`,
+      dados_novos: { status: "Aprovada", signatario: nomeSignatario, cpf: cpfSignatario },
+      ip: ipCliente
+    }).catch(e => console.warn("[Aprovação] Erro ao registrar audit log:", e.message));
+
     // 1. Notificar responsável interno
     try {
       if (!(await emailService.notificarHugo(prop))) console.error("[Aprovação] Aviso interno de aprovação não foi entregue (e-mail).");
@@ -1507,6 +1653,18 @@ router.post("/api/propostas/:token/aprovar-parcial", async (req, res, next) => {
       [prop.id, prop.criado_por || 1, logMotivos]
     );
 
+    auditService.registrarLogProposta({
+      proposta_id: prop.id,
+      usuario_nome: "Cliente (Portal)",
+      usuario_role: "Cliente",
+      acao: "APROVACAO_PARCIAL_CLIENTE",
+      titulo: "Aprovação de Escopo Parcial pelo Cliente",
+      detalhes: `Cliente selecionou ${itensAprovados.length} serviço(s) e recusou ${itensRecusados.length}. Novo valor total: R$ ${novoTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (anterior: R$ ${Number(prop.valor_total || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}).`,
+      dados_anteriores: { valor_total: prop.valor_total },
+      dados_novos: { valor_total: novoTotal, itensAprovados, itensRecusados },
+      ip: ipCliente
+    }).catch(e => console.warn("[Aprovação Parcial] Erro ao registrar audit log:", e.message));
+
     // 1. Notificar responsável interno
     try { await emailService.notificarHugo(prop); } catch (e) {}
 
@@ -1653,6 +1811,17 @@ router.post("/api/propostas/:token/recusar", async (req, res, next) => {
 
     await connection.commit();
 
+    auditService.registrarLogProposta({
+      proposta_id: prop.id,
+      usuario_nome: "Cliente (Portal)",
+      usuario_role: "Cliente",
+      acao: "RECUSA_CLIENTE",
+      titulo: "Proposta Recusada pelo Cliente",
+      detalhes: observacao ? `Justificativa informada pelo cliente: "${observacao.trim()}"` : "Proposta recusada sem justificativa.",
+      dados_novos: { status: "Recusada", justificativa: observacao.trim() },
+      ip: req.ip || ""
+    }).catch(e => console.warn("[Recusa] Erro ao registrar audit log:", e.message));
+
     notificationService.enviarNotificacao("recusada", {
       id: prop.id,
       numeroProposta: prop.numero_proposta,
@@ -1690,6 +1859,16 @@ router.post("/api/propostas/:id/renovar-validade", verificarToken, donoProposta,
       "INSERT INTO proposta_observacoes (proposta_id, usuario_id, observacao) VALUES (?, ?, ?)",
       [req.params.id, req.user.id, `Validade de 10 dias renovada por ${req.user.nome || "consultor"}.`],
     );
+    auditService.registrarLogProposta({
+      proposta_id: req.params.id,
+      usuario_id: req.user.id,
+      usuario_nome: req.user.nome || "Consultor",
+      usuario_role: req.user.role || "Comercial",
+      acao: "RENOVACAO_VALIDADE",
+      titulo: "Validade da Proposta Renovada",
+      detalhes: `Validade renovada por mais 10 dias por ${req.user.nome || "consultor"}.`,
+      ip: req.ip
+    }).catch(e => console.warn("Erro ao registrar renovação no audit log:", e.message));
     res.json({ success: true, message: "Validade renovada por mais 10 dias." });
   } catch (error) {
     next(error);
@@ -1728,6 +1907,17 @@ router.post("/api/propostas/:id/reenviar", verificarToken, donoProposta, async (
     if (!(await emailService.enviarEmailLink(dadosEmail, linkAcesso))) {
       return res.status(502).json({ error: "Não foi possível enviar o e-mail para o cliente. Tente novamente ou envie o link manualmente." });
     }
+
+    auditService.registrarLogProposta({
+      proposta_id: req.params.id,
+      usuario_id: req.user.id,
+      usuario_nome: req.user.nome || "Consultor",
+      usuario_role: req.user.role || "Comercial",
+      acao: "REENVIO_EMAIL",
+      titulo: "Proposta Reenviada por E-mail",
+      detalhes: `Link da proposta reenviado com sucesso para o e-mail ${proposta.email}.`,
+      ip: req.ip
+    }).catch(e => console.warn("Erro ao registrar reenvio no audit log:", e.message));
 
     return res.json({
       success: true,
@@ -2214,7 +2404,42 @@ router.post("/api/propostas/:id/observacoes", verificarToken, donoProposta, asyn
       `INSERT INTO proposta_observacoes (proposta_id, usuario_id, observacao) VALUES (?, ?, ?)`,
       [req.params.id, req.user.id, observacao.trim()],
     );
+
+    auditService.registrarLogProposta({
+      proposta_id: req.params.id,
+      usuario_id: req.user.id,
+      usuario_nome: req.user.nome || "Usuário",
+      usuario_role: req.user.role || "Comercial",
+      acao: "OBSERVACAO",
+      titulo: "Observação Interna Registrada",
+      detalhes: observacao.trim(),
+      ip: req.ip
+    }).catch(e => console.warn("Erro ao registrar observação no audit log:", e.message));
+
     res.json({ success: true, message: "Observação registrada com sucesso." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- LOGS & AUDITORIA DA PROPOSTA ---
+router.get("/api/propostas/:id/logs", verificarToken, donoProposta, async (req, res, next) => {
+  try {
+    const logs = await auditService.obterLogsProposta(req.params.id);
+    return res.json(logs);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- LOGS GLOBAIS DE TODAS AS PROPOSTAS (DIRETORIA) ---
+router.get("/api/admin/propostas/logs", verificarToken, async (req, res, next) => {
+  try {
+    if (req.user.role !== "Diretor") {
+      return res.status(403).json({ error: "Acesso restrito à diretoria." });
+    }
+    const resultado = await auditService.obterLogsGlobais(req.query);
+    return res.json(resultado);
   } catch (error) {
     next(error);
   }

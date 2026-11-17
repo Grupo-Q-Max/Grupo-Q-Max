@@ -765,6 +765,19 @@ async function processarDocumentoD4Sign(uuid, evento, mensagem = "") {
     [proposta.id, proposta.criado_por || 1, MARCA_ASSINATURA_D4SIGN],
   );
 
+  try {
+    const auditService = require("./auditService");
+    auditService.registrarLogProposta({
+      proposta_id: proposta.id,
+      usuario_nome: "D4Sign Signatários",
+      usuario_role: "Cliente",
+      acao: "ASSINATURA_D4SIGN",
+      titulo: "Contrato Assinado Digitalmente (D4Sign)",
+      detalhes: "Todas as partes concluíram a assinatura digital com validade jurídica via D4Sign.",
+      dados_novos: { status: "Aprovada", d4sign_status: "4 - Finalizado" }
+    }).catch(() => {});
+  } catch (e) {}
+
   notificationService.enviarNotificacao("aprovada", {
     id: proposta.id,
     numeroProposta: proposta.numero_proposta,

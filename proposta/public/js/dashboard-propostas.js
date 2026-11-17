@@ -855,6 +855,28 @@ function renderizarTabelaDashboard(propostas) {
                 </div>
               </div>
             </div>
+
+            <div class="proposta-box" style="border-left: 4px solid #2563eb;">
+              <h4 style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <span>Registro de Alterações & Auditoria</span>
+                <span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:800;">Log Ativo</span>
+              </h4>
+              <div style="font-size:12px; line-height:1.6; color:#334155;">
+                <p style="margin: 0 0 10px; color: #64748b; font-size: 11.5px;">
+                  Consulte todas as edições no rascunho, alterações de faturamento, pedidos de desconto e ações registradas pela equipe e pelo cliente.
+                </p>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <button class="btn-mini" style="background:#2563eb; color:#fff; padding:6px 12px; font-weight:800; border-radius:6px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;" onclick="abrirLinhaDoTempo(${p.id})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Ver Linha do Tempo de Alterações
+                  </button>
+                  <button class="btn-mini btn-mini-light" style="padding:6px 12px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:6px;" onclick="abrirModalObservacoes(${p.id})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Adicionar Anotação
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </td>
       </tr>
@@ -1082,64 +1104,301 @@ async function carregarUltimaObservacao(propostaId) {
   }
 }
 
+let cacheLogsAuditoria = [];
+let cacheVersoesProposta = [];
+let idPropostaLinhaTempoAtual = null;
+
 async function abrirLinhaDoTempo(id) {
   const container = document.getElementById("timelineContainer");
   if (!container) return;
 
-  container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--muted);">Carregando histórico...</div>';
+  idPropostaLinhaTempoAtual = id;
+  container.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--muted);"><div class="loading-spinner" style="margin: 0 auto 12px;"></div>Carregando registro completo de alterações e histórico...</div>';
   abrirModal("modalLinhaTempo");
 
   try {
-    const res = await fetch(`/api/propostas/${id}/historico`, { headers: authHeaders });
-    if (!res.ok) {
-      container.innerHTML = '<div class="viewer-error">Erro ao carregar histórico.</div>';
-      return;
-    }
+    const [resLogs, resVersoes] = await Promise.all([
+      fetch(`/api/propostas/${id}/logs`, { headers: authHeaders }).catch(() => ({ ok: false })),
+      fetch(`/api/propostas/${id}/historico`, { headers: authHeaders }).catch(() => ({ ok: false }))
+    ]);
 
-    const historico = await res.json();
-    if (!Array.isArray(historico) || historico.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--muted);">Nenhuma proposta encontrada na linha do tempo.</div>';
-      return;
-    }
+    cacheLogsAuditoria = resLogs.ok ? await resLogs.json() : [];
+    cacheVersoesProposta = resVersoes.ok ? await resVersoes.json() : [];
 
-    let html = '<div class="qmax-timeline">';
-    historico.forEach((p) => {
-      const statusClean = String(p.status || "").replace(/\s/g, "-");
-      const dataCriacao = new Date(p.criado_em).toLocaleString("pt-BR");
-      const isCurrent = p.id === id;
-
-      let descHtml = "";
-      if (Number(p.percentual_desconto || 0) > 0) {
-        descHtml = `<div class="timeline-discount">Desconto de ${p.percentual_desconto}% (-${formatador.format(p.valor_desconto)})</div>`;
-      }
-
-      html += `
-        <div class="timeline-item ${isCurrent ? "current-item" : ""}">
-          <div class="timeline-badge badge-${statusClean}"></div>
-          <div class="timeline-content">
-            <div class="timeline-header">
-              <span class="timeline-title">Proposta #${p.numero_proposta}</span>
-              <span class="status-badge status-${statusClean}">${escapeHTML(p.status)}</span>
-            </div>
-            <div class="timeline-body">
-              <div class="timeline-meta">
-                <span>${dataCriacao}</span>
-                <span>${escapeHTML(p.criador || "Vendedor")}</span>
-              </div>
-              <div class="timeline-value">Valor Total: <strong>${formatador.format(p.valor_total)}</strong></div>
-              ${descHtml}
-            </div>
-            ${isCurrent ? '<div class="current-label">Visualizando esta versão</div>' : ""}
-          </div>
-        </div>
-      `;
-    });
-    html += "</div>";
-    container.innerHTML = html;
+    renderizarLinhaTempoCompleta("todos", "logs");
   } catch (error) {
     console.error("Erro na requisição da linha do tempo:", error);
-    container.innerHTML = '<div class="viewer-error">Erro de conexão ao carregar histórico.</div>';
+    container.innerHTML = '<div class="viewer-error">Erro de conexão ao carregar histórico da proposta.</div>';
   }
+}
+
+function alternarAbaLinhaTempo(aba) {
+  renderizarLinhaTempoCompleta("todos", aba);
+}
+
+function filtrarLogsLinhaTempo(filtro) {
+  renderizarLinhaTempoCompleta(filtro, "logs");
+}
+
+function renderizarLinhaTempoCompleta(filtro = "todos", aba = "logs") {
+  const container = document.getElementById("timelineContainer");
+  if (!container) return;
+
+  const totalLogs = Array.isArray(cacheLogsAuditoria) ? cacheLogsAuditoria.length : 0;
+  const totalVersoes = Array.isArray(cacheVersoesProposta) ? cacheVersoesProposta.length : 0;
+
+  // Header com abas e estatísticas
+  let html = `
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; gap: 8px;">
+          <button type="button" onclick="alternarAbaLinhaTempo('logs')" class="btn-mini ${aba === 'logs' ? 'filtro-ativo' : 'btn-mini-light'}" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer;">
+            📋 Registro de Alterações (${totalLogs})
+          </button>
+          <button type="button" onclick="alternarAbaLinhaTempo('versoes')" class="btn-mini ${aba === 'versoes' ? 'filtro-ativo' : 'btn-mini-light'}" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer;">
+            🌿 Versões Geradas (${totalVersoes})
+          </button>
+        </div>
+        <div style="font-size: 12px; color: #64748b;">
+          Proposta ID: <strong>#${idPropostaLinhaTempoAtual}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (aba === "versoes") {
+    // Renderiza árvore de versões
+    if (!Array.isArray(cacheVersoesProposta) || cacheVersoesProposta.length === 0) {
+      html += '<div style="text-align:center; padding: 30px; color: var(--muted);">Nenhuma versão encontrada na árvore da proposta.</div>';
+    } else {
+      html += '<div class="qmax-timeline" style="margin-top: 10px;">';
+      cacheVersoesProposta.forEach((p) => {
+        const statusClean = String(p.status || "").replace(/\s/g, "-");
+        const dataCriacao = new Date(p.criado_em).toLocaleString("pt-BR");
+        const isCurrent = p.id === idPropostaLinhaTempoAtual;
+
+        let descHtml = "";
+        if (Number(p.percentual_desconto || 0) > 0) {
+          descHtml = `<div class="timeline-discount">Desconto de ${p.percentual_desconto}% (-${formatador.format(p.valor_desconto)})</div>`;
+        }
+
+        html += `
+          <div class="timeline-item ${isCurrent ? "current-item" : ""}">
+            <div class="timeline-badge badge-${statusClean}"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">Proposta #${p.numero_proposta}</span>
+                <span class="status-badge status-${statusClean}">${escapeHTML(p.status)}</span>
+              </div>
+              <div class="timeline-body">
+                <div class="timeline-meta">
+                  <span>${dataCriacao}</span>
+                  <span>${escapeHTML(p.criador || "Vendedor")}</span>
+                </div>
+                <div class="timeline-value">Valor Total: <strong>${formatador.format(p.valor_total)}</strong></div>
+                ${descHtml}
+              </div>
+              ${isCurrent ? '<div class="current-label">Visualizando esta versão</div>' : ""}
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+    }
+  } else {
+    // Renderiza logs de auditoria
+    let logsFiltrados = cacheLogsAuditoria || [];
+    if (filtro === "edicoes") {
+      logsFiltrados = logsFiltrados.filter(l => l.acao.includes("EDICAO") || l.acao.includes("CRIACAO"));
+    } else if (filtro === "descontos") {
+      logsFiltrados = logsFiltrados.filter(l => l.acao.includes("DESCONTO"));
+    } else if (filtro === "cliente") {
+      logsFiltrados = logsFiltrados.filter(l => l.acao.includes("VISUALIZACAO") || l.acao.includes("REABERTURA") || l.acao.includes("APROVACAO") || l.acao.includes("RECUSA") || l.acao.includes("ASSINATURA"));
+    } else if (filtro === "observacoes") {
+      logsFiltrados = logsFiltrados.filter(l => l.acao.includes("OBSERVACAO"));
+    }
+
+    // Filtros por pílula
+    html += `
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px;">
+        <button type="button" onclick="filtrarLogsLinhaTempo('todos')" class="btn-mini ${filtro === 'todos' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">Todos</button>
+        <button type="button" onclick="filtrarLogsLinhaTempo('edicoes')" class="btn-mini ${filtro === 'edicoes' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">✏️ Criação & Edições</button>
+        <button type="button" onclick="filtrarLogsLinhaTempo('descontos')" class="btn-mini ${filtro === 'descontos' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">🏷️ Descontos & Diretoria</button>
+        <button type="button" onclick="filtrarLogsLinhaTempo('cliente')" class="btn-mini ${filtro === 'cliente' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">👤 Acessos & Aceites</button>
+        <button type="button" onclick="filtrarLogsLinhaTempo('observacoes')" class="btn-mini ${filtro === 'observacoes' ? 'filtro-ativo' : 'btn-mini-light'}" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">💬 Observações</button>
+      </div>
+    `;
+
+    if (!Array.isArray(logsFiltrados) || logsFiltrados.length === 0) {
+      html += `
+        <div style="text-align: center; padding: 40px 20px; color: #64748b; background: #fff; border: 1px dashed #cbd5e1; border-radius: 12px;">
+          <div style="font-size: 28px; margin-bottom: 8px;">📋</div>
+          <strong style="color: #0f172a;">Nenhuma alteração registrada nesta categoria</strong>
+          <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">As ações realizadas pelos consultores, diretores e clientes serão exibidas aqui em tempo real.</p>
+        </div>
+      `;
+    } else {
+      html += '<div style="position: relative; margin-top: 10px;">';
+      html += '<div style="position: absolute; left: 14px; top: 12px; bottom: 20px; width: 2px; background: #e2e8f0; z-index: 0;"></div>';
+      logsFiltrados.forEach(log => {
+        html += renderItemAuditLog(log);
+      });
+      html += '</div>';
+    }
+  }
+
+  container.innerHTML = html;
+}
+
+function renderItemAuditLog(log) {
+  const dataFormatada = new Date(log.criado_em).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  // Ícone e cores conforme a ação
+  let icone = "📝";
+  let badgeCor = "#2563eb";
+  let badgeBg = "#eff6ff";
+  let borderCor = "#bfdbfe";
+
+  const acaoUpper = String(log.acao || "").toUpperCase();
+
+  if (acaoUpper.includes("CRIACAO")) {
+    icone = "✨";
+    badgeCor = "#16a34a";
+    badgeBg = "#f0fdf4";
+    borderCor = "#bbf7d0";
+  } else if (acaoUpper.includes("EDICAO")) {
+    icone = "✏️";
+    badgeCor = "#d97706";
+    badgeBg = "#fffbeb";
+    borderCor = "#fde68a";
+  } else if (acaoUpper.includes("DESCONTO_APROVADO")) {
+    icone = "✅";
+    badgeCor = "#059669";
+    badgeBg = "#ecfdf5";
+    borderCor = "#a7f3d0";
+  } else if (acaoUpper.includes("DESCONTO_RECUSADO") || acaoUpper.includes("RECUSA")) {
+    icone = "❌";
+    badgeCor = "#dc2626";
+    badgeBg = "#fef2f2";
+    borderCor = "#fecdd3";
+  } else if (acaoUpper.includes("DESCONTO_SOLICITADO")) {
+    icone = "⏳";
+    badgeCor = "#ea580c";
+    badgeBg = "#fff7ed";
+    borderCor = "#ffedd5";
+  } else if (acaoUpper.includes("VISUALIZACAO") || acaoUpper.includes("REABERTURA")) {
+    icone = "👁️";
+    badgeCor = "#0284c7";
+    badgeBg = "#f0f9ff";
+    borderCor = "#bae6fd";
+  } else if (acaoUpper.includes("ASSINATURA") || acaoUpper.includes("APROVACAO")) {
+    icone = "🖋️";
+    badgeCor = "#7c3aed";
+    badgeBg = "#faf5ff";
+    borderCor = "#ddd6fe";
+  } else if (acaoUpper.includes("RENOVACAO")) {
+    icone = "🔄";
+    badgeCor = "#0d9488";
+    badgeBg = "#f0fdfa";
+    borderCor = "#99f6e4";
+  }
+
+  // Role tag
+  let roleTag = "";
+  if (log.usuario_role === "Diretor") {
+    roleTag = `<span style="background:#581c87; color:#f3e8ff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">👑 DIRETOR</span>`;
+  } else if (log.usuario_role === "Comercial") {
+    roleTag = `<span style="background:#065f46; color:#d1fae5; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">💼 COMERCIAL</span>`;
+  } else if (log.usuario_role === "Cliente") {
+    roleTag = `<span style="background:#1e3a8a; color:#dbeafe; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">👤 CLIENTE</span>`;
+  } else {
+    roleTag = `<span style="background:#334155; color:#f1f5f9; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">⚙️ SISTEMA</span>`;
+  }
+
+  // Diff antes/depois se disponível
+  let diffHtml = "";
+  const temDiff = (log.dados_anteriores && Object.keys(log.dados_anteriores).length > 0) ||
+                  (log.dados_novos && Object.keys(log.dados_novos).length > 0);
+  if (temDiff) {
+    const diffId = `diff-log-${log.id || Math.random().toString(36).substr(2, 6)}`;
+    let linhasDiff = "";
+
+    const chaves = Array.from(new Set([
+      ...Object.keys(log.dados_anteriores || {}),
+      ...Object.keys(log.dados_novos || {})
+    ]));
+
+    chaves.forEach(chave => {
+      let vAntigo = log.dados_anteriores ? log.dados_anteriores[chave] : "-";
+      let vNovo = log.dados_novos ? log.dados_novos[chave] : "-";
+
+      if (typeof vAntigo === "object") vAntigo = JSON.stringify(vAntigo);
+      if (typeof vNovo === "object") vNovo = JSON.stringify(vNovo);
+
+      linhasDiff += `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
+          <td style="padding: 6px 10px; font-weight: 700; color: #475569; text-transform: capitalize;">${escapeHTML(chave.replace(/_/g, " "))}</td>
+          <td style="padding: 6px 10px; color: #dc2626; background: #fff5f5;">${escapeHTML(String(vAntigo || "-"))}</td>
+          <td style="padding: 6px 10px; color: #16a34a; background: #f0fdf4; font-weight: 600;">${escapeHTML(String(vNovo || "-"))}</td>
+        </tr>
+      `;
+    });
+
+    diffHtml = `
+      <div style="margin-top: 10px;">
+        <button type="button" onclick="const el=document.getElementById('${diffId}'); el.style.display=el.style.display==='none'?'block':'none';" style="background: none; border: 1px dashed #94a3b8; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: #475569; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+          🔍 Ver Comparativo Antes / Depois
+        </button>
+        <div id="${diffId}" style="display: none; margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead style="background: #f8fafc; font-size: 11px; text-transform: uppercase; color: #64748b;">
+              <tr>
+                <th style="padding: 6px 10px;">Campo Alterado</th>
+                <th style="padding: 6px 10px;">Valor Anterior</th>
+                <th style="padding: 6px 10px;">Novo Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${linhasDiff}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div style="position: relative; padding-left: 38px; margin-bottom: 20px; z-index: 1;">
+      <div style="position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: ${badgeBg}; border: 1.5px solid ${borderCor}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+        ${icone}
+      </div>
+      <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <strong style="color: #0f172a; font-size: 13.5px;">${escapeHTML(log.titulo || "Registro do Sistema")}</strong>
+            ${roleTag}
+          </div>
+          <span style="font-size: 11.5px; color: #64748b; font-weight: 500;">
+            🕒 ${dataFormatada}
+          </span>
+        </div>
+        <div style="font-size: 12.5px; color: #334155; line-height: 1.5; word-break: break-word;">
+          ${escapeHTML(log.detalhes || "Ação executada com sucesso.")}
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 11px; color: #94a3b8;">
+          <span>Executado por: <strong style="color: #475569;">${escapeHTML(log.usuario_nome || "Sistema")}</strong></span>
+          ${log.ip ? `<span>IP: <code style="font-size: 10.5px;">${escapeHTML(log.ip)}</code></span>` : ""}
+        </div>
+        ${diffHtml}
+      </div>
+    </div>
+  `;
 }
 
 function compartilharWhatsApp(numeroProposta, nomeClinica, nomeSocio, tokenAcesso, tipoProposta) {

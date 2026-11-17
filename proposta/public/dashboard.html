@@ -953,12 +953,16 @@
     </div>
 
     <div id="modalLinhaTempo" class="modal">
-        <div class="modal-content" style="width: 720px; max-width: 90%;">
+        <div class="modal-content" style="width: 840px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 24px;">
             <span class="close-btn" onclick="fecharModal('modalLinhaTempo')">&times;</span>
-            <h3>Linha do Tempo da Negociação</h3>
-            <p style="font-size: 13.5px; color: var(--muted); margin-bottom: 20px;">
-                Histórico cronológico de propostas, renegociações e decisões para esta clínica.
-            </p>
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a;" id="tituloModalLinhaTempo">Registro & Linha do Tempo da Proposta</h3>
+                    <p style="margin: 4px 0 0; font-size: 13px; color: #64748b;">
+                        Histórico completo e auditável de alterações, edições, faturamentos, descontos e interações com o cliente.
+                    </p>
+                </div>
+            </div>
             <div id="timelineContainer" class="timeline-container">
                 <!-- Injetado dinamicamente -->
             </div>

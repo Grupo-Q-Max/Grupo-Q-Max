@@ -4,6 +4,7 @@ const db = require("../config/db");
 const { verificarToken, verificarRole } = require("../middleware/auth");
 const { responderSolicitacaoSchema, alterarDescontoSchema } = require("../validations/solicitacaoValidation");
 const notificationService = require("../services/notificationService");
+const auditService = require("../services/auditService");
 const {
   enviarEmailLink,
 } = require("../services/emailService");
@@ -182,6 +183,17 @@ router.post(
 
           await connection.commit();
 
+          auditService.registrarLogProposta({
+            proposta_id: proposta.id,
+            usuario_id: req.user.id,
+            usuario_nome: req.user.nome || "Diretor",
+            usuario_role: req.user.role || "Diretor",
+            acao: "DESCONTO_APROVADO",
+            titulo: "Desconto por Item Aprovado",
+            detalhes: `Desconto por item aprovado pela diretoria (${req.user.nome || "Diretor"}). Proposta liberada com novos valores.`,
+            dados_novos: { status: "Pendente", aprovado_por: req.user.nome }
+          }).catch(e => console.warn("Erro ao auditar aprovação de desconto:", e.message));
+
           // Aprovação já gravada: falha de PDF/e-mail não pode virar 500 (o retry aprovaria de novo)
           let emailEnviado = false;
           try {
@@ -274,6 +286,17 @@ router.post(
 
           await connection.commit();
 
+          auditService.registrarLogProposta({
+            proposta_id: proposta.id,
+            usuario_id: req.user.id,
+            usuario_nome: req.user.nome || "Diretor",
+            usuario_role: req.user.role || "Diretor",
+            acao: "DESCONTO_RECUSADO",
+            titulo: "Desconto por Item Recusado",
+            detalhes: `Solicitação de desconto por item recusada pela diretoria (${req.user.nome || "Diretor"}).`,
+            dados_novos: { status: "Recusada" }
+          }).catch(e => console.warn("Erro ao auditar recusa de desconto:", e.message));
+
           notificationService.enviarNotificacao("desconto_respondido", {
             id: solicitacao.id,
             propostaId: solicitacao.proposta_id,
@@ -328,6 +351,17 @@ router.post(
 
         await connection.commit();
 
+        auditService.registrarLogProposta({
+          proposta_id: proposta.id,
+          usuario_id: req.user.id,
+          usuario_nome: req.user.nome || "Diretor",
+          usuario_role: req.user.role || "Diretor",
+          acao: "DESCONTO_APROVADO",
+          titulo: `Desconto Global de ${solicitacao.percentual_solicitado}% Aprovado`,
+          detalhes: `Desconto aprovado pela diretoria (${req.user.nome || "Diretor"}). Nova proposta gerada com ${solicitacao.percentual_solicitado}% de desconto.`,
+          dados_novos: { status: "Aprovada", percentual: solicitacao.percentual_solicitado }
+        }).catch(e => console.warn("Erro ao auditar aprovação global de desconto:", e.message));
+
         // Aprovação já gravada: falha de PDF/e-mail vira aviso; o retry daria 409 e o e-mail nunca sairia
         const { emailEnviado } = await gerarMidiaESenharProposta(token).catch((e) => {
           console.error("[Solicitação global] Erro ao gerar PDF/enviar e-mail:", e.message);
@@ -358,6 +392,17 @@ router.post(
         );
 
         await connection.commit();
+
+        auditService.registrarLogProposta({
+          proposta_id: proposta ? proposta.id : solicitacao.proposta_id,
+          usuario_id: req.user.id,
+          usuario_nome: req.user.nome || "Diretor",
+          usuario_role: req.user.role || "Diretor",
+          acao: "DESCONTO_RECUSADO",
+          titulo: "Desconto Recusado pela Diretoria",
+          detalhes: `Solicitação de desconto reprovada pela diretoria (${req.user.nome || "Diretor"}).`,
+          dados_novos: { status: "Recusada" }
+        }).catch(e => console.warn("Erro ao auditar recusa global de desconto:", e.message));
 
         notificationService.enviarNotificacao("desconto_respondido", {
           id: solicitacao.id,
