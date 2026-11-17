@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ContaAzul Flow | Conversor Inteligente de Extratos para Conta Azul</title>
+  <meta name="description" content="Automatize a conversão de extratos consolidados Santander/PJ para o modelo oficial de importação do Conta Azul com suporte a múltiplos arquivos.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/automacao/css/styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="logo-badge">⚡</div>
+        <div class="brand-titles">
+          <h1>ContaAzul Flow <span class="tag">Automação Financeira</span></h1>
+          <p>Conversor inteligente de extratos bancários para o modelo oficial de importação do Conta Azul</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <a href="/" class="btn btn-secondary" title="Voltar ao Portal Grupo Q-Max" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          <span>🏛️</span> Portal Q-Max
+        </a>
+        <a href="/automacao/automacao/" class="btn btn-secondary" title="Gerador de Informes IRRF PJ" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          <span>📄</span> Informes IRRF PJ
+        </a>
+        <button id="btnHelp" class="btn btn-secondary" title="Como importar no Conta Azul">
+          <span>💡</span> Instruções de Importação
+        </button>
+        <button id="btnThemeToggle" class="btn btn-secondary btn-icon-only" title="Alternar tema">
+          ☀️
+        </button>
+      </div>
+    </header>
+
+    <!-- Upload Hero Dropzone -->
+    <section class="upload-hero">
+      <div id="dropzone" class="dropzone-card">
+        <div class="dropzone-inner">
+          <div class="dropzone-icon-wrapper">
+            📁
+          </div>
+          <div class="dropzone-text">
+            <h2>Arraste e solte seus Extratos Santander (PDF) aqui</h2>
+            <p>Aceita múltiplos arquivos de uma vez • Processamento 100% instantâneo e seguro no seu navegador</p>
+          </div>
+          <button id="btnSelectFiles" class="btn btn-primary" type="button">
+            <span>➕</span> Selecionar Arquivos PDF
+          </button>
+          <div class="dropzone-badges">
+            <span class="badge-feature">⚡ Extração Automática de Datas (3 Colunas)</span>
+            <span class="badge-feature">📊 Modelo Oficial Conta Azul (.xls / .xlsx)</span>
+            <span class="badge-feature">🔒 Dados 100% Locais e Privados</span>
+          </div>
+        </div>
+        <input type="file" id="fileInput" multiple accept="application/pdf,.pdf" style="display: none;">
+        <input type="file" id="addMoreInput" multiple accept="application/pdf,.pdf" style="display: none;">
+      </div>
+    </section>
+
+    <!-- Progress Bar (Multi-file / Multi-page) -->
+    <div id="progressContainer" class="progress-bar-container">
+      <div class="progress-header">
+        <span id="progressStatus">Lendo extratos...</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressBar" class="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- File Queue & Tabs -->
+    <section id="filesQueueSection" class="files-queue-section">
+      <div class="section-header">
+        <div class="section-title">
+          <span>📂</span> Extratos Carregados
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button id="btnAddMore" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
+            <span>➕</span> Adicionar Mais PDFs
+          </button>
+          <button id="btnClearAll" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; color: var(--danger);">
+            <span>🗑️</span> Limpar Tudo
+          </button>
+        </div>
+      </div>
+      <div id="fileCardsGrid" class="file-cards-grid">
+        <!-- Generated dynamically in app.js -->
+      </div>
+    </section>
+
+    <!-- Stats / KPI Cards -->
+    <section class="stats-grid">
+      <div class="stat-card stat-credits">
+        <div class="stat-label">
+          <span>Total de Entradas (Créditos)</span>
+          <span style="color: var(--success);">📈</span>
+        </div>
+        <div id="statCredits" class="stat-value credits">R$ 0,00</div>
+        <div class="stat-hint">Lançamentos a favor da conta</div>
+      </div>
+
+      <div class="stat-card stat-debits">
+        <div class="stat-label">
+          <span>Total de Saídas (Débitos)</span>
+          <span style="color: var(--danger);">📉</span>
+        </div>
+        <div id="statDebits" class="stat-value debits">R$ 0,00</div>
+        <div class="stat-hint">Pagamentos, PIX e tarifas</div>
+      </div>
+
+      <div class="stat-card stat-balance">
+        <div class="stat-label">
+          <span>Saldo Líquido do Período</span>
+          <span style="color: var(--accent-primary);">⚖️</span>
+        </div>
+        <div id="statBalance" class="stat-value">R$ 0,00</div>
+        <div class="stat-hint">Diferença créditos x débitos</div>
+      </div>
+
+      <div class="stat-card stat-count">
+        <div class="stat-label">
+          <span>Total de Lançamentos</span>
+          <span style="color: var(--warning);">📋</span>
+        </div>
+        <div id="statCount" class="stat-value" style="color: var(--warning);">0</div>
+        <div id="statPeriod" class="stat-hint">Nenhum arquivo carregado</div>
+      </div>
+    </section>
+
+    <!-- Data Table & Action Section -->
+    <section id="tableSection" class="data-section" style="display: none;">
+      
+      <!-- Toolbar -->
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Filtrar por descrição, valor, data...">
+          </div>
+
+          <div class="filter-pills">
+            <button class="filter-pill active" data-filter="ALL">Todos</button>
+            <button class="filter-pill" data-filter="CREDITS">Entradas (+)</button>
+            <button class="filter-pill" data-filter="DEBITS">Saídas (-)</button>
+            <button class="filter-pill" data-filter="CATEGORIZED">Categorizados</button>
+            <button class="filter-pill" data-filter="UNCATEGORIZED">Sem Categoria</button>
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <button id="btnCopyTable" class="btn btn-secondary" title="Copiar linhas selecionadas para colar diretamente no Excel">
+            <span>📋</span> Copiar Tabela
+          </button>
+
+          <!-- Export Dropdown -->
+          <div id="exportDropdownContainer" class="dropdown-container">
+            <button id="btnExportDropdown" class="btn btn-success">
+              <span>📥</span> Baixar Planilha Conta Azul ▾
+            </button>
+            <div class="dropdown-menu">
+              <a href="javascript:void(0)" id="btnExportExcel" class="dropdown-item">
+                <span>📊</span> Excel Moderno (.xlsx) — Recomendado
+              </a>
+              <a href="javascript:void(0)" id="btnExportXls" class="dropdown-item">
+                <span>📁</span> Excel Modelo Original (.xls / BIFF8)
+              </a>
+              <a href="javascript:void(0)" id="btnExportCsv" class="dropdown-item">
+                <span>📄</span> Formato CSV (Delimitador ;)
+              </a>
+              <a href="javascript:void(0)" id="btnExportOfx" class="dropdown-item">
+                <span>🏦</span> Arquivo OFX (.ofx) — Integração Direta
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Table -->
+      <div class="table-responsive">
+        <table class="financial-table">
+          <thead>
+            <tr>
+              <th class="col-check">
+                <input type="checkbox" id="checkAllRows" checked title="Selecionar/Desmarcar todos">
+              </th>
+              <th class="col-date">Data Competência</th>
+              <th class="col-date">Data Vencimento</th>
+              <th class="col-date">Data Pagamento</th>
+              <th class="col-val">Valor (R$)</th>
+              <th class="col-desc">Descrição</th>
+              <th class="col-action"></th>
+            </tr>
+          </thead>
+          <tbody id="financialTableBody">
+            <!-- Populated via app.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="table-footer-bar">
+        <div id="txtSelectedCount">0 de 0 selecionados</div>
+        <div>💡 <em>Dica: Dê um duplo clique ou clique em qualquer célula para editar antes de exportar.</em></div>
+      </div>
+
+    </section>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state">
+      <div class="empty-icon">📊</div>
+      <h3>Nenhum extrato processado ainda</h3>
+      <p>Arraste e solte o arquivo <strong>extrato-consolidado-pj.pdf</strong> ou clique no botão acima para converter para a planilha do Conta Azul em segundos.</p>
+    </div>
+
+  </div>
+
+  <!-- Help / Instructions Modal -->
+  <div id="helpModal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title"><span>📘</span> Como importar a planilha no Conta Azul</h3>
+        <button id="btnCloseHelp" class="btn-close-modal">✕</button>
+      </div>
+      <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; display: flex; flex-direction: column; gap: 14px;">
+        <p>A planilha gerada por este conversor segue rigorosamente a estrutura oficial do <strong>Conta Azul</strong>:</p>
+        
+        <div style="background: var(--bg-input); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 6px;">Passo a passo no Conta Azul:</strong>
+          <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
+            <li>No Conta Azul, acesse o menu <strong>Financeiro</strong> &gt; <strong>Extratos e Contas</strong> (ou <strong>Movimentações</strong>).</li>
+            <li>Selecione a conta corrente bancária desejada.</li>
+            <li>Clique na opção <strong>Importar Extrato / Planilha</strong>.</li>
+            <li>Envie o arquivo <code>.xlsx</code> ou <code>.xls</code> gerado aqui pelo aplicativo.</li>
+            <li>Confirme a importação. Todas as datas, valores de débitos/créditos e descrições serão sincronizados automaticamente!</li>
+          </ol>
+        </div>
+
+        <p>✔️ <strong>Regra de 3 Datas:</strong> Conforme solicitado, as 3 colunas (<em>Data de Competência</em>, <em>Data de Vencimento</em> e <em>Data de Pagamento</em>) são preenchidas com a data exata de cada movimentação.</p>
+        <p>✔️ <strong>Múltiplos Documentos:</strong> Você pode enviar 1, 5 ou mais extratos de uma só vez para gerar uma planilha unificada ou baixar individualmente.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Vendor Scripts -->
+  <script src="/automacao/vendor/pdf.min.js"></script>
+  <script src="/automacao/vendor/xlsx.full.min.js"></script>
+
+  <!-- Application Modules -->
+  <script src="/automacao/js/parser.js"></script>
+  <script src="/automacao/js/categorizer.js"></script>
+  <script src="/automacao/js/excel-exporter.js"></script>
+  <script src="/automacao/js/ofx-exporter.js"></script>
+  <script src="/automacao/js/app.js"></script>
+
+</body>
+</html>

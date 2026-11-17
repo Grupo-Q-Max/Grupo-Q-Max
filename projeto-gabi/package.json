@@ -1,0 +1,27 @@
+{
+  "name": "contaazul-flow",
+  "version": "1.0.0",
+  "description": "Conversor Inteligente de Extratos Bancários para Modelo Oficial Conta Azul",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "convert": "node convert.js",
+    "build": "echo 'No build required'"
+  },
+  "keywords": [
+    "contaazul",
+    "extrato",
+    "santander",
+    "financeiro",
+    "automacao",
+    "excel"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "dependencies": {
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^3.11.174",
+    "xlsx": "^0.18.5"
+  }
+}

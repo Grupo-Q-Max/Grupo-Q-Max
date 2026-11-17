@@ -88,6 +88,23 @@ const nextConfig: NextConfig = {
         source: "/quiz/:path*",
         destination: `${quizUrl}/:path*`,
       },
+      // Automação Financeira (ContaAzul Flow / Projeto Gabi & IRRF)
+      {
+        source: "/automacao",
+        destination: "/automacao/index.html",
+      },
+      {
+        source: "/automacao/",
+        destination: "/automacao/index.html",
+      },
+      {
+        source: "/automacao/irrf",
+        destination: "/automacao/automacao/index.html",
+      },
+      {
+        source: "/automacao/informes",
+        destination: "/automacao/automacao/index.html",
+      },
       // Sistema de Propostas (Finora / Q-Max)
       {
         source: "/proposta/:path*",

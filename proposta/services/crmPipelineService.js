@@ -464,3 +464,4 @@ module.exports = {
   tratarAssinaturaCompletaD4Sign,
   sincronizarTodasPropostasExistentes,
 };
+

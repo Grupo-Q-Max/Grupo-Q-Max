@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Informes de Rendimentos (IRRF PJ) - IN/SRF nº 119/2000</title>
+  <meta name="description" content="Automação simples e perfeita para transformar relatórios de pagamentos em Informes de Rendimentos Oficiais em PDF.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  
+  <link rel="stylesheet" href="/automacao/automacao/style.css">
+</head>
+<body>
+  <!-- Ambient background glow -->
+  <div class="glow-bg glow-1"></div>
+  <div class="glow-bg glow-2"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <div class="app-layout">
+    
+    <!-- TOP NAVBAR -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="nav-logo">
+          <i data-lucide="file-check-2"></i>
+        </div>
+        <div class="nav-title-box">
+          <div class="nav-title-row">
+            <h2>AutoInforme <strong>IRRF PJ</strong></h2>
+            <span class="badge-official">IN/SRF nº 119/2000</span>
+          </div>
+          <span class="nav-subtitle">Gerador Automático de Comprovantes Anuais de Retenção</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="/" class="btn btn-outline" title="Portal Grupo Q-Max" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          <span>🏛️</span> Portal Q-Max
+        </a>
+        <a href="/automacao/" class="btn btn-outline" title="Conversor ContaAzul Flow" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          <span>⚡</span> Conversor ContaAzul
+        </a>
+        <button id="btn-theme-toggle" class="btn-icon" title="Alternar Tema">
+          <i data-lucide="sun" id="theme-icon"></i>
+        </button>
+        <button id="btn-config-toggle" class="btn btn-outline" title="Ajustar dados da sua empresa se necessário">
+          <i data-lucide="settings"></i>
+          <span>Dados da Empresa (Opcional)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- STEP PROGRESS BAR -->
+    <div class="stepper-container">
+      <div class="step-item active" id="step-1-indicator">
+        <div class="step-circle">1</div>
+        <div class="step-info">
+          <strong>Envie a Planilha</strong>
+          <span>Excel ou CSV de Pagamentos</span>
+        </div>
+      </div>
+      <div class="step-line" id="step-line-1"></div>
+      <div class="step-item" id="step-2-indicator">
+        <div class="step-circle">2</div>
+        <div class="step-info">
+          <strong>Processamento Instantâneo</strong>
+          <span>Cálculo automático de 12 meses</span>
+        </div>
+      </div>
+      <div class="step-line" id="step-line-2"></div>
+      <div class="step-item" id="step-3-indicator">
+        <div class="step-circle">3</div>
+        <div class="step-info">
+          <strong>Baixar PDFs Oficiais</strong>
+          <span>PDFs individuais ou arquivo ZIP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTIONAL CONFIG MODAL / DRAWER -->
+    <section id="config-drawer" class="card config-box closed">
+      <div class="box-header">
+        <div class="box-title">
+          <i data-lucide="building" class="text-primary"></i>
+          <div>
+            <h3>Dados da Empresa Fonte Pagadora (Sua Empresa)</h3>
+            <p>Estes dados são preenchidos automaticamente do seu arquivo ou salvos para os próximos usos.</p>
+          </div>
+        </div>
+        <button id="btn-close-config" class="btn-icon-subtle">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group span-2 hidden" style="display: none;">
+          <label for="cfg-empresa">Nome da Sua Empresa (Fonte Pagadora)</label>
+          <input type="text" id="cfg-empresa" class="form-input" placeholder="Ex: Minha Empresa Ltda">
+        </div>
+        <div class="form-group hidden" style="display: none;">
+          <label for="cfg-cnpj">CNPJ da Sua Empresa</label>
+          <input type="text" id="cfg-cnpj" class="form-input" placeholder="Ex: 00.000.000/0000-00">
+        </div>
+        <div class="form-group hidden" style="display: none;">
+          <label for="cfg-ano">Ano-Calendário (Ex: 2025)</label>
+          <input type="text" id="cfg-ano" class="form-input" placeholder="Ex: 2025">
+        </div>
+        <div class="form-group span-2">
+          <label for="cfg-responsavel">Nome do Responsável pela Declaração</label>
+          <input type="text" id="cfg-responsavel" class="form-input" placeholder="Ex: João da Silva">
+        </div>
+        <div class="form-group">
+          <label for="cfg-data">Data de Emissão no PDF</label>
+          <input type="text" id="cfg-data" class="form-input" placeholder="Ex: 18/03/2026">
+        </div>
+        <div class="form-group">
+          <label for="cfg-cod-padrao">Código Retenção Padrão</label>
+          <input type="text" id="cfg-cod-padrao" class="form-input" value="1708">
+        </div>
+        <div class="form-group span-full">
+          <label for="cfg-info-comp">Informações Complementares (Quadro 4 - Opcional)</label>
+          <input type="text" id="cfg-info-comp" class="form-input" placeholder="Ex: Impostos recolhidos no prazo legal...">
+        </div>
+      </div>
+      <div class="box-footer">
+        <span class="text-hint"><i data-lucide="check"></i> As alterações são salvas automaticamente.</span>
+        <button id="btn-save-config-close" class="btn btn-primary btn-sm">Pronto, Fechar</button>
+      </div>
+    </section>
+
+    <!-- SECTION 1: UPLOAD AREA (HERO) -->
+    <section id="upload-section" class="upload-hero-section">
+      <div id="dropzone" class="main-dropzone">
+        <input type="file" id="file-input" accept=".xlsx, .xls, .csv, .txt" class="file-input-hidden">
+        
+        <div class="dropzone-body">
+          <div class="dropzone-icon-bubble">
+            <i data-lucide="upload-cloud"></i>
+          </div>
+          <h1 class="dropzone-heading">Arraste e solte o seu relatório aqui</h1>
+          <p class="dropzone-sub">Transforme relatórios de pagamentos com várias empresas em <strong>Informes de Rendimentos oficiais em PDF</strong> em segundos.</p>
+          
+          <div class="dropzone-buttons">
+            <button type="button" class="btn btn-primary btn-lg" id="btn-browse">
+              <i data-lucide="folder-open"></i>
+              <span>Escolher Arquivo do Computador</span>
+            </button>
+            <span class="divider-text">ou</span>
+            <button type="button" class="btn btn-sample btn-lg" id="btn-load-sample">
+              <i data-lucide="sparkles"></i>
+              <span>Ver Demonstração Pronta (1 Clique)</span>
+            </button>
+          </div>
+
+          <div class="dropzone-footer-badges">
+            <div class="feat-badge"><i data-lucide="file-spreadsheet"></i> Aceita Excel (.xlsx, .xls) e CSV</div>
+            <div class="feat-badge"><i data-lucide="wand-2"></i> Auto-detecção inteligente de colunas</div>
+            <div class="feat-badge"><i data-lucide="shield-check"></i> 100% Seguro (roda direto no seu navegador)</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: MAPPER MODAL (ONLY SHOWN IF USER WANTS MANUAL REVIEW) -->
+    <div id="mapper-section" class="modal-backdrop hidden">
+      <div class="modal-content" style="max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto;">
+        <div class="box-header">
+          <div class="box-title">
+            <i data-lucide="sliders" class="text-primary"></i>
+            <div>
+              <h3>Conferência das Colunas do Arquivo</h3>
+              <p>Identificamos as colunas abaixo. Se estiver tudo certo, basta confirmar:</p>
+            </div>
+          </div>
+        </div>
+        <div class="mapper-grid" id="mapper-fields"></div>
+        
+        <div class="box-header" style="margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+          <div class="box-title">
+            <i data-lucide="tag" class="text-primary"></i>
+            <div>
+              <h3>Códigos de Retenção (Tributos Encontrados)</h3>
+              <p>Preencha os códigos DARF para os tributos encontrados no arquivo. (Salvo automaticamente para as próximas vezes).</p>
+            </div>
+          </div>
+        </div>
+        <div class="mapper-grid" id="tributos-fields"></div>
+
+        <div style="margin-top: 32px; text-align: center;">
+          <button id="btn-apply-mapping" class="btn btn-primary btn-xl">
+            <i data-lucide="check"></i>
+            <span>Confirmar Mapeamentos e Gerar Informes</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: RESULTS DASHBOARD -->
+    <main id="results-section" class="results-layout hidden">
+      
+      <!-- SUCCESS CALLOUT & MASTER ACTION -->
+      <section class="master-action-card">
+        <div class="master-action-content">
+          <div class="master-icon">
+            <i data-lucide="check-circle"></i>
+          </div>
+          <div>
+            <h2>Tudo Pronto! Seus Informes foram Gerados</h2>
+            <p id="master-summary-text">Foram identificadas empresas e calculados todos os 12 meses de rendimento e IRRF.</p>
+          </div>
+        </div>
+        <div class="master-buttons">
+          <button id="btn-download-all-zip" class="btn btn-success btn-xl">
+            <i data-lucide="archive"></i>
+            <span>BAIXAR TODOS OS PDFs EM .ZIP</span>
+          </button>
+          <button id="btn-export-excel" class="btn btn-outline">
+            <i data-lucide="table"></i>
+            <span>Exportar Resumo (.xlsx)</span>
+          </button>
+          <button id="btn-reset" class="btn btn-ghost" title="Processar outra planilha">
+            <i data-lucide="rotate-ccw"></i>
+            <span>Trocar Arquivo</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- KPI METRICS -->
+      <section class="kpi-row">
+        <div class="kpi-box">
+          <span class="kpi-title">Empresas Beneficiárias</span>
+          <div class="kpi-num-group">
+            <i data-lucide="building-2" class="kpi-sub-icon text-blue"></i>
+            <strong id="kpi-total-empresas" class="kpi-number">0</strong>
+          </div>
+        </div>
+        <div class="kpi-box">
+          <span class="kpi-title">Lançamentos Processados</span>
+          <div class="kpi-num-group">
+            <i data-lucide="layers" class="kpi-sub-icon text-purple"></i>
+            <strong id="kpi-total-linhas" class="kpi-number">0</strong>
+          </div>
+        </div>
+        <div class="kpi-box">
+          <span class="kpi-title">Rendimento Bruto Total</span>
+          <div class="kpi-num-group">
+            <i data-lucide="circle-dollar-sign" class="kpi-sub-icon text-green"></i>
+            <strong id="kpi-total-rendimento" class="kpi-number text-green">R$ 0,00</strong>
+          </div>
+        </div>
+        <div class="kpi-box">
+          <span class="kpi-title">Total IRRF Retido</span>
+          <div class="kpi-num-group">
+            <i data-lucide="receipt" class="kpi-sub-icon text-amber"></i>
+            <strong id="kpi-total-irrf" class="kpi-number text-amber">R$ 0,00</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMPANIES LIST & SEARCH -->
+      <section class="card companies-box">
+        <div class="companies-header">
+          <div class="search-wrapper">
+            <i data-lucide="search"></i>
+            <input type="text" id="search-input" placeholder="Buscar por Nome da Empresa ou CNPJ...">
+          </div>
+          <span class="badge-pill" id="companies-counter">0 empresas</span>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Empresa Beneficiária (PJ)</th>
+                <th>CNPJ</th>
+                <th class="text-center">Meses Movimentados</th>
+                <th class="text-right">Rendimento Total</th>
+                <th class="text-right">IRRF Retido Total</th>
+                <th class="text-center">Ações Rápidas</th>
+              </tr>
+            </thead>
+            <tbody id="companies-tbody">
+              <!-- Rendered via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- PDF PREVIEW MODAL -->
+    <div id="pdf-modal" class="modal-backdrop hidden">
+      <div class="modal-window">
+        <div class="modal-top">
+          <div class="modal-title-area">
+            <i data-lucide="file-text" class="text-primary"></i>
+            <div>
+              <h3 id="modal-company-name">Informe de Rendimentos</h3>
+              <span id="modal-company-cnpj" class="modal-cnpj">CNPJ: 00.000.000/0000-00</span>
+            </div>
+          </div>
+          <div class="modal-btns">
+            <button id="btn-modal-download-pdf" class="btn btn-primary">
+              <i data-lucide="download"></i>
+              <span>Baixar Este PDF</span>
+            </button>
+            <button id="btn-modal-print" class="btn btn-outline">
+              <i data-lucide="printer"></i>
+              <span>Imprimir</span>
+            </button>
+            <button id="btn-close-modal" class="btn-icon-subtle" title="Fechar">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+        </div>
+        <div class="modal-content-pdf">
+          <iframe id="pdf-preview-frame" title="Visualização do PDF Oficial"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="main-footer">
+      <p>Gerador de Informes de Rendimentos de acordo com a <strong>Instrução Normativa SRF nº 119/2000</strong></p>
+      <p class="footer-small">Desenvolvido com alta fidelidade visual, cálculos automáticos e exportação em lote.</p>
+    </footer>
+
+  </div>
+
+  <script src="/automacao/automacao/app.js"></script>
+</body>
+</html>
