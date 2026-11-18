@@ -13,7 +13,6 @@ export class MeetingsService {
   ) {}
 
   async getAvailableSlots(eventId: number, dateString: string) {
-    // Retorna horários disponíveis das 08:00 às 17:30
     const startDate = new Date(`${dateString}T00:00:00.000-03:00`);
     if (isNaN(startDate.getTime())) {
       throw new BadRequestException('Formato de data inválido. Use YYYY-MM-DD');
@@ -22,9 +21,10 @@ export class MeetingsService {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 1);
 
+    // 1. Horários já ocupados no banco de dados por QUALQUER agendamento do site
+    // (mesmo que o Hugo ainda não tenha aceitado o convite no Outlook, já bloqueia imediatamente!)
     const existingMeetings = await this.prisma.meetings.findMany({
       where: {
-        event_id: eventId,
         scheduled_at: {
           gte: startDate,
           lt: endDate,
@@ -33,10 +33,8 @@ export class MeetingsService {
       },
     });
 
-    // 1. Horários já ocupados no banco de dados local
-    const takenTimes = existingMeetings.map((m) => m.scheduled_at.toISOString());
-
-    // 2. Consulta 100% em tempo real na agenda do Hugo no Microsoft 365 (Graph API)
+    // 2. Consulta 100% em tempo real na agenda do Hugo no Microsoft 365 (Graph API: calendarView + getSchedule)
+    // Traz todos os eventos, incluindo convites e reuniões que ele AINDA NÃO ACEITOU no Outlook!
     const hugoBusyIntervals = await getHugoBusyIntervals(dateString);
 
     const slots: Date[] = [];
@@ -51,19 +49,27 @@ export class MeetingsService {
     const now = new Date();
     const availableSlots = slots.filter((slot) => {
       if (slot <= now) return false;
-      if (takenTimes.includes(slot.toISOString())) return false;
 
-      // Se houver conflito com qualquer evento na agenda do Microsoft 365 do Hugo, bloqueia o horário
       const slotStart = slot.getTime();
       const slotEnd = slotStart + 45 * 60 * 1000;
 
+      // 1. Bloqueia se colidir com qualquer agendamento do site (intervalo de 45 minutos)
+      const collidesWithSiteMeeting = existingMeetings.some((m) => {
+        const mStart = m.scheduled_at.getTime();
+        const mEnd = mStart + 45 * 60 * 1000;
+        return slotStart < mEnd && slotEnd > mStart;
+      });
+      if (collidesWithSiteMeeting) return false;
+
+      // 2. Bloqueia se houver conflito com qualquer evento na agenda do Hugo no Microsoft 365 (mesmo não aceito ainda)
       const collidesWithHugo = hugoBusyIntervals.some((busy) => {
         const busyStart = busy.start.getTime();
         const busyEnd = busy.end.getTime();
         return slotStart < busyEnd && slotEnd > busyStart;
       });
+      if (collidesWithHugo) return false;
 
-      return !collidesWithHugo;
+      return true;
     });
 
     return availableSlots.map((s) => s.toISOString());
@@ -99,6 +105,33 @@ export class MeetingsService {
     );
     if (hourSp >= 12 && hourSp < 14) {
       throw new BadRequestException('Horário indisponível (intervalo das 12h às 14h).');
+    }
+
+    // 1. Bloqueio rigoroso: verifica se já existe agendamento ativo no banco de dados para esse horário (mesmo antes do aceite)
+    const slotStart = scheduledAt.getTime();
+    const slotEnd = slotStart + 45 * 60 * 1000;
+
+    const existingDbMeeting = await this.prisma.meetings.findFirst({
+      where: {
+        scheduled_at: {
+          gte: new Date(slotStart - 44 * 60 * 1000),
+          lte: new Date(slotStart + 44 * 60 * 1000),
+        },
+        status: { notIn: ['CANCELED'] },
+      },
+    });
+    if (existingDbMeeting) {
+      throw new ConflictException('Este horário já acabou de ser reservado no site.');
+    }
+
+    // 2. Bloqueio rigoroso: verifica se colide com algum compromisso na agenda do Hugo no Microsoft 365 (mesmo que ele ainda não tenha aceitado)
+    const dateStr = scheduledAt.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    const busyIntervals = await getHugoBusyIntervals(dateStr);
+    const collidesWithHugo = busyIntervals.some((busy) => {
+      return slotStart < busy.end.getTime() && slotEnd > busy.start.getTime();
+    });
+    if (collidesWithHugo) {
+      throw new ConflictException('Este horário já está ocupado na agenda executiva de reuniões.');
     }
 
     try {

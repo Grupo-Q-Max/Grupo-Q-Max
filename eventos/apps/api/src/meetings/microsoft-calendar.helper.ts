@@ -67,52 +67,88 @@ export async function getHugoBusyIntervals(
   const token = await getMicrosoftGraphAppToken();
   if (!token) return [];
 
+  const busySlots: BusySlot[] = [];
+
   try {
     const startDateTime = `${dateString}T00:00:00`;
     const endDateTime = `${dateString}T23:59:59`;
 
-    // getSchedule retorna a disponibilidade oficial de qualquer membro da organização
-    const res = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/calendar/getSchedule`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        Prefer: 'outlook.timezone="America/Sao_Paulo"',
-      },
-      body: JSON.stringify({
-        schedules: [userEmail],
-        startTime: { dateTime: startDateTime, timeZone: 'America/Sao_Paulo' },
-        endTime: { dateTime: endDateTime, timeZone: 'America/Sao_Paulo' },
-        availabilityViewInterval: 15,
-      }),
-    });
+    // 1. calendarView: traz TODOS os eventos da agenda do Hugo, incluindo convites que ele AINDA NÃO ACEITOU
+    // (responseStatus: 'notResponded', 'tentativelyAccepted', 'accepted', 'organizer')
+    try {
+      const viewUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/calendarView?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}&$select=subject,start,end,showAs,responseStatus,isCancelled&$top=250`;
+      const viewRes = await fetch(viewUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Prefer: 'outlook.timezone="America/Sao_Paulo"',
+        },
+      });
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      console.warn('[MicrosoftCalendar] getSchedule não retornou sucesso:', res.status, errData);
-      return [];
+      if (viewRes.ok) {
+        const viewData = await viewRes.json();
+        const events = viewData?.value || [];
+        for (const evt of events) {
+          // Se o evento foi cancelado, ignora
+          if (evt.isCancelled === true) continue;
+
+          // Se o evento existe na agenda do Hugo (mesmo que ele NÃO tenha aceitado ainda: notResponded ou tentative),
+          // considera ocupado para proteger a agenda e não permitir conflitos!
+          if (evt.start?.dateTime && evt.end?.dateTime) {
+            const start = new Date(evt.start.dateTime + '-03:00');
+            const end = new Date(evt.end.dateTime + '-03:00');
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+              busySlots.push({ start, end });
+            }
+          }
+        }
+      } else {
+        console.warn('[MicrosoftCalendar] calendarView retorno status:', viewRes.status);
+      }
+    } catch (err: any) {
+      console.warn('[MicrosoftCalendar] Erro ao consultar calendarView:', err.message);
     }
 
-    const data = await res.json();
-    const scheduleInfo = data?.value?.[0];
-    const scheduleItems = scheduleInfo?.scheduleItems || [];
+    // 2. getSchedule: consulta a disponibilidade agregada do Exchange (bloqueia busy, tentative, oof)
+    try {
+      const res = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/calendar/getSchedule`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Prefer: 'outlook.timezone="America/Sao_Paulo"',
+        },
+        body: JSON.stringify({
+          schedules: [userEmail],
+          startTime: { dateTime: startDateTime, timeZone: 'America/Sao_Paulo' },
+          endTime: { dateTime: endDateTime, timeZone: 'America/Sao_Paulo' },
+          availabilityViewInterval: 15,
+        }),
+      });
 
-    const busySlots: BusySlot[] = [];
-    for (const item of scheduleItems) {
-      // Ignora status 'free'; bloqueia 'busy', 'tentative', 'oof' (fora do escritório), 'workingElsewhere'
-      if (item.status && item.status.toLowerCase() !== 'free') {
-        const start = new Date(item.start.dateTime + '-03:00');
-        const end = new Date(item.end.dateTime + '-03:00');
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-          busySlots.push({ start, end });
+      if (res.ok) {
+        const data = await res.json();
+        const scheduleInfo = data?.value?.[0];
+        const scheduleItems = scheduleInfo?.scheduleItems || [];
+
+        for (const item of scheduleItems) {
+          // Ignora status 'free'; bloqueia 'busy', 'tentative', 'oof' (fora do escritório), 'workingElsewhere'
+          if (item.status && item.status.toLowerCase() !== 'free') {
+            const start = new Date(item.start.dateTime + '-03:00');
+            const end = new Date(item.end.dateTime + '-03:00');
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+              busySlots.push({ start, end });
+            }
+          }
         }
       }
+    } catch (err: any) {
+      console.warn('[MicrosoftCalendar] Erro ao consultar getSchedule:', err.message);
     }
 
     return busySlots;
   } catch (err: any) {
     console.warn('[MicrosoftCalendar] Falha ao consultar agenda do Hugo:', err.message);
-    return [];
+    return busySlots;
   }
 }
 
