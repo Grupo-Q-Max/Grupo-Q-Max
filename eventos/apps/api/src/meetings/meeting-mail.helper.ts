@@ -257,21 +257,10 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
       return false;
     }
 
-    const recipients = [bossEmail];
-    if (secondEmail && secondEmail !== bossEmail) {
-      recipients.push(secondEmail);
-    }
-    if (thirdEmail && thirdEmail !== bossEmail && thirdEmail !== secondEmail) {
-      recipients.push(thirdEmail);
-    }
-    if (participantEmail && !participantEmail.includes('@visitante.') && participantEmail.includes('@')) {
-      recipients.push(participantEmail);
-    }
-
+    // 1. Envia notificação com .ics para a Diretoria (Hugo, Rodrigo, Edvaldo)
     await transporter.sendMail({
       from: `"Grupo Q-Max & Finora" <${user}>`,
       to: [bossEmail, secondEmail, thirdEmail].filter(Boolean),
-      cc: participantEmail && !participantEmail.includes('@visitante.') ? participantEmail : undefined,
       subject: `📅 Reunião Estratégica: Hugo Werninghaus & ${participantName} (Invictus)`,
       html: htmlContent,
       icalEvent: {
@@ -282,8 +271,86 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
     });
 
     console.log(
-      `[MeetingMail] Convite enviado com sucesso para ${[bossEmail, secondEmail, thirdEmail].filter(Boolean).join(', ')}`,
+      `[MeetingMail] Convite enviado com sucesso para a diretoria: ${[bossEmail, secondEmail, thirdEmail].filter(Boolean).join(', ')}`,
     );
+
+    // 2. Envia convite de calendário oficial diretamente para o e-mail do Participante
+    if (participantEmail && !participantEmail.includes('@visitante.') && participantEmail.includes('@')) {
+      const participantHtmlContent = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Sua Reunião com Hugo Werninghaus</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b1120; color: #f8fafc; margin: 0; padding: 24px;">
+  <div style="max-width: 600px; margin: 0 auto; background: #0f172a; border-radius: 16px; border: 1px solid #1e293b; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+    
+    <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding: 28px 24px; text-align: center;">
+      <span style="display: inline-block; padding: 4px 12px; background: rgba(255,255,255,0.18); border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: #ffffff; text-transform: uppercase;">
+        Finora Experience · Invictus 2026
+      </span>
+      <h1 style="color: #ffffff; margin: 12px 0 0 0; font-size: 22px; font-weight: 800;">
+        Sua Reunião Estratégica está Confirmada!
+      </h1>
+      <p style="color: #e0f2fe; margin: 6px 0 0 0; font-size: 14px;">
+        ${dateFormatted}
+      </p>
+    </div>
+
+    <div style="padding: 24px;">
+      <p style="font-size: 16px; color: #f8fafc; margin-top: 0;">
+        Olá, <strong>${participantName}</strong>!
+      </p>
+      <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">
+        Sua consultoria executiva com <strong>Hugo Werninghaus (CEO do Grupo Q-Max)</strong> foi confirmada. Este e-mail contém o convite oficial do calendário para adicionar automaticamente à sua agenda (Google Agenda, Apple Calendar ou Outlook).
+      </p>
+
+      <div style="background: #1e293b; border-radius: 12px; padding: 18px; margin: 20px 0; border-left: 4px solid #38bdf8;">
+        <h2 style="margin: 0 0 12px 0; font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
+          Detalhes do Compromisso
+        </h2>
+        <p style="margin: 6px 0; font-size: 14px; color: #f8fafc;">📅 <strong>Data e Horário:</strong> ${dateFormatted}</p>
+        <p style="margin: 6px 0; font-size: 14px; color: #f8fafc;">⏱️ <strong>Duração:</strong> 45 minutos</p>
+        <p style="margin: 6px 0; font-size: 14px; color: #f8fafc;">💻 <strong>Plataforma:</strong> Microsoft Teams</p>
+        <p style="margin: 6px 0; font-size: 14px; color: #f8fafc;">🏥 <strong>Clínica:</strong> ${clinic}</p>
+      </div>
+
+      <div style="background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center;">
+        <span style="font-size: 13px; color: #94a3b8; display: block; margin-bottom: 10px;">Link para acessar a reunião:</span>
+        <a href="${teamsLink}" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 13px 30px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 15px; box-shadow: 0 4px 14px rgba(37,99,235,0.4);">
+          Entrar na Reunião Teams
+        </a>
+      </div>
+
+      <p style="font-size: 12px; color: #64748b; text-align: center; margin: 0;">
+        💡 O convite de calendário (.ics) está anexado a este e-mail. Abra o convite para salvar o compromisso no seu celular.
+      </p>
+    </div>
+
+    <div style="background: #090d16; padding: 16px 24px; text-align: center; border-top: 1px solid #1e293b; font-size: 11px; color: #64748b;">
+      © 2026 Grupo Q-Max & Finora · Tecnologia e Gestão Odontológica
+    </div>
+  </div>
+</body>
+</html>
+      `;
+
+      await transporter.sendMail({
+        from: `"Hugo Werninghaus (Grupo Q-Max)" <${user}>`,
+        to: participantEmail,
+        subject: `📅 Reunião Confirmada: Hugo Werninghaus & ${participantName} (Grupo Q-Max)`,
+        html: participantHtmlContent,
+        icalEvent: {
+          filename: 'convite-reuniao.ics',
+          method: 'REQUEST',
+          content: icsContent,
+        },
+      });
+
+      console.log(`[MeetingMail] Convite direto enviado com sucesso para o participante: ${participantEmail}`);
+    }
+
     return true;
   } catch (err: any) {
     console.error('[MeetingMail] Erro ao enviar convite por e-mail:', err.message);
