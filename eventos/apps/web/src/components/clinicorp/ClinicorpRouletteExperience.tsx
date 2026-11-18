@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowRight, Check, CircleAlert, Crown, LoaderCircle, LogOut, Maximize, Minimize, Play, Search, Sparkles, Target, UserRound, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowRight, Check, CircleAlert, Crown, LoaderCircle, Lock, LogOut, Maximize, Minimize, Play, Search, Sparkles, Target, UserRound, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
+import { QRCodeSVG } from "qrcode.react";
 import { playChimeSound, playSlowdownSound, playTickSound, playWinFanfare, speakWinner, triggerHaptic } from "@/lib/audio";
 import { getAdminProxyUrl, getApiBaseUrl } from "@/lib/api-client";
 import { useLiveEvent } from "@/lib/use-live-event";
@@ -253,6 +254,30 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
 
   // Usuário VIP: possui código VIP cadastrado OU agendou reunião na área de cadastro
   const isVipSpin = Boolean(selected?.vip);
+
+  // Monitora a cada 3 segundos se o participante agendou pelo QR Code do celular para liberar a Roleta VIP em tempo real
+  useEffect(() => {
+    if (isVipSpin || !participationId || phase === "RESULT") return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/participants/${participationId}/public`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isVip || data.hasScheduledMeeting || data.vipCode) {
+            setSelected((prev) => (prev ? { ...prev, vip: true } : prev));
+            if (soundEnabled) playChimeSound();
+            confetti({
+              particleCount: 50,
+              spread: 80,
+              origin: { x: 0.75, y: 0.5 },
+              colors: ["#FFD700", "#FFA500", "#FFFFFF"],
+            });
+          }
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isVipSpin, participationId, phase, soundEnabled]);
 
   const normalPrizes = useMemo(() => {
     const pool = prizes.filter((prize) => !prize.is_vip);
@@ -961,30 +986,42 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   // ---------- Visitante gira ----------
   if (isParticipantConfirmed && (phase === "READY" || phase === "DRAWING")) {
     const spinning = phase === "DRAWING";
+    const isSpinningNormal = phase === "DRAWING" && (!isVipSpin || vipSpinStage === "SPINNING_NORMAL");
+    const isSpinningVip = phase === "DRAWING" && vipSpinStage === "SPINNING_VIP";
+    const isWaitingVip = isVipSpin && vipSpinStage === "WAITING_VIP";
+    const isSuspense = vipSpinStage === "SUSPENSE";
 
-    // CASO 1: VISITANTE VIP -> DUAS ROLETAS NA TELA (Roleta 1 Brindes + Roleta 2 VIP sequenciais)
-    if (isVipSpin) {
-      const isSpinningNormal = phase === "DRAWING" && vipSpinStage === "SPINNING_NORMAL";
-      const isSpinningVip = phase === "DRAWING" && vipSpinStage === "SPINNING_VIP";
-      const isWaitingVip = vipSpinStage === "WAITING_VIP";
-      const isSuspense = vipSpinStage === "SUSPENSE";
+    const siteOrigin =
+      typeof window !== "undefined" && window.location.origin && !window.location.origin.includes("localhost")
+        ? window.location.origin
+        : "https://grupoqmax.com.br";
+    const eventSlug = event?.route || "invictus";
+    const scheduleUrl = selected?.participantId
+      ? `${siteOrigin}/finora-experience/${eventSlug}/agendamento/${selected.participantId}?event=${activeEventId}`
+      : `${siteOrigin}/finora-experience/${eventSlug}/agendamento?event=${activeEventId}`;
 
-      return (
-        <div className="relative h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between items-center px-3 sm:px-6 py-2 select-none">
-          {/* Efeito de ambiente futurista e dourado */}
-          <div className="cyber-grid-overlay pointer-events-none opacity-40" />
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none opacity-25"
-            style={{ background: "radial-gradient(circle, #FFD700 0%, var(--event-accent, #22C3DC) 50%, transparent 75%)" }}
-          />
+    return (
+      <div className="relative h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between items-center px-3 sm:px-6 py-2 select-none">
+        {/* Efeito de ambiente futurista e dourado */}
+        <div className="cyber-grid-overlay pointer-events-none opacity-40" />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none opacity-25"
+          style={{
+            background: isVipSpin
+              ? "radial-gradient(circle, #FFD700 0%, var(--event-accent, #22C3DC) 50%, transparent 75%)"
+              : "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 75%)",
+          }}
+        />
 
-          {/* Barra superior */}
-          <div className="flex-none w-full max-w-6xl h-10 sm:h-11 flex items-center justify-between z-20 px-1">
-            <div className="flex items-center gap-3">
-              <FinoraLogo className="text-[19px] sm:text-[23px]" />
-              <span className="font-mono text-xs tracking-[0.08em] text-accent uppercase hidden sm:inline">{event?.label}</span>
-            </div>
+        {/* Barra superior */}
+        <div className="flex-none w-full max-w-6xl h-10 sm:h-11 flex items-center justify-between z-20 px-1">
+          <div className="flex items-center gap-3">
+            <FinoraLogo className="text-[19px] sm:text-[23px]" />
+            <span className="font-mono text-xs tracking-[0.08em] text-accent uppercase hidden sm:inline">{event?.label}</span>
+          </div>
 
+          {/* Badge superior */}
+          {isVipSpin ? (
             <div className="flex items-center gap-2 rounded-full border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37]/30 to-[#996515]/30 px-3.5 py-1 shadow-[0_0_20px_rgba(212,175,55,0.4)] backdrop-blur">
               <Crown size={14} className="text-[#FFDF73] animate-bounce" />
               <span className="font-mono text-xs font-black text-[#FFDF73] uppercase tracking-wider">
@@ -995,173 +1032,18 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
                 {spinning ? "Boa sorte!" : isDemoSpin ? "Modo Teste VIP" : firstName}
               </span>
             </div>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                aria-label={soundEnabled ? "Desligar som" : "Ligar som"}
-                className="flex size-9 sm:size-10 items-center justify-center rounded-xl border border-ink-line bg-ink-800/80 text-ink-text hover:text-white transition-colors cursor-pointer"
-              >
-                {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-              </button>
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                aria-label="Tela cheia"
-                className="flex size-9 sm:size-10 items-center justify-center rounded-xl border border-ink-line bg-ink-800/80 text-ink-text hover:text-white transition-colors cursor-pointer"
-              >
-                {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-              </button>
-              <button
-                type="button"
-                onClick={returnToQueue}
-                disabled={spinning}
-                aria-label="Voltar ao modo operador"
-                title="Voltar ao modo operador"
-                className="flex size-9 sm:size-10 items-center justify-center rounded-xl border border-ink-line bg-ink-800/80 text-ink-text hover:text-white transition-colors disabled:invisible cursor-pointer"
-              >
-                <X size={18} />
-              </button>
+          ) : (
+            <div className="flex items-center gap-2 rounded-full border border-accent/40 bg-ink-800/90 px-3.5 py-1 shadow-md backdrop-blur">
+              <Sparkles size={14} className="text-accent animate-pulse" />
+              <span className="font-mono text-xs font-black text-accent uppercase tracking-wider">
+                EXPERIÊNCIA FINORA
+              </span>
+              <span className="h-3 w-px bg-white/20" />
+              <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[130px] sm:max-w-[200px]">
+                {spinning ? "Boa sorte!" : isDemoSpin ? "Modo Teste" : firstName}
+              </span>
             </div>
-          </div>
-
-          {/* ÁREA DAS DUAS ROLETAS LADO A LADO */}
-          <div className="flex-1 min-h-0 w-full max-w-6xl flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 my-auto z-10 px-2 py-1">
-            {/* Roleta 1: Brindes */}
-            <div className={`flex flex-col items-center justify-center flex-1 w-full max-w-[min(85vw,calc(45dvh-40px),420px)] md:max-w-[460px] transition-all duration-500 ${isWaitingVip || isSpinningVip || isSuspense ? "opacity-85 scale-95" : "opacity-100 scale-100"}`}>
-              <div className="flex items-center gap-2 mb-2 px-3 py-1 rounded-full border border-accent/40 bg-ink-800/80 backdrop-blur shadow-sm">
-                <span className="font-mono text-[11px] sm:text-xs font-black tracking-wider text-accent uppercase">
-                  {normalWonPrize ? `✔ BRINDE GANHO: ${normalWonPrize.name}` : "ROLETA 1 · BRINDES"}
-                </span>
-              </div>
-              <div className="relative flex items-center justify-center w-full aspect-square">
-                <Wheel
-                  names={normalPrizes.map((p) => p.name)}
-                  rotation={rotationNormal}
-                  spinning={isSpinningNormal}
-                  durationMs={SPIN_MS}
-                  tickerCount={tickerCount}
-                  onSpin={vipSpinStage === "READY_NORMAL" ? handleSpinNormal : undefined}
-                  variant="normal"
-                />
-              </div>
-            </div>
-
-            {/* Divisor Central Estilizado */}
-            <div className="hidden md:flex flex-col items-center justify-center gap-2 flex-none px-2 text-center">
-              <div className="h-16 w-px bg-gradient-to-b from-transparent via-[#FFD700] to-transparent" />
-              <span className="font-display text-2xl font-black text-[#FFDF73] drop-shadow-[0_0_12px_rgba(255,215,0,0.6)]">+</span>
-              <div className="h-16 w-px bg-gradient-to-b from-transparent via-[#FFD700] to-transparent" />
-            </div>
-
-            {/* Roleta 2: Prêmios VIP Dourados */}
-            <div className={`flex flex-col items-center justify-center flex-1 w-full max-w-[min(85vw,calc(45dvh-40px),420px)] md:max-w-[460px] transition-all duration-500 ${isWaitingVip ? "scale-105 drop-shadow-[0_0_35px_rgba(255,215,0,0.5)]" : isSpinningVip || isSuspense ? "scale-105" : "opacity-75"}`}>
-              <div className={`flex items-center gap-2 mb-2 px-3 py-1 rounded-full border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37]/30 to-[#996515]/30 shadow-[0_0_15px_rgba(212,175,55,0.4)] ${isWaitingVip ? "animate-bounce" : ""}`}>
-                <Crown size={13} className="text-[#FFDF73]" />
-                <span className="font-mono text-[11px] sm:text-xs font-black tracking-wider text-[#FFDF73] uppercase">
-                  ROLETA 2 · PRÊMIOS VIP 👑
-                </span>
-              </div>
-              <div className="relative flex items-center justify-center w-full aspect-square">
-                <Wheel
-                  names={vipPrizes.map((p) => p.name)}
-                  rotation={rotationVip}
-                  spinning={isSpinningVip}
-                  durationMs={SPIN_MS}
-                  tickerCount={tickerCount}
-                  onSpin={isWaitingVip ? handleSpinVip : undefined}
-                  variant="vip"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Botão de Ação Sequencial */}
-          <div className="flex-none w-full max-w-md flex flex-col items-center gap-2 pb-1 sm:pb-2 z-20">
-            {isWaitingVip ? (
-              <>
-                <div className="flex flex-col items-center gap-0.5 text-center animate-pop-burst">
-                  <span className="text-xs sm:text-[13px] font-mono font-bold text-accent">
-                    🎉 Brinde Conquistado: <strong className="text-white underline">{normalWonPrize?.name}</strong>!
-                  </span>
-                  <span className="text-[11px] sm:text-xs text-[#FFDF73] font-bold uppercase tracking-wider">
-                    Agora libere o seu giro no Pool de Prêmios VIP:
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSpinVip}
-                  className="w-full h-15 sm:h-18 rounded-full text-xl sm:text-2xl font-black active:scale-[0.98] transition-all cursor-pointer shadow-[0_12px_45px_rgba(255,215,0,0.7)] flex items-center justify-center gap-3 bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] hover:brightness-110 animate-pulse-glow"
-                >
-                  <Crown size={26} className="text-[#3E2723] animate-bounce" />
-                  <span>ROLAR ROLETA VIP 🌟</span>
-                  <ArrowRight size={24} className="animate-pulse text-[#3E2723]" />
-                </button>
-              </>
-            ) : isSpinningVip || isSuspense ? (
-              <div className="w-full h-15 sm:h-18 rounded-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#FFE57F]/30 via-[#FFD700]/30 to-[#FF9900]/30 border-2 border-[#FFD700] text-[#FFDF73] font-display text-lg sm:text-xl font-black shadow-[0_0_30px_rgba(255,215,0,0.4)] animate-pulse">
-                <LoaderCircle size={24} className="animate-spin text-[#FFDF73]" />
-                <span>{isSuspense ? "👑 APURANDO PREMIAÇÃO VIP EXCLUSIVA..." : "Girando a Roleta VIP…"}</span>
-              </div>
-            ) : isSpinningNormal ? (
-              <div className="w-full h-15 sm:h-18 rounded-full flex items-center justify-center gap-3 bg-accent/20 border-2 border-accent text-accent font-display text-lg sm:text-xl font-black shadow-[0_0_30px_rgba(var(--accent-rgb),0.3)] animate-pulse">
-                <LoaderCircle size={24} className="animate-spin text-accent" />
-                <span>Girando Roleta 1 (Brindes)…</span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSpinNormal}
-                disabled={spinning}
-                className="w-full h-15 sm:h-18 rounded-full text-xl sm:text-2xl font-black active:scale-[0.98] transition-all cursor-pointer shadow-[0_12px_45px_rgba(34,195,220,0.4)] flex items-center justify-center gap-3 bg-accent text-ink-950 hover:brightness-110 animate-pulse-glow"
-              >
-                <span>GIRAR ROLETA 1 (BRINDES) 🎯</span>
-                <ArrowRight size={24} className="animate-pulse text-ink-950" />
-              </button>
-            )}
-
-            <div className="flex items-center gap-1.5 text-xs font-mono text-ink-text-2">
-              <kbd className="px-2 py-0.5 rounded bg-ink-800 border border-ink-line text-[11px] font-bold text-[#FFD700]">[Espaço]</kbd>
-              <span>{isWaitingVip ? "para rolar a Roleta VIP!" : "ou clique na roleta para girar"}</span>
-            </div>
-            {error && (
-              <p role="alert" className="flex items-center gap-1.5 text-xs font-semibold text-[#FF8FA3]">
-                <CircleAlert size={14} /> {error}
-              </p>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // CASO 2: VISITANTE NORMAL -> ROLETA ÚNICA DE BRINDES
-    return (
-      <div className="relative h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between items-center px-4 py-2.5 sm:py-4 select-none landscape:grid landscape:grid-cols-[minmax(0,56%)_minmax(0,1fr)] landscape:items-center landscape:gap-10 landscape:px-12 landscape:py-6">
-        {/* Efeito de ambiente futurista leve */}
-        <div className="cyber-grid-overlay pointer-events-none opacity-40" />
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full pointer-events-none opacity-30"
-          style={{ background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 70%)" }}
-        />
-
-        {/* Barra superior: Logotipo, Identificação do Participante e Controles */}
-        <div className="flex-none w-full max-w-5xl h-10 sm:h-11 flex items-center justify-between z-20 px-1">
-          <div className="flex items-center gap-3">
-            <FinoraLogo className="text-[19px] sm:text-[23px]" />
-            <span className="font-mono text-xs tracking-[0.08em] text-accent uppercase hidden sm:inline">{event?.label}</span>
-          </div>
-
-          {/* Badge superior compacto do participante (visível em telas verticais) */}
-          <div className="flex items-center gap-2 rounded-full border border-ink-line/80 bg-ink-800/90 px-3.5 py-1 shadow-md backdrop-blur landscape:hidden">
-            <span className="flex items-center gap-1.5 font-mono text-xs font-bold text-accent uppercase tracking-wider">
-              <Sparkles size={13} /> {spinning ? "Girando" : "Giro Liberado"}
-            </span>
-            <span className="h-3 w-px bg-ink-line" />
-            <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[130px] sm:max-w-[180px]">
-              {spinning ? "Boa sorte!" : isDemoSpin ? "Modo Teste" : firstName}
-            </span>
-          </div>
+          )}
 
           <div className="flex items-center gap-1.5">
             <button
@@ -1193,47 +1075,147 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
           </div>
         </div>
 
-        {/* Coluna da Roleta: Perfeitamente Centralizada e Proporcionada */}
-        <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative my-auto z-10 px-2 py-1 landscape:h-full">
-          <div className="relative flex items-center justify-center w-full aspect-square max-w-[min(90vw,calc(100dvh-175px),520px)] landscape:max-w-[min(720px,84dvh)]">
-            <div
-              className="absolute -inset-4 rounded-full pointer-events-none opacity-30"
-              style={{ background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 75%)" }}
-            />
-            <Wheel
-              names={normalPrizes.map((p) => p.name)}
-              rotation={rotationNormal}
-              spinning={spinning}
-              durationMs={SPIN_MS}
-              tickerCount={tickerCount}
-              onSpin={handleSpin}
-            />
+        {/* ÁREA DAS DUAS ROLETAS LADO A LADO */}
+        <div className="flex-1 min-h-0 w-full max-w-6xl flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 my-auto z-10 px-2 py-1">
+          {/* Roleta 1: Brindes (Liberada para todos) */}
+          <div className={`flex flex-col items-center justify-center flex-1 w-full max-w-[min(85vw,calc(45dvh-40px),420px)] md:max-w-[460px] transition-all duration-500 ${isWaitingVip || isSpinningVip || isSuspense ? "opacity-85 scale-95" : "opacity-100 scale-100"}`}>
+            <div className="flex items-center gap-2 mb-2 px-3 py-1 rounded-full border border-accent/40 bg-ink-800/80 backdrop-blur shadow-sm">
+              <span className="font-mono text-[11px] sm:text-xs font-black tracking-wider text-accent uppercase">
+                {normalWonPrize ? `✔ BRINDE GANHO: ${normalWonPrize.name}` : "ROLETA 1 · BRINDES"}
+              </span>
+            </div>
+            <div className="relative flex items-center justify-center w-full aspect-square">
+              <Wheel
+                names={normalPrizes.map((p) => p.name)}
+                rotation={rotationNormal}
+                spinning={isSpinningNormal}
+                durationMs={SPIN_MS}
+                tickerCount={tickerCount}
+                onSpin={!isWaitingVip && !spinning ? handleSpinNormal : undefined}
+                variant="normal"
+              />
+            </div>
+          </div>
+
+          {/* Divisor Central Estilizado */}
+          <div className="hidden md:flex flex-col items-center justify-center gap-2 flex-none px-2 text-center">
+            <div className="h-16 w-px bg-gradient-to-b from-transparent via-[#FFD700] to-transparent" />
+            <span className="font-display text-2xl font-black text-[#FFDF73] drop-shadow-[0_0_12px_rgba(255,215,0,0.6)]">+</span>
+            <div className="h-16 w-px bg-gradient-to-b from-transparent via-[#FFD700] to-transparent" />
+          </div>
+
+          {/* Roleta 2: Prêmios VIP Dourados (Liberada se VIP, ou bloqueada com QR Code de agendamento) */}
+          <div className={`flex flex-col items-center justify-center flex-1 w-full max-w-[min(85vw,calc(45dvh-40px),420px)] md:max-w-[460px] transition-all duration-500 ${isWaitingVip ? "scale-105 drop-shadow-[0_0_35px_rgba(255,215,0,0.5)]" : isSpinningVip || isSuspense ? "scale-105" : isVipSpin ? "opacity-75" : "opacity-95"}`}>
+            <div className={`flex items-center gap-2 mb-2 px-3 py-1 rounded-full border ${isVipSpin ? "border-[#D4AF37] bg-gradient-to-r from-[#D4AF37]/30 to-[#996515]/30 shadow-[0_0_15px_rgba(212,175,55,0.4)]" : "border-[#FFD700]/50 bg-black/70 shadow-md"} ${isWaitingVip ? "animate-bounce" : ""}`}>
+              {isVipSpin ? <Crown size={13} className="text-[#FFDF73]" /> : <Lock size={13} className="text-[#FFD700]" />}
+              <span className="font-mono text-[11px] sm:text-xs font-black tracking-wider text-[#FFDF73] uppercase">
+                {isVipSpin ? "ROLETA 2 · PRÊMIOS VIP 👑" : "ROLETA 2 · BLOQUEADA"}
+              </span>
+            </div>
+
+            <div className="relative flex items-center justify-center w-full aspect-square">
+              {/* Roleta VIP em si (visível mas com blur se não-VIP) */}
+              <div className={`w-full h-full flex items-center justify-center ${!isVipSpin ? "opacity-35 blur-[2.5px] pointer-events-none select-none transition-all duration-500" : ""}`}>
+                <Wheel
+                  names={vipPrizes.map((p) => p.name)}
+                  rotation={rotationVip}
+                  spinning={isSpinningVip}
+                  durationMs={SPIN_MS}
+                  tickerCount={tickerCount}
+                  onSpin={isWaitingVip ? handleSpinVip : undefined}
+                  variant="vip"
+                />
+              </div>
+
+              {/* CARD SOBREPOSTO COM QR CODE PARA LIBERAR A ROLETA (SE NÃO FOR VIP) */}
+              {!isVipSpin && (
+                <div className="absolute inset-2 sm:inset-4 rounded-3xl border-2 border-[#FFD700] bg-gradient-to-b from-[#090E1C]/95 via-[#0C1222]/95 to-[#080D1A]/95 backdrop-blur-md p-4 sm:p-5 flex flex-col items-center justify-center gap-2.5 shadow-[0_0_40px_rgba(255,215,0,0.35)] text-center animate-pop-burst z-20">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-[#FFD700] bg-[#FFD700]/20 px-3 py-1 shadow-[0_0_15px_rgba(255,215,0,0.3)]">
+                    <Lock size={14} className="text-[#FFE57F]" />
+                    <span className="font-mono text-[11px] sm:text-xs font-black tracking-wider text-[#FFE57F] uppercase">
+                      LIBERAR ROLETA VIP
+                    </span>
+                  </div>
+
+                  {/* QR Code de Alta Definição */}
+                  <div className="rounded-2xl bg-white p-2.5 shadow-[0_0_25px_rgba(255,215,0,0.4)] border-2 border-[#FFD700]">
+                    <QRCodeSVG
+                      value={scheduleUrl}
+                      size={116}
+                      level="M"
+                      includeMargin={false}
+                      fgColor="#080D1A"
+                    />
+                  </div>
+
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="font-display text-xs sm:text-[13px] font-black text-white uppercase tracking-wide">
+                      Escaneie para Liberar a Roleta 2
+                    </span>
+                    <p className="text-[10.5px] sm:text-[11.5px] text-[#C2CEE3] max-w-[230px] leading-tight">
+                      Agende um bate-papo de 30 min com nosso CEO Hugo Werninghaus e concorra a consultorias, mentorias e honorários grátis!
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Em modo vertical, o botão fica Imediatamente Visível Sem Rolagem */}
-        <div className="flex-none w-full max-w-sm flex flex-col items-center gap-1.5 pb-1 sm:pb-2 z-20 landscape:hidden">
-          <button
-            type="button"
-            onClick={handleSpin}
-            disabled={spinning}
-            className="w-full h-14 sm:h-16 rounded-full text-xl sm:text-2xl font-black active:scale-[0.98] transition-all cursor-pointer shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex items-center justify-center gap-2.5 bg-accent text-ink-950 shadow-[0_10px_35px_rgba(var(--accent-rgb),0.55)] hover:brightness-105 animate-pulse-glow"
-          >
-            {spinning ? (
-              <>
-                <LoaderCircle size={22} className="animate-spin text-ink-950" />
-                <span>{suspenseStatus || "Girando a roleta…"}</span>
-              </>
-            ) : (
-              <>
-                <span>GIRAR A ROLETA</span>
-                <ArrowRight size={22} className="animate-pulse" />
-              </>
-            )}
-          </button>
+        {/* Botão de Ação Inferior */}
+        <div className="flex-none w-full max-w-md flex flex-col items-center gap-2 pb-1 sm:pb-2 z-20">
+          {isWaitingVip ? (
+            <>
+              <div className="flex flex-col items-center gap-0.5 text-center animate-pop-burst">
+                <span className="text-xs sm:text-[13px] font-mono font-bold text-accent">
+                  🎉 Brinde Conquistado: <strong className="text-white underline">{normalWonPrize?.name}</strong>!
+                </span>
+                <span className="text-[11px] sm:text-xs text-[#FFDF73] font-bold uppercase tracking-wider">
+                  Agora libere o seu giro no Pool de Prêmios VIP:
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleSpinVip}
+                className="w-full h-15 sm:h-18 rounded-full text-xl sm:text-2xl font-black active:scale-[0.98] transition-all cursor-pointer shadow-[0_12px_45px_rgba(255,215,0,0.7)] flex items-center justify-center gap-3 bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] hover:brightness-110 animate-pulse-glow"
+              >
+                <Crown size={26} className="text-[#3E2723] animate-bounce" />
+                <span>ROLAR ROLETA VIP 🌟</span>
+                <ArrowRight size={24} className="animate-pulse text-[#3E2723]" />
+              </button>
+            </>
+          ) : isSpinningVip || isSuspense ? (
+            <div className="w-full h-15 sm:h-18 rounded-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#FFE57F]/30 via-[#FFD700]/30 to-[#FF9900]/30 border-2 border-[#FFD700] text-[#FFDF73] font-display text-lg sm:text-xl font-black shadow-[0_0_30px_rgba(255,215,0,0.4)] animate-pulse">
+              <LoaderCircle size={24} className="animate-spin text-[#FFDF73]" />
+              <span>{isSuspense ? "👑 APURANDO PREMIAÇÃO VIP EXCLUSIVA..." : "Girando a Roleta VIP…"}</span>
+            </div>
+          ) : isSpinningNormal ? (
+            <div className="w-full h-15 sm:h-18 rounded-full flex items-center justify-center gap-3 bg-accent/20 border-2 border-accent text-accent font-display text-lg sm:text-xl font-black shadow-[0_0_30px_rgba(var(--accent-rgb),0.3)] animate-pulse">
+              <LoaderCircle size={24} className="animate-spin text-accent" />
+              <span>Girando Roleta 1 (Brindes)…</span>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleSpinNormal}
+                disabled={spinning}
+                className="w-full h-15 sm:h-18 rounded-full text-xl sm:text-2xl font-black active:scale-[0.98] transition-all cursor-pointer shadow-[0_12px_45px_rgba(34,195,220,0.4)] flex items-center justify-center gap-3 bg-accent text-ink-950 hover:brightness-110 animate-pulse-glow"
+              >
+                <span>GIRAR ROLETA 1 (BRINDES) 🎯</span>
+                <ArrowRight size={24} className="animate-pulse text-ink-950" />
+              </button>
+              {!isVipSpin && (
+                <span className="text-[11px] sm:text-xs text-[#FFDF73] font-bold text-center">
+                  💡 Quer girar também a Roleta VIP? Escaneie o QR Code na Roleta 2 acima para destravar!
+                </span>
+              )}
+            </>
+          )}
+
           <div className="flex items-center gap-1.5 text-xs font-mono text-ink-text-2">
-            <kbd className="px-2 py-0.5 rounded bg-ink-800 border border-ink-line text-[11px] font-bold text-accent">[Espaço]</kbd>
-            <span>ou toque na roleta para girar</span>
+            <kbd className="px-2 py-0.5 rounded bg-ink-800 border border-ink-line text-[11px] font-bold text-[#FFD700]">[Espaço]</kbd>
+            <span>{isWaitingVip ? "para rolar a Roleta VIP!" : "ou clique na roleta para girar"}</span>
           </div>
           {error && (
             <p role="alert" className="flex items-center gap-1.5 text-xs font-semibold text-[#FF8FA3]">
@@ -1241,54 +1223,9 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
             </p>
           )}
         </div>
-
-        {/* Coluna Lateral no Landscape: Compacta, Nobre, com Botão Imediato */}
-        <div className="hidden landscape:flex flex-col justify-center gap-6 z-10 w-full max-w-md">
-          <div className="flex flex-col gap-1.5">
-            <span className="font-mono text-xs tracking-widest text-accent uppercase font-bold">
-              {spinning ? "SORTEIO EM ANDAMENTO" : isDemoSpin ? "MODO DEMONSTRAÇÃO" : "PARTICIPANTE LIBERADO"}
-            </span>
-            <h1 className="font-display text-[clamp(32px,3.8vw,48px)] font-black text-white leading-tight">
-              {spinning ? "Boa sorte!" : isDemoSpin ? "Giro de Teste" : `${firstName}, é a sua vez!`}
-            </h1>
-            <p className="text-sm sm:text-base text-ink-text-2">
-              100% dos giros ganham brindes no balcão.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 w-full">
-            <button
-              type="button"
-              onClick={handleSpin}
-              disabled={spinning}
-              className="w-full h-20 sm:h-22 rounded-full text-2xl sm:text-[26px] font-black active:scale-[0.98] transition-all cursor-pointer shadow-2xl flex items-center justify-center gap-3 bg-accent text-ink-950 shadow-[0_10px_40px_rgba(var(--accent-rgb),0.55)] hover:brightness-105 animate-pulse-glow"
-            >
-              {spinning ? (
-                <>
-                  <LoaderCircle size={26} className="animate-spin text-ink-950" />
-                  <span>{suspenseStatus || "Girando a roleta…"}</span>
-                </>
-              ) : (
-                <>
-                  <span>GIRAR A ROLETA</span>
-                  <ArrowRight size={26} className="animate-pulse" />
-                </>
-              )}
-            </button>
-            <div className="flex items-center gap-2 text-xs font-mono text-ink-text-2">
-              <kbd className="px-2 py-0.5 rounded bg-ink-800 border border-ink-line text-[11px] font-bold text-accent">[Espaço]</kbd>
-              <span>ou clique diretamente na roleta para girar</span>
-            </div>
-          </div>
-
-          {error && (
-            <p role="alert" className="flex items-center gap-2 font-semibold text-[#FF8FA3]">
-              <CircleAlert size={18} /> {error}
-            </p>
-          )}
-        </div>
       </div>
     );
+  }
   }
 
   // ---------- Operador escolhe quem gira ----------
