@@ -179,19 +179,25 @@ export type MicrosoftCalendarDetailedEvent = {
 
 /**
  * Retorna todos os eventos detalhados da agenda do Hugo para exibição na tela do Admin.
+ * Por padrão busca de hoje até 31 de Janeiro de 2027 (ou no período customizado).
  */
 export async function getHugoDetailedEvents(
-  dateString: string,
+  startDateString?: string,
+  endDateString?: string,
   userEmail: string = env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br',
 ): Promise<MicrosoftCalendarDetailedEvent[]> {
   const token = await getMicrosoftGraphAppToken();
   if (!token) return [];
 
   try {
-    const startDateTime = `${dateString}T00:00:00-03:00`;
-    const endDateTime = `${dateString}T23:59:59-03:00`;
+    const startDateTime = startDateString
+      ? (startDateString.includes('T') ? startDateString : `${startDateString}T00:00:00-03:00`)
+      : '2026-11-18T00:00:00-03:00';
+    const endDateTime = endDateString
+      ? (endDateString.includes('T') ? endDateString : `${endDateString}T23:59:59-03:00`)
+      : '2027-01-31T23:59:59-03:00';
 
-    const viewUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/calendarView?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}&$select=id,subject,start,end,location,webLink,onlineMeeting,organizer,responseStatus,showAs,isCancelled&$top=250`;
+    const viewUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/calendarView?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}&$select=id,subject,start,end,location,webLink,onlineMeeting,organizer,responseStatus,showAs,isCancelled&$top=999`;
     const viewRes = await fetch(viewUrl, {
       headers: {
         Authorization: `Bearer ${token}`,

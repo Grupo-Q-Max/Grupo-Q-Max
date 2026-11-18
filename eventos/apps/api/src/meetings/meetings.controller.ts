@@ -26,7 +26,7 @@ export class MeetingsController {
   @Get('event/:eventId/agenda')
   getAgenda(
     @Param('eventId', ParseIntPipe) eventId: number,
-    @Query('date') dateString: string,
+    @Query('date') dateString?: string,
   ) {
     return this.meetingsService.getAgendaByEvent(eventId, dateString);
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertCircle, ArrowRight, CalendarCheck, CheckCircle2, Clock, Crown, Gift, LoaderCircle, Sparkles, Ticket, Trophy, Users, X } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/api-client";
+import { getApiBaseUrl, fetchApi } from "@/lib/api-client";
 import Link from "next/link";
 import { StepBar } from "@/components/brand/Brand";
 import { Alert, Check, Field, PaperHeading, Segmented, StickyActions, primaryButton } from "@/components/form/Paper";
@@ -230,6 +230,28 @@ function RegistrationForm({
   function handleAcceptCeoMeeting() {
     setCeoModalOpen(false);
     setSchedulerModalOpen(true);
+  }
+
+  async function handleQuickBookNextSlot() {
+    if (!pendingParticipationData || !ceoNextSlot) return;
+    setBookingCeo(true);
+    try {
+      await fetchApi(`/meetings/event/${eventId}/book`, {
+        method: "POST",
+        body: JSON.stringify({
+          participantId: pendingParticipationData.participantId,
+          scheduledAt: ceoNextSlot,
+          meetingEmail: email.trim(),
+        }),
+      });
+      handleMeetingBooked();
+    } catch {
+      // Se o horário rápido já tiver sido tomado, abre o seletor completo
+      setCeoModalOpen(false);
+      setSchedulerModalOpen(true);
+    } finally {
+      setBookingCeo(false);
+    }
   }
 
   function handleMeetingBooked() {
@@ -999,22 +1021,47 @@ function RegistrationForm({
             )}
 
             {/* Ações */}
-            <div className="flex flex-col gap-2 pt-1">
+            <div className="flex flex-col gap-2.5 pt-1">
+              {ceoNextSlot && (
+                <button
+                  type="button"
+                  onClick={handleQuickBookNextSlot}
+                  disabled={bookingCeo}
+                  className="w-full flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-6 font-display text-base font-black text-[#3E2723] shadow-[0_10px_30px_rgba(255,215,0,0.5)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  {bookingCeo ? (
+                    <>
+                      <LoaderCircle size={18} className="animate-spin text-[#3E2723]" />
+                      <span>Confirmando agendamento automático...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Confirmar Reunião no Horário Sugerido ⚡</span>
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={handleAcceptCeoMeeting}
                 disabled={bookingCeo}
-                className="w-full flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-6 font-display text-base sm:text-lg font-black text-[#3E2723] shadow-[0_10px_30px_rgba(255,215,0,0.5)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
+                className={`w-full flex items-center justify-center gap-2 rounded-full py-3 px-6 font-display text-sm sm:text-base font-bold transition-all cursor-pointer ${
+                  ceoNextSlot
+                    ? "border border-[#FFD700]/50 bg-[#FFD700]/15 text-[#FFE57F] hover:bg-[#FFD700]/25"
+                    : "bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] font-black py-3.5"
+                }`}
               >
-                <span>Sim, Escolher Horário & Liberar Roleta VIP 🌟</span>
-                <ArrowRight size={18} />
+                <span>{ceoNextSlot ? "📅 Escolher Outro Dia ou Horário" : "Sim, Escolher Horário & Liberar Roleta VIP 🌟"}</span>
+                <ArrowRight size={16} />
               </button>
 
               <button
                 type="button"
                 onClick={handleDeclineCeoMeeting}
                 disabled={bookingCeo}
-                className="w-full py-2.5 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="w-full py-2 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 Não, quero continuar apenas com a Roleta Normal
               </button>

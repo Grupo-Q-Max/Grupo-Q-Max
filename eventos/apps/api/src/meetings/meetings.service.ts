@@ -285,23 +285,37 @@ export class MeetingsService {
     });
   }
 
-  async getAgendaByEvent(eventId: number, dateString: string) {
-    const startDate = new Date(`${dateString}T00:00:00.000-03:00`);
-    if (isNaN(startDate.getTime())) {
-      throw new BadRequestException('Formato de data inválido. Use YYYY-MM-DD');
-    }
+  async getAgendaByEvent(eventId: number, dateString?: string) {
+    let siteMeetingsWhere: any = {
+      event_id: eventId,
+    };
 
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 1);
+    let msStartDate = '2026-11-18';
+    let msEndDate = '2027-01-31';
+
+    if (dateString && dateString.toUpperCase() !== 'ALL' && dateString.trim() !== '') {
+      const startDate = new Date(`${dateString}T00:00:00.000-03:00`);
+      if (!isNaN(startDate.getTime())) {
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 1);
+        siteMeetingsWhere.scheduled_at = {
+          gte: startDate,
+          lt: endDate,
+        };
+        msStartDate = dateString;
+        msEndDate = dateString;
+      }
+    } else {
+      // Sem filtro de dia: traz todos os agendamentos até o final de Janeiro de 2027
+      siteMeetingsWhere.scheduled_at = {
+        gte: new Date('2026-11-01T00:00:00.000-03:00'),
+        lte: new Date('2027-01-31T23:59:59.000-03:00'),
+      };
+    }
 
     // 1. Reuniões gravadas no banco de dados local
     const siteMeetings = await this.prisma.meetings.findMany({
-      where: {
-        scheduled_at: {
-          gte: startDate,
-          lt: endDate,
-        },
-      },
+      where: siteMeetingsWhere,
       include: {
         participants: {
           select: {
@@ -321,8 +335,8 @@ export class MeetingsService {
       },
     });
 
-    // 2. Compromissos e reuniões do Hugo puxados 100% em tempo real do Microsoft 365 (Teams / Outlook)
-    const msEvents = await getHugoDetailedEvents(dateString);
+    // 2. Compromissos e reuniões do Hugo puxados 100% em tempo real do Microsoft 365 (Teams / Outlook) até janeiro
+    const msEvents = await getHugoDetailedEvents(msStartDate, msEndDate);
 
     // Formata os agendamentos do site
     const formattedSiteMeetings = siteMeetings.map((m) => ({
