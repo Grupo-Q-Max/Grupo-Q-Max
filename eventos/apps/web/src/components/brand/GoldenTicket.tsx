@@ -4,75 +4,7 @@ import { Crown, Sparkles, ShieldCheck, Printer, Check, Copy, Download, Loader2 }
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { renderGoldenTicketCanvas } from "@/lib/ticket-export";
-
-function FinoraDragonflyGold({ className = "h-8 w-10 shrink-0" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 64 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <defs>
-        <linearGradient id="finora-gold-body" x1="32" y1="4" x2="32" y2="44" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFF9B8" />
-          <stop offset="50%" stopColor="#FFD700" />
-          <stop offset="100%" stopColor="#CC7A00" />
-        </linearGradient>
-        <linearGradient id="finora-gold-wing-sup" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="rgba(255, 249, 184, 0.95)" />
-          <stop offset="100%" stopColor="rgba(255, 215, 0, 0.75)" />
-        </linearGradient>
-        <linearGradient id="finora-gold-wing-inf" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="rgba(255, 235, 130, 0.9)" />
-          <stop offset="100%" stopColor="rgba(204, 122, 0, 0.7)" />
-        </linearGradient>
-      </defs>
-
-      {/* Asas e Corpo da Libélula Dourada de Luxo */}
-      <g transform="translate(32, 22)">
-        <ellipse
-          cx="-15"
-          cy="-6"
-          rx="15"
-          ry="5.5"
-          transform="rotate(-28 -15 -6)"
-          fill="url(#finora-gold-wing-sup)"
-          stroke="#FFD700"
-          strokeWidth="1.4"
-        />
-        <ellipse
-          cx="15"
-          cy="-6"
-          rx="15"
-          ry="5.5"
-          transform="rotate(28 15 -6)"
-          fill="url(#finora-gold-wing-sup)"
-          stroke="#FFD700"
-          strokeWidth="1.4"
-        />
-        <ellipse
-          cx="-12"
-          cy="5"
-          rx="12"
-          ry="4.5"
-          transform="rotate(-14 -12 5)"
-          fill="url(#finora-gold-wing-inf)"
-          stroke="#FFD700"
-          strokeWidth="1.3"
-        />
-        <ellipse
-          cx="12"
-          cy="5"
-          rx="12"
-          ry="4.5"
-          transform="rotate(14 12 5)"
-          fill="url(#finora-gold-wing-inf)"
-          stroke="#FFD700"
-          strokeWidth="1.3"
-        />
-        <circle cx="0" cy="-11" r="3.2" fill="url(#finora-gold-body)" />
-        <ellipse cx="0" cy="-3.5" rx="2.4" ry="4.5" fill="url(#finora-gold-body)" />
-        <path d="M -1.6 1 L 1.6 1 L 0.7 18 L -0.7 18 Z" fill="url(#finora-gold-body)" />
-      </g>
-    </svg>
-  );
-}
+import { FINORA_LOGO_GOLD_BASE64 } from "@/lib/brand-assets-base64";
 
 export type GoldenTicketProps = {
   code: string;
@@ -160,7 +92,7 @@ export default function GoldenTicket({
       {/* O Bilhete Dourado */}
       <div
         id={`golden-ticket-${code}`}
-        className="golden-ticket-card relative w-full max-w-[660px] overflow-hidden rounded-3xl p-1.5 select-none shadow-[0_22px_60px_rgba(255,185,0,0.45)] transition-all duration-300 hover:shadow-[0_28px_75px_rgba(255,215,0,0.65)]"
+        className="golden-ticket-card relative w-full max-w-[620px] overflow-hidden rounded-3xl p-1.5 select-none shadow-[0_22px_60px_rgba(255,185,0,0.45)] transition-all duration-300 hover:shadow-[0_28px_75px_rgba(255,215,0,0.65)]"
         style={{
           background:
             "linear-gradient(135deg, #FFF9B8 0%, #FFD700 22%, #FF9900 48%, #FFF085 68%, #CC7A00 88%, #FFD700 100%)",
@@ -184,12 +116,12 @@ export default function GoldenTicket({
 
             {/* Cabeçalho do Bilhete */}
             <div className="relative z-10 flex items-center justify-between gap-2 border-b border-[#FFD700]/35 pb-3.5">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <FinoraDragonflyGold className="h-8 w-10 shrink-0" />
-                <span className="h-5 w-px bg-[#FFD700]/50 shrink-0" />
-                <span className="font-mono text-xs sm:text-sm font-black tracking-widest text-[#FFD700] uppercase whitespace-nowrap">
-                  FINORA
-                </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <img
+                  src={FINORA_LOGO_GOLD_BASE64}
+                  alt="Finora"
+                  className="h-7 sm:h-8 w-auto object-contain shrink-0"
+                />
               </div>
 
               <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#FFD700] bg-gradient-to-r from-[#FFD700]/30 to-[#FF9900]/40 px-3 py-1.5 shadow-[0_0_18px_rgba(255,215,0,0.35)] shrink-0 whitespace-nowrap">

@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import QRCode from "qrcode";
 import { assetUrl } from "@/components/brand/Brand";
+import { FINORA_LOGO_GOLD_BASE64 } from "./brand-assets-base64";
 
 export type TicketExportItem = {
   code: string;
@@ -91,89 +92,6 @@ function traceNotchedTicketPath(
 }
 
 /**
- * Desenha a libélula oficial da Finora em traço vetorial de luxo dourado/branco
- */
-function drawFinoraDragonflyVector(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  size: number
-) {
-  ctx.save();
-  ctx.translate(cx, cy);
-
-  // Asas superiores esquerdas e direitas (elipses anguladas)
-  ctx.fillStyle = "rgba(255, 235, 130, 0.85)";
-  ctx.strokeStyle = "#FFD700";
-  ctx.lineWidth = 1.6;
-
-  // Asa sup esq
-  ctx.save();
-  ctx.rotate(-0.55);
-  ctx.beginPath();
-  ctx.ellipse(-size * 0.45, -size * 0.15, size * 0.42, size * 0.14, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-
-  // Asa sup dir
-  ctx.save();
-  ctx.rotate(0.55);
-  ctx.beginPath();
-  ctx.ellipse(size * 0.45, -size * 0.15, size * 0.42, size * 0.14, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-
-  // Asas inferiores
-  ctx.fillStyle = "rgba(255, 215, 0, 0.7)";
-  // Asa inf esq
-  ctx.save();
-  ctx.rotate(-0.25);
-  ctx.beginPath();
-  ctx.ellipse(-size * 0.38, size * 0.16, size * 0.32, size * 0.11, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-
-  // Asa inf dir
-  ctx.save();
-  ctx.rotate(0.25);
-  ctx.beginPath();
-  ctx.ellipse(size * 0.38, size * 0.16, size * 0.32, size * 0.11, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-
-  // Corpo central e cauda da libélula
-  const bodyGrad = ctx.createLinearGradient(0, -size * 0.5, 0, size * 0.55);
-  bodyGrad.addColorStop(0, "#FFF9B8");
-  bodyGrad.addColorStop(0.5, "#FFD700");
-  bodyGrad.addColorStop(1, "#CC7A00");
-
-  ctx.fillStyle = bodyGrad;
-  ctx.beginPath();
-  // Cabeça
-  ctx.arc(0, -size * 0.32, size * 0.09, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Tórax e cauda segmentada
-  ctx.beginPath();
-  ctx.ellipse(0, -size * 0.1, size * 0.07, size * 0.14, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(-size * 0.045, size * 0.04);
-  ctx.lineTo(size * 0.045, size * 0.04);
-  ctx.lineTo(size * 0.02, size * 0.55);
-  ctx.lineTo(-size * 0.02, size * 0.55);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.restore();
-}
-
-/**
  * Desenha um bilhete dourado VIP no canvas em altíssima resolução (1500x680)
  * com moldura ouro pura, entalhes de picote reais e visual de luxo idêntico ao modelo
  */
@@ -190,8 +108,8 @@ export async function renderGoldenTicketCanvas(
     } catch {}
   }
 
-  const width = 1480;
-  const height = 660;
+  const width = 1140;
+  const height = 640;
   canvas.width = width;
   canvas.height = height;
 
@@ -200,18 +118,18 @@ export async function renderGoldenTicketCanvas(
 
   ctx.clearRect(0, 0, width, height);
 
-  // Parâmetros do cartão e margens de corte / respiro
-  const marginX = 22;
-  const marginY = 22;
+  // Parâmetros do cartão e margens de corte / respiro (layout compacto proporcional)
+  const marginX = 20;
+  const marginY = 20;
   const cardW = width - marginX * 2;
   const cardH = height - marginY * 2;
   const cardX = marginX;
   const cardY = marginY;
 
-  const outerRadius = 32;
-  const stubWidth = 390;
+  const outerRadius = 28;
+  const stubWidth = 340;
   const stubX = cardX + cardW - stubWidth;
-  const notchR = 26; // Raio do entalhe de picote
+  const notchR = 24; // Raio do entalhe de picote
 
   // 1. Sombra suave externa do cartão
   ctx.save();
@@ -294,41 +212,44 @@ export async function renderGoldenTicketCanvas(
   // ========================================================
   // LADO ESQUERDO: CORPO PRINCIPAL DO BILHETE
   // ========================================================
-  const contentLeft = innerX + 44;
-  const headerY = innerY + 44;
+  const contentLeft = innerX + 36;
+  const headerY = innerY + 40;
 
-  // A. Logo Finora: Libélula vetorial dourada de altíssima definição
-  drawFinoraDragonflyVector(ctx, contentLeft + 18, headerY, 32);
+  // A. Logo Oficial da Finora em ouro metálico (marca registrada oficial com libélula odontológica)
+  let logo = logoImg;
+  if (!logo) {
+    try {
+      logo = await loadImage(FINORA_LOGO_GOLD_BASE64);
+    } catch {}
+  }
 
-  // Separador vertical fino
-  ctx.strokeStyle = "rgba(255, 215, 0, 0.5)";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(contentLeft + 48, headerY - 14);
-  ctx.lineTo(contentLeft + 48, headerY + 14);
-  ctx.stroke();
-
-  // Wordmark Finora (limpo, dourado e sem cortes: apenas FINORA)
-  ctx.fillStyle = "#FFD700";
-  ctx.font = "900 18px monospace, 'Courier New', Courier";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText("FINORA", contentLeft + 62, headerY);
+  if (logo && logo.naturalWidth > 0) {
+    const logoH = 34;
+    const logoW = Math.round(logoH * (logo.naturalWidth / logo.naturalHeight || 3.58));
+    ctx.drawImage(logo, contentLeft, headerY - logoH / 2, logoW, logoH);
+  } else {
+    // Fallback caso imagem não carregue: Wordmark em ouro puro
+    ctx.fillStyle = "#FFD700";
+    ctx.font = "900 20px monospace, 'Courier New', Courier";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText("FINORA", contentLeft, headerY);
+  }
 
   // B. Badge Nobre "BILHETE DOURADO · VIP"
   const badgeText = "BILHETE DOURADO · VIP";
-  ctx.font = "900 13px monospace, 'Courier New', Courier";
+  ctx.font = "900 12.5px monospace, 'Courier New', Courier";
   const badgeTextWidth = ctx.measureText(badgeText).width;
-  const badgeH = 38;
-  const badgeW = badgeTextWidth + 56;
-  const badgeX = stubX - 44 - badgeW;
+  const badgeH = 36;
+  const badgeW = badgeTextWidth + 52;
+  const badgeX = stubX - 32 - badgeW;
   const badgeY = headerY - badgeH / 2;
 
   // Fundo com gradiente e borda dourada
   const badgeGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH);
   badgeGrad.addColorStop(0, "rgba(255, 215, 0, 0.35)");
   badgeGrad.addColorStop(1, "rgba(255, 153, 0, 0.45)");
-  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 19);
+  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 18);
   ctx.fillStyle = badgeGrad;
   ctx.fill();
   ctx.strokeStyle = "#FFD700";
@@ -336,70 +257,70 @@ export async function renderGoldenTicketCanvas(
   ctx.stroke();
 
   // Mini coroa dourada dentro do badge
-  const crownX = badgeX + 20;
+  const crownX = badgeX + 18;
   const crownY = headerY;
   ctx.fillStyle = "#FFE57F";
   ctx.beginPath();
-  ctx.moveTo(crownX - 8, crownY + 7);
-  ctx.lineTo(crownX + 8, crownY + 7);
-  ctx.lineTo(crownX + 9, crownY - 3);
-  ctx.lineTo(crownX + 4.5, crownY + 1.5);
-  ctx.lineTo(crownX, crownY - 7);
-  ctx.lineTo(crownX - 4.5, crownY + 1.5);
-  ctx.lineTo(crownX - 9, crownY - 3);
+  ctx.moveTo(crownX - 7, crownY + 6);
+  ctx.lineTo(crownX + 7, crownY + 6);
+  ctx.lineTo(crownX + 8, crownY - 3);
+  ctx.lineTo(crownX + 4, crownY + 1.5);
+  ctx.lineTo(crownX, crownY - 6);
+  ctx.lineTo(crownX - 4, crownY + 1.5);
+  ctx.lineTo(crownX - 8, crownY - 3);
   ctx.closePath();
   ctx.fill();
 
   // Texto do badge
   ctx.fillStyle = "#FFF9B8";
-  ctx.font = "900 13px monospace, 'Courier New', Courier";
+  ctx.font = "900 12.5px monospace, 'Courier New', Courier";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText(badgeText, crownX + 16, headerY);
+  ctx.fillText(badgeText, crownX + 14, headerY);
 
   // Linha divisória fina abaixo do cabeçalho
   ctx.strokeStyle = "rgba(255, 215, 0, 0.35)";
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.moveTo(contentLeft, headerY + 32);
-  ctx.lineTo(stubX - 44, headerY + 32);
+  ctx.moveTo(contentLeft, headerY + 28);
+  ctx.lineTo(stubX - 32, headerY + 28);
   ctx.stroke();
 
   // C. Conteúdo Central
-  const bodyY = headerY + 68;
+  const bodyY = headerY + 56;
 
   // Nome do Evento em destaque dourado
   ctx.fillStyle = "#FFD700";
-  ctx.font = "900 15px monospace, 'Courier New', Courier";
+  ctx.font = "900 14px monospace, 'Courier New', Courier";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   ctx.fillText(eventName.toUpperCase(), contentLeft, bodyY);
 
   // Título Nobre
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "900 44px 'Segoe UI', Inter, -apple-system, sans-serif";
-  ctx.fillText("Passe Oficial do Mentorado", contentLeft, bodyY + 28);
+  ctx.font = "900 38px 'Segoe UI', Inter, -apple-system, sans-serif";
+  ctx.fillText("Passe Oficial do Mentorado", contentLeft, bodyY + 24);
 
   // Subtítulo
   ctx.fillStyle = "#C2CEE3";
-  ctx.font = "600 16px 'Segoe UI', Inter, -apple-system, sans-serif";
+  ctx.font = "600 14.5px 'Segoe UI', Inter, -apple-system, sans-serif";
   ctx.fillText(
     "Acesso exclusivo ao Pool de Prêmios VIP e cupom oficial registrado para o Grande Sorteio no Telão.",
     contentLeft,
-    bodyY + 88
+    bodyY + 76
   );
 
   // D. Callout Oficial: Fotopolimerizador
-  const calloutY = bodyY + 128;
-  const calloutW = stubX - contentLeft - 44;
-  const calloutH = 50;
+  const calloutY = bodyY + 116;
+  const calloutW = stubX - contentLeft - 32;
+  const calloutH = 48;
 
   const calloutGrad = ctx.createLinearGradient(contentLeft, calloutY, contentLeft + calloutW, calloutY + calloutH);
   calloutGrad.addColorStop(0, "rgba(255, 215, 0, 0.32)");
   calloutGrad.addColorStop(0.5, "rgba(255, 153, 0, 0.28)");
   calloutGrad.addColorStop(1, "rgba(255, 215, 0, 0.32)");
 
-  roundRect(ctx, contentLeft, calloutY, calloutW, calloutH, 15);
+  roundRect(ctx, contentLeft, calloutY, calloutW, calloutH, 14);
   ctx.fillStyle = calloutGrad;
   ctx.fill();
   ctx.strokeStyle = "#FFD700";
@@ -408,44 +329,44 @@ export async function renderGoldenTicketCanvas(
 
   // Texto do callout com brilho
   ctx.fillStyle = "#FFF9B8";
-  ctx.font = "900 15px 'Segoe UI', Inter, sans-serif";
+  ctx.font = "900 13px 'Segoe UI', Inter, sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText("✦ ESCANEIE O QR CODE AO LADO E CONCORRA A UM FOTOPOLIMERIZADOR !", contentLeft + 20, calloutY + calloutH / 2);
+  ctx.fillText("✦ ESCANEIE O QR CODE AO LADO E CONCORRA A UM FOTOPOLIMERIZADOR !", contentLeft + 16, calloutY + calloutH / 2);
 
   // E. Rodapé: Portador Credenciado & Cupom Telão
-  const footerLineY = innerY + innerH - 120;
+  const footerLineY = innerY + innerH - 110;
   ctx.strokeStyle = "rgba(255, 215, 0, 0.35)";
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.moveTo(contentLeft, footerLineY);
-  ctx.lineTo(stubX - 44, footerLineY);
+  ctx.lineTo(stubX - 32, footerLineY);
   ctx.stroke();
 
-  const footerY = footerLineY + 18;
+  const footerY = footerLineY + 16;
 
   // Portador
   ctx.fillStyle = "#A7B2C6";
-  ctx.font = "bold 12px monospace, 'Courier New', Courier";
+  ctx.font = "bold 11px monospace, 'Courier New', Courier";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   ctx.fillText("PORTADOR CREDENCIADO", contentLeft, footerY);
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "900 24px 'Segoe UI', Inter, -apple-system, sans-serif";
-  ctx.fillText(ticket.participantName || "Mentorado Convidado", contentLeft, footerY + 22);
+  ctx.font = "900 22px 'Segoe UI', Inter, -apple-system, sans-serif";
+  ctx.fillText(ticket.participantName || "Mentorado Convidado", contentLeft, footerY + 18);
 
   // Cupom Telão com fonte grande em ouro
-  const cupomX = stubX - 44;
+  const cupomX = stubX - 32;
   ctx.textAlign = "right";
   ctx.fillStyle = "#FFD700";
-  ctx.font = "bold 12px monospace, 'Courier New', Courier";
+  ctx.font = "bold 11px monospace, 'Courier New', Courier";
   ctx.fillText("CUPOM TELÃO", cupomX, footerY);
 
   const formattedTicket = ticket.code.startsWith("#") ? ticket.code : `#${ticket.code}`;
   ctx.fillStyle = "#FFD700";
-  ctx.font = "900 42px monospace, 'Courier New', Courier";
-  ctx.fillText(formattedTicket, cupomX, footerY + 20);
+  ctx.font = "900 40px monospace, 'Courier New', Courier";
+  ctx.fillText(formattedTicket, cupomX, footerY + 16);
 
   // ========================================================
   // LADO DIREITO: CANHOTO DE SEGURANÇA COM QR CODE
@@ -456,8 +377,8 @@ export async function renderGoldenTicketCanvas(
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
   ctx.fillStyle = "#FFD700";
-  ctx.font = "900 14px monospace, 'Courier New', Courier";
-  ctx.fillText("ESCANEAR PARA ATIVAR", stubCenterX, innerY + 38);
+  ctx.font = "900 13.5px monospace, 'Courier New', Courier";
+  ctx.fillText("ESCANEAR PARA ATIVAR", stubCenterX, innerY + 34);
 
   // Gerar QR Code
   const origin =
@@ -468,7 +389,7 @@ export async function renderGoldenTicketCanvas(
 
   const qrCanvas = document.createElement("canvas");
   await QRCode.toCanvas(qrCanvas, activationUrl, {
-    width: 200,
+    width: 176,
     margin: 1,
     color: {
       dark: "#080D1A",
@@ -477,11 +398,11 @@ export async function renderGoldenTicketCanvas(
   });
 
   // Box branco do QR Code com borda dourada elegante
-  const qrBoxSize = 224;
+  const qrBoxSize = 200;
   const qrBoxX = stubCenterX - qrBoxSize / 2;
-  const qrBoxY = innerY + 68;
+  const qrBoxY = innerY + 60;
 
-  roundRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 20);
+  roundRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 18);
   ctx.fillStyle = "#FFFFFF";
   ctx.fill();
   ctx.strokeStyle = "#FFD700";
@@ -489,30 +410,30 @@ export async function renderGoldenTicketCanvas(
   ctx.stroke();
 
   // Desenhar QR Code dentro do box
-  ctx.drawImage(qrCanvas, qrBoxX + 12, qrBoxY + 12, 200, 200);
+  ctx.drawImage(qrCanvas, qrBoxX + 12, qrBoxY + 12, 176, 176);
 
   // Sub-legenda do QR
   ctx.fillStyle = "#C2CEE3";
-  ctx.font = "600 13px 'Segoe UI', Inter, sans-serif";
-  ctx.fillText("Abre cadastro com código pronto", stubCenterX, qrBoxY + qrBoxSize + 18);
+  ctx.font = "600 12px 'Segoe UI', Inter, sans-serif";
+  ctx.fillText("Abre cadastro com código pronto", stubCenterX, qrBoxY + qrBoxSize + 14);
 
   // Bloco Inferior: Código VIP gigante estilo cupom
-  const codeBlockY = qrBoxY + qrBoxSize + 48;
+  const codeBlockY = qrBoxY + qrBoxSize + 40;
   ctx.fillStyle = "#A7B2C6";
-  ctx.font = "900 12px monospace, 'Courier New', Courier";
+  ctx.font = "900 11.5px monospace, 'Courier New', Courier";
   ctx.fillText("BILHETE VIP", stubCenterX, codeBlockY);
 
   ctx.fillStyle = "#FFD700";
-  ctx.font = "900 46px monospace, 'Courier New', Courier";
-  ctx.fillText(formattedTicket, stubCenterX, codeBlockY + 24);
+  ctx.font = "900 44px monospace, 'Courier New', Courier";
+  ctx.fillText(formattedTicket, stubCenterX, codeBlockY + 20);
 
   // Selo de Válido / Resgatado
   ctx.fillStyle = ticket.redeemedAt ? "#F59E0B" : "#10B981";
-  ctx.font = "bold 15px 'Segoe UI', Inter, sans-serif";
+  ctx.font = "bold 14px 'Segoe UI', Inter, sans-serif";
   ctx.fillText(
     ticket.redeemedAt ? "● Resgatado" : "✔ Válido p/ 1 Giro",
     stubCenterX,
-    codeBlockY + 76
+    codeBlockY + 70
   );
 }
 
