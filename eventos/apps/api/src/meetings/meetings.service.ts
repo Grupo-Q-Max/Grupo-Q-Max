@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { notifyLive } from '../live/live';
 import { sendMeetingInvite } from './meeting-mail.helper';
-import { getHugoBusyIntervals, createMicrosoftCalendarEvent } from './microsoft-calendar.helper';
+import { getHugoBusyIntervals, createMicrosoftCalendarEvent, getHugoDetailedEvents } from './microsoft-calendar.helper';
 
 @Injectable()
 export class MeetingsService {
@@ -289,9 +289,9 @@ export class MeetingsService {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 1);
 
-    const meetings = await this.prisma.meetings.findMany({
+    // 1. Reuniões gravadas no banco de dados local
+    const siteMeetings = await this.prisma.meetings.findMany({
       where: {
-        event_id: eventId,
         scheduled_at: {
           gte: startDate,
           lt: endDate,
@@ -308,15 +308,66 @@ export class MeetingsService {
             cro_number: true,
             cro_state: true,
             chairs_count: true,
-          }
-        }
+          },
+        },
       },
       orderBy: {
         scheduled_at: 'asc',
       },
     });
 
-    return meetings;
+    // 2. Compromissos e reuniões do Hugo puxados 100% em tempo real do Microsoft 365 (Teams / Outlook)
+    const msEvents = await getHugoDetailedEvents(dateString);
+
+    // Formata os agendamentos do site
+    const formattedSiteMeetings = siteMeetings.map((m) => ({
+      id: m.id,
+      source: 'FINORA' as const,
+      isMicrosoft: false,
+      scheduled_at: m.scheduled_at.toISOString(),
+      status: m.status,
+      participants: m.participants,
+    }));
+
+    // Formata e adiciona os eventos do Microsoft 365 (evitando duplicar reuniões que o site acabou de criar)
+    const formattedMsEvents = msEvents
+      .filter((evt) => {
+        const evtTime = new Date(evt.scheduled_at).getTime();
+        if (isNaN(evtTime)) return false;
+        // Se já existe agendamento do site no mesmo horário (diferença < 2 min), evita duplicata
+        return !siteMeetings.some((sm) => Math.abs(sm.scheduled_at.getTime() - evtTime) < 2 * 60 * 1000);
+      })
+      .map((evt, idx) => ({
+        id: `ms-${evt.id || idx}`,
+        source: 'MICROSOFT_365' as const,
+        isMicrosoft: true,
+        scheduled_at: evt.scheduled_at,
+        end_at: evt.end_at,
+        status: 'SCHEDULED' as const,
+        subject: evt.subject,
+        location: evt.location,
+        teamsUrl: evt.teamsUrl,
+        webLink: evt.webLink,
+        organizerName: evt.organizerName,
+        organizerEmail: evt.organizerEmail,
+        msResponse: evt.response,
+        msShowAs: evt.showAs,
+        participants: {
+          id: 0,
+          full_name: evt.subject,
+          phone: '',
+          email: evt.organizerEmail || 'hugo@grupoqmax.com.br',
+          clinic_name: evt.location || 'Microsoft Outlook / Teams',
+          cro_number: null,
+          cro_state: null,
+          chairs_count: null,
+        },
+      }));
+
+    // Retorna todos os agendamentos consolidados e ordenados por horário
+    return [...formattedSiteMeetings, ...formattedMsEvents].sort(
+      (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime(),
+    );
   }
 
   async updateMeetingStatus(meetingId: number, status: 'COMPLETED' | 'NO_SHOW' | 'CANCELED') {

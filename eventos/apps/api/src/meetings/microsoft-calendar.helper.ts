@@ -152,6 +152,75 @@ export async function getHugoBusyIntervals(
   }
 }
 
+export type MicrosoftCalendarDetailedEvent = {
+  id: string;
+  subject: string;
+  scheduled_at: string;
+  end_at: string;
+  location?: string;
+  teamsUrl?: string;
+  webLink?: string;
+  organizerName?: string;
+  organizerEmail?: string;
+  response: string;
+  showAs: string;
+};
+
+/**
+ * Retorna todos os eventos detalhados da agenda do Hugo para exibição na tela do Admin.
+ */
+export async function getHugoDetailedEvents(
+  dateString: string,
+  userEmail: string = env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br',
+): Promise<MicrosoftCalendarDetailedEvent[]> {
+  const token = await getMicrosoftGraphAppToken();
+  if (!token) return [];
+
+  try {
+    const startDateTime = `${dateString}T00:00:00-03:00`;
+    const endDateTime = `${dateString}T23:59:59-03:00`;
+
+    const viewUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/calendarView?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}&$select=id,subject,start,end,location,webLink,onlineMeeting,organizer,responseStatus,showAs,isCancelled&$top=250`;
+    const viewRes = await fetch(viewUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Prefer: 'outlook.timezone="America/Sao_Paulo"',
+      },
+    });
+
+    if (!viewRes.ok) return [];
+
+    const data = await viewRes.json();
+    const events = data?.value || [];
+    const result: MicrosoftCalendarDetailedEvent[] = [];
+
+    for (const evt of events) {
+      if (evt.isCancelled === true) continue;
+      const startIso = evt.start?.dateTime ? `${evt.start.dateTime}-03:00` : '';
+      const endIso = evt.end?.dateTime ? `${evt.end.dateTime}-03:00` : '';
+
+      result.push({
+        id: evt.id,
+        subject: evt.subject || 'Compromisso Outlook',
+        scheduled_at: startIso,
+        end_at: endIso,
+        location: evt.location?.displayName || undefined,
+        teamsUrl: evt.onlineMeeting?.joinUrl || undefined,
+        webLink: evt.webLink || undefined,
+        organizerName: evt.organizer?.emailAddress?.name || undefined,
+        organizerEmail: evt.organizer?.emailAddress?.address || undefined,
+        response: evt.responseStatus?.response || 'accepted',
+        showAs: evt.showAs || 'busy',
+      });
+    }
+
+    return result;
+  } catch (err: any) {
+    console.warn('[MicrosoftCalendar] Erro ao carregar getHugoDetailedEvents:', err.message);
+    return [];
+  }
+}
+
 /**
  * Cria o evento diretamente no Microsoft Calendar de hugo@grupoqmax.com.br
  * com link do Teams e convite para rodrigo@grupoqmax.com.br e participante.
