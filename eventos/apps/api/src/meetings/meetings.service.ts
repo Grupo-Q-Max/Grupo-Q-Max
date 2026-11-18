@@ -141,18 +141,7 @@ export class MeetingsService {
         );
       }
 
-      // 4. Marca a participação como VIP para destravar a Roleta VIP automaticamente
-      await this.prisma.participations.updateMany({
-        where: {
-          participant_id: participantId,
-          event_id: eventId,
-        },
-        data: {
-          vip: true,
-        },
-      });
-
-      // 5. Dispara convite de calendário oficial do Outlook (.ics) para o chefe Hugo
+      // 4. Dispara convite de calendário oficial do Outlook (.ics) para o chefe Hugo
       sendMeetingInvite({
         meetingId: meeting.id,
         scheduledAt,
@@ -169,6 +158,8 @@ export class MeetingsService {
       }).catch((err) => {
         console.warn('[MeetingsService] Falha ao enviar convite por e-mail:', err.message);
       });
+
+      notifyLive(eventId);
 
       notifyLive(eventId);
       return meeting;
