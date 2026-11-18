@@ -11,7 +11,10 @@ export default async function AdminEventSelector() {
   const events = listableEvents<EventRecord>(await getEvents());
 
   return (
-    <main className="relative flex min-h-dvh flex-col gap-12 bg-ink-950 px-6 py-12 text-ink-text sm:px-16 overflow-hidden">
+    <main
+      style={{ background: "#050811", color: "#F8FAFC", minHeight: "100vh" }}
+      className="relative flex min-h-dvh flex-col gap-12 bg-ink-950 px-6 py-12 text-ink-text sm:px-16 overflow-hidden"
+    >
       {/* Glow institucional */}
       <div
         aria-hidden="true"

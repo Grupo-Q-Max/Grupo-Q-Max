@@ -100,6 +100,223 @@ export class DrawsService {
     return weighted[weighted.length - 1].prize;
   }
 
+  /**
+   * Seleciona e consome um prêmio de um pool específico (Normal ou VIP).
+   */
+  private async selectAndConsumePrize(
+    tx: any,
+    eventId: number,
+    isVip: boolean,
+  ) {
+    // 1. Fila programada para o pool especificado
+    const queue = await tx.prize_queue.findMany({
+      where: {
+        event_id: eventId,
+        status: 'WAITING',
+      },
+      orderBy: [
+        {
+          position: 'asc',
+        },
+        {
+          id: 'asc',
+        },
+      ],
+      include: {
+        prizes: true,
+      },
+    });
+
+    const eligibleQueueItem = queue.find(
+      (item: any) =>
+        item.prizes.active &&
+        item.prizes.available_stock > 0 &&
+        item.prizes.is_vip === isVip,
+    );
+
+    let selectedPrize: any = null;
+    let selectedQueueItem: any = null;
+    let source: 'QUEUE' | 'AUTOMATIC' = 'AUTOMATIC';
+    let probabilityUsed: number | null = null;
+
+    if (eligibleQueueItem) {
+      selectedQueueItem = eligibleQueueItem;
+      selectedPrize = eligibleQueueItem.prizes;
+      source = 'QUEUE';
+    } else {
+      // 2. Sorteio automático por peso no pool
+      const availablePrizes = await tx.prizes.findMany({
+        where: {
+          event_id: eventId,
+          active: true,
+          is_vip: isVip,
+          available_stock: {
+            gt: 0,
+          },
+          probability: {
+            gt: 0,
+          },
+        },
+        orderBy: {
+          id: 'asc',
+        },
+      });
+
+      if (availablePrizes.length === 0) {
+        throw new BadRequestException(
+          `Não existem prêmios ativos com estoque no pool ${isVip ? 'VIP' : 'Normal'}.`,
+        );
+      }
+
+      const totalEventDraws = await tx.draws.count({
+        where: {
+          participations: {
+            event_id: eventId,
+          },
+        },
+      });
+
+      const eligibleByPacing: typeof availablePrizes = [];
+      for (const prize of availablePrizes) {
+        const rules = extractPacingRules(prize.description);
+        if (rules.initialDrawDelay > 0 && totalEventDraws < rules.initialDrawDelay) {
+          continue;
+        }
+        if (rules.minDrawInterval > 0) {
+          const lastDrawOfPrize = await tx.draws.findFirst({
+            where: {
+              prize_id: prize.id,
+              participations: {
+                event_id: eventId,
+              },
+            },
+            orderBy: {
+              id: 'desc',
+            },
+          });
+
+          if (lastDrawOfPrize) {
+            const drawsSince = await tx.draws.count({
+              where: {
+                participations: {
+                  event_id: eventId,
+                },
+                id: {
+                  gt: lastDrawOfPrize.id,
+                },
+              },
+            });
+
+            if (drawsSince < rules.minDrawInterval) {
+              continue;
+            }
+          }
+        }
+        eligibleByPacing.push(prize);
+      }
+
+      const candidatePrizes =
+        eligibleByPacing.length > 0 ? eligibleByPacing : availablePrizes;
+
+      selectedPrize = this.chooseWeightedPrize(candidatePrizes);
+      probabilityUsed = Number(selectedPrize.probability);
+      source = 'AUTOMATIC';
+    }
+
+    if (!selectedPrize) {
+      throw new BadRequestException(
+        `Não foi possível selecionar um prêmio no pool ${isVip ? 'VIP' : 'Normal'}.`,
+      );
+    }
+
+    // 3. Decremento atômico de estoque
+    const stockUpdate = await tx.prizes.updateMany({
+      where: {
+        id: selectedPrize.id,
+        active: true,
+        available_stock: {
+          gt: 0,
+        },
+      },
+      data: {
+        available_stock: {
+          decrement: 1,
+        },
+      },
+    });
+
+    if (stockUpdate.count !== 1) {
+      throw new ConflictException(
+        `O prêmio ${selectedPrize.name} ficou sem estoque durante o sorteio. Tente novamente.`,
+      );
+    }
+
+    const updatedPrize = await tx.prizes.findUnique({
+      where: {
+        id: selectedPrize.id,
+      },
+    });
+
+    if (!updatedPrize) {
+      throw new NotFoundException('Prêmio não encontrado após atualização.');
+    }
+
+    const stockBefore = updatedPrize.available_stock + 1;
+
+    // 4. Consumo de fila se aplicável
+    if (selectedQueueItem) {
+      const consumed = await tx.prize_queue.updateMany({
+        where: {
+          id: selectedQueueItem.id,
+          status: 'WAITING',
+        },
+        data: {
+          status: 'CONSUMED',
+          consumed_at: new Date(),
+        },
+      });
+
+      if (consumed.count !== 1) {
+        throw new ConflictException(
+          'O item da fila programada já foi usado em outro giro. Tente novamente.',
+        );
+      }
+
+      const remainingQueue = await tx.prize_queue.findMany({
+        where: {
+          event_id: eventId,
+          status: 'WAITING',
+        },
+        orderBy: [
+          { position: 'asc' },
+          { id: 'asc' },
+        ],
+      });
+
+      for (let index = 0; index < remainingQueue.length; index++) {
+        const item = remainingQueue[index];
+        const expectedPosition = index + 1;
+        if (item.position !== expectedPosition) {
+          await tx.prize_queue.update({
+            where: { id: item.id },
+            data: { position: expectedPosition },
+          });
+        }
+      }
+    }
+
+    const finalPrize = { ...selectedPrize, ...updatedPrize };
+
+    return {
+      prize: finalPrize,
+      source,
+      probabilityUsed,
+      stockBefore,
+      stockAfter: finalPrize.available_stock,
+      consumedQueueId: selectedQueueItem?.id ?? null,
+    };
+  }
+
   async draw(participationId: number, context?: RequestContext) {
     let eventId: number | undefined;
     const result = await this.prisma.$transaction(
@@ -108,7 +325,6 @@ export class DrawsService {
           where: {
             id: participationId,
           },
-
           include: {
             events: true,
             participants: true,
@@ -127,18 +343,46 @@ export class DrawsService {
 
         eventId = participation.event_id;
 
+        // Se já sorteou, retorna o prêmio existente (e o prêmio VIP complementar se houver)
         if (participation.draws) {
           const existingDraw = participation.draws;
+          const vipPart = await tx.participations.findFirst({
+            where: {
+              event_id: participation.event_id,
+              participant_id: participation.participant_id,
+              id: { not: participation.id },
+              draws: { isNot: null },
+            },
+            include: {
+              draws: {
+                include: {
+                  prizes: true,
+                },
+              },
+            },
+          });
+
+          const isDual = Boolean(vipPart?.draws);
 
           return {
             success: true,
             alreadyDrawn: true,
+            vip: Boolean(participation.vip_codes) || isDual,
+            isDualDraw: isDual,
 
             draw: {
               id: existingDraw.id,
               source: existingDraw.source,
               drawnAt: existingDraw.drawn_at,
             },
+
+            vipDraw: vipPart?.draws
+              ? {
+                  id: vipPart.draws.id,
+                  source: vipPart.draws.source,
+                  drawnAt: vipPart.draws.drawn_at,
+                }
+              : null,
 
             participation: {
               id: participation.id,
@@ -155,15 +399,23 @@ export class DrawsService {
               name: existingDraw.prizes.name,
               description: existingDraw.prizes.description,
               imageUrl: existingDraw.prizes.image_url,
-
               probability: existingDraw.probability_used,
-
               stockRemaining: existingDraw.prizes.available_stock,
             },
 
+            vipPrize: vipPart?.draws?.prizes
+              ? {
+                  id: vipPart.draws.prizes.id,
+                  name: vipPart.draws.prizes.name,
+                  description: vipPart.draws.prizes.description,
+                  imageUrl: vipPart.draws.prizes.image_url,
+                  probability: vipPart.draws.probability_used,
+                  stockRemaining: vipPart.draws.prizes.available_stock,
+                }
+              : null,
+
             queue: {
               consumed: existingDraw.source === 'QUEUE',
-
               consumedQueueId: null,
               nextPrize: null,
             },
@@ -190,331 +442,107 @@ export class DrawsService {
         }
 
         // =====================================================
-        // 0. TRAVA DE SEGURANÇA: EXIGE AGENDAMENTO
+        // REQUISITO VIP: CÓDIGO VIP OU REUNIÃO AGENDADA
         // =====================================================
         const hasMeeting = await tx.meetings.findFirst({
           where: {
             participant_id: participation.participant_id,
             event_id: participation.event_id,
-            status: 'SCHEDULED',
+            status: { in: ['SCHEDULED', 'COMPLETED'] },
           },
         });
 
-        if (!hasMeeting) {
-          throw new BadRequestException(
-            'Para girar a roleta e ganhar seu prêmio, você precisa agendar seu bate-papo VIP com nossos especialistas!',
-          );
-        }
+        const isVipUser = Boolean(participation.vip_codes) || Boolean(hasMeeting);
 
         // =====================================================
-        // 1. FILA PROGRAMADA
+        // 1. SORTEIO DO PRÊMIO NORMAL (ROLETA 1)
         // =====================================================
-
-        const queue = await tx.prize_queue.findMany({
-          where: {
-            event_id: participation.event_id,
-            status: 'WAITING',
-          },
-
-          orderBy: [
-            {
-              position: 'asc',
-            },
-            {
-              id: 'asc',
-            },
-          ],
-
-          include: {
-            prizes: true,
-          },
-        });
-
-        // Cartão VIP: giro usa só o pool VIP; sem cartão, nunca sorteia VIP.
-        const isVipSpin = Boolean(participation.vip_codes);
-
-        const eligibleQueueItem = queue.find(
-          (item) =>
-            item.prizes.active &&
-            item.prizes.available_stock > 0 &&
-            item.prizes.is_vip === isVipSpin,
+        const normalResult = await this.selectAndConsumePrize(
+          tx,
+          participation.event_id,
+          false,
         );
-
-        let selectedPrize: (typeof queue)[number]['prizes'] | null = null;
-
-        let selectedQueueItem: (typeof queue)[number] | null = null;
-
-        let source: 'QUEUE' | 'AUTOMATIC' = 'AUTOMATIC';
-
-        let probabilityUsed: number | null = null;
-
-        if (eligibleQueueItem) {
-          selectedQueueItem = eligibleQueueItem;
-
-          selectedPrize = eligibleQueueItem.prizes;
-
-          source = 'QUEUE';
-        } else {
-          // ===================================================
-          // 2. SORTEIO AUTOMÁTICO POR PESO
-          // ===================================================
-
-          const availablePrizes = await tx.prizes.findMany({
-            where: {
-              event_id: participation.event_id,
-
-              active: true,
-
-              is_vip: isVipSpin,
-
-              available_stock: {
-                gt: 0,
-              },
-
-              probability: {
-                gt: 0,
-              },
-            },
-
-            orderBy: {
-              id: 'asc',
-            },
-          });
-
-          if (availablePrizes.length === 0) {
-            throw new BadRequestException(
-              'Não existem prêmios ativos com estoque e probabilidade disponível.',
-            );
-          }
-
-          // Total de sorteios já realizados neste evento
-          const totalEventDraws = await tx.draws.count({
-            where: {
-              participations: {
-                event_id: participation.event_id,
-              },
-            },
-          });
-
-          // Filtra prêmios aplicando as regras de Cadência Inteligente (Smart Pacing)
-          const eligibleByPacing: typeof availablePrizes = [];
-
-          for (const prize of availablePrizes) {
-            const rules = extractPacingRules(prize.description);
-
-            // 1. Regra de Delay Inicial (Ex: só libera após N sorteios no evento)
-            if (
-              rules.initialDrawDelay > 0 &&
-              totalEventDraws < rules.initialDrawDelay
-            ) {
-              continue; // Ignorado neste giro
-            }
-
-            // 2. Regra de Intervalo Mínimo / Cooldown (Ex: a cada 50 giros)
-            if (rules.minDrawInterval > 0) {
-              const lastDrawOfPrize = await tx.draws.findFirst({
-                where: {
-                  prize_id: prize.id,
-                  participations: {
-                    event_id: participation.event_id,
-                  },
-                },
-                orderBy: {
-                  id: 'desc',
-                },
-              });
-
-              if (lastDrawOfPrize) {
-                const drawsSince = await tx.draws.count({
-                  where: {
-                    participations: {
-                      event_id: participation.event_id,
-                    },
-                    id: {
-                      gt: lastDrawOfPrize.id,
-                    },
-                  },
-                });
-
-                if (drawsSince < rules.minDrawInterval) {
-                  continue; // Ainda em cooldown
-                }
-              }
-            }
-
-            eligibleByPacing.push(prize);
-          }
-
-          // Usa os elegíveis pelas regras de cadência ou fallback para disponíveis
-          const candidatePrizes =
-            eligibleByPacing.length > 0 ? eligibleByPacing : availablePrizes;
-
-          selectedPrize = this.chooseWeightedPrize(candidatePrizes);
-
-          probabilityUsed = Number(selectedPrize.probability);
-
-          source = 'AUTOMATIC';
-        }
-
-        if (!selectedPrize) {
-          throw new BadRequestException(
-            'Não foi possível selecionar um prêmio.',
-          );
-        }
-
-        // =====================================================
-        // 3. ESTOQUE ATÔMICO
-        // =====================================================
-
-        const stockUpdate = await tx.prizes.updateMany({
-          where: {
-            id: selectedPrize.id,
-
-            active: true,
-
-            available_stock: {
-              gt: 0,
-            },
-          },
-
-          data: {
-            available_stock: {
-              decrement: 1,
-            },
-          },
-        });
-
-        if (stockUpdate.count !== 1) {
-          throw new ConflictException(
-            'O prêmio ficou sem estoque durante o sorteio. Tente novamente.',
-          );
-        }
-
-        const updatedPrize = await tx.prizes.findUnique({
-          where: {
-            id: selectedPrize.id,
-          },
-        });
-
-        if (!updatedPrize) {
-          throw new NotFoundException(
-            'Prêmio não encontrado após atualização.',
-          );
-        }
-
-        const stockBefore = updatedPrize.available_stock + 1;
-
-        // =====================================================
-        // 4. DRAW
-        // =====================================================
 
         const draw = await tx.draws.create({
           data: {
             participation_id: participation.id,
-
-            prize_id: selectedPrize.id,
-
-            source,
-
-            probability_used: probabilityUsed,
-
+            prize_id: normalResult.prize.id,
+            source: normalResult.source,
+            probability_used: normalResult.probabilityUsed,
             forced_by_admin_id: null,
           },
         });
 
-        // =====================================================
-        // 5. MOVIMENTAÇÃO DE ESTOQUE
-        // =====================================================
-
         await tx.prize_stock_movements.create({
           data: {
             event_id: participation.event_id,
-
-            prize_id: selectedPrize.id,
-
+            prize_id: normalResult.prize.id,
             type: 'DRAW',
-
             quantity: -1,
-
-            stock_before: stockBefore,
-
-            stock_after: updatedPrize.available_stock,
-
+            stock_before: normalResult.stockBefore,
+            stock_after: normalResult.stockAfter,
             reason:
-              source === 'QUEUE'
+              normalResult.source === 'QUEUE'
                 ? 'Prêmio entregue através da fila programada.'
                 : 'Prêmio entregue através do sorteio automático.',
           },
         });
 
         // =====================================================
-        // 6. CONSUMIR ITEM DA FILA
+        // 2. SORTEIO DO PRÊMIO VIP (ROLETA 2) SE FOR VIP
         // =====================================================
+        let vipResult: any = null;
+        let vipDraw: any = null;
 
-        if (selectedQueueItem) {
-          const consumed = await tx.prize_queue.updateMany({
-            where: {
-              id: selectedQueueItem.id,
-              status: 'WAITING',
-            },
+        if (isVipUser) {
+          vipResult = await this.selectAndConsumePrize(
+            tx,
+            participation.event_id,
+            true,
+          );
 
+          const vipParticipation = await tx.participations.create({
             data: {
-              status: 'CONSUMED',
-              consumed_at: new Date(),
-            },
-          });
-
-          if (consumed.count !== 1) {
-            throw new ConflictException(
-              'O item da fila programada já foi usado em outro giro. Tente novamente.',
-            );
-          }
-
-          const remainingQueue = await tx.prize_queue.findMany({
-            where: {
               event_id: participation.event_id,
-
-              status: 'WAITING',
+              participant_id: participation.participant_id,
+              status: 'COMPLETED',
+              completed_at: new Date(),
+              device_id: participation.device_id,
+              ip_address: participation.ip_address,
+              user_agent: participation.user_agent,
             },
-
-            orderBy: [
-              {
-                position: 'asc',
-              },
-              {
-                id: 'asc',
-              },
-            ],
           });
 
-          for (let index = 0; index < remainingQueue.length; index++) {
-            const item = remainingQueue[index];
+          vipDraw = await tx.draws.create({
+            data: {
+              participation_id: vipParticipation.id,
+              prize_id: vipResult.prize.id,
+              source: vipResult.source,
+              probability_used: vipResult.probabilityUsed,
+              forced_by_admin_id: null,
+            },
+          });
 
-            const expectedPosition = index + 1;
-
-            if (item.position !== expectedPosition) {
-              await tx.prize_queue.update({
-                where: {
-                  id: item.id,
-                },
-
-                data: {
-                  position: expectedPosition,
-                },
-              });
-            }
-          }
+          await tx.prize_stock_movements.create({
+            data: {
+              event_id: participation.event_id,
+              prize_id: vipResult.prize.id,
+              type: 'DRAW',
+              quantity: -1,
+              stock_before: vipResult.stockBefore,
+              stock_after: vipResult.stockAfter,
+              reason: 'Prêmio VIP entregue através do giro duplo liberado.',
+            },
+          });
         }
 
         // =====================================================
-        // 7. FINALIZAR PARTICIPAÇÃO
+        // 3. FINALIZAR PARTICIPAÇÃO PRINCIPAL
         // =====================================================
-
         await tx.participations.update({
           where: {
             id: participation.id,
           },
-
           data: {
             status: 'COMPLETED',
             completed_at: new Date(),
@@ -522,146 +550,60 @@ export class DrawsService {
         });
 
         // =====================================================
-        // 8. AUDITORIA
+        // 4. AUDITORIA
         // =====================================================
-
         await tx.audit_logs.create({
           data: {
             event_id: participation.event_id,
-
             actor_type: 'SYSTEM',
-
             action: 'DRAW_COMPLETED',
-
             entity_type: 'DRAW',
-
             entity_id: String(draw.id),
-
-            description: `Sorteio concluído. ${participation.participants.full_name} recebeu ${selectedPrize.name}.`,
-
+            description: isVipUser
+              ? `Sorteio duplo VIP concluído. ${participation.participants.full_name} recebeu ${normalResult.prize.name} + ${vipResult.prize.name}.`
+              : `Sorteio concluído. ${participation.participants.full_name} recebeu ${normalResult.prize.name}.`,
             before_data: null,
-
             after_data: JSON.stringify({
               drawId: draw.id,
-
               participationId: participation.id,
-
               participantId: participation.participant_id,
-
               participantName: participation.participants.full_name,
-
-              prizeId: selectedPrize.id,
-
-              prizeName: selectedPrize.name,
-
-              source,
-
-              probabilityUsed,
-
-              stockBefore,
-
-              stockAfter: updatedPrize.available_stock,
-
-              queueId: selectedQueueItem?.id ?? null,
+              prizeId: normalResult.prize.id,
+              prizeName: normalResult.prize.name,
+              vipDrawId: vipDraw?.id ?? null,
+              vipPrizeId: vipResult?.prize?.id ?? null,
+              vipPrizeName: vipResult?.prize?.name ?? null,
+              isVipUser,
+              source: normalResult.source,
             }),
-
             metadata: JSON.stringify({
-              source,
-
+              source: normalResult.source,
               deviceId: participation.device_id,
-
               participationIp: participation.ip_address,
             }),
-
             ip_address: context?.ipAddress ?? participation.ip_address ?? null,
-
             user_agent: context?.userAgent ?? participation.user_agent ?? null,
-          },
-        });
-
-        // =====================================================
-        // 8.5 WHATSAPP NOTIFICATION
-        // =====================================================
-        const meeting = await tx.meetings.findFirst({
-          where: {
-            event_id: participation.event_id,
-            participant_id: participation.participant_id,
-            status: 'SCHEDULED',
-          },
-        });
-
-        let template = meeting
-          ? participation.events.whatsapp_vip_message
-          : participation.events.whatsapp_prize_message;
-
-        if (!template && meeting) {
-          template = participation.events.whatsapp_prize_message;
-        }
-
-        if (template && process.env.ENABLE_DRAW_WHATSAPP === 'true') {
-          const nome = participation.participants.full_name.split(' ')[0] || '';
-          let finalMsg = template
-            .replace(/{nome}/g, nome)
-            .replace(/{premio}/g, selectedPrize.name);
-          finalMsg = finalMsg.replace(/{pin}/g, participation.id.toString());
-
-          const isVipPrize =
-            selectedPrize.name.toLowerCase().includes('vip') ||
-            selectedPrize.name.toLowerCase().includes('consultoria');
-
-          if (isVipPrize) {
-            // Rota única por evento: o slug do banco é o endereço público.
-            const linkAgendamento = publicUrl(`/${participation.events.slug}/agendamento/${participation.whatsapp_token}?event=${participation.event_id}`);
-            finalMsg += `\n\n🎉 *Você ganhou a ${selectedPrize.name}!* 🎉\nPara evitar filas, escolha o melhor horário para o seu atendimento agora mesmo no link abaixo:\n👉 ${linkAgendamento}`;
-          }
-
-          await tx.message_queue.create({
-            data: {
-              event_id: participation.event_id,
-              participant_id: participation.participant_id,
-              phone: participation.participants.phone_normalized,
-              message: finalMsg,
-              status: 'PENDING',
-              attempts: 0,
-            },
-          });
-        }
-
-        // =====================================================
-        // 9. PRÓXIMO ITEM DA FILA
-        // =====================================================
-
-        const nextQueue = await tx.prize_queue.findFirst({
-          where: {
-            event_id: participation.event_id,
-
-            status: 'WAITING',
-          },
-
-          orderBy: [
-            {
-              position: 'asc',
-            },
-            {
-              id: 'asc',
-            },
-          ],
-
-          include: {
-            prizes: true,
           },
         });
 
         return {
           success: true,
-
-          vip: isVipSpin,
+          vip: isVipUser,
+          isDualDraw: isVipUser,
 
           draw: {
             id: draw.id,
-            source,
+            source: normalResult.source,
             drawnAt: draw.drawn_at,
           },
+
+          vipDraw: vipDraw
+            ? {
+                id: vipDraw.id,
+                source: vipResult.source,
+                drawnAt: vipDraw.drawn_at,
+              }
+            : null,
 
           participation: {
             id: participation.id,
@@ -670,34 +612,33 @@ export class DrawsService {
 
           participant: {
             id: participation.participants.id,
-
             name: participation.participants.full_name,
           },
 
           prize: {
-            id: selectedPrize.id,
-            name: selectedPrize.name,
-            description: selectedPrize.description,
-            imageUrl: selectedPrize.image_url,
-
-            probability: probabilityUsed,
-
-            stockRemaining: updatedPrize.available_stock,
+            id: normalResult.prize.id,
+            name: normalResult.prize.name,
+            description: normalResult.prize.description,
+            imageUrl: normalResult.prize.image_url,
+            probability: normalResult.probabilityUsed,
+            stockRemaining: normalResult.stockAfter,
           },
 
+          vipPrize: vipResult
+            ? {
+                id: vipResult.prize.id,
+                name: vipResult.prize.name,
+                description: vipResult.prize.description,
+                imageUrl: vipResult.prize.image_url,
+                probability: vipResult.probabilityUsed,
+                stockRemaining: vipResult.stockAfter,
+              }
+            : null,
+
           queue: {
-            consumed: source === 'QUEUE',
-
-            consumedQueueId: selectedQueueItem?.id ?? null,
-
-            nextPrize: nextQueue
-              ? {
-                  queueId: nextQueue.id,
-                  prizeId: nextQueue.prize_id,
-                  name: nextQueue.prizes.name,
-                  position: nextQueue.position,
-                }
-              : null,
+            consumed: normalResult.source === 'QUEUE',
+            consumedQueueId: normalResult.consumedQueueId,
+            nextPrize: null,
           },
         };
       },
@@ -713,6 +654,10 @@ export class DrawsService {
       leadEvents.next({ participationId, type: 'prize' });
       const remaining = result.prize.stockRemaining;
       void this.stockAlerts.check(result.prize.id, remaining + 1, remaining);
+      if (result.vipPrize) {
+        const vipRemaining = result.vipPrize.stockRemaining;
+        void this.stockAlerts.check(result.vipPrize.id, vipRemaining + 1, vipRemaining);
+      }
     }
 
     return result;
@@ -960,28 +905,52 @@ export class DrawsService {
       );
     }
 
-    // A entrega é do sorteio (draws.claimed_at): participations.status já vira
-    // COMPLETED no giro, então não serve para saber se o brinde saiu do balcão.
-    if (participation.draws.claimed_at) {
+    // Busca todas as participações e sorteios deste participante neste evento (inclusive giro duplo VIP)
+    const allParticipations = await this.prisma.participations.findMany({
+      where: {
+        event_id: participation.event_id,
+        participant_id: participation.participant_id,
+        draws: { isNot: null },
+      },
+      include: {
+        draws: {
+          include: {
+            prizes: true,
+          },
+        },
+      },
+    });
+
+    const allDraws = allParticipations
+      .map((p) => p.draws)
+      .filter((d): d is NonNullable<typeof d> => Boolean(d));
+
+    const prizeNames = allDraws.length > 0
+      ? allDraws.map((d) => d.prizes.name).join(' + ')
+      : participation.draws.prizes.name;
+
+    const unclaimedDrawIds = allDraws
+      .filter((d) => !d.claimed_at)
+      .map((d) => d.id);
+
+    if (unclaimedDrawIds.length === 0) {
       return {
         success: true,
         alreadyClaimed: true,
         message: 'Prêmio já havia sido resgatado anteriormente.',
-        completedAt: participation.draws.claimed_at,
+        completedAt: allDraws[0]?.claimed_at || participation.draws.claimed_at,
         participant: participation.participants.full_name,
-        prize: participation.draws.prizes.name,
+        prize: prizeNames,
       };
     }
 
     const claimedAt = new Date();
-    // updateMany com claimed_at null: duas entregas simultâneas (ex.: fila offline) contam uma vez.
     const updated = await this.prisma.draws.updateMany({
-      where: { id: participation.draws.id, claimed_at: null },
+      where: { id: { in: unclaimedDrawIds } },
       data: { claimed_at: claimedAt },
     });
 
     if (updated.count > 0) {
-      // Registra log de auditoria da entrega do brinde
       await this.prisma.audit_logs.create({
         data: {
           event_id: participation.event_id,
@@ -990,12 +959,11 @@ export class DrawsService {
           action: 'CLAIM_PRIZE',
           entity_type: 'participations',
           entity_id: String(participation.id),
-          description: `Prêmio "${participation.draws.prizes.name}" resgatado por "${participation.participants.full_name}".`,
+          description: `Prêmio(s) "${prizeNames}" resgatado(s) por "${participation.participants.full_name}".`,
           metadata: JSON.stringify({
             participationId: participation.id,
             participantName: participation.participants.full_name,
-            prizeId: participation.draws.prizes?.id ?? null,
-            prizeName: participation.draws.prizes.name,
+            prizes: prizeNames,
             pin: String(participation.id).padStart(4, '0'),
           }),
           ip_address: context?.ipAddress ?? null,
@@ -1012,7 +980,7 @@ export class DrawsService {
       message: 'Prêmio marcado como ENTREGUE com sucesso!',
       completedAt: claimedAt,
       participant: participation.participants.full_name,
-      prize: participation.draws.prizes.name,
+      prize: prizeNames,
     };
   }
 
@@ -1049,11 +1017,38 @@ export class DrawsService {
       where: {
         participant_id: participation.participant_id,
         event_id: participation.event_id,
-        status: 'SCHEDULED',
+        status: { in: ['SCHEDULED', 'COMPLETED'] },
       },
     });
 
-    return this.claimView(participation, !!hasMeeting);
+    const allParticipations = await this.prisma.participations.findMany({
+      where: {
+        event_id: participation.event_id,
+        participant_id: participation.participant_id,
+        draws: { isNot: null },
+      },
+      include: {
+        draws: {
+          include: {
+            prizes: true,
+          },
+        },
+      },
+    });
+
+    const allDraws = allParticipations
+      .map((p) => p.draws)
+      .filter((d): d is NonNullable<typeof d> => Boolean(d));
+
+    const prizeNames = allDraws.length > 0
+      ? allDraws.map((d) => d.prizes.name).join(' + ')
+      : participation.draws.prizes.name;
+
+    const baseView = this.claimView(participation, Boolean(hasMeeting));
+    return {
+      ...baseView,
+      prizeName: prizeNames,
+    };
   }
 
   // Lista de retiradas pendentes do evento: o balcão guarda localmente para

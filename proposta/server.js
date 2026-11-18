@@ -237,4 +237,12 @@ app.listen(PORT, () => {
   } catch (error) {
     console.error("Erro ao inicializar pipeline de propostas no CRM:", error.message);
   }
+
+  // Inicializar Motor Autônomo de Renovação de Certificados (1 Mês Antes)
+  try {
+    const renovacaoCertificadoService = require("./services/renovacaoCertificadoService");
+    renovacaoCertificadoService.inicializarMotorRenovacoes();
+  } catch (error) {
+    console.error("Erro ao inicializar motor de renovação de certificados:", error.message);
+  }
 });

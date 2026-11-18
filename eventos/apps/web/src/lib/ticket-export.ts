@@ -46,7 +46,136 @@ function roundRect(
 }
 
 /**
- * Desenha um bilhete dourado VIP no canvas em altíssima resolução (1400x620)
+ * Traça o contorno do bilhete com os recortes semicirculares (notches) do canhoto
+ */
+function traceNotchedTicketPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  radius: number,
+  stubX: number,
+  notchR: number
+) {
+  ctx.beginPath();
+  // Canto superior esquerdo até antes do entalhe
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(stubX - notchR, y);
+
+  // Entalhe semicircular superior (corta para dentro do bilhete)
+  ctx.arc(stubX, y, notchR, Math.PI, 0, true);
+
+  // Continua até o canto superior direito
+  ctx.lineTo(x + w - radius, y);
+  ctx.arcTo(x + w, y, x + w, y + radius, radius);
+
+  // Lado direito até o canto inferior direito
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.arcTo(x + w, y + h, x + w - radius, y + h, radius);
+
+  // Lado inferior até antes do entalhe
+  ctx.lineTo(stubX + notchR, y + h);
+
+  // Entalhe semicircular inferior (corta para dentro do bilhete)
+  ctx.arc(stubX, y + h, notchR, 0, Math.PI, true);
+
+  // Continua até o canto inferior esquerdo
+  ctx.lineTo(x + radius, y + h);
+  ctx.arcTo(x, y + h, x, y + h - radius, radius);
+
+  // Lado esquerdo até o início
+  ctx.lineTo(x, y + radius);
+  ctx.arcTo(x, y, x + radius, y, radius);
+  ctx.closePath();
+}
+
+/**
+ * Desenha a libélula oficial da Finora em traço vetorial de luxo dourado/branco
+ */
+function drawFinoraDragonflyVector(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number
+) {
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // Asas superiores esquerdas e direitas (elipses anguladas)
+  ctx.fillStyle = "rgba(255, 235, 130, 0.85)";
+  ctx.strokeStyle = "#FFD700";
+  ctx.lineWidth = 1.6;
+
+  // Asa sup esq
+  ctx.save();
+  ctx.rotate(-0.55);
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.45, -size * 0.15, size * 0.42, size * 0.14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // Asa sup dir
+  ctx.save();
+  ctx.rotate(0.55);
+  ctx.beginPath();
+  ctx.ellipse(size * 0.45, -size * 0.15, size * 0.42, size * 0.14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // Asas inferiores
+  ctx.fillStyle = "rgba(255, 215, 0, 0.7)";
+  // Asa inf esq
+  ctx.save();
+  ctx.rotate(-0.25);
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.38, size * 0.16, size * 0.32, size * 0.11, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // Asa inf dir
+  ctx.save();
+  ctx.rotate(0.25);
+  ctx.beginPath();
+  ctx.ellipse(size * 0.38, size * 0.16, size * 0.32, size * 0.11, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // Corpo central e cauda da libélula
+  const bodyGrad = ctx.createLinearGradient(0, -size * 0.5, 0, size * 0.55);
+  bodyGrad.addColorStop(0, "#FFF9B8");
+  bodyGrad.addColorStop(0.5, "#FFD700");
+  bodyGrad.addColorStop(1, "#CC7A00");
+
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath();
+  // Cabeça
+  ctx.arc(0, -size * 0.32, size * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Tórax e cauda segmentada
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.1, size * 0.07, size * 0.14, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.045, size * 0.04);
+  ctx.lineTo(size * 0.045, size * 0.04);
+  ctx.lineTo(size * 0.02, size * 0.55);
+  ctx.lineTo(-size * 0.02, size * 0.55);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/**
+ * Desenha um bilhete dourado VIP no canvas em altíssima resolução (1500x680)
+ * com moldura ouro pura, entalhes de picote reais e visual de luxo idêntico ao modelo
  */
 export async function renderGoldenTicketCanvas(
   canvas: HTMLCanvasElement,
@@ -55,8 +184,14 @@ export async function renderGoldenTicketCanvas(
   eventSlug: string,
   logoImg?: HTMLImageElement | null
 ): Promise<void> {
-  const width = 1400;
-  const height = 620;
+  if (typeof document !== "undefined" && document.fonts) {
+    try {
+      await document.fonts.ready;
+    } catch {}
+  }
+
+  const width = 1480;
+  const height = 660;
   canvas.width = width;
   canvas.height = height;
 
@@ -65,241 +200,264 @@ export async function renderGoldenTicketCanvas(
 
   ctx.clearRect(0, 0, width, height);
 
-  // 1. Moldura metálica externa (Gradiente Ouro Nobre)
-  const pad = 6;
+  // Parâmetros do cartão e margens de corte / respiro
+  const marginX = 22;
+  const marginY = 22;
+  const cardW = width - marginX * 2;
+  const cardH = height - marginY * 2;
+  const cardX = marginX;
+  const cardY = marginY;
+
   const outerRadius = 32;
-  const outerGrad = ctx.createLinearGradient(0, 0, width, height);
-  outerGrad.addColorStop(0, "#FDF7C3");
-  outerGrad.addColorStop(0.2, "#E6C25B");
-  outerGrad.addColorStop(0.45, "#B8860B");
-  outerGrad.addColorStop(0.65, "#FBF5B7");
-  outerGrad.addColorStop(0.85, "#996515");
-  outerGrad.addColorStop(1, "#E6C25B");
+  const stubWidth = 390;
+  const stubX = cardX + cardW - stubWidth;
+  const notchR = 26; // Raio do entalhe de picote
 
-  roundRect(ctx, 0, 0, width, height, outerRadius);
-  ctx.fillStyle = outerGrad;
-  ctx.fill();
-
-  // 2. Fundo escuro interno do bilhete
-  const innerRadius = 26;
-  const innerX = pad;
-  const innerY = pad;
-  const innerW = width - pad * 2;
-  const innerH = height - pad * 2;
-
-  roundRect(ctx, innerX, innerY, innerW, innerH, innerRadius);
-  ctx.fillStyle = "#0C1222";
-  ctx.fill();
-
-  // Borda dourada sutil interna
-  ctx.strokeStyle = "rgba(243, 229, 171, 0.4)";
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  // 3. Padrão geométrico de pontos no fundo (estilo cédula de segurança)
+  // 1. Sombra suave externa do cartão
   ctx.save();
-  ctx.fillStyle = "rgba(255, 232, 149, 0.05)";
-  for (let x = innerX + 20; x < innerW; x += 22) {
-    for (let y = innerY + 20; y < innerH; y += 22) {
+  ctx.shadowColor = "rgba(255, 185, 0, 0.45)";
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 10;
+  traceNotchedTicketPath(ctx, cardX, cardY, cardW, cardH, outerRadius, stubX, notchR);
+  ctx.fillStyle = "#FFD700";
+  ctx.fill();
+  ctx.restore();
+
+  // 2. Moldura Metálica Ouro Puro Vibrante (Gradiente multi-stop)
+  const goldGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+  goldGrad.addColorStop(0, "#FFF9B8");
+  goldGrad.addColorStop(0.2, "#FFD700");
+  goldGrad.addColorStop(0.45, "#FF9900");
+  goldGrad.addColorStop(0.65, "#FFF085");
+  goldGrad.addColorStop(0.85, "#CC7A00");
+  goldGrad.addColorStop(1, "#FFD700");
+
+  traceNotchedTicketPath(ctx, cardX, cardY, cardW, cardH, outerRadius, stubX, notchR);
+  ctx.fillStyle = goldGrad;
+  ctx.fill();
+
+  // 3. Fundo Escuro Interno com Entalhes Perfeitos
+  const borderWidth = 12; // Espessura da borda dourada rica
+  const innerX = cardX + borderWidth;
+  const innerY = cardY + borderWidth;
+  const innerW = cardW - borderWidth * 2;
+  const innerH = cardH - borderWidth * 2;
+  const innerRadius = outerRadius - 6;
+  const innerNotchR = notchR + 1;
+
+  ctx.save();
+  traceNotchedTicketPath(ctx, innerX, innerY, innerW, innerH, innerRadius, stubX, innerNotchR);
+  ctx.clip();
+
+  // A. Lado Esquerdo / Principal: Dark Blue Luxury (#090E1C)
+  ctx.fillStyle = "#090E1C";
+  ctx.fillRect(innerX, innerY, stubX - innerX, innerH);
+
+  // B. Lado Direito / Canhoto: Gradiente azul noite profundo
+  const stubGrad = ctx.createLinearGradient(stubX, innerY, innerX + innerW, innerY + innerH);
+  stubGrad.addColorStop(0, "#111A2E");
+  stubGrad.addColorStop(0.5, "#0C1222");
+  stubGrad.addColorStop(1, "#080D1A");
+  ctx.fillStyle = stubGrad;
+  ctx.fillRect(stubX, innerY, innerX + innerW - stubX, innerH);
+
+  // C. Padrão de segurança pontilhado dourado sutil no lado principal
+  ctx.fillStyle = "rgba(255, 215, 0, 0.08)";
+  for (let px = innerX + 24; px < stubX - 10; px += 20) {
+    for (let py = innerY + 20; py < innerY + innerH; py += 20) {
       ctx.beginPath();
-      ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+      ctx.arc(px, py, 1.4, 0, Math.PI * 2);
       ctx.fill();
     }
   }
+
   ctx.restore();
 
-  // Divisão: Corpo Principal (Esquerda) vs Canhoto com QR (Direita)
-  const stubWidth = 380;
-  const stubX = width - stubWidth - pad;
-  const mainWidth = stubX - innerX;
+  // 4. Contorno interno dourado fino para realce
+  traceNotchedTicketPath(ctx, innerX, innerY, innerW, innerH, innerRadius, stubX, innerNotchR);
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.55)";
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
 
-  // 4. Lado Esquerdo - Cabeçalho
-  const headerY = innerY + 45;
+  // 5. Linha Perfurada de Picote (Dashed Gold Tear-Line)
+  ctx.save();
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.65)";
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([9, 9]);
+  ctx.beginPath();
+  ctx.moveTo(stubX, innerY + innerNotchR + 10);
+  ctx.lineTo(stubX, innerY + innerH - innerNotchR - 10);
+  ctx.stroke();
+  ctx.restore();
 
-  // A. Logo da Finora (A Libélula)
-  let logoEndX = innerX + 45;
-  if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
-    const logoH = 46;
-    const logoW = (logoImg.naturalWidth / logoImg.naturalHeight) * logoH;
-    ctx.drawImage(logoImg, innerX + 45, headerY - 26, logoW, logoH);
-    logoEndX = innerX + 45 + logoW;
-  }
+  // ========================================================
+  // LADO ESQUERDO: CORPO PRINCIPAL DO BILHETE
+  // ========================================================
+  const contentLeft = innerX + 44;
+  const headerY = innerY + 44;
+
+  // A. Logo Finora: Libélula vetorial dourada de altíssima definição
+  drawFinoraDragonflyVector(ctx, contentLeft + 18, headerY, 32);
 
   // Separador vertical fino
-  ctx.strokeStyle = "rgba(212, 175, 55, 0.4)";
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.5)";
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(logoEndX + 16, headerY - 14);
-  ctx.lineTo(logoEndX + 16, headerY + 14);
+  ctx.moveTo(contentLeft + 48, headerY - 14);
+  ctx.lineTo(contentLeft + 48, headerY + 14);
   ctx.stroke();
 
-  // Nome do evento no cabeçalho
-  ctx.fillStyle = "#F3E5AB";
-  ctx.font = "bold 15px monospace, 'Courier New', Courier";
+  // Wordmark Finora Experience
+  ctx.fillStyle = "#FFF4A3";
+  ctx.font = "900 15px monospace, 'Courier New', Courier";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText("FINORA EXPERIENCE", logoEndX + 28, headerY);
+  ctx.fillText("FINORA EXPERIENCE", contentLeft + 62, headerY);
 
-  // B. Badge "BILHETE DOURADO · VIP" em LINHA ÚNICA
+  // B. Badge Nobre "BILHETE DOURADO · VIP"
   const badgeText = "BILHETE DOURADO · VIP";
-  ctx.font = "bold 14px monospace, 'Courier New', Courier";
+  ctx.font = "900 13px monospace, 'Courier New', Courier";
   const badgeTextWidth = ctx.measureText(badgeText).width;
-  const badgePaddingX = 18;
-  const badgePaddingY = 9;
-  const badgeH = 34;
-  const badgeW = badgeTextWidth + badgePaddingX * 2 + 24; // Espaço para a coroa
-  const badgeX = stubX - 45 - badgeW;
+  const badgeH = 38;
+  const badgeW = badgeTextWidth + 56;
+  const badgeX = stubX - 44 - badgeW;
   const badgeY = headerY - badgeH / 2;
 
-  // Fundo do badge com gradiente
+  // Fundo com gradiente e borda dourada
   const badgeGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH);
-  badgeGrad.addColorStop(0, "rgba(212, 175, 55, 0.25)");
-  badgeGrad.addColorStop(1, "rgba(153, 101, 21, 0.35)");
-  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 17);
+  badgeGrad.addColorStop(0, "rgba(255, 215, 0, 0.35)");
+  badgeGrad.addColorStop(1, "rgba(255, 153, 0, 0.45)");
+  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 19);
   ctx.fillStyle = badgeGrad;
   ctx.fill();
-  ctx.strokeStyle = "rgba(212, 175, 55, 0.6)";
-  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = "#FFD700";
+  ctx.lineWidth = 1.8;
   ctx.stroke();
 
-  // Desenho da coroa dourada dentro do badge
-  ctx.save();
-  const crownX = badgeX + 16;
+  // Mini coroa dourada dentro do badge
+  const crownX = badgeX + 20;
   const crownY = headerY;
-  ctx.fillStyle = "#FFDF73";
+  ctx.fillStyle = "#FFE57F";
   ctx.beginPath();
-  // Mini coroa estilizada
-  ctx.moveTo(crownX - 7, crownY + 6);
-  ctx.lineTo(crownX + 7, crownY + 6);
-  ctx.lineTo(crownX + 8, crownY - 3);
-  ctx.lineTo(crownX + 4, crownY + 1);
-  ctx.lineTo(crownX, crownY - 6);
-  ctx.lineTo(crownX - 4, crownY + 1);
-  ctx.lineTo(crownX - 8, crownY - 3);
+  ctx.moveTo(crownX - 8, crownY + 7);
+  ctx.lineTo(crownX + 8, crownY + 7);
+  ctx.lineTo(crownX + 9, crownY - 3);
+  ctx.lineTo(crownX + 4.5, crownY + 1.5);
+  ctx.lineTo(crownX, crownY - 7);
+  ctx.lineTo(crownX - 4.5, crownY + 1.5);
+  ctx.lineTo(crownX - 9, crownY - 3);
   ctx.closePath();
   ctx.fill();
-  ctx.restore();
 
   // Texto do badge
-  ctx.fillStyle = "#FFDF73";
+  ctx.fillStyle = "#FFF9B8";
   ctx.font = "900 13px monospace, 'Courier New', Courier";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText(badgeText, crownX + 14, headerY);
+  ctx.fillText(badgeText, crownX + 16, headerY);
 
-  // Linha divisória abaixo do cabeçalho
-  ctx.strokeStyle = "rgba(212, 175, 55, 0.25)";
-  ctx.lineWidth = 1;
+  // Linha divisória fina abaixo do cabeçalho
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.35)";
+  ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.moveTo(innerX + 45, headerY + 32);
-  ctx.lineTo(stubX - 45, headerY + 32);
+  ctx.moveTo(contentLeft, headerY + 32);
+  ctx.lineTo(stubX - 44, headerY + 32);
   ctx.stroke();
 
-  // 5. Conteúdo Central (Esquerda)
-  const bodyY = headerY + 75;
+  // C. Conteúdo Central
+  const bodyY = headerY + 68;
 
-  // Nome do evento / sub-selo
-  ctx.fillStyle = "#D4AF37";
-  ctx.font = "bold 15px monospace, 'Courier New', Courier";
+  // Nome do Evento em destaque dourado
+  ctx.fillStyle = "#FFD700";
+  ctx.font = "900 15px monospace, 'Courier New', Courier";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillText(eventName.toUpperCase(), innerX + 45, bodyY);
+  ctx.fillText(eventName.toUpperCase(), contentLeft, bodyY);
 
   // Título Nobre
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "900 38px 'Segoe UI', Inter, -apple-system, sans-serif";
-  ctx.fillText("Passe Oficial do Mentorado", innerX + 45, bodyY + 32);
+  ctx.font = "900 44px 'Segoe UI', Inter, -apple-system, sans-serif";
+  ctx.fillText("Passe Oficial do Mentorado", contentLeft, bodyY + 28);
 
-  // Descrição
-  ctx.fillStyle = "#A7B2C6";
-  ctx.font = "500 17px 'Segoe UI', Inter, -apple-system, sans-serif";
+  // Subtítulo
+  ctx.fillStyle = "#C2CEE3";
+  ctx.font = "600 16px 'Segoe UI', Inter, -apple-system, sans-serif";
   ctx.fillText(
-    "Acesso exclusivo ao Pool de Prêmios VIP e cupom oficial registrado",
-    innerX + 45,
-    bodyY + 95
-  );
-  ctx.fillText(
-    "para o Grande Sorteio no Telão Oficial da Finora Experience.",
-    innerX + 45,
-    bodyY + 122
+    "Acesso exclusivo ao Pool de Prêmios VIP e cupom oficial registrado para o Grande Sorteio no Telão.",
+    contentLeft,
+    bodyY + 88
   );
 
-  // Linha separadora antes do rodapé
-  const footerLineY = height - 145;
-  ctx.strokeStyle = "rgba(212, 175, 55, 0.25)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(innerX + 45, footerLineY);
-  ctx.lineTo(stubX - 45, footerLineY);
+  // D. Callout Oficial: Fotopolimerizador
+  const calloutY = bodyY + 128;
+  const calloutW = stubX - contentLeft - 44;
+  const calloutH = 50;
+
+  const calloutGrad = ctx.createLinearGradient(contentLeft, calloutY, contentLeft + calloutW, calloutY + calloutH);
+  calloutGrad.addColorStop(0, "rgba(255, 215, 0, 0.32)");
+  calloutGrad.addColorStop(0.5, "rgba(255, 153, 0, 0.28)");
+  calloutGrad.addColorStop(1, "rgba(255, 215, 0, 0.32)");
+
+  roundRect(ctx, contentLeft, calloutY, calloutW, calloutH, 15);
+  ctx.fillStyle = calloutGrad;
+  ctx.fill();
+  ctx.strokeStyle = "#FFD700";
+  ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Rodapé: Portador Credenciado & Cupom Telão
-  const footerY = footerLineY + 22;
+  // Texto do callout com brilho
+  ctx.fillStyle = "#FFF9B8";
+  ctx.font = "900 15px 'Segoe UI', Inter, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText("✦ ESCANEIE O QR CODE AO LADO E CONCORRA A UM FOTOPOLIMERIZADOR !", contentLeft + 20, calloutY + calloutH / 2);
+
+  // E. Rodapé: Portador Credenciado & Cupom Telão
+  const footerLineY = innerY + innerH - 120;
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.35)";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(contentLeft, footerLineY);
+  ctx.lineTo(stubX - 44, footerLineY);
+  ctx.stroke();
+
+  const footerY = footerLineY + 18;
 
   // Portador
   ctx.fillStyle = "#A7B2C6";
-  ctx.font = "bold 13px monospace, 'Courier New', Courier";
-  ctx.fillText("PORTADOR CREDENCIADO", innerX + 45, footerY);
+  ctx.font = "bold 12px monospace, 'Courier New', Courier";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText("PORTADOR CREDENCIADO", contentLeft, footerY);
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "800 22px 'Segoe UI', Inter, -apple-system, sans-serif";
-  ctx.fillText(ticket.participantName || "Mentorado Convidado", innerX + 45, footerY + 24);
+  ctx.font = "900 24px 'Segoe UI', Inter, -apple-system, sans-serif";
+  ctx.fillText(ticket.participantName || "Mentorado Convidado", contentLeft, footerY + 22);
 
-  // Cupom Telão
-  const cupomX = stubX - 45;
+  // Cupom Telão com fonte grande em ouro
+  const cupomX = stubX - 44;
   ctx.textAlign = "right";
-  ctx.fillStyle = "#A7B2C6";
-  ctx.font = "bold 13px monospace, 'Courier New', Courier";
+  ctx.fillStyle = "#FFD700";
+  ctx.font = "bold 12px monospace, 'Courier New', Courier";
   ctx.fillText("CUPOM TELÃO", cupomX, footerY);
 
   const formattedTicket = ticket.code.startsWith("#") ? ticket.code : `#${ticket.code}`;
-  ctx.fillStyle = "#FFDF73";
-  ctx.font = "900 34px monospace, 'Courier New', Courier";
+  ctx.fillStyle = "#FFD700";
+  ctx.font = "900 42px monospace, 'Courier New', Courier";
   ctx.fillText(formattedTicket, cupomX, footerY + 20);
 
-  // 6. Linha perfurada vertical e entalhes redondos estilo ingresso
-  // Fundo gradiente do canhoto (direita)
-  roundRect(ctx, stubX, innerY, stubWidth, innerH, innerRadius);
-  ctx.save();
-  ctx.clip();
-  const stubGrad = ctx.createLinearGradient(stubX, innerY, stubX + stubWidth, innerY + innerH);
-  stubGrad.addColorStop(0, "#111A2E");
-  stubGrad.addColorStop(1, "#0A1020");
-  ctx.fillStyle = stubGrad;
-  ctx.fillRect(stubX, innerY, stubWidth, innerH);
-  ctx.restore();
-
-  // Linha picotada
-  ctx.save();
-  ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
-  ctx.lineWidth = 2.5;
-  ctx.setLineDash([8, 8]);
-  ctx.beginPath();
-  ctx.moveTo(stubX, innerY + 36);
-  ctx.lineTo(stubX, innerY + innerH - 36);
-  ctx.stroke();
-  ctx.restore();
-
-  // Entalhe semicircular superior
-  ctx.beginPath();
-  ctx.arc(stubX, innerY, 20, 0, Math.PI);
-  ctx.fillStyle = "#E6C25B";
-  ctx.fill();
-
-  // Entalhe semicircular inferior
-  ctx.beginPath();
-  ctx.arc(stubX, innerY + innerH, 20, Math.PI, 0);
-  ctx.fillStyle = "#E6C25B";
-  ctx.fill();
-
-  // 7. Lado Direito (Canhoto de Segurança com QR Code)
+  // ========================================================
+  // LADO DIREITO: CANHOTO DE SEGURANÇA COM QR CODE
+  // ========================================================
   const stubCenterX = stubX + stubWidth / 2;
 
   // Header do Canhoto
   ctx.textAlign = "center";
-  ctx.fillStyle = "#D4AF37";
-  ctx.font = "bold 13px monospace, 'Courier New', Courier";
-  ctx.fillText("ESCANEAR PARA ATIVAR", stubCenterX, innerY + 45);
+  ctx.textBaseline = "top";
+  ctx.fillStyle = "#FFD700";
+  ctx.font = "900 14px monospace, 'Courier New', Courier";
+  ctx.fillText("ESCANEAR PARA ATIVAR", stubCenterX, innerY + 38);
 
   // Gerar QR Code
   const origin =
@@ -308,54 +466,53 @@ export async function renderGoldenTicketCanvas(
       : "https://grupoqmax.com.br";
   const activationUrl = `${origin}/finora-experience/${eventSlug}/cadastro?vip=${encodeURIComponent(ticket.code)}`;
 
-  // Criar QR Code como Canvas temporário de 180x180
   const qrCanvas = document.createElement("canvas");
   await QRCode.toCanvas(qrCanvas, activationUrl, {
-    width: 180,
+    width: 200,
     margin: 1,
     color: {
-      dark: "#0C1222",
+      dark: "#080D1A",
       light: "#FFFFFF",
     },
   });
 
-  // Moldura dourada com cantos arredondados para o QR Code
-  const qrBoxSize = 200;
+  // Box branco do QR Code com borda dourada elegante
+  const qrBoxSize = 224;
   const qrBoxX = stubCenterX - qrBoxSize / 2;
-  const qrBoxY = innerY + 75;
+  const qrBoxY = innerY + 68;
 
   roundRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 20);
   ctx.fillStyle = "#FFFFFF";
   ctx.fill();
-  ctx.strokeStyle = "#D4AF37";
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#FFD700";
+  ctx.lineWidth = 3.5;
   ctx.stroke();
 
   // Desenhar QR Code dentro do box
-  ctx.drawImage(qrCanvas, qrBoxX + 10, qrBoxY + 10, 180, 180);
+  ctx.drawImage(qrCanvas, qrBoxX + 12, qrBoxY + 12, 200, 200);
 
   // Sub-legenda do QR
-  ctx.fillStyle = "#A7B2C6";
-  ctx.font = "500 12px 'Segoe UI', Inter, sans-serif";
-  ctx.fillText("Abre cadastro com código pronto", stubCenterX, qrBoxY + qrBoxSize + 22);
+  ctx.fillStyle = "#C2CEE3";
+  ctx.font = "600 13px 'Segoe UI', Inter, sans-serif";
+  ctx.fillText("Abre cadastro com código pronto", stubCenterX, qrBoxY + qrBoxSize + 18);
 
-  // Bloco Inferior: Código VIP
-  const codeBlockY = qrBoxY + qrBoxSize + 60;
+  // Bloco Inferior: Código VIP gigante estilo cupom
+  const codeBlockY = qrBoxY + qrBoxSize + 48;
   ctx.fillStyle = "#A7B2C6";
-  ctx.font = "bold 13px monospace, 'Courier New', Courier";
+  ctx.font = "900 12px monospace, 'Courier New', Courier";
   ctx.fillText("BILHETE VIP", stubCenterX, codeBlockY);
 
-  ctx.fillStyle = "#FFDF73";
-  ctx.font = "900 38px monospace, 'Courier New', Courier";
-  ctx.fillText(formattedTicket, stubCenterX, codeBlockY + 42);
+  ctx.fillStyle = "#FFD700";
+  ctx.font = "900 46px monospace, 'Courier New', Courier";
+  ctx.fillText(formattedTicket, stubCenterX, codeBlockY + 24);
 
   // Selo de Válido / Resgatado
-  ctx.fillStyle = ticket.redeemedAt ? "#F59E0B" : "#34D399";
-  ctx.font = "bold 14px 'Segoe UI', Inter, sans-serif";
+  ctx.fillStyle = ticket.redeemedAt ? "#F59E0B" : "#10B981";
+  ctx.font = "bold 15px 'Segoe UI', Inter, sans-serif";
   ctx.fillText(
     ticket.redeemedAt ? "● Resgatado" : "✔ Válido p/ 1 Giro",
     stubCenterX,
-    codeBlockY + 80
+    codeBlockY + 76
   );
 }
 
@@ -375,23 +532,15 @@ export async function exportAllTicketsToZip(
   const zip = new JSZip();
   const folder = zip.folder(`bilhetes-vip-${eventSlug}`);
 
-  // Tenta carregar o logo da Finora uma única vez
-  let logoImg: HTMLImageElement | null = null;
-  try {
-    logoImg = await loadImage(assetUrl("/brands/finora-symbol.png"));
-  } catch {
-    console.warn("Logo finora-symbol não pôde ser carregada para o canvas, prosseguindo sem ela.");
-  }
-
   // Canvas reutilizável offscreen
   const canvas = document.createElement("canvas");
   const total = codes.length;
 
   for (let i = 0; i < total; i++) {
     const item = codes[i];
-    await renderGoldenTicketCanvas(canvas, item, eventName, eventSlug, logoImg);
+    await renderGoldenTicketCanvas(canvas, item, eventName, eventSlug);
 
-    // Converte para Blob PNG
+    // Converte para Blob PNG de alta qualidade
     const dataUrl = canvas.toDataURL("image/png");
     const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
 
@@ -402,13 +551,13 @@ export async function exportAllTicketsToZip(
       onProgress(i + 1, total);
     }
 
-    // Pequeno intervalo para liberar o event loop do navegador e manter UI fluida
+    // Intervalo suave para liberar o event loop do navegador
     if (i % 10 === 0) {
       await new Promise((r) => setTimeout(r, 10));
     }
   }
 
-  // Adiciona também um arquivo README / lista de códigos no ZIP
+  // Adiciona arquivo README / lista com links diretos
   const listContent = [
     `=== BILHETES DOURADOS VIP - ${eventName.toUpperCase()} ===`,
     `Total de Bilhetes: ${codes.length}`,

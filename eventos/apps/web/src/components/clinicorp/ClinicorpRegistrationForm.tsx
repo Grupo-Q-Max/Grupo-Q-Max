@@ -421,8 +421,20 @@ function RegistrationForm({
               <span className="text-lg">🎉</span>
               <span>Inscrição Confirmada no Grande Sorteio Geral (19/11)!</span>
             </div>
+            <div className="flex items-center gap-3 bg-slate-950/60 rounded-xl p-2.5 border border-amber-400/30">
+              <img
+                src="/fotopolimerizador.jpg"
+                alt="Fotopolimerizador"
+                className="h-16 w-16 object-contain rounded-lg bg-white/10 p-1 flex-none"
+              />
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] font-mono font-bold uppercase text-amber-300">Prêmio Oficial</span>
+                <strong className="text-xs sm:text-sm text-white font-bold">Fotopolimerizador Odontológico</strong>
+                <span className="text-[11px] text-slate-300 leading-tight">Apuração ao vivo no dia 19/11.</span>
+              </div>
+            </div>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-              Além de girar a roleta e retirar seu brinde exclusivo no estande Finora, <strong>seu número de cadastro está automaticamente concorrendo ao Grande Sorteio Geral no dia 19/11</strong>! Fique atento às transmissões no telão.
+              Além de girar a roleta e retirar seu brinde exclusivo no estande Finora, <strong>seu número de cadastro está automaticamente concorrendo ao Fotopolimerizador no Grande Sorteio Geral do dia 19/11</strong>! Fique atento às transmissões no telão.
             </p>
           </div>
 
@@ -557,8 +569,30 @@ function RegistrationForm({
             </div>
           </div>
 
+          {/* Card Recompensa Sorteio Geral 19/11 */}
+          <div className="flex flex-col sm:flex-row items-center gap-3.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-950/60 via-slate-900 to-amber-950/60 p-3 shadow-md">
+            <div className="relative h-20 w-20 flex-none overflow-hidden rounded-lg border border-amber-400/60 bg-white/5 shadow-inner">
+              <img
+                src="/fotopolimerizador.jpg"
+                alt="Fotopolimerizador - Grande Sorteio Geral"
+                className="h-full w-full object-contain p-1"
+              />
+            </div>
+            <div className="flex flex-1 flex-col text-center sm:text-left">
+              <span className="font-mono text-[10px] font-extrabold uppercase tracking-widest text-amber-300">
+                🏆 Grande Prêmio Oficial · Sorteio Geral 19/11
+              </span>
+              <strong className="text-sm font-bold text-white leading-snug">
+                Fotopolimerizador Odontológico
+              </strong>
+              <span className="text-[11px] text-slate-300 leading-tight mt-0.5">
+                O sorteio geral acontecerá exclusivamente no dia 19/11. Todo participante cadastrado concorre automaticamente!
+              </span>
+            </div>
+          </div>
+
           <div className="rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/20 to-amber-500/15 px-3.5 py-2.5 text-center text-xs font-semibold text-amber-200 shadow-xs">
-            📢 <strong>Atenção:</strong> Ao concluir o cadastro, você garante seu brinde na roleta e <strong>estará concorrendo oficialmente ao Grande Sorteio Geral no dia 19/11</strong>!
+            📢 <strong>Atenção:</strong> Ao concluir o cadastro, você garante seu brinde na roleta e <strong>estará concorrendo oficialmente ao Fotopolimerizador no dia 19/11</strong>!
           </div>
         </div>
 

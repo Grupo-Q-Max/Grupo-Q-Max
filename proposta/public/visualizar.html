@@ -361,7 +361,7 @@
           Baixar PDF
         </a>
         <button class="btn-recusar" onclick="recusarProposta()">Negar</button>
-        <button class="btn-aprovar btn-aprovar-parcial" onclick="abrirModalAprovarParcial()">Aprovar Parcialmente</button>
+        <button class="btn-aprovar btn-aprovar-parcial" onclick="abrirModalAprovarParcial()" style="background:#0284c7; border-color:#0284c7;">📋 Selecionar Serviços</button>
         <button class="btn-aprovar" onclick="aprovarProposta()">Aprovar Todos</button>
       </div>
     </header>
@@ -465,8 +465,8 @@
       </main>
     </div>
 
-    <!-- PITCH ODONTO: só propostas FINORA / QMAX Contábil (body.seg-odonto) -->
-    <section id="secaoOdonto" class="secao-odonto" aria-labelledby="secaoOdontoTitulo">
+    <!-- PITCH ODONTO: só propostas FINORA (body.seg-odonto) -->
+    <section id="secaoOdonto" class="secao-odonto" aria-labelledby="secaoOdontoTitulo" style="display:none;">
       <div class="secao-odonto-topo">
         <svg class="secao-odonto-icone" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3C4.5 3 3 5 3 7.5c0 2 .7 3.3 1.3 4.8.6 1.6.8 3.6 1.2 5.6.3 1.6.8 3.1 1.9 3.1 1.3 0 1.5-2.2 1.9-4 .3-1.5.9-2.5 2.7-2.5s2.4 1 2.7 2.5c.4 1.8.6 4 1.9 4 1.1 0 1.6-1.5 1.9-3.1.4-2 .6-4 1.2-5.6.6-1.5 1.3-2.8 1.3-4.8C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>
         <div>
@@ -538,8 +538,8 @@
       <button type="button" onclick="recusarProposta()" class="btn-recusar" style="padding:12px 20px; margin-right: 10px;">
         Negar
       </button>
-      <button type="button" onclick="abrirModalAprovarParcial()" class="btn-sticky-aprovar btn-aprovar-parcial" style="margin-right: 10px;">
-        Aprovar Parcial
+      <button type="button" onclick="abrirModalAprovarParcial()" class="btn-sticky-aprovar btn-aprovar-parcial" style="margin-right: 10px; background:#0284c7; border-color:#0284c7;">
+        📋 Selecionar Serviços
       </button>
       <button type="button" onclick="aprovarProposta()" class="btn-sticky-aprovar">
         Aprovar Todos
@@ -668,10 +668,10 @@
           GARANTIA DE CONFORMIDADE TRIBUTÁRIA & FISCAL
         </span>
         <h2 id="certClinicaNome" style="font-size:24px; font-weight:900; color:#0f172a; margin:8px 0 14px 0;">
-          Clínica Odontológica
+          Empresa Contratante
         </h2>
         <p style="color:#475569; font-size:13.5px; line-height:1.6; max-width:540px; margin:0 auto 20px;">
-          Atestamos que a assessoria contratada prevê o enquadramento fiscal no <strong>Fator R (Anexo III - 6%)</strong>, gestão rigorosa do Pró-labore dos sócios e regularidade cadastral nos termos das normativas da <strong>Receita Federal do Brasil</strong> e dos Conselhos Regionais (<span data-odonto="CRO">CRO/CRF</span>).
+          Atestamos que a assessoria contratada prevê o enquadramento fiscal no <strong>Fator R (Anexo III - 6%)</strong>, gestão rigorosa do Pró-labore dos sócios e regularidade cadastral nos termos das normativas da <strong>Receita Federal do Brasil</strong> e dos Conselhos Competentes (<span id="certConselhoRegional" data-odonto="CRO">CRC/Fisco</span>).
         </p>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; text-align:left;">
@@ -1230,14 +1230,20 @@
       }
     }
 
-    // Produto é vendido quase só para clínicas odontológicas: FINORA / QMAX Contábil = odonto
+    // Segmento exclusivo odonto: apenas FINORA
     function ehOdonto(p) {
-      return ["finora", "contabil"].includes(String(p.tipo_proposta || "").toLowerCase());
+      return String(p?.tipo_proposta || p?.empresa || "").toLowerCase() === "finora";
     }
 
     function aplicarSegmentoOdonto(p) {
-      if (!ehOdonto(p)) return;
+      const secao = document.getElementById('secaoOdonto');
+      if (!ehOdonto(p)) {
+        if (secao) secao.style.display = 'none';
+        document.body.classList.remove('seg-odonto');
+        return;
+      }
       document.body.classList.add('seg-odonto');
+      if (secao) secao.style.display = 'block';
       document.querySelectorAll('[data-odonto]').forEach(el => { el.textContent = el.dataset.odonto; });
       const metricas = [];
       if (Number(p.cadeiras) > 0) metricas.push(`<strong>${esc(p.cadeiras)}</strong> cadeiras`);
@@ -1456,8 +1462,11 @@
     function abrirModalCertificadoBlindagem() {
       const modal = document.getElementById('modalCertificadoBlindagem');
       const elNome = document.getElementById('certClinicaNome');
+      const elConselho = document.getElementById('certConselhoRegional');
       const p = window.dadosPropostaAtual || {};
-      if (elNome) elNome.innerText = p.nome_clinica || "Clínica";
+      const odonto = ehOdonto(p);
+      if (elNome) elNome.innerText = p.nome_clinica || (odonto ? "Clínica" : "Empresa");
+      if (elConselho) elConselho.innerText = odonto ? "CRO" : "CRC / Fisco";
       if (modal) modal.style.display = 'flex';
     }
 
@@ -1698,15 +1707,15 @@
             </p>
             <div style="display:inline-flex; gap:16px; background:rgba(255,255,255,0.06); padding:12px 24px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
               <div><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Faturamento Estimado</span><strong style="color:#38bdf8; font-size:16px;">${faturamento}/mês</strong></div>
-              <div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">${odonto ? 'Cadeiras' : 'Cadeiras Odonto'}</span><strong style="color:#fff; font-size:16px;">${esc(p.cadeiras || 2)}</strong></div>
-              <div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Equipe</span><strong style="color:#fff; font-size:16px;">${esc(p.funcionarios || 2)} funcionários</strong></div>
+              ${odonto && Number(p.cadeiras) > 0 ? `<div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Cadeiras</span><strong style="color:#fff; font-size:16px;">${esc(p.cadeiras)}</strong></div>` : ''}
+              <div style="border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;"><span style="color:#94a3b8; font-size:11px; text-transform:uppercase; display:block;">Equipe</span><strong style="color:#fff; font-size:16px;">${esc(p.funcionarios || 0)} colaboradores</strong></div>
             </div>
           </div>
         `;
       } else if (idx === 1) {
         elConteudo.innerHTML = `
           <div style="animation: fadeIn 0.4s ease;">
-                        <h2 style="font-size:28px; font-weight:900; margin:0 0 10px; color:#ffffff;">O Que a FINORA Assume ${odonto ? 'no Seu Consultório' : 'na Sua Clínica'}</h2>
+            <h2 style="font-size:28px; font-weight:900; margin:0 0 10px; color:#ffffff;">O Que a ${odonto ? 'FINORA' : (p.empresa_proposta || 'Assessoria')} Assume ${odonto ? 'no Seu Consultório' : 'na Sua Empresa'}</h2>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; text-align:left; margin-top:20px;">
               <div style="background:rgba(255,255,255,0.06); padding:18px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
                 <strong style="color:#38bdf8; font-size:15px; display:block; margin-bottom:4px;">BPO Financeiro Completo</strong>
@@ -2464,19 +2473,40 @@
       transform: translateY(0);
     }
   </style>
-  <!-- Modal Aprovação Parcial -->
-  <div id="modalAprovarParcial" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
-    <div style="background:#fff; width:90%; max-width:600px; padding:24px; border-radius:12px; max-height:90vh; overflow-y:auto; font-family:'Inter', sans-serif;">
-      <h3 style="margin-top:0; font-size:20px; font-weight:700; color:#0f172a;">Aprovar Parcialmente</h3>
-      <p style="font-size:14px; color:#64748b; margin-bottom:16px;">Selecione os serviços que deseja <strong>manter</strong>. Os serviços desmarcados serão removidos da proposta e você deve informar o motivo.</p>
-      
-      <div id="listaServicosParcial" style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
-        <!-- Lista injetada via JS -->
+  <!-- Modal Aprovação e Seleção de Serviços Customizados -->
+  <div id="modalAprovarParcial" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.75); backdrop-filter:blur(4px); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:#ffffff; width:92%; max-width:650px; padding:28px; border-radius:18px; max-height:92vh; overflow-y:auto; font-family:'Inter', sans-serif; box-shadow:0 25px 60px rgba(0,0,0,0.3); border:1px solid #e2e8f0;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+        <div>
+          <h3 style="margin:0 0 6px; font-size:22px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+            <span>📋</span> Selecionar Serviços para Contratação
+          </h3>
+          <p style="margin:0; font-size:13.5px; color:#64748b; line-height:1.5;">
+            Escolha exatamente quais serviços deseja contratar. Para cada serviço que <strong>não desejar incluir</strong>, informe o motivo para registro formal no contrato.
+          </p>
+        </div>
+        <button onclick="fecharModalAprovarParcial()" style="background:#f1f5f9; border:none; border-radius:50%; width:32px; height:32px; cursor:pointer; font-weight:700; color:#64748b; display:flex; align-items:center; justify-content:center;">✕</button>
       </div>
 
-      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
-        <button onclick="fecharModalAprovarParcial()" style="background:none; border:1px solid #cbd5e1; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600; color:#475569;">Cancelar</button>
-        <button onclick="enviarAprovacaoParcial()" style="background:var(--brand-primary, #1f5a52); border:none; padding:10px 16px; border-radius:4px; cursor:pointer; font-weight:600; color:#fff;">Confirmar Aprovação Parcial</button>
+      <!-- Resumo ao vivo dos valores selecionados -->
+      <div id="resumoParcialCard" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:12px 16px; margin:16px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <span style="font-size:11px; text-transform:uppercase; font-weight:800; color:#64748b; letter-spacing:0.5px;">Serviços Selecionados</span>
+          <div id="qtdServicosSelecionados" style="font-size:16px; font-weight:800; color:#0f172a;">0 de 0</div>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:11px; text-transform:uppercase; font-weight:800; color:#64748b; letter-spacing:0.5px;">Novo Total Selecionado</span>
+          <div id="totalParcialSelecionado" style="font-size:18px; font-weight:900; color:#059669;">R$ 0,00</div>
+        </div>
+      </div>
+      
+      <div id="listaServicosParcial" style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+        <!-- Lista de itens injetada via JS -->
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px; border-top:1px solid #e2e8f0; padding-top:16px;">
+        <button type="button" onclick="fecharModalAprovarParcial()" style="background:#f8fafc; border:1px solid #cbd5e1; padding:11px 18px; border-radius:10px; cursor:pointer; font-weight:700; color:#475569;">Cancelar</button>
+        <button type="button" onclick="enviarAprovacaoParcial()" style="background:#059669; border:none; padding:11px 22px; border-radius:10px; cursor:pointer; font-weight:800; color:#fff; box-shadow:0 4px 14px rgba(5,150,105,0.3); transition:all 0.2s;">Confirmar & Assinar Selecionados</button>
       </div>
     </div>
   </div>
@@ -2484,8 +2514,28 @@
   <script>
     let itensParaAprovarParcial = [];
 
+    function atualizarTotaisParcial() {
+      let total = 0;
+      let qtdAtivos = 0;
+      const totalItens = itensParaAprovarParcial.length;
+
+      itensParaAprovarParcial.forEach((item, index) => {
+        const chk = document.getElementById(`chk_servico_${index}`);
+        if (chk && chk.checked) {
+          total += Number(item.valor || 0) * (Number(item.quantidade) || 1);
+          qtdAtivos++;
+        }
+      });
+
+      const elQtd = document.getElementById("qtdServicosSelecionados");
+      const elTotal = document.getElementById("totalParcialSelecionado");
+      if (elQtd) elQtd.innerText = `${qtdAtivos} de ${totalItens}`;
+      if (elTotal) {
+        elTotal.innerText = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      }
+    }
+
     function abrirModalAprovarParcial() {
-      // `itens` é a lista já normalizada pelo servidor (cai em proposta_itens quando itens_json está vazio)
       const itens = window.dadosPropostaAtual && window.dadosPropostaAtual.itens;
       if (!Array.isArray(itens) || itens.length === 0) {
         alert("Carregando dados da proposta...");
@@ -2496,30 +2546,34 @@
         const container = document.getElementById("listaServicosParcial");
         container.innerHTML = "";
         
-        if (itens.length === 0) {
-          container.innerHTML = "<p>Nenhum serviço encontrado.</p>";
-        }
-
         itens.forEach((item, index) => {
-          const valor = Number(item.valor || 0).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+          const valor = Number(item.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          const tipo = item.tipo || item.observacao || "Serviço";
           const div = document.createElement("div");
-          div.style.cssText = "border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;";
+          div.id = `card_servico_${index}`;
+          div.style.cssText = "border:1.5px solid #e2e8f0; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px; transition:all 0.2s; background:#ffffff;";
           div.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#1e293b; cursor:pointer;">
-                <input type="checkbox" id="chk_servico_${index}" checked onchange="toggleMotivoParcial(${index})" style="width:18px; height:18px; cursor:pointer;">
-                ${esc(item.servico)}
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+              <label style="display:flex; align-items:center; gap:12px; font-weight:700; color:#1e293b; cursor:pointer; flex:1;">
+                <input type="checkbox" id="chk_servico_${index}" checked onchange="toggleMotivoParcial(${index})" style="width:20px; height:20px; cursor:pointer; accent-color:#059669;">
+                <div>
+                  <div style="font-size:14.5px;">${esc(item.servico)}</div>
+                  <span style="font-size:11px; font-weight:600; text-transform:uppercase; color:#64748b; background:#f1f5f9; padding:2px 8px; border-radius:6px;">${esc(tipo)}</span>
+                </div>
               </label>
-              <span style="font-weight:700; color:#0f172a;">${valor}</span>
+              <span style="font-weight:800; font-size:15px; color:#0f172a; white-space:nowrap;">${valor}</span>
             </div>
-            <div id="motivo_box_${index}" style="display:none; margin-top:8px;">
-              <label style="font-size:12px; color:#64748b;">Motivo da recusa deste serviço:</label>
-              <textarea id="motivo_texto_${index}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; font-family:'Inter',sans-serif; resize:vertical; min-height:50px;"></textarea>
+            <div id="motivo_box_${index}" style="display:none; margin-top:10px; padding:12px; background:#fff1f2; border:1px solid #fecdd3; border-radius:10px;">
+              <label style="display:block; font-size:12px; font-weight:700; color:#be123c; margin-bottom:6px;">
+                Motivo de não aceitar este serviço (obrigatório):
+              </label>
+              <textarea id="motivo_texto_${index}" placeholder="Explique brevemente por que não deseja contratar este serviço agora (ex: Já possuímos profissional interno / Não há interesse no momento / Deseja renegociar)..." style="width:100%; padding:10px; border:1.5px solid #f43f5e; border-radius:8px; font-size:13px; font-family:'Inter',sans-serif; resize:vertical; min-height:60px; box-sizing:border-box; background:#ffffff; color:#0f172a;"></textarea>
             </div>
           `;
           container.appendChild(div);
         });
         
+        atualizarTotaisParcial();
         document.getElementById("modalAprovarParcial").style.display = "flex";
       } catch (err) {
         console.error("Erro ao montar modal de aprovação parcial:", err);
@@ -2532,31 +2586,51 @@
 
     function toggleMotivoParcial(index) {
       const isChecked = document.getElementById(`chk_servico_${index}`).checked;
-      document.getElementById(`motivo_box_${index}`).style.display = isChecked ? "none" : "block";
+      const motivoBox = document.getElementById(`motivo_box_${index}`);
+      const card = document.getElementById(`card_servico_${index}`);
+      
+      if (motivoBox) motivoBox.style.display = isChecked ? "none" : "block";
+      if (card) {
+        card.style.borderColor = isChecked ? "#e2e8f0" : "#fca5a5";
+        card.style.background = isChecked ? "#ffffff" : "#fffbfb";
+      }
+      if (!isChecked) {
+        const txt = document.getElementById(`motivo_texto_${index}`);
+        if (txt) txt.focus();
+      }
+      atualizarTotaisParcial();
     }
 
     async function enviarAprovacaoParcial() {
       const btn = document.querySelector("#modalAprovarParcial button:last-child");
-      btn.innerHTML = "Processando...";
-      btn.disabled = true;
+      const textoOriginal = btn.innerHTML;
 
       const itensRecusados = [];
       const itensAprovados = [];
 
-      itensParaAprovarParcial.forEach((item, index) => {
+      for (let index = 0; index < itensParaAprovarParcial.length; index++) {
+        const item = itensParaAprovarParcial[index];
         const isChecked = document.getElementById(`chk_servico_${index}`).checked;
         if (!isChecked) {
-          const motivo = document.getElementById(`motivo_texto_${index}`).value;
+          const txt = document.getElementById(`motivo_texto_${index}`);
+          const motivo = (txt?.value || "").trim();
+          if (!motivo || motivo.length < 5) {
+            alert(`Por favor, informe o motivo de não aceitar o serviço "${item.servico}" (mínimo de 5 caracteres).`);
+            if (txt) {
+              txt.style.borderColor = "#e11d48";
+              txt.style.background = "#fff1f2";
+              txt.focus();
+            }
+            return;
+          }
           itensRecusados.push({ ...item, motivoRecusa: motivo });
         } else {
           itensAprovados.push(item);
         }
-      });
+      }
 
       if (itensAprovados.length === 0) {
-        alert("Você precisa aprovar pelo menos um serviço. Caso contrário, utilize o botão 'Negar'.");
-        btn.innerHTML = "Confirmar Aprovação Parcial";
-        btn.disabled = false;
+        alert("Você precisa selecionar pelo menos um serviço para aprovação. Caso deseje recusar todos, clique no botão 'Negar'.");
         return;
       }
 
@@ -2565,6 +2639,9 @@
         aprovarProposta();
         return;
       }
+
+      btn.innerHTML = "Processando aceite parcial...";
+      btn.disabled = true;
 
       try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -2578,16 +2655,16 @@
         if (res.ok) {
           fecharModalAprovarParcial();
           dispararConfetes();
-          mostrarOverlay('Proposta Atualizada!', 'Aprovação parcial enviada com sucesso. A proposta foi atualizada.');
-          setTimeout(() => window.location.reload(), 4000);
+          mostrarOverlay('Proposta Atualizada!', 'Aprovação parcial enviada com sucesso. Os serviços selecionados foram registrados no contrato.');
+          setTimeout(() => window.location.reload(), 3500);
         } else {
-          alert("Erro: " + (data.error || "Tente novamente."));
-          btn.innerHTML = "Confirmar Aprovação Parcial";
+          alert("Erro: " + (data.error || "Não foi possível enviar a aprovação parcial."));
+          btn.innerHTML = textoOriginal;
           btn.disabled = false;
         }
       } catch(err) {
-        alert("Erro na conexão.");
-        btn.innerHTML = "Confirmar Aprovação Parcial";
+        alert("Erro na conexão com o servidor.");
+        btn.innerHTML = textoOriginal;
         btn.disabled = false;
       }
     }

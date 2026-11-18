@@ -49,7 +49,7 @@ export default function RootLayout({
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
-      <body className="font-sans" suppressHydrationWarning>
+      <body className="font-sans bg-[#050811] text-[#F8FAFC] min-h-dvh antialiased" style={{ background: "#050811", color: "#F8FAFC" }} suppressHydrationWarning>
         <ToastProvider>
           <NetworkStatusBanner />
           {children}

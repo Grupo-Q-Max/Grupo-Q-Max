@@ -299,11 +299,26 @@ jobs:
           echo "Configurando Eventos Web..."
           mkdir -p deploy/eventos-web
           cp -R eventos/apps/web/.next/standalone/. deploy/eventos-web/
+
+          # 1. Static para o standalone do eventos-web em todos os caminhos de resolução
           mkdir -p deploy/eventos-web/apps/web/.next
           cp -R eventos/apps/web/.next/static deploy/eventos-web/apps/web/.next/static
+          mkdir -p deploy/eventos-web/.next
+          cp -R eventos/apps/web/.next/static deploy/eventos-web/.next/static
+
+          # 2. Public para o standalone do eventos-web
           if [ -d "eventos/apps/web/public" ]; then
             mkdir -p deploy/eventos-web/apps/web/public
             cp -R eventos/apps/web/public/. deploy/eventos-web/apps/web/public/
+            mkdir -p deploy/eventos-web/public
+            cp -R eventos/apps/web/public/. deploy/eventos-web/public/
+          fi
+
+          # 3. Mirroring para o Next.js raiz servir diretamente em /finora-experience sem proxy
+          mkdir -p deploy/public/finora-experience/_next
+          cp -R eventos/apps/web/.next/static deploy/public/finora-experience/_next/static
+          if [ -d "eventos/apps/web/public" ]; then
+            cp -R eventos/apps/web/public/. deploy/public/finora-experience/
           fi
 
           echo ""

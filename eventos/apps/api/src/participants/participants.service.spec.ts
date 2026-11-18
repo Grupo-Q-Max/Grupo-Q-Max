@@ -154,7 +154,17 @@ describe('ParticipantsService - Fluxo Direto Sem Disparos', () => {
         draws: null,
       },
       include: {
-        participants: true,
+        participants: {
+          include: {
+            meetings: {
+              where: {
+                event_id: 1,
+                status: { in: ['SCHEDULED', 'COMPLETED'] },
+              },
+              take: 1,
+            },
+          },
+        },
         vip_codes: { select: { id: true } },
       },
       orderBy: { id: 'desc' },

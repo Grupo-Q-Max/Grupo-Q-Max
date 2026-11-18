@@ -19,12 +19,25 @@ async function carregarSolicitacoes() {
 
   const solicitacoes = await res.json();
   const tbody = document.querySelector("#tabelaSolicitacoes tbody");
-  tbody.innerHTML = "";
+  if (tbody) tbody.innerHTML = "";
+
+  const badgeQtd = document.getElementById("badgeQtdSolicitacoesDesconto");
+  const blocoSol = document.getElementById("blocoSolicitacoes");
+
+  if (badgeQtd) {
+    badgeQtd.innerText = Array.isArray(solicitacoes) ? solicitacoes.length : 0;
+  }
 
   if (solicitacoes.length === 0) {
-    tbody.innerHTML =
-      '<tr><td colspan="5" style="text-align:center;">Nenhuma solicitação pendente.</td></tr>';
+    if (tbody) {
+      tbody.innerHTML =
+        '<tr><td colspan="5" style="text-align:center; padding:18px; color:#64748b;">Nenhuma solicitação de desconto pendente no momento.</td></tr>';
+    }
     return;
+  }
+
+  if (blocoSol) {
+    blocoSol.style.display = "block";
   }
 
   solicitacoes.forEach((s) => {

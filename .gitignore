@@ -54,3 +54,4 @@ azure-appsettings.json
 
 # Local uploads (team photos, brand logos, CRM attachments)
 data/uploads/
+public/finora-experience/_next/

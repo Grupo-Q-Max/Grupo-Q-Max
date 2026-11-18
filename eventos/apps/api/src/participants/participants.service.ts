@@ -1144,12 +1144,12 @@ export class ParticipantsService {
       where: {
         event_id: participation.event_id,
         participant_id: participation.participants.id,
-        status: 'SCHEDULED',
+        status: { in: ['SCHEDULED', 'COMPLETED'] },
       },
       select: { id: true },
     });
 
-    const isVip = Boolean(participation.vip_codes);
+    const isVip = Boolean(participation.vip_codes) || Boolean(meeting);
 
     return {
       id: participation.id,
@@ -1660,27 +1660,43 @@ export class ParticipantsService {
     const participations = await this.prisma.participations.findMany({
       where,
       include: {
-        participants: true,
+        participants: {
+          include: {
+            meetings: {
+              where: {
+                event_id: eventId,
+                status: { in: ['SCHEDULED', 'COMPLETED'] },
+              },
+              take: 1,
+            },
+          },
+        },
         vip_codes: { select: { id: true } },
       },
       orderBy: { id: 'desc' },
       take: 30,
     });
 
-    return participations.map((p) => ({
-      participationId: p.id,
-      vip: Boolean(p.vip_codes),
-      participantId: p.participant_id,
-      fullName: p.participants.full_name,
-      cpfLastDigits: p.participants.cpf_last_digits,
-      phone: maskPhone(p.participants.phone_normalized),
-      clinicName: p.participants.clinic_name,
-      croNumber: p.participants.cro_number,
-      croState: p.participants.cro_state,
-      city: p.participants.city,
-      state: p.participants.state,
-      createdAt: p.created_at,
-    }));
+    return participations.map((p) => {
+      const hasMeeting = Boolean(p.participants.meetings && p.participants.meetings.length > 0);
+      const isVip = Boolean(p.vip_codes) || hasMeeting;
+      return {
+        participationId: p.id,
+        vip: isVip,
+        hasVipCode: Boolean(p.vip_codes),
+        hasMeeting,
+        participantId: p.participant_id,
+        fullName: p.participants.full_name,
+        cpfLastDigits: p.participants.cpf_last_digits,
+        phone: maskPhone(p.participants.phone_normalized),
+        clinicName: p.participants.clinic_name,
+        croNumber: p.participants.cro_number,
+        croState: p.participants.cro_state,
+        city: p.participants.city,
+        state: p.participants.state,
+        createdAt: p.created_at,
+      };
+    });
   }
 }
 

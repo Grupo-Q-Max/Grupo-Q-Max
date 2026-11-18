@@ -146,6 +146,21 @@ router.get("/api/propostas", verificarToken, async (req, res, next) => {
   }
 });
 
+// --- ALERTAS DE VENCIMENTO & RENOVAÇÃO AUTOMÁTICA (1 MÊS ANTES) ---
+router.get("/api/propostas/alertas-vencimentos", verificarToken, async (req, res, next) => {
+  try {
+    const renovacaoCertificadoService = require("../services/renovacaoCertificadoService");
+    const alertas = await renovacaoCertificadoService.verificarVencimentosECriarRascunhos();
+    if (req.user.role === "Comercial") {
+      const meusAlertas = alertas.filter(a => Number(a.criadoPor) === Number(req.user.id));
+      return res.json(meusAlertas);
+    }
+    res.json(alertas);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // --- HISTÓRICO DE PROPOSTAS POR CNPJ ---
 router.get("/api/propostas/historico-cnpj/:cnpj", verificarToken, async (req, res, next) => {
   try {
@@ -318,6 +333,10 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
 
         const diff = calcularDiferencasProposta(existente, dados);
 
+        const isFinora = String(dados.tipoProposta || existente.tipo_proposta || "finora").toLowerCase() === "finora";
+        const cadeirasSalvar = isFinora ? Number(dados.cadeiras || 0) : 0;
+        const dentistasSalvar = isFinora ? Number(dados.dentistasParceiros || 0) : 0;
+
         await db.executarQuery(
           `UPDATE propostas SET 
             nome_clinica = ?, razao_social = ?, cnpj = ?, nome_socio = ?, cpf_socio = ?,
@@ -329,10 +348,10 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
           WHERE id = ? AND status = 'Rascunho'`,
           [
             nomeClinica, dados.razaoSocial || null, dados.cnpj || null, dados.nomeSocio || null, dados.cpfSocio || null,
-            email, dados.telefone || null, dados.enderecoClinica || null, Number(dados.cadeiras || 0), Number(dados.funcionarios || 0),
+            email, dados.telefone || null, dados.enderecoClinica || null, cadeirasSalvar, Number(dados.funcionarios || 0),
             Number(dados.socios || 0), Number(dados.faturamento || 0), dados.regimeFiscal || null, dados.regimeHibrido || null, Number(dados.distanciaKm || 0),
             Number(dados.metragem || 0), valorTotal, JSON.stringify(itens), (dados.tipoProposta || "FINORA").toUpperCase(), dados.tipoProposta || "finora",
-            dados.tipoPessoa || "PJ", dados.proLabore || "Não", Number(dados.dentistasParceiros || 0), Number(dados.quantidadeSocios || 0),
+            dados.tipoPessoa || "PJ", dados.proLabore || "Não", dentistasSalvar, Number(dados.quantidadeSocios || 0),
             estadoCompletoJson, dados.videoPitch || dados.video_pitch || "", dados.audioPitch || dados.audio_pitch || "", rascunhoId
           ]
         );
@@ -373,6 +392,10 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
     const numRandom = Math.floor(1000 + Math.random() * 9000);
     const numeroProposta = `RASC-${ano}${mes}-${numRandom}`;
 
+    const isFinora = String(dados.tipoProposta || "finora").toLowerCase() === "finora";
+    const cadeirasSalvar = isFinora ? Number(dados.cadeiras || 0) : 0;
+    const dentistasSalvar = isFinora ? Number(dados.dentistasParceiros || 0) : 0;
+
     const [resultado] = await db.execute(
       `INSERT INTO propostas (
         token_acesso, numero_proposta, data_proposta, nome_clinica, razao_social, cnpj,
@@ -385,11 +408,11 @@ router.post("/api/propostas/rascunho", verificarToken, async (req, res, next) =>
       [
         tokenAcesso, numeroProposta, dataProposta, nomeClinica, dados.razaoSocial || null, dados.cnpj || null,
         dados.nomeSocio || null, dados.cpfSocio || null, email, dados.telefone || null, dados.enderecoClinica || null,
-        Number(dados.cadeiras || 0), Number(dados.funcionarios || 0), Number(dados.socios || 0), Number(dados.faturamento || 0),
+        cadeirasSalvar, Number(dados.funcionarios || 0), Number(dados.socios || 0), Number(dados.faturamento || 0),
         dados.regimeFiscal || null, dados.regimeHibrido || null, Number(dados.distanciaKm || 0), Number(dados.metragem || 0),
         valorTotal, JSON.stringify(itens), req.user.id, (dados.tipoProposta || "FINORA").toUpperCase(),
         dados.tipoProposta || "finora", dados.tipoPessoa || "PJ", dados.proLabore || "Não",
-        Number(dados.dentistasParceiros || 0), Number(dados.quantidadeSocios || 0), estadoCompletoJson,
+        dentistasSalvar, Number(dados.quantidadeSocios || 0), estadoCompletoJson,
         dados.videoPitch || dados.video_pitch || "", dados.audioPitch || dados.audio_pitch || ""
       ]
     );
@@ -596,6 +619,10 @@ const proLaboreNormalizado = normalizarProLabore(
         tipo_pessoa, pro_labore, dentistas_parceiros, quantidade_socios, socios_detalhados_json, certificado_status, certificado_nome_original,
         video_pitch, audio_pitch, documento_status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const isFinora = String(dados.tipoProposta || "finora").toLowerCase() === "finora";
+    const cadeirasSalvar = isFinora ? Number(dados.cadeiras || 0) : 0;
+    const dentistasSalvar = isFinora ? Number(dados.dentistasParceiros || 0) : 0;
+
     const values = [
       tokenAcesso,
       dados.numeroProposta,
@@ -608,7 +635,7 @@ const proLaboreNormalizado = normalizarProLabore(
       dados.email,
       dados.telefone || "",
       dados.enderecoClinica || "",
-      dados.cadeiras || 0,
+      cadeirasSalvar,
       dados.funcionarios || 0,
       dados.socios || 0,
       dados.faturamento || 0,
@@ -624,7 +651,7 @@ const proLaboreNormalizado = normalizarProLabore(
       dados.tipoProposta || "finora",
       dados.tipoPessoa || "PJ",
       proLaboreNormalizado || "Não",
-      dados.dentistasParceiros || 0,
+      dentistasSalvar,
       dados.quantidadeSocios || 0,
       JSON.stringify(dados.vencimentosRegularizacoes ? {
         socios: dados.sociosDetalhados || [],
