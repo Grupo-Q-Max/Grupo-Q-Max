@@ -75,6 +75,7 @@ const OPERATOR_API: Array<[methods: string[], pattern: RegExp]> = [
   [["POST"], /^meetings\/event\/\d+\/book$/],
   // Roleta do estande (ClinicorpRouletteExperience)
   [["GET"], /^participants\/pending-draws$/],
+  [["GET"], /^participants\/\d+\/public$/],
   [["GET"], /^draws\/event\/\d+\/eligible-grand-draw$/],
   [["POST"], /^draws\/event\/\d+\/grand-draw$/],
   [["POST"], /^draws\/event\/\d+\/grand-draw\/\d+\/claim$/],

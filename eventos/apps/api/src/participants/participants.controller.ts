@@ -8,10 +8,13 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  Req,
   Res,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+
+import { isFullAdmin } from '../security/admin-mutation.guard';
 
 import { RegisterParticipantDto } from './dto/register-participant.dto';
 import { ParticipantsService } from './participants.service';
@@ -46,8 +49,10 @@ export class ParticipantsController {
   findByEvent(
     @Param('eventId', ParseIntPipe)
     eventId: number,
+
+    @Req() req: Request,
   ) {
-    return this.participantsService.findByEvent(eventId);
+    return this.participantsService.findByEvent(eventId, isFullAdmin(req));
   }
 
   @Get('event/:eventId/export-csv')
@@ -116,8 +121,10 @@ export class ParticipantsController {
   findOne(
     @Param('id', ParseIntPipe)
     id: number,
+
+    @Req() req: Request,
   ) {
-    return this.participantsService.findOne(id);
+    return this.participantsService.findOne(id, isFullAdmin(req));
   }
 
   @Throttle({ default: { limit: 10, ttl: 60_000 } })

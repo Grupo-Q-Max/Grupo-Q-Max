@@ -14,7 +14,6 @@ const PUBLIC_ROUTES: Array<[method: string, pattern: RegExp]> = [
   ['GET', /^\/api\/v1\/health\/?$/],
   ['POST', /^\/api\/v1\/participants\/register\/?$/],
   ['POST', /^\/api\/v1\/participants\/validate-whatsapp\/?$/],
-  ['GET', /^\/api\/v1\/participants\/\d+\/public\/?$/],
   ['POST', /^\/api\/v1\/draws\/participation\/\d+\/?$/],
   ['GET', /^\/api\/v1\/prizes\/event\/\d+\/?$/],
   ['GET', /^\/api\/v1\/events\/?$/],
@@ -72,13 +71,28 @@ export class AdminMutationGuard implements CanActivate {
       throw new UnauthorizedException('Acesso administrativo não autorizado.');
     }
 
-    const received = request.headers['x-finora-admin-key'];
-    const receivedKey = Array.isArray(received) ? received[0] : received;
-
-    if (!receivedKey || !safeEqual(receivedKey.trim(), expectedKey)) {
+    if (!hasValidAdminKey(request)) {
       throw new UnauthorizedException('Acesso administrativo não autorizado.');
     }
 
     return true;
   }
+}
+
+// Chave administrativa válida: só o admin-proxy do web a envia.
+export function hasValidAdminKey(request: Request): boolean {
+  const expectedKey = (process.env.FINORA_ADMIN_API_KEY || '').trim();
+  const received = request.headers['x-finora-admin-key'];
+  const receivedKey = Array.isArray(received) ? received[0] : received;
+  return Boolean(
+    expectedKey && receivedKey && safeEqual(receivedKey.trim(), expectedKey),
+  );
+}
+
+// Perfil do usuário do painel, repassado pelo admin-proxy junto com a chave.
+// Sem o cabeçalho, conta como perfil restrito (dados mascarados).
+export function isFullAdmin(request: Request): boolean {
+  const header = request.headers['x-finora-admin-role'];
+  const role = Array.isArray(header) ? header[0] : header;
+  return hasValidAdminKey(request) && role === 'ADMIN';
 }

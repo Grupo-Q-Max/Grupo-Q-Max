@@ -180,13 +180,27 @@ process.on("unhandledRejection", (err) => {
 const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => {
   console.log(`Servidor FINORA rodando com sucesso na porta ${PORT}`);
-  
+
+  // Dev local apontando pro banco de produção: não duplicar follow-ups, lembretes e polling D4Sign
+  if (process.env.DISABLE_BACKGROUND_JOBS === "true") {
+    console.log("Jobs em segundo plano desativados (DISABLE_BACKGROUND_JOBS=true).");
+    return;
+  }
+
   // Inicializar limpeza automatizada de arquivos temporários PDF
   try {
     const pdfCleanupService = require("./services/pdfCleanupService");
     pdfCleanupService.inicializarAgendamentoLimpeza();
   } catch (error) {
     console.error("Erro ao inicializar serviço de limpeza de PDFs:", error.message);
+  }
+
+  // LGPD: retenção de documentos de onboarding (recusadas/vencidas há mais de 90 dias)
+  try {
+    const documentosRetencaoService = require("./services/documentosRetencaoService");
+    documentosRetencaoService.inicializarAgendamentoRetencao();
+  } catch (error) {
+    console.error("Erro ao inicializar retenção de documentos de onboarding:", error.message);
   }
 
   // Inicializar lembretes de atividades do CRM

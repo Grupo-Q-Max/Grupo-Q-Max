@@ -1,6 +1,7 @@
 "use client";
 
 import { useSettings } from "@/components/SettingsProvider";
+import { legal } from "@/data/site";
 
 const socials = [
   { label: "Facebook", href: "https://www.facebook.com/grupoqmax/" },
@@ -63,7 +64,19 @@ export function FinoraFooter() {
         <a href="/politica-de-privacidade" style={{ color: "#a1a1aa", textDecoration: "none" }}>Privacidade (LGPD)</a>
         <span>·</span>
         <a href="/politica-de-cookies" style={{ color: "#a1a1aa", textDecoration: "none" }}>Cookies</a>
+        <span>·</span>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("open-cookie-preferences"))}
+          style={{ background: "none", border: 0, padding: 0, color: "#a1a1aa", font: "inherit", cursor: "pointer" }}
+        >
+          Preferências de Cookies
+        </button>
       </div>
+      <p style={{ textAlign: "center", marginTop: 8, fontSize: "0.75rem", color: "#71717a" }}>
+        {legal.companies[legal.mainCompanyIndex].legalName} · CNPJ {legal.companies[legal.mainCompanyIndex].cnpj} · DPO:{" "}
+        <a href={`mailto:${legal.dpoEmail}`} style={{ color: "inherit" }}>{legal.dpoEmail}</a>
+      </p>
     </footer>
   );
 }

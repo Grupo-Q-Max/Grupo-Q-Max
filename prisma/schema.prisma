@@ -20,8 +20,11 @@ model ContactLead {
   message   String
   status    String   @default("NEW") // NEW, CONTACTED, CLOSED
   createdAt DateTime @default(now())
+  // LGPD consent snapshot taken when the visitor sent the form. Null on leads created before consent was recorded.
+  consentAt      DateTime?
+  privacyVersion String?   @db.VarChar(20)
 
-  // /admin lists the latest leads
+  // /admin lists the latest leads; lib/data-retention.ts purges by createdAt
   @@index([createdAt])
 }
 
@@ -176,7 +179,7 @@ model PageVisit {
   userAgent String?
   createdAt DateTime @default(now())
 
-  // /admin lists the latest visits
+  // /admin lists the latest visits; lib/data-retention.ts purges by createdAt
   @@index([createdAt])
 }
 

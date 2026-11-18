@@ -5,10 +5,23 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 // Prisma String columns are varchar(191)
 const field = (value: unknown) => (typeof value === "string" ? value.trim().slice(0, 191) : "");
 
-/** Page view from PageTracker. Open endpoint: validated and rate limited per IP. */
+/** Keeps only the origin of a referrer URL: paths and query strings may carry personal data. */
+function referrerOrigin(value: unknown) {
+  const text = field(value);
+  try {
+    return new URL(text).origin;
+  } catch {
+    return text.startsWith("Direto") ? "Direto" : "";
+  }
+}
+
+/**
+ * Page view from PageTracker, sent only after the visitor allows statistics in the cookie banner.
+ * Open endpoint: validated and rate limited per IP. Stores no IP and no user agent (data minimisation).
+ */
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  const path = field(body?.path);
+  const path = field(body?.path).split(/[?#]/)[0];
   if (!path.startsWith("/")) return NextResponse.json({ error: "Invalid path" }, { status: 400 });
 
   // Prevent saving useless dev-server noise
@@ -23,8 +36,8 @@ export async function POST(req: NextRequest) {
     await prisma.pageVisit.create({
       data: {
         path,
-        referrer: field(body.referrer) || "Direto",
-        userAgent: field(body.userAgent) || "Desconhecido",
+        referrer: referrerOrigin(body.referrer) || "Direto",
+        userAgent: null,
       },
     });
     return NextResponse.json({ success: true });

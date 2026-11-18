@@ -354,11 +354,14 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
 
         if (queryPartId > 0) {
           try {
-            const partRes = await fetch(`${apiUrl}/participants/${queryPartId}/public`, { cache: "no-store" });
+            // Só com sessão de operador: o PIN é sequencial.
+            const partRes = await fetch(`${getAdminProxyUrl()}/participants/${queryPartId}/public`, { cache: "no-store" });
             if (partRes.ok) {
               const partData = await partRes.json();
+              // VIP only from the API: a ?vip= URL parameter must not grant it
               const isVipUser = Boolean(partData.isVip || partData.vipCode);
-              const displayName = partData.participant.fullName || partData.participant.firstName || "Participante";
+              // The public endpoint returns only the first name (LGPD)
+              const displayName = partData.participant.firstName || "Participante";
 
               if (partData.draw) {
                 setResult({
@@ -387,7 +390,6 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
                   partData.hasScheduledMeeting ? "📅 Bate-papo VIP Agendado" : null,
                   partData.participant.clinicName,
                   partData.participant.croNumber ? `CRO ${partData.participant.croNumber}/${partData.participant.croState || ""}` : null,
-                  partData.participant.city ? `${partData.participant.city}/${partData.participant.state || ""}` : null,
                 ]
                   .filter(Boolean)
                   .join(" · ")
@@ -403,8 +405,8 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
                 clinicName: partData.participant.clinicName || null,
                 croNumber: partData.participant.croNumber || null,
                 croState: partData.participant.croState || null,
-                city: partData.participant.city || null,
-                state: partData.participant.state || null,
+                city: null,
+                state: null,
                 createdAt: new Date().toISOString(),
               });
 

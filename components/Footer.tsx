@@ -5,6 +5,7 @@ import { QmaxInline } from "@/components/QmaxBrandText";
 import type { MouseEvent } from "react";
 
 import { useSettings } from "@/components/SettingsProvider";
+import { legal } from "@/data/site";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 
@@ -62,6 +63,7 @@ export function Footer() {
   }
 
   const settings = useSettings();
+  const mainCompany = legal.companies[legal.mainCompanyIndex];
   const phoneOnly = settings.whatsapp.replace(/\D/g, "");
   const pathname = usePathname();
 
@@ -241,23 +243,25 @@ export function Footer() {
             >
               Preferências de Cookies
             </button>
-            <a href="mailto:dpo@grupoqmax.com.br">Encarregado (DPO)</a>
+            <a href={`mailto:${legal.dpoEmail}`}>Encarregado (DPO)</a>
           </div>
         </div>
       </div>
 
       <div className="container" style={{ padding: "16px 0", borderTop: "1px solid rgba(255, 255, 255, 0.05)", borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, fontSize: "0.78rem", color: "#a1a1aa" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <span style={{ color: "#14d0c1", fontWeight: 700 }}>🔒 CONFORMIDADE LGPD:</span>
-            <span>Ambiente seguro, governança corporativa e sigilo rigoroso de dados protegidos pela Lei Federal nº 13.709/18.</span>
+          <span>
+            {mainCompany.legalName} · CNPJ {mainCompany.cnpj} · {legal.address}
           </span>
-          <span style={{ color: "#71717a" }}>Certificados Digitais &amp; Auditoria Contábil Regular</span>
+          <span>
+            Dados pessoais tratados conforme a Lei nº 13.709/2018 (LGPD). Dúvidas ou pedidos:{" "}
+            <a href={`mailto:${legal.dpoEmail}`} style={{ color: "inherit" }}>{legal.dpoEmail}</a>
+          </span>
         </div>
       </div>
 
       <div className="container finish-footer__bottom">
-        <span>© 2026 {settings.siteName} <QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span> Todos os direitos reservados.</span>
+        <span>© {new Date().getFullYear()} {settings.siteName} <QmaxInline>Q-Max</QmaxInline><span className="qmax-punctuation">.</span> Todos os direitos reservados.</span>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           <a href="/termos-de-uso" style={{ color: "#a1a1aa", textDecoration: "none", fontSize: "0.82rem" }}>Termos</a>

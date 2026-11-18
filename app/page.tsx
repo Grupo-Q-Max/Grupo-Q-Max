@@ -14,7 +14,6 @@ import { ConversionBand } from "@/components/ConversionBand";
 import { FAQ } from "@/components/FAQ";
 import { Contact } from "@/components/Contact";
 
-import { QuickLeadModal } from "@/components/QuickLeadModal";
 
 
 import { ScrollReveal } from "@/components/ScrollReveal";
@@ -45,7 +44,6 @@ export default function Home() {
 
       
       
-      <QuickLeadModal />
     </>
   );
 }

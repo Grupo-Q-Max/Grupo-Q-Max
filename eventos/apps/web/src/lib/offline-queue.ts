@@ -3,19 +3,27 @@
 // Fila local para quando a internet do estande cai. Cada item é reenviado até a
 // API responder (2xx ou 4xx); 5xx/rede mantém na fila. localStorage pode falhar
 // (modo privado, cota): nesse caso a fila fica vazia e o envio segue online.
+// LGPD: os itens têm CPF e contato. Saem da fila assim que a API responde e são
+// descartados após 24h sem envio. Nunca registrar o conteúdo em log.
 export type QueuedRequest = { id: string; url: string; body: unknown; createdAt: number };
 
 export const REGISTRATION_QUEUE = "finora-offline-registrations";
 export const CLAIM_QUEUE = "finora-offline-claims";
 export const OFFLINE_QUEUE_EVENT = "finora-offline-queue";
 
+export const QUEUE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 export function readQueue(key: string): QueuedRequest[] {
+  let items: QueuedRequest[];
   try {
     const parsed = JSON.parse(window.localStorage.getItem(key) || "[]");
-    return Array.isArray(parsed) ? parsed : [];
+    items = Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
+  const fresh = items.filter((q) => Date.now() - q.createdAt < QUEUE_MAX_AGE_MS);
+  if (fresh.length !== items.length) writeQueue(key, fresh);
+  return fresh;
 }
 
 function writeQueue(key: string, items: QueuedRequest[]) {

@@ -75,6 +75,12 @@ function propostaVencida(p, agora = new Date()) {
   return agora.getTime() > inicio.getTime() + DIAS_VALIDADE * 24 * 60 * 60 * 1000;
 }
 
+// LGPD: CPF completo vai só para o D4Sign; texto livre guarda apenas os 2 últimos dígitos.
+function mascararCpf(cpf) {
+  const digitos = String(cpf || "").replace(/\D/g, "");
+  return digitos ? `***.***.***-${digitos.slice(-2).padStart(2, "*")}` : "";
+}
+
 // ip_assinatura guarda o IP do aceite ou o UUID do documento D4Sign. Só UUID real conta como contrato gerado:
 // IPv6 (sem ponto) e o UUID de mock ("mocked_...") passavam pela checagem antiga e o contrato nunca era gerado.
 function ehUuidD4Sign(valor) {
@@ -241,7 +247,8 @@ module.exports = {
   proximoNumeroProposta,
   ehUuidD4Sign,
   DIAS_VALIDADE,
-  propostaVencida
+  propostaVencida,
+  mascararCpf
 };
 
 // Auto-checagem: node services/proposalHelpers.js
@@ -253,6 +260,9 @@ if (require.main === module) {
   // Renovada: conta da renovação, não da criação
   assert.strictEqual(propostaVencida({ criado_em: "2026-09-01T00:00:00Z", validade_inicia_em: "2026-10-15T00:00:00Z" }, agora), false);
   assert.strictEqual(propostaVencida({ criado_em: null }, agora), false);
+  assert.strictEqual(mascararCpf("123.456.789-12"), "***.***.***-12");
+  assert.strictEqual(mascararCpf("12345678912"), "***.***.***-12");
+  assert.strictEqual(mascararCpf(""), "");
   console.log("proposalHelpers ok");
   process.exit(0);
 }

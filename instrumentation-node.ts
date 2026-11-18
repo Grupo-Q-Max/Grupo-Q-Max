@@ -19,6 +19,13 @@ async function tick() {
   } catch (error) {
     console.error("[crm-automation] ticker failed:", error);
   }
+  try {
+    // LGPD retention: deletes expired site leads and page visits, at most once a day
+    const { purgeExpiredDataDaily } = await import("./lib/data-retention");
+    await purgeExpiredDataDaily();
+  } catch (error) {
+    console.error("[data-retention] failed:", error instanceof Error ? error.message : error);
+  }
 }
 
 if (

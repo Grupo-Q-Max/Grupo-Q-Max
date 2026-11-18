@@ -1322,6 +1322,7 @@ interface Lead {
   message: string;
   status: string;
   createdAt: string;
+  consentAt: string | null;
 }
 
 function LeadsTab() {
@@ -1337,6 +1338,14 @@ function LeadsTab() {
       .catch(() => console.error("Failed to fetch leads"))
       .finally(() => setLoading(false));
   }, []);
+
+  // LGPD Art. 18, VI: the data subject asked to delete their data
+  const deleteLead = async (lead: Lead) => {
+    if (!window.confirm(`Excluir definitivamente o lead de ${lead.name}? Use só para atender pedido do titular. Não dá para desfazer.`)) return;
+    const res = await fetch(`/api/leads?id=${encodeURIComponent(lead.id)}`, { method: "DELETE" });
+    if (res.ok) setLeads((current) => current.filter((l) => l.id !== lead.id));
+    else window.alert("Não foi possível excluir o lead.");
+  };
 
   return (
     <div className="qadmin__leads">
@@ -1378,12 +1387,14 @@ function LeadsTab() {
                 <th>Empresa</th>
                 <th>Contato</th>
                 <th>Interesse</th>
+                <th>Consentimento</th>
+                <th aria-label="Ações" />
               </tr>
             </thead>
             <tbody>
               {shownLeads.length === 0 && (
                 <tr>
-                  <td colSpan={5}>Nenhum lead corresponde à busca.</td>
+                  <td colSpan={7}>Nenhum lead corresponde à busca.</td>
                 </tr>
               )}
               {shownLeads.map((lead) => (
@@ -1396,6 +1407,16 @@ function LeadsTab() {
                     {lead.email !== "Não informado" && <div><small>{lead.email}</small></div>}
                   </td>
                   <td>{lead.message}</td>
+                  <td>
+                    {lead.consentAt
+                      ? new Date(lead.consentAt).toLocaleDateString("pt-BR")
+                      : <small>não registrado</small>}
+                  </td>
+                  <td>
+                    <button type="button" onClick={() => deleteLead(lead)} title="Excluir lead a pedido do titular (LGPD)">
+                      Excluir
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

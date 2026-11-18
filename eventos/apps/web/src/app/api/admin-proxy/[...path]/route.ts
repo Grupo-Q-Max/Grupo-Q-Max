@@ -81,8 +81,10 @@ async function forward(
   const headers = new Headers();
   headers.set("x-finora-admin-key", adminKey);
 
+  // Without a session (WhatsApp queue reads) no role is sent: the API then masks contact/CPF.
   if (session) {
     headers.set("x-finora-admin-user-id", String(session.uid));
+    headers.set("x-finora-admin-role", session.role);
   }
 
   headers.set(

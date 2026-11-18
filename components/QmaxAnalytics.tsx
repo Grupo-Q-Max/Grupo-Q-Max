@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { hasConsent } from "@/lib/consent";
 
 declare global {
   interface Window {
@@ -248,6 +249,8 @@ function classifyLink(anchor: HTMLAnchorElement) {
 export function QmaxAnalytics() {
   useEffect(() => {
     function handleClick(event: MouseEvent) {
+      // Click statistics are part of the "Estatísticas" consent
+      if (!hasConsent("analytics")) return;
       const target = event.target;
 
       if (!(target instanceof Element)) return;
@@ -265,8 +268,9 @@ export function QmaxAnalytics() {
             result.label || "sem_label",
           interaction_location:
             result.location,
+          // Without query string: links such as wa.me?text= or mailto:?body= may carry personal data
           destination:
-            anchor.getAttribute("href") || undefined,
+            (anchor.getAttribute("href") || "").split("?")[0] || undefined,
         });
 
         return;

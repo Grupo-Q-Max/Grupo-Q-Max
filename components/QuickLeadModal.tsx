@@ -26,6 +26,7 @@ export function QuickLeadModal() {
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [phone, setPhone] = useState("");
+  const [consent, setConsent] = useState(false);
   // Quem abriu o modal, para devolver o foco ao fechar (guardado na
   // abertura: o autoFocus do campo de nome muda o foco antes dos efeitos)
   const openerRef = useRef<HTMLElement | null>(null);
@@ -88,8 +89,10 @@ export function QuickLeadModal() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // LGPD: nothing leaves the browser without the visitor's explicit consent
+    if (!consent || name.trim().length < 2) return;
     const text = encodeURIComponent(
-      `Olá! Meu nome é ${name || "Visitante"}${companyName ? ` (Empresa: ${companyName})` : ""}. Gostaria de solicitar um diagnóstico com a unidade ${selectedCompany.name} (${selectedCompany.category}).`
+      `Olá! Meu nome é ${name.trim()}${companyName ? ` (Empresa: ${companyName})` : ""}. Gostaria de solicitar um diagnóstico com a unidade ${selectedCompany.name} (${selectedCompany.category}).`
     );
 
     // Abre o WhatsApp antes de salvar: depois de um await lento o navegador
@@ -102,8 +105,9 @@ export function QuickLeadModal() {
       headers: { "Content-Type": "application/json" },
       keepalive: true,
       body: JSON.stringify({
-        name: name || "Visitante",
+        name: name.trim(),
         phone,
+        consent: true,
         company: companyName,
         message: `Deseja diagnóstico com ${selectedCompany.name}`,
       }),
@@ -112,6 +116,7 @@ export function QuickLeadModal() {
     });
 
     setIsOpen(false);
+    setConsent(false);
   };
 
   return (
@@ -216,17 +221,38 @@ export function QuickLeadModal() {
             />
           </div>
 
-          <button type="submit" className="qmax-modal-submit">
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 14, fontSize: "0.8rem", lineHeight: 1.45, color: "#c4c0c8", cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              name="consent"
+              required
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              style={{ marginTop: 3, accentColor: "var(--qmax-magenta, #d90f81)" }}
+            />
+            <span>
+              Li a{" "}
+              <a href="/politica-de-privacidade" target="_blank" rel="noopener" style={{ color: "inherit", textDecoration: "underline" }}>Política de Privacidade</a>{" "}
+              e autorizo o Grupo <QmaxInline>Q-Max</QmaxInline> a usar meu nome, empresa e telefone para responder a esta
+              solicitação. A conversa continua no WhatsApp (Meta).
+            </span>
+          </label>
+
+          <button
+            type="submit"
+            className="qmax-modal-submit"
+            disabled={!consent}
+            style={{ opacity: consent ? 1 : 0.55, cursor: consent ? "pointer" : "not-allowed" }}
+          >
             <span>Iniciar Conversa no WhatsApp</span>
             <ArrowRight size={17} />
           </button>
 
           <p style={{ marginTop: 14, fontSize: "0.74rem", color: "#71717a", textAlign: "center", lineHeight: 1.45 }}>
-            Ao prosseguir, você concorda com nossos{" "}
-            <a href="/termos-de-uso" target="_blank" style={{ color: "#14d0c1", textDecoration: "underline" }}>Termos de Uso</a>{" "}
-            e nossa{" "}
-            <a href="/politica-de-privacidade" target="_blank" style={{ color: "#14d0c1", textDecoration: "underline" }}>Política de Privacidade</a>{" "}
-            em estrita observância à LGPD (Lei 13.709/18).
+            Você pode pedir acesso, correção ou exclusão dos seus dados pelo e-mail{" "}
+            <a href="mailto:dpo@grupoqmax.com.br" style={{ color: "inherit", textDecoration: "underline" }}>dpo@grupoqmax.com.br</a>.
+            Veja também os{" "}
+            <a href="/termos-de-uso" target="_blank" rel="noopener" style={{ color: "inherit", textDecoration: "underline" }}>Termos de Uso</a>.
           </p>
         </form>
       </div>

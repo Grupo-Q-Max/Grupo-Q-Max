@@ -27,10 +27,14 @@ async function bootstrap() {
     .map((o) => o.trim())
     .filter(Boolean);
 
+  // Sem CORS_ORIGINS, só o site oficial (e localhost fora de produção).
   const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    ...customOrigins,
+    ...(customOrigins.length
+      ? customOrigins
+      : ['https://grupoqmax.com.br', 'https://www.grupoqmax.com.br']),
+    ...(process.env.NODE_ENV === 'production'
+      ? []
+      : ['http://localhost:3000', 'http://localhost:3001']),
   ];
 
   app.use((req: any, _res: any, next: () => void) => {
@@ -46,7 +50,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: allowedOrigins.length === 2 ? true : allowedOrigins,
+    origin: allowedOrigins,
     credentials: true,
   });
 

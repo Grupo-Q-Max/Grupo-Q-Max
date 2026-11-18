@@ -17,6 +17,7 @@ import confetti from "canvas-confetti";
 import { postRegistration } from "@/lib/offline-queue";
 import OfflineSaved from "@/components/form/OfflineSaved";
 import GoldenTicket from "@/components/brand/GoldenTicket";
+import { PrivacyConsentText } from "@/components/form/Legal";
 
 type Props = {
   eventId: number;
@@ -192,8 +193,9 @@ function RegistrationForm({
       clearTimeout(timer);
     };
   }, [vipCode, eventId]);
-  const [acceptTerms, setAcceptTerms] = useState(true);
-  const [acceptMarketing, setAcceptMarketing] = useState(true);
+  // LGPD: consentimento nunca vem pré-marcado.
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptMarketing, setAcceptMarketing] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [offlineSaved, setOfflineSaved] = useState<string | null>(null);
@@ -233,11 +235,12 @@ function RegistrationForm({
     }
 
     if (!acceptTerms) {
-      setError("É necessário aceitar os termos para participar.");
+      setError("É necessário aceitar a Política de Privacidade e o Regulamento para participar.");
       return;
     }
 
-    if (!email.trim() || !email.includes("@")) {
+    // E-mail é opcional (minimização): só serve para o convite da reunião.
+    if (email.trim() && !email.includes("@")) {
       setError("Por favor, informe um E-mail válido.");
       return;
     }
@@ -250,7 +253,7 @@ function RegistrationForm({
         fullName: fullName.trim(),
         cpf: cleanCpf,
         phone: cleanPhone,
-        email: email.trim(),
+        email: email.trim() || undefined,
         clinicName: clinicName.trim() || undefined,
         croNumber: cro.trim() || undefined,
         croState: croState.trim() || "SP",
@@ -640,7 +643,7 @@ function RegistrationForm({
           onChange={(e) => setPhone(formatPhone(e.target.value))}
           hint="Seu número de contato no evento."
         />
-        <Field id="c-mail" label="E-mail" type="email" inputMode="email" required placeholder="voce@clinica.com.br" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Field id="c-mail" label="E-mail (opcional)" type="email" inputMode="email" placeholder="voce@clinica.com.br" value={email} onChange={(e) => setEmail(e.target.value)} />
 
         <Field
           id="c-vip"
@@ -699,11 +702,11 @@ function RegistrationForm({
         />
 
         <div className="flex flex-col gap-3 pt-1">
-          <Check checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}>
-            Aceito o regulamento e o uso dos meus dados para esta ativação e o sorteio.
+          <Check required checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}>
+            <PrivacyConsentText />
           </Check>
           <Check checked={acceptMarketing} onChange={(e) => setAcceptMarketing(e.target.checked)}>
-            Quero receber novidades da Finora.
+            Quero receber novidades e ofertas da Finora e do Grupo Q-Max por WhatsApp e e-mail. (opcional, posso cancelar quando quiser)
           </Check>
         </div>
       </div>
