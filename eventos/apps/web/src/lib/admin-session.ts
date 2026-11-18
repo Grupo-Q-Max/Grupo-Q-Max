@@ -73,6 +73,8 @@ const OPERATOR_API: Array<[methods: string[], pattern: RegExp]> = [
   [["GET"], /^draws\/event\/\d+\/pending-claims$/],
   [["GET"], /^meetings\/event\/\d+\/available-slots$/],
   [["POST"], /^meetings\/event\/\d+\/book$/],
+  [["GET"], /^meetings\/event\/\d+\/agenda$/],
+  [["POST"], /^meetings\/\d+\/status$/],
   // Roleta do estande (ClinicorpRouletteExperience)
   [["GET"], /^participants\/pending-draws$/],
   [["GET"], /^draws\/event\/\d+\/eligible-grand-draw$/],

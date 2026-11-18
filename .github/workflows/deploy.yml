@@ -212,6 +212,16 @@ jobs:
           if [ -z "${ZAPI_CLIENT_TOKEN}" ]; then
             echo "ZAPI_CLIENT_TOKEN='F3c0fad77fa1b4aa485ee6d6ff93b4bbbS'" >> deploy/.env
           fi
+          if [ -z "${MICROSOFT_CLIENT_SECRET}" ]; then
+            echo "MICROSOFT_CLIENT_SECRET='FrN8Q~TMgWNKxVq5q_m2B23F3pC89p16M133ib-X'" >> deploy/.env
+          fi
+          echo "BOSS_MEETING_EMAIL='hugo@grupoqmax.com.br'" >> deploy/.env
+          echo "SECOND_MEETING_EMAIL='rodrigo@grupoqmax.com.br'" >> deploy/.env
+          echo "SMTP_HOST='smtp.office365.com'" >> deploy/.env
+          echo "SMTP_PORT='587'" >> deploy/.env
+          echo "SMTP_USER='rodrigo@grupoqmax.com.br'" >> deploy/.env
+          echo "SMTP_PASS='kqhswvqxpkqgddnl'" >> deploy/.env
+          echo "SMTP_APP_PASSWORD='kqhswvqxpkqgddnl'" >> deploy/.env
 
           echo ""
                     mkdir -p deploy/bin

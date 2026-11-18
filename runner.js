@@ -32,6 +32,16 @@ const apiEnv = {
   ZAPI_INSTANCE_ID: process.env.ZAPI_INSTANCE_ID || '3F89F6D486DE607670FCC6875DDA7AD5',
   ZAPI_TOKEN: process.env.ZAPI_TOKEN || 'B6484C6CC1E7F0C99EAAD46C',
   ZAPI_CLIENT_TOKEN: process.env.ZAPI_CLIENT_TOKEN || 'F3c0fad77fa1b4aa485ee6d6ff93b4bbbS',
+  MICROSOFT_TENANT_ID: process.env.MICROSOFT_TENANT_ID || 'e3a65ea4-591b-4eab-acf5-059083274f98',
+  MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || '365625d9-2647-489d-b319-48b960f9edab',
+  MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || 'FrN8Q~TMgWNKxVq5q_m2B23F3pC89p16M133ib-X',
+  BOSS_MEETING_EMAIL: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
+  SECOND_MEETING_EMAIL: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
+  SMTP_HOST: process.env.SMTP_HOST || 'smtp.office365.com',
+  SMTP_PORT: process.env.SMTP_PORT || '587',
+  SMTP_USER: process.env.SMTP_USER || 'rodrigo@grupoqmax.com.br',
+  SMTP_PASS: process.env.SMTP_PASS || process.env.SMTP_APP_PASSWORD || 'kqhswvqxpkqgddnl',
+  SMTP_APP_PASSWORD: process.env.SMTP_APP_PASSWORD || 'kqhswvqxpkqgddnl',
 };
 
 // Variáveis de ambiente para o Web de Eventos
