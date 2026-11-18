@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, Crown, IdCard, LoaderCircle, Mail, Sparkles, UserCheck, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Crown, IdCard, LoaderCircle, Mail, Sparkles, UserCheck, X } from "lucide-react";
 import VipScheduler from "@/components/VipScheduler";
 import { getApiBaseUrl } from "@/lib/api-client";
 import { validateCpfAlgorithmic } from "@/components/clinicorp/ClinicorpRegistrationForm";
@@ -160,7 +160,7 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
         eventId={eventId}
         participantId={participant.participantId}
         meetingEmail={effectiveEmail || undefined}
-        inviteText="Ao confirmar sua reunião com o CEO Hugo Werninghaus, sua Roleta VIP estará liberada no telão/estande Finora!"
+        inviteText="Ao confirmar sua reunião de 45 minutos com o CEO Hugo Werninghaus, sua Roleta VIP estará liberada no telão/estande Finora!"
       />
     );
   }
@@ -179,17 +179,17 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
         </div>
 
         <h1 className="font-display text-[26px] sm:text-[30px] font-black leading-tight text-white mt-1">
-          Bate-papo VIP com Nosso CEO
+          Bate-papo VIP com Hugo Werninghaus
         </h1>
 
         <p className="text-[13.5px] leading-relaxed text-slate-300">
-          Agende sua consultoria de planejamento tributário e financeiro exclusivo. Ao marcar, você garante sua vaga na{" "}
+          Agende sua consultoria de 45 minutos de diagnóstico financeiro e planejamento tributário exclusivo. Ao marcar, você destrava automaticamente a sua vaga na{" "}
           <strong className="text-amber-300 font-extrabold">Roleta VIP</strong> do estande Finora!
         </p>
 
         {/* Aviso de Validade Estendida */}
         <div className="mt-1 rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 p-3 text-xs text-amber-200">
-          ⭐ <strong>Validade Estendida:</strong> O prêmio conquistado na <strong>Roleta VIP</strong> (descontos no 1º honorário, diagnósticos e mentorias) <strong>valerá até depois da reunião</strong>!
+          ⭐ <strong>Validade Estendida:</strong> O prêmio conquistado na <strong>Roleta VIP</strong> (descontos no 1º honorário, diagnósticos e mentorias) <strong>valerá até depois da realização da reunião</strong>!
         </div>
       </div>
 
@@ -385,18 +385,18 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
               required
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="voce@clinica.com.br"
+              placeholder="doutor@clinica.com.br"
               className="w-full rounded-xl border border-white/15 bg-slate-900/80 py-3 px-3.5 text-sm text-white placeholder-slate-500 focus:border-amber-400 focus:outline-none"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-200 uppercase">Nome da Clínica (opcional)</label>
+            <label className="text-xs font-bold text-slate-200 uppercase">Nome da Clínica (Opcional)</label>
             <input
               type="text"
               value={newClinicName}
               onChange={(e) => setNewClinicName(e.target.value)}
-              placeholder="Clínica Exemplo"
+              placeholder="Clínica Odontológica"
               className="w-full rounded-xl border border-white/15 bg-slate-900/80 py-3 px-3.5 text-sm text-white placeholder-slate-500 focus:border-amber-400 focus:outline-none"
             />
           </div>
@@ -411,11 +411,11 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
             {registering ? (
               <>
                 <LoaderCircle size={20} className="animate-spin text-[#3E2723]" />
-                <span>Registrando e abrindo agenda…</span>
+                <span>Registrando...</span>
               </>
             ) : (
               <>
-                <span>Salvar e Escolher Horário da Reunião 📅</span>
+                <span>Cadastrar & Avançar para Agendamento</span>
                 <ArrowRight size={18} />
               </>
             )}

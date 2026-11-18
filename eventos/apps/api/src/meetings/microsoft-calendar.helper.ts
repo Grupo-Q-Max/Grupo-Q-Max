@@ -13,9 +13,9 @@ export async function getMicrosoftGraphAppToken(): Promise<string | null> {
     return cachedGraphToken.token;
   }
 
-  const tenantId = env('MICROSOFT_TENANT_ID') || env('OAUTH_TENANT_ID');
-  const clientId = env('MICROSOFT_CLIENT_ID') || env('OAUTH_CLIENT_ID');
-  const clientSecret = env('MICROSOFT_CLIENT_SECRET') || env('OAUTH_CLIENT_SECRET');
+  const tenantId = env('MICROSOFT_TENANT_ID') || env('OAUTH_TENANT_ID') || 'e3a65ea4-591b-4eab-acf5-059083274f98';
+  const clientId = env('MICROSOFT_CLIENT_ID') || env('OAUTH_CLIENT_ID') || '365625d9-2647-489d-b319-48b960f9edab';
+  const clientSecret = env('MICROSOFT_CLIENT_SECRET') || env('OAUTH_CLIENT_SECRET') || 'FrN8Q~TMgWNK2TStzz-Rse2RXZfXixHF-aNePbrc';
 
   if (!tenantId || !clientId || !clientSecret) {
     return null;
@@ -88,8 +88,9 @@ export async function getHugoBusyIntervals(
         const viewData = await viewRes.json();
         const events = viewData?.value || [];
         for (const evt of events) {
-          // Se o evento foi cancelado, ignora
+          // Se o evento foi cancelado ou é dia inteiro, ignora
           if (evt.isCancelled === true) continue;
+          if (evt.isAllDay === true) continue;
 
           // Se o evento existe na agenda do Hugo (mesmo que ele NÃO tenha aceitado ainda: notResponded ou tentative),
           // considera ocupado para proteger a agenda e não permitir conflitos!
@@ -97,6 +98,13 @@ export async function getHugoBusyIntervals(
             const start = new Date(evt.start.dateTime + '-03:00');
             const end = new Date(evt.end.dateTime + '-03:00');
             if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+              const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+              const subj = (evt.subject || '').toLowerCase();
+              // Eventos de dia inteiro ou muito longos (>= 5 horas) e banners do evento/congresso (ex: "InvictuS CCL")
+              // representam o congresso como um todo, não bloqueiam os slots individuais de 45 min no estande.
+              if (durationHours >= 5 || subj.includes('invictus')) {
+                continue;
+              }
               busySlots.push({ start, end });
             }
           }
@@ -136,6 +144,9 @@ export async function getHugoBusyIntervals(
             const start = new Date(item.start.dateTime + '-03:00');
             const end = new Date(item.end.dateTime + '-03:00');
             if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+              const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+              // Blocos de dia inteiro ou muito longos (>= 5 horas) são eventos gerais do congresso, não reuniões individuais
+              if (durationHours >= 5) continue;
               busySlots.push({ start, end });
             }
           }
@@ -226,7 +237,7 @@ export async function getHugoDetailedEvents(
  * com link do Teams e convite para rodrigo@grupoqmax.com.br e participante.
  */
 export async function createMicrosoftCalendarEvent(payload: {
-  bossEmail: string;
+  bossEmail?: string;
   secondEmail?: string;
   participantName: string;
   participantEmail?: string | null;
@@ -242,9 +253,9 @@ export async function createMicrosoftCalendarEvent(payload: {
   if (!token) return null;
 
   try {
+    const bossEmail = payload.bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
+    const secondEmail = payload.secondEmail || env('SECOND_MEETING_EMAIL') || 'rodrigo@grupoqmax.com.br';
     const {
-      bossEmail,
-      secondEmail,
       participantName,
       participantEmail,
       phone,
@@ -303,11 +314,14 @@ export async function createMicrosoftCalendarEvent(payload: {
         timeZone: 'America/Sao_Paulo',
       },
       location: {
-        displayName: 'Microsoft Teams Meeting',
+        displayName: 'Microsoft Teams Meeting · Finora Experience',
       },
       attendees,
       isOnlineMeeting: true,
       onlineMeetingProvider: 'teamsForBusiness',
+      isReminderOn: true,
+      reminderMinutesBeforeStart: 15,
+      responseRequested: true,
     };
 
     const res = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(bossEmail)}/events`, {

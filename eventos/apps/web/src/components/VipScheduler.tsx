@@ -47,7 +47,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
   const [date, setDate] = useState(dates[0]);
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState<string | null>(null);
-  const [durationMinutes, setDurationMinutes] = useState<number>(45);
+  const durationMinutes = 45; // Duração fixa oficial de 45 minutos
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -77,16 +77,6 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
 
   const startTimeFormatted = slot ? format(parseISO(slot), "HH:mm") : "";
   const endTimeFormatted = slot ? format(addMinutes(parseISO(slot), durationMinutes), "HH:mm") : "";
-
-  // Opções de término a partir do horário de início
-  const endOptions = useMemo(() => {
-    if (!slot) return [];
-    return [
-      { minutes: 45, label: `${format(addMinutes(parseISO(slot), 45), "HH:mm")} (45 min - Oficial)` },
-      { minutes: 30, label: `${format(addMinutes(parseISO(slot), 30), "HH:mm")} (30 min - Rápido)` },
-      { minutes: 60, label: `${format(addMinutes(parseISO(slot), 60), "HH:mm")} (1 hora - Extensão)` },
-    ];
-  }, [slot]);
 
   async function book() {
     if (!slot) return;
@@ -230,39 +220,9 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
               </div>
             </div>
 
-            {/* Horário Final */}
-            {slot && (
-              <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
-                <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <Clock size={14} className="text-[#FFD700]" />
-                  <span>3. Selecione o Horário Final (Término)</span>
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {endOptions.map((opt) => {
-                    const on = durationMinutes === opt.minutes;
-                    return (
-                      <button
-                        key={opt.minutes}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => setDurationMinutes(opt.minutes)}
-                        className={`h-12 px-3 rounded-xl border text-xs sm:text-sm font-mono font-bold transition-all cursor-pointer flex items-center justify-center text-center ${
-                          on
-                            ? "border-[#FFD700] bg-[#FFD700]/25 text-[#FFF9B8] shadow-[0_0_15px_rgba(255,215,0,0.35)]"
-                            : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08] hover:text-white"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {/* Resumo Nobre do Agendamento Selecionado */}
             {slot && (
-              <div className="rounded-2xl border-2 border-[#FFD700]/60 bg-gradient-to-r from-[#2B1B04]/80 via-ink-950/90 to-ink-900/90 p-4 shadow-[0_0_20px_rgba(255,215,0,0.2)] flex flex-col gap-1.5">
+              <div className="rounded-2xl border-2 border-[#FFD700]/60 bg-gradient-to-r from-[#2B1B04]/80 via-ink-950/90 to-ink-900/90 p-4 shadow-[0_0_20px_rgba(255,215,0,0.2)] flex flex-col gap-1.5 animate-pop-burst">
                 <span className="font-mono text-[11px] font-black text-[#FFD700] uppercase tracking-wider flex items-center gap-1.5">
                   <Crown size={14} className="text-[#FFD700]" /> RESUMO DA REUNIÃO SELECIONADA
                 </span>
@@ -272,7 +232,9 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
                 <div className="flex items-center gap-2 text-sm font-bold text-[#FFE57F]">
                   <span>⏰ Horário:</span>
                   <span className="underline">{startTimeFormatted} às {endTimeFormatted}</span>
-                  <span className="text-xs font-mono text-slate-400">({durationMinutes} min)</span>
+                  <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    45 min (Duração Fixa)
+                  </span>
                 </div>
                 <span className="text-xs text-slate-300 mt-0.5">
                   💻 Plataforma: <strong>Microsoft Teams</strong> · com <strong>Hugo Werninghaus (CEO)</strong>

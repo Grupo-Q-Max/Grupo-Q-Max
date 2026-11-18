@@ -213,7 +213,7 @@ jobs:
             echo "ZAPI_CLIENT_TOKEN='F3c0fad77fa1b4aa485ee6d6ff93b4bbbS'" >> deploy/.env
           fi
           if [ -z "${MICROSOFT_CLIENT_SECRET}" ]; then
-            echo "MICROSOFT_CLIENT_SECRET='FrN8Q~TMgWNKxVq5q_m2B23F3pC89p16M133ib-X'" >> deploy/.env
+            echo "MICROSOFT_CLIENT_SECRET='FrN8Q~TMgWNK2TStzz-Rse2RXZfXixHF-aNePbrc'" >> deploy/.env
           fi
           echo "BOSS_MEETING_EMAIL='hugo@grupoqmax.com.br'" >> deploy/.env
           echo "SECOND_MEETING_EMAIL='rodrigo@grupoqmax.com.br'" >> deploy/.env

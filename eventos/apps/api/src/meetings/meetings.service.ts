@@ -208,42 +208,47 @@ export class MeetingsService {
       }
 
       // 4. Cria evento 100% automático no calendário do Hugo no Microsoft 365 (Teams)
-      createMicrosoftCalendarEvent({
-        bossEmail: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
-        secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
-        participantName: meeting.participants.full_name,
-        participantEmail: cleanMeetingEmail || meeting.participants.email,
-        phone: meeting.participants.phone,
-        clinicName: meeting.participants.clinic_name,
-        chairsCount: meeting.participants.chairs_count,
-        croNumber: meeting.participants.cro_number,
-        croState: meeting.participants.cro_state,
-        scheduledAt,
-        durationMinutes: 45,
-      }).catch((err) => {
-        console.warn('[MeetingsService] Falha ao criar evento no Microsoft Graph:', err.message);
-      });
-
-      // 5. Dispara convite de calendário oficial do Outlook (.ics) para o chefe Hugo
-      sendMeetingInvite({
-        meetingId: meeting.id,
-        scheduledAt,
-        participant: {
-          fullName: meeting.participants.full_name,
-          email: cleanMeetingEmail || meeting.participants.email,
+      try {
+        const graphEventId = await createMicrosoftCalendarEvent({
+          bossEmail: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
+          secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
+          participantName: meeting.participants.full_name,
+          participantEmail: cleanMeetingEmail || meeting.participants.email,
           phone: meeting.participants.phone,
           clinicName: meeting.participants.clinic_name,
+          chairsCount: meeting.participants.chairs_count,
           croNumber: meeting.participants.cro_number,
           croState: meeting.participants.cro_state,
-          chairsCount: meeting.participants.chairs_count,
-        },
-        bossEmail: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
-        secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
-      }).catch((err) => {
-        console.warn('[MeetingsService] Falha ao enviar convite por e-mail:', err.message);
-      });
+          scheduledAt,
+          durationMinutes: 45,
+        });
+        if (graphEventId) {
+          console.log('[MeetingsService] Evento criado no Teams/Outlook com ID:', graphEventId);
+        }
+      } catch (err: any) {
+        console.warn('[MeetingsService] Falha ao criar evento no Microsoft Graph:', err.message);
+      }
 
-      notifyLive(eventId);
+      // 5. Dispara convite de calendário oficial do Outlook (.ics) para o chefe Hugo e Rodrigo
+      try {
+        await sendMeetingInvite({
+          meetingId: meeting.id,
+          scheduledAt,
+          participant: {
+            fullName: meeting.participants.full_name,
+            email: cleanMeetingEmail || meeting.participants.email,
+            phone: meeting.participants.phone,
+            clinicName: meeting.participants.clinic_name,
+            croNumber: meeting.participants.cro_number,
+            croState: meeting.participants.cro_state,
+            chairsCount: meeting.participants.chairs_count,
+          },
+          bossEmail: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
+          secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
+        });
+      } catch (err: any) {
+        console.warn('[MeetingsService] Falha ao enviar convite por e-mail:', err.message);
+      }
 
       notifyLive(eventId);
       return meeting;

@@ -155,12 +155,78 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
 
   const isCofre = event.experience === "COFRE";
 
+  const asideCards = (
+    <aside className="flex flex-col justify-between gap-4" style={{ width: "580px", height: "870px" }}>
+      {/* CARD 1: CADASTRO NORMAL & 1º GIRO */}
+      <div
+        className="flex items-center justify-between gap-6 rounded-[28px] border border-accent/40 bg-gradient-to-br from-ink-900/90 via-ink-950 to-ink-900/80 p-6 text-white shadow-xl relative overflow-hidden"
+        style={{ height: "370px" }}
+      >
+        <div className="flex flex-1 flex-col justify-between h-full py-1">
+          <div className="flex flex-col gap-2">
+            <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-accent/15 border border-accent/30 px-3.5 py-1 font-mono text-[13px] font-bold uppercase tracking-wider text-accent">
+              1º PASSO · NOVO NO ESTANDE
+            </span>
+            <h2 className="font-display text-[32px] font-extrabold leading-tight tracking-tight text-white mt-1">
+              {isCofre ? "Abra o Cofre" : "Gire a Roleta"}
+            </h2>
+            <p className="text-[17px] leading-snug text-slate-300">
+              {isCofre ? "Toda tentativa leva um brinde especial da Finora!" : "Todo giro ganha um brinde exclusivo Finora Experience!"}
+            </p>
+          </div>
+          <span className="text-[15px] font-semibold text-accent flex items-center gap-1.5">
+            📲 Aponte a câmera para cadastrar
+          </span>
+        </div>
+        {qr(180, qrUrl)}
+      </div>
+
+      {/* CARD 2: VIP · BATE-PAPO COM O CEO HUGO & ROLETA VIP */}
+      <div
+        className="flex items-center justify-between gap-6 rounded-[28px] border-2 border-[#FFD700] bg-gradient-to-br from-[#2B1B04]/90 via-[#181105]/95 to-[#0B0802]/95 p-6 text-white shadow-[0_0_40px_rgba(255,215,0,0.35)] relative overflow-hidden"
+        style={{ height: "480px" }}
+      >
+        <div className="flex flex-1 flex-col justify-between h-full py-1">
+          <div className="flex flex-col gap-2">
+            <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3.5 py-1 font-mono text-[13px] font-black uppercase tracking-wider text-[#FFE57F]">
+              👑 2º PASSO · EXECUTIVO
+            </span>
+            <h2 className="font-display text-[34px] font-black leading-tight tracking-tight text-[#FFF4A3] mt-1">
+              Libere a Roleta VIP
+            </h2>
+            <p className="text-[16px] leading-snug text-amber-100/90 font-medium">
+              Agende sua consultoria de 45 min com <strong>Hugo Werninghaus (CEO)</strong> e destrave o <strong>2º Giro VIP</strong>!
+            </p>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[15px] font-black text-[#FFD700] flex items-center gap-1.5">
+              📅 Já se cadastrou? Aponte para agendar
+            </span>
+            <span className="inline-block text-[12.5px] font-semibold text-amber-200/80 bg-amber-500/15 border border-amber-400/30 px-2.5 py-1 rounded-lg">
+              ⭐ Vagas até 11 de Dezembro · Prêmio válido pós-reunião
+            </span>
+          </div>
+        </div>
+        {qr(200, meetingQrUrl)}
+      </div>
+    </aside>
+  );
+
   if (isStandby) {
     return (
-      <TvCanvas className="grid grid-rows-[auto_minmax(0,1fr)] gap-12 px-18 py-14">
+      <TvCanvas
+        style={{
+          display: "grid",
+          gridTemplateRows: "auto 1fr",
+          rowGap: "3rem",
+          padding: "3.5rem 4.5rem",
+          width: "1920px",
+          height: "1080px",
+        }}
+      >
         {header}
         <div className="flex flex-col justify-center gap-8">
-          <h1 className="font-display text-[150px] leading-[0.9] font-extrabold tracking-[-0.045em]">
+          <h1 className="font-display font-extrabold tracking-[-0.045em]" style={{ fontSize: "140px", lineHeight: "0.95" }}>
             Encerramos
             <br />
             <span className="text-accent">por hoje.</span>
@@ -178,10 +244,24 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
 
   if (winners.length === 0) {
     return (
-      <TvCanvas className="grid grid-cols-[minmax(0,1fr)_640px] grid-rows-[auto_minmax(0,1fr)] gap-x-20 gap-y-12 px-18 py-14">
+      <TvCanvas
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 580px",
+          gridTemplateRows: "auto 1fr",
+          columnGap: "4rem",
+          rowGap: "2.5rem",
+          padding: "3rem 4.5rem",
+          width: "1920px",
+          height: "1080px",
+        }}
+      >
         {header}
-        <div className="flex flex-col justify-center gap-14">
-          <h1 className="font-display text-[150px] leading-[0.9] font-extrabold tracking-[-0.045em]">
+        <div className="flex flex-col justify-center gap-10" style={{ maxWidth: "1150px" }}>
+          <h1
+            className="font-display font-extrabold tracking-[-0.04em] text-white"
+            style={{ fontSize: "100px", lineHeight: "0.95" }}
+          >
             {isCofre ? (
               <>
                 O cofre está
@@ -200,64 +280,25 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
               </>
             )}
           </h1>
-          <ol className="flex flex-col gap-6">
+          <ol className="flex flex-col gap-6" style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {[
-              "Aponte a câmera para o QR Code",
-              "Seu giro é liberado imediatamente no estande",
+              "Aponte a câmera para o QR Code ao lado",
+              "Seu giro é liberado imediatamente no tablet do estande",
               isCofre ? "Abra o cofre aqui no estande e leve um brinde" : "Gire aqui no estande e leve um brinde",
             ].map((t, i) => (
-              <li key={t} className="grid grid-cols-[72px_minmax(0,1fr)] items-center gap-6 text-[40px] font-semibold">
-                <span className="flex size-18 items-center justify-center rounded-full border-[3px] border-accent font-mono text-[32px] text-accent">{i + 1}</span>
-                {t}
+              <li key={t} className="flex items-center gap-6 font-semibold" style={{ fontSize: "38px" }}>
+                <span
+                  className="flex items-center justify-center rounded-full border-[3px] border-accent font-mono text-accent shrink-0"
+                  style={{ width: "68px", height: "68px", fontSize: "32px", fontWeight: "bold" }}
+                >
+                  {i + 1}
+                </span>
+                <span className="text-slate-100">{t}</span>
               </li>
             ))}
           </ol>
         </div>
-        <aside className="flex flex-col gap-6">
-          {asideTab === "MEETING" ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-7 rounded-[32px] bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] p-12 text-center text-[#3E2723] shadow-[0_0_50px_rgba(255,215,0,0.55)] border-4 border-white animate-fade-in">
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#3E2723]/15 px-5 py-2 font-mono text-[24px] font-black uppercase tracking-wider text-[#3E2723]">
-                👑 REUNIÃO COM O CEO
-              </span>
-              <span className="font-display text-[52px] leading-none font-black tracking-[-0.03em] text-[#3E2723]">
-                Libere a Roleta VIP
-              </span>
-              {qr(340, meetingQrUrl)}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[30px] font-black text-[#3E2723]">
-                  Aponte a câmera para agendar
-                </span>
-                <span className="text-[22px] font-bold text-[#3E2723]/80">
-                  Vagas até 11 de Dezembro · Prêmio válido pós-reunião
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-8 rounded-[32px] bg-accent p-12 text-center text-ink-950 animate-fade-in">
-              <span className="font-display text-[54px] leading-none font-extrabold tracking-[-0.03em]">
-                {isCofre ? "Sua vez no cofre" : "Sua vez de girar"}
-              </span>
-              {qr(340)}
-              <span className="text-[34px] font-bold">
-                {isCofre ? "Toda tentativa ganha um brinde" : "Todo giro ganha um brinde"}
-              </span>
-            </div>
-          )}
-          <div className="flex justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => setAsideTab("ROULETTE")}
-              className={`h-4 rounded-full transition-all cursor-pointer ${asideTab === "ROULETTE" ? "w-12 bg-accent" : "w-4 bg-white/20"}`}
-              title="Mostrar Roleta"
-            />
-            <button
-              type="button"
-              onClick={() => setAsideTab("MEETING")}
-              className={`h-4 rounded-full transition-all cursor-pointer ${asideTab === "MEETING" ? "w-12 bg-[#FFD700] shadow-[0_0_12px_#FFD700]" : "w-4 bg-white/20"}`}
-              title="Mostrar Reunião com CEO"
-            />
-          </div>
-        </aside>
+        {asideCards}
         {controls}
       </TvCanvas>
     );
@@ -265,7 +306,18 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
 
   const [latest, ...rest] = winners;
   return (
-    <TvCanvas className="grid grid-cols-[minmax(0,1fr)_560px] grid-rows-[auto_minmax(0,1fr)] gap-x-16 gap-y-12 px-18 py-14">
+    <TvCanvas
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 580px",
+        gridTemplateRows: "auto 1fr",
+        columnGap: "4rem",
+        rowGap: "2.5rem",
+        padding: "3rem 4.5rem",
+        width: "1920px",
+        height: "1080px",
+      }}
+    >
       {header}
       <main className="flex min-h-0 flex-col gap-8">
         <div className="flex flex-col gap-3.5 rounded-[28px] border border-ink-line bg-ink-800 px-12 py-10">
@@ -290,56 +342,7 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
           ))}
         </div>
       </main>
-      <aside className="flex flex-col gap-6">
-        {asideTab === "MEETING" ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-6 rounded-[28px] bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] p-9 text-center text-[#3E2723] shadow-[0_0_50px_rgba(255,215,0,0.55)] border-4 border-white animate-fade-in">
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#3E2723]/15 px-4 py-1.5 font-mono text-[20px] font-black uppercase tracking-wider text-[#3E2723]">
-              👑 REUNIÃO COM O CEO
-            </span>
-            <span className="font-display text-[44px] leading-tight font-black tracking-[-0.03em] text-[#3E2723]">
-              Libere a Roleta VIP
-            </span>
-            {qr(270, meetingQrUrl)}
-            <div className="flex flex-col gap-1">
-              <span className="text-[26px] font-black text-[#3E2723]">
-                Aponte a câmera para agendar
-              </span>
-              <span className="text-[18px] font-bold text-[#3E2723]/80">
-                Vagas até 11 de Dezembro · Prêmio válido pós-reunião
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-7 rounded-[28px] bg-accent p-10 text-center text-ink-950 animate-fade-in">
-            <span className="font-display text-[54px] leading-none font-extrabold tracking-[-0.03em]">
-              {isCofre ? "Sua vez no cofre" : "Sua vez de girar"}
-            </span>
-            {qr(290)}
-            <span className="text-[28px] font-semibold">Aponte a câmera do celular</span>
-          </div>
-        )}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-1 flex-col gap-1.5 rounded-[24px] border border-ink-line bg-ink-800 px-7 py-5">
-            <span className="font-mono text-lg tracking-[0.08em] text-ink-text-2">SORTEIO GERAL</span>
-            <span className="text-[28px] font-bold">Todo cadastro concorre</span>
-            <span className="text-[22px] text-ink-text-2">No encerramento, no estande</span>
-          </div>
-          <div className="flex flex-col gap-2.5 pr-2">
-            <button
-              type="button"
-              onClick={() => setAsideTab("ROULETTE")}
-              className={`h-4 rounded-full transition-all cursor-pointer ${asideTab === "ROULETTE" ? "w-10 bg-accent" : "w-4 bg-white/20"}`}
-              title="Mostrar Roleta"
-            />
-            <button
-              type="button"
-              onClick={() => setAsideTab("MEETING")}
-              className={`h-4 rounded-full transition-all cursor-pointer ${asideTab === "MEETING" ? "w-10 bg-[#FFD700] shadow-[0_0_12px_#FFD700]" : "w-4 bg-white/20"}`}
-              title="Mostrar Reunião com CEO"
-            />
-          </div>
-        </div>
-      </aside>
+      {asideCards}
       {controls}
     </TvCanvas>
   );

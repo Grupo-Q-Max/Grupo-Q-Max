@@ -151,7 +151,12 @@ describe('ParticipantsService - Fluxo Direto Sem Disparos', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           event_id: 1,
-          status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
+          OR: expect.arrayContaining([
+            expect.objectContaining({
+              status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
+              draws: null,
+            }),
+          ]),
         }),
         orderBy: { id: 'desc' },
       }),

@@ -34,7 +34,7 @@ const apiEnv = {
   ZAPI_CLIENT_TOKEN: process.env.ZAPI_CLIENT_TOKEN || 'F3c0fad77fa1b4aa485ee6d6ff93b4bbbS',
   MICROSOFT_TENANT_ID: process.env.MICROSOFT_TENANT_ID || 'e3a65ea4-591b-4eab-acf5-059083274f98',
   MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || '365625d9-2647-489d-b319-48b960f9edab',
-  MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || 'FrN8Q~TMgWNKxVq5q_m2B23F3pC89p16M133ib-X',
+  MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || 'FrN8Q~TMgWNK2TStzz-Rse2RXZfXixHF-aNePbrc',
   BOSS_MEETING_EMAIL: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
   SECOND_MEETING_EMAIL: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
   SMTP_HOST: process.env.SMTP_HOST || 'smtp.office365.com',

@@ -1648,9 +1648,16 @@ export class ParticipantsService {
 
     const participations = await this.prisma.participations.findMany({
       where: {
-        ...where,
+        event_id: eventId,
+        ...(where.participants ? { participants: where.participants } : {}),
         OR: [
-          { draws: null },
+          // 1. Participações que ainda não realizaram seu primeiro giro
+          {
+            status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
+            draws: null,
+          },
+          // 2. Participações que já realizaram o giro normal (status COMPLETED ou outro),
+          // mas agendaram reunião com o CEO ou têm código VIP e têm direito à Roleta VIP!
           {
             draws: { isNot: null },
             participants: {
