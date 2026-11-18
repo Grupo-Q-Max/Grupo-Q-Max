@@ -43,6 +43,7 @@ describe('DrawsService', () => {
       prismaMock.participations.findUnique.mockResolvedValue({
         id: 42,
         event_id: 1,
+        participant_id: 3,
         status: 'COMPLETED',
         draws: {
           id: 7,
@@ -51,6 +52,16 @@ describe('DrawsService', () => {
         },
         participants: { full_name: 'Dr. Rodrigo' },
       });
+      prismaMock.participations.findMany.mockResolvedValue([
+        {
+          id: 42,
+          draws: {
+            id: 7,
+            claimed_at: null,
+            prizes: { name: 'Garrafa Térmica Finora' },
+          },
+        },
+      ]);
       prismaMock.draws.updateMany.mockResolvedValue({ count: 1 });
 
       const result = await service.claimPrize(42);
@@ -58,7 +69,7 @@ describe('DrawsService', () => {
       expect(result.success).toBe(true);
       expect(result.alreadyClaimed).toBe(false);
       expect(prismaMock.draws.updateMany).toHaveBeenCalledWith({
-        where: { id: 7, claimed_at: null },
+        where: { id: { in: [7] } },
         data: { claimed_at: expect.any(Date) },
       });
       expect(result.prize).toBe('Garrafa Térmica Finora');
@@ -208,9 +219,10 @@ describe('DrawsService', () => {
           events: { status: 'ACTIVE', participation_enabled: true, slug: 'invictus' },
           participants: { id: 3, full_name: 'Dra. Ana', phone_normalized: '11999999999' },
         }),
+        create: jest.fn().mockResolvedValue({ id: 8 }),
         update: jest.fn(),
       },
-      meetings: { findFirst: jest.fn().mockResolvedValue({ id: 1 }) },
+      meetings: { findFirst: jest.fn().mockResolvedValue(opts.vip ? { id: 1 } : null) },
       prize_queue: {
         findMany: jest.fn().mockResolvedValue(opts.queue ?? []),
         findFirst: jest.fn().mockResolvedValue(null),
@@ -218,9 +230,14 @@ describe('DrawsService', () => {
         update: jest.fn(),
       },
       prizes: {
-        findMany: jest.fn().mockResolvedValue([prize(opts.vip ? 2 : 1, opts.vip)]),
+        findMany: jest.fn().mockImplementation((args?: any) => {
+          const isVip = args?.where?.is_vip ?? false;
+          return Promise.resolve([prize(isVip ? 2 : 1, isVip)]);
+        }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-        findUnique: jest.fn().mockResolvedValue({ available_stock: 4 }),
+        findUnique: jest.fn().mockImplementation((args?: any) =>
+          Promise.resolve({ id: args?.where?.id ?? 1, name: 'Brinde', available_stock: 4 }),
+        ),
       },
       draws: {
         count: jest.fn().mockResolvedValue(0),
@@ -236,13 +253,14 @@ describe('DrawsService', () => {
       return service.draw(7);
     };
 
-    it('participação com cartão VIP sorteia só o pool VIP', async () => {
+    it('participante VIP realiza sorteio duplo (Brinde Normal + Prêmio VIP)', async () => {
       const tx = buildTx({ vip: true });
       const result = await run(tx);
 
-      expect(tx.prizes.findMany.mock.calls[0][0].where.is_vip).toBe(true);
       expect(result.vip).toBe(true);
-      expect(result.prize.id).toBe(2);
+      expect(result.isDualDraw).toBe(true);
+      expect(result.prize.id).toBe(1);
+      expect(result.vipPrize?.id).toBe(2);
     });
 
     it('participação sem cartão nunca usa item VIP da fila', async () => {

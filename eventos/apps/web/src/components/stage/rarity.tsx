@@ -3,10 +3,10 @@ export type Rarity = "LEGENDARY" | "EPIC" | "RARE" | "COMMON";
 // Heurística por nome (não há campo de raridade no prêmio).
 export function getPrizeRarity(prizeName = ""): Rarity {
   const lower = prizeName.toLowerCase();
-  if (["iphone", "apple", "ouro", "mega", "notebook", "ipad", "especial", "premium"].some((k) => lower.includes(k))) {
+  if (["mentoria", "100%", "ceo", "iphone", "apple", "ouro", "mega", "notebook", "ipad", "especial", "premium"].some((k) => lower.includes(k))) {
     return "LEGENDARY";
   }
-  if (["mochila", "garrafa", "kit", "fone", "alexa", "termo"].some((k) => lower.includes(k))) {
+  if (["50%", "diagnóstico", "diagnostico", "certificado", "honorário", "honorario", "mochila", "garrafa", "kit", "fone", "alexa", "termo"].some((k) => lower.includes(k))) {
     return "EPIC";
   }
   return "COMMON";

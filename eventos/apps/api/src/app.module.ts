@@ -24,6 +24,7 @@ import { MeetingsModule } from './meetings/meetings.module';
 import { VipCodesModule } from './vip-codes/vip-codes.module';
 import { LiveModule } from './live/live.module';
 import { CrmModule } from './crm/crm.module';
+import { InvictusSeedService } from './seed/invictus-seed.service';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { CrmModule } from './crm/crm.module';
 
   providers: [
     AppService,
+    InvictusSeedService,
 
     {
       provide: APP_GUARD,

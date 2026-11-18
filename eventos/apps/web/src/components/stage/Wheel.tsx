@@ -5,6 +5,7 @@ import { FinoraLogo } from "@/components/brand/Brand";
 import { RARITY, getPrizeRarity } from "./rarity";
 
 const COMMON_FILLS = ["#131B2E", "#1E2A47"];
+const VIP_FILLS = ["#1F160A", "#2E210D", "#1A1208", "#382910"];
 const LED_COUNT = 24;
 
 // 24 LEDs distribuídos em círculo ao redor da borda da roleta
@@ -31,6 +32,7 @@ export default function Wheel({
   durationMs,
   tickerCount = 0,
   onSpin,
+  variant = "normal",
 }: {
   names: string[];
   rotation: number;
@@ -38,7 +40,9 @@ export default function Wheel({
   durationMs: number;
   tickerCount?: number;
   onSpin?: () => void;
+  variant?: "normal" | "vip";
 }) {
+  const isVip = variant === "vip";
   const [flick, setFlick] = useState(false);
 
   // Efeito mecânico de rebote do ponteiro em sincronia com o tick da catraca
@@ -52,6 +56,9 @@ export default function Wheel({
 
   const step = 360 / Math.max(names.length, 1);
   const fills = names.map((name, i) => {
+    if (isVip) {
+      return VIP_FILLS[i % VIP_FILLS.length];
+    }
     const rarity = getPrizeRarity(name);
     return rarity === "COMMON" ? COMMON_FILLS[i % 2] : RARITY[rarity].color;
   });
@@ -100,14 +107,20 @@ export default function Wheel({
         aria-hidden="true"
         className="pointer-events-none absolute -inset-4 rounded-full opacity-40"
         style={{
-          background: "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 72%)",
+          background: isVip
+            ? "radial-gradient(circle, #FFD700 0%, #D4AF37 35%, transparent 72%)"
+            : "radial-gradient(circle, var(--event-accent, #22C3DC) 0%, transparent 72%)",
         }}
       />
 
       {/* Casing Fixo Estático (Sombra 3D e aro chanfrado - não gira, isolando o custo de pintura) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-full shadow-[0_0_0_8px_#0A1020,0_0_0_12px_rgba(255,255,255,0.14),0_0_0_18px_#141E36,0_20px_70px_rgba(0,0,0,0.92)] z-5"
+        className={`pointer-events-none absolute inset-0 rounded-full z-5 ${
+          isVip
+            ? "shadow-[0_0_0_8px_#1B1202,0_0_0_12px_rgba(255,215,0,0.5),0_0_0_18px_#3E2723,0_20px_70px_rgba(0,0,0,0.92)]"
+            : "shadow-[0_0_0_8px_#0A1020,0_0_0_12px_rgba(255,255,255,0.14),0_0_0_18px_#141E36,0_20px_70px_rgba(0,0,0,0.92)]"
+        }`}
       />
 
       {/* Disco Giratório com Aceleração de Hardware GPU (will-change + translateZ) */}
@@ -176,7 +189,13 @@ export default function Wheel({
           <span
             key={i}
             className={`absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70 transition-transform ${
-              spinning ? "bg-white shadow-[0_0_10px_#fff,0_0_18px_var(--event-accent,#22C3DC)]" : "bg-accent/80 shadow-[0_0_6px_var(--event-accent,#22C3DC)]"
+              spinning
+                ? isVip
+                  ? "bg-white shadow-[0_0_10px_#fff,0_0_18px_#FFD700]"
+                  : "bg-white shadow-[0_0_10px_#fff,0_0_18px_var(--event-accent,#22C3DC)]"
+                : isVip
+                ? "bg-[#FFD700] shadow-[0_0_8px_#FFD700]"
+                : "bg-accent/80 shadow-[0_0_6px_var(--event-accent,#22C3DC)]"
             }`}
             style={{
               left: led.left,
@@ -190,9 +209,19 @@ export default function Wheel({
       </div>
 
       {/* Miolo Central Estático com Logo Finora e anéis metálicos nobres */}
-      <div className="absolute top-1/2 left-1/2 flex size-[29%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] border-accent bg-gradient-to-b from-[#18233C] via-[#0D1527] to-[#060A13] shadow-[0_0_35px_rgba(0,0,0,0.95),inset_0_3px_10px_rgba(255,255,255,0.35),0_0_25px_var(--event-accent,#22C3DC)] z-20 pointer-events-none">
+      <div
+        className={`absolute top-1/2 left-1/2 flex size-[29%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] bg-gradient-to-b shadow-[0_0_35px_rgba(0,0,0,0.95),inset_0_3px_10px_rgba(255,255,255,0.35)] z-20 pointer-events-none ${
+          isVip
+            ? "border-[#FFD700] from-[#2B1B04] via-[#1A1102] to-[#0A0701] shadow-[0_0_30px_rgba(255,215,0,0.6)]"
+            : "border-accent from-[#18233C] via-[#0D1527] to-[#060A13] shadow-[0_0_25px_var(--event-accent,#22C3DC)]"
+        }`}
+      >
         <div className="absolute inset-1.5 rounded-full border border-white/20 shadow-inner" />
-        <div className="absolute inset-3 rounded-full border border-accent/30 bg-gradient-to-tr from-black/80 via-transparent to-white/10" />
+        <div
+          className={`absolute inset-3 rounded-full border bg-gradient-to-tr from-black/80 via-transparent to-white/10 ${
+            isVip ? "border-[#FFD700]/40" : "border-accent/30"
+          }`}
+        />
         <div className="relative z-10 flex items-center justify-center p-2.5 transition-transform hover:scale-105">
           <FinoraLogo variant="symbol" className="drop-shadow-[0_4px_14px_rgba(0,0,0,0.9)] filter brightness-110" />
         </div>
@@ -212,7 +241,11 @@ export default function Wheel({
       >
         <div className="relative drop-shadow-[0_8px_16px_rgba(0,0,0,0.95)]">
           {/* Lâmina do ponteiro */}
-          <div className="h-0 w-0 border-x-[26px] border-t-[58px] border-x-transparent border-t-accent" />
+          <div
+            className={`h-0 w-0 border-x-[26px] border-t-[58px] border-x-transparent ${
+              isVip ? "border-t-[#FFD700]" : "border-t-accent"
+            }`}
+          />
           <div className="absolute top-1.5 left-1/2 h-0 w-0 -translate-x-1/2 border-x-[18px] border-t-[44px] border-x-transparent border-t-white/50" />
           <div className="absolute top-3 left-1/2 h-0 w-0 -translate-x-1/2 border-x-[10px] border-t-[26px] border-x-transparent border-t-black/40" />
           {/* Rebite metálico de fixação com reflexo */}

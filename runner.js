@@ -53,6 +53,22 @@ const apiScriptCandidates = [
 ];
 const apiScript = apiScriptCandidates.find((p) => fs.existsSync(p));
 
+// Sincronizar prêmios Invictus no banco
+try {
+  const seedScriptCandidates = [
+    path.join(__dirname, 'eventos-api/scripts/seed-invictus-prizes.js'),
+    path.join(__dirname, 'eventos/apps/api/scripts/seed-invictus-prizes.js'),
+  ];
+  const seedScript = seedScriptCandidates.find((p) => fs.existsSync(p));
+  if (seedScript) {
+    const { execSync } = require('child_process');
+    console.log('[RUNNER] Sincronizando prêmios do evento Invictus...');
+    execSync(`node "${seedScript}"`, { env: apiEnv, stdio: 'inherit' });
+  }
+} catch (e) {
+  console.warn('[RUNNER] Aviso ao sincronizar prêmios Invictus:', e.message);
+}
+
 if (apiScript) {
   const apiCwd = apiScript.includes('eventos-api')
     ? path.join(__dirname, 'eventos-api')
