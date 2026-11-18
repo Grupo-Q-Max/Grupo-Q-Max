@@ -1,8 +1,6 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { MeetingsService } from './meetings.service';
-import { IsDateString, IsInt } from 'class-validator';
-
 import { IsDateString, IsEmail, IsInt, IsOptional } from 'class-validator';
 
 export class BookMeetingDto {

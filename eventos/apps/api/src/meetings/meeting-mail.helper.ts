@@ -72,7 +72,7 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
   const user = env('EMAIL_USER') || env('SMTP_USER') || 'envio@qmax.com.br';
 
   const startTime = scheduledAt;
-  const endTime = new Date(startTime.getTime() + 30 * 60 * 1000); // 30 minutos
+  const endTime = new Date(startTime.getTime() + 45 * 60 * 1000); // 45 minutos
 
   const pad = (n: number) => String(n).padStart(2, '0');
   const toIcsDate = (d: Date) =>

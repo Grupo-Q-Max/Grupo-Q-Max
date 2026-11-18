@@ -35,12 +35,12 @@ export class MeetingsService {
     const takenTimes = existingMeetings.map((m) => m.scheduled_at.toISOString());
 
     const slots: Date[] = [];
-    for (let hour = 8; hour < 18; hour++) {
-      for (const min of ['00', '30']) {
-        const hStr = hour.toString().padStart(2, '0');
-        const isoStr = `${dateString}T${hStr}:${min}:00.000-03:00`;
-        slots.push(new Date(isoStr));
-      }
+    // Agendas de hora em hora (09h às 18h), com duração de 45 min e sem horários das 12h às 14h (almoço)
+    for (let hour = 9; hour <= 18; hour++) {
+      if (hour >= 12 && hour < 14) continue;
+      const hStr = hour.toString().padStart(2, '0');
+      const isoStr = `${dateString}T${hStr}:00:00.000-03:00`;
+      slots.push(new Date(isoStr));
     }
 
     const now = new Date();
@@ -74,6 +74,14 @@ export class MeetingsService {
 
     if (scheduledAt <= new Date()) {
       throw new BadRequestException('Não é possível agendar no passado.');
+    }
+
+    // Validação do fuso América/São Paulo para intervalo 12h-14h
+    const hourSp = Number(
+      scheduledAt.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false }),
+    );
+    if (hourSp >= 12 && hourSp < 14) {
+      throw new BadRequestException('Horário indisponível (intervalo das 12h às 14h).');
     }
 
     try {

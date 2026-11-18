@@ -47,7 +47,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
   const [date, setDate] = useState(dates[0]);
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState<string | null>(null);
-  const [durationMinutes, setDurationMinutes] = useState<number>(30);
+  const [durationMinutes, setDurationMinutes] = useState<number>(45);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -82,9 +82,9 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
   const endOptions = useMemo(() => {
     if (!slot) return [];
     return [
-      { minutes: 30, label: `${format(addMinutes(parseISO(slot), 30), "HH:mm")} (30 min - Padrão)` },
-      { minutes: 45, label: `${format(addMinutes(parseISO(slot), 45), "HH:mm")} (45 min)` },
-      { minutes: 60, label: `${format(addMinutes(parseISO(slot), 60), "HH:mm")} (1 hora - Completo)` },
+      { minutes: 45, label: `${format(addMinutes(parseISO(slot), 45), "HH:mm")} (45 min - Oficial)` },
+      { minutes: 30, label: `${format(addMinutes(parseISO(slot), 30), "HH:mm")} (30 min - Rápido)` },
+      { minutes: 60, label: `${format(addMinutes(parseISO(slot), 60), "HH:mm")} (1 hora - Extensão)` },
     ];
   }, [slot]);
 

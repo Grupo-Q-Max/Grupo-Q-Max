@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, ArrowRight, CalendarCheck, CheckCircle2, Clock, Crown, Gift, LoaderCircle, Sparkles, Trophy, Users, X } from "lucide-react";
+import { AlertCircle, ArrowRight, CalendarCheck, CheckCircle2, Clock, Crown, Gift, LoaderCircle, Sparkles, Ticket, Trophy, Users, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api-client";
 import Link from "next/link";
 import { StepBar } from "@/components/brand/Brand";
@@ -17,6 +17,7 @@ import confetti from "canvas-confetti";
 import { postRegistration } from "@/lib/offline-queue";
 import OfflineSaved from "@/components/form/OfflineSaved";
 import GoldenTicket from "@/components/brand/GoldenTicket";
+import VipScheduler from "@/components/VipScheduler";
 
 type Props = {
   eventId: number;
@@ -200,6 +201,8 @@ function RegistrationForm({
   const [error, setError] = useState<string | null>(null);
   const [ceoModalOpen, setCeoModalOpen] = useState(false);
   const [day19ModalOpen, setDay19ModalOpen] = useState(false);
+  const [ticketModalOpen, setTicketModalOpen] = useState(false);
+  const [schedulerModalOpen, setSchedulerModalOpen] = useState(false);
   const [ceoNextSlot, setCeoNextSlot] = useState<string | null>(null);
   const [bookingCeo, setBookingCeo] = useState(false);
   const [pendingParticipationData, setPendingParticipationData] = useState<{
@@ -224,62 +227,32 @@ function RegistrationForm({
     drawnPrize?: string | null;
   } | null>(null);
 
-  async function handleAcceptCeoMeeting() {
+  function handleAcceptCeoMeeting() {
+    setCeoModalOpen(false);
+    setSchedulerModalOpen(true);
+  }
+
+  function handleMeetingBooked() {
     if (!pendingParticipationData) return;
-    setBookingCeo(true);
-    let chosenSlot = ceoNextSlot;
-
-    try {
-      if (!chosenSlot) {
-        const resSlot = await fetch(`${getApiBaseUrl()}/meetings/event/${eventId}/next-slot`).catch(() => null);
-        if (resSlot?.ok) {
-          const d = await resSlot.json();
-          chosenSlot = d.nextSlot;
-        }
-      }
-
-      if (chosenSlot) {
-        await fetch(`${getApiBaseUrl()}/meetings/event/${eventId}/book`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            participantId: pendingParticipationData.participantId,
-            scheduledAt: chosenSlot,
-          }),
-        });
-      }
-
-      confetti({
-        particleCount: 120,
-        spread: 90,
-        origin: { y: 0.6 },
-        colors: ["#FFD700", "#FF9900", "#FFF9B8", "#FFFFFF"],
-        disableForReducedMotion: true,
-      });
-
-      setRegisteredParticipation({
-        ...pendingParticipationData,
-        isVip: true,
-        autoBookedSlot: chosenSlot,
-      });
-      setDay19ModalOpen(true);
-      setCeoModalOpen(false);
-    } catch (e) {
-      console.error("Erro ao agendar reunião com CEO:", e);
-      setRegisteredParticipation({
-        ...pendingParticipationData,
-        isVip: true,
-      });
-      setDay19ModalOpen(true);
-      setCeoModalOpen(false);
-    } finally {
-      setBookingCeo(false);
-    }
+    setSchedulerModalOpen(false);
+    confetti({
+      particleCount: 120,
+      spread: 90,
+      origin: { y: 0.6 },
+      colors: ["#FFD700", "#FF9900", "#FFF9B8", "#FFFFFF"],
+      disableForReducedMotion: true,
+    });
+    setRegisteredParticipation({
+      ...pendingParticipationData,
+      isVip: true,
+    });
+    setTicketModalOpen(true);
   }
 
   function handleDeclineCeoMeeting() {
     if (!pendingParticipationData) return;
     setCeoModalOpen(false);
+    setSchedulerModalOpen(false);
     confetti({
       particleCount: 80,
       spread: 70,
@@ -292,7 +265,7 @@ function RegistrationForm({
       isVip: false,
       autoBookedSlot: null,
     });
-    setDay19ModalOpen(true);
+    setTicketModalOpen(true);
   }
 
   useEffect(() => {
@@ -404,7 +377,7 @@ function RegistrationForm({
           ...partData,
           autoBookedSlot: result.autoBookedSlot || null,
         });
-        setDay19ModalOpen(true);
+        setTicketModalOpen(true);
         return;
       }
 
@@ -575,6 +548,14 @@ function RegistrationForm({
                   Apresente seu código para a nossa equipe liberar seu giro no tablet da roleta!
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={() => setTicketModalOpen(true)}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-button bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3 text-[14px] font-black text-[#3E2723] hover:brightness-110 transition-all cursor-pointer shadow-md active:scale-[0.98]"
+              >
+                <Ticket size={18} />
+                {isVip ? "Visualizar Bilhete VIP em Popup 🎫" : "Visualizar Cupom em Popup 🎫"}
+              </button>
               {clinicName && (
                 <button
                   type="button"
@@ -619,7 +600,10 @@ function RegistrationForm({
             <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border-2 border-amber-400 bg-[#080d1a] p-6 sm:p-8 text-white shadow-[0_20px_70px_rgba(255,215,0,0.4)] animate-pop-burst">
               <button
                 type="button"
-                onClick={() => setDay19ModalOpen(false)}
+                onClick={() => {
+                  setDay19ModalOpen(false);
+                  setTicketModalOpen(true);
+                }}
                 aria-label="Fechar"
                 className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
@@ -675,11 +659,73 @@ function RegistrationForm({
               <div className="mt-6">
                 <button
                   type="button"
-                  onClick={() => setDay19ModalOpen(false)}
+                  onClick={() => {
+                    setDay19ModalOpen(false);
+                    setTicketModalOpen(true);
+                  }}
                   className="w-full flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-6 font-display text-base font-black text-[#3E2723] shadow-[0_10px_30px_rgba(255,215,0,0.4)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
                 >
                   <span>Entendido, Acessar Meu Bilhete</span>
                   <ArrowRight size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Popup: Bilhete / Cupom Oficial em Popup */}
+        {ticketModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
+            <div className="relative w-full max-w-2xl max-h-[94vh] overflow-y-auto rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-4 sm:p-7 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst my-auto">
+              <button
+                type="button"
+                onClick={() => setTicketModalOpen(false)}
+                aria-label="Fechar"
+                className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer z-10"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="text-center mb-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3.5 py-1 font-mono text-[11px] font-black uppercase tracking-wider text-[#FFDF73]">
+                  <Crown size={14} className="text-[#FFD700]" />
+                  {isVip ? "SEU PASSE VIP OFICIAL EMITIDO" : "SEU CUPOM DE PARTICIPAÇÃO"}
+                </span>
+                <h3 className="mt-2 font-display text-2xl sm:text-3xl font-black text-white leading-tight">
+                  {isVip ? "Bilhete Dourado do Mentorado" : "Cupom de Participação Finora"}
+                </h3>
+                <p className="mt-1 text-xs sm:text-sm text-[#C2CEE3]">
+                  {isVip
+                    ? "Apresente no estande Finora para girar a Roleta VIP e concorrer aos prêmios executivos!"
+                    : "Apresente seu código no estande Finora para girar a roleta e retirar seu brinde!"}
+                </p>
+              </div>
+
+              <div className="w-full flex justify-center py-2 overflow-x-auto">
+                <GoldenTicket
+                  code={registeredParticipation.vipCode || `#${String(registeredParticipation.id).padStart(4, "0")}`}
+                  eventName={_eventName}
+                  eventSlug={route}
+                  participantName={registeredParticipation.name}
+                  ticketNumber={registeredParticipation.id}
+                  showPrintButton={true}
+                  className="my-1 scale-[0.92] sm:scale-100 origin-center"
+                />
+              </div>
+
+              <div className="mt-4 flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-white/10 pt-4">
+                <div className="text-xs font-mono text-slate-400 text-center sm:text-left">
+                  Código: <strong className="text-white">#{String(registeredParticipation.id).padStart(4, "0")}</strong>
+                  {isVip && (
+                    <span className="ml-2 text-[#FFD700] font-bold">★ Roleta VIP Liberada</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTicketModalOpen(false)}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] font-bold text-xs uppercase tracking-wider text-[#3E2723] hover:brightness-110 transition-all cursor-pointer shadow-md"
+                >
+                  Concluir & Ir para o Estande 🚀
                 </button>
               </div>
             </div>
@@ -960,17 +1006,8 @@ function RegistrationForm({
                 disabled={bookingCeo}
                 className="w-full flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-6 font-display text-base sm:text-lg font-black text-[#3E2723] shadow-[0_10px_30px_rgba(255,215,0,0.5)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
               >
-                {bookingCeo ? (
-                  <>
-                    <LoaderCircle size={20} className="animate-spin text-[#3E2723]" />
-                    <span>Liberando Roleta VIP…</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Sim, Agendar com CEO & Liberar Roleta VIP 🌟</span>
-                    <ArrowRight size={18} />
-                  </>
-                )}
+                <span>Sim, Escolher Horário & Liberar Roleta VIP 🌟</span>
+                <ArrowRight size={18} />
               </button>
 
               <button
@@ -982,6 +1019,48 @@ function RegistrationForm({
                 Não, quero continuar apenas com a Roleta Normal
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Popup: Agendamento com o CEO em Popup Dedicado */}
+      {schedulerModalOpen && pendingParticipationData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-4 sm:p-6 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst my-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setSchedulerModalOpen(false);
+                handleDeclineCeoMeeting();
+              }}
+              aria-label="Fechar"
+              className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer z-10"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="text-center mb-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3.5 py-1 font-mono text-[11px] font-black uppercase tracking-wider text-[#FFDF73]">
+                <Crown size={14} className="text-[#FFD700]" />
+                AGENDAMENTO EXCLUSIVO COM O CEO
+              </span>
+              <h3 className="mt-2 font-display text-2xl sm:text-3xl font-black text-white leading-tight">
+                Selecione o Dia e Horário
+              </h3>
+              <p className="mt-1 text-xs sm:text-sm text-[#C2CEE3]">
+                Reunião estratégica de <strong>45 minutos</strong> com <strong>Hugo Werninghaus (CEO Grupo Q-Max)</strong> via Microsoft Teams.
+              </p>
+              <div className="mt-2.5 inline-flex items-center gap-2 rounded-xl bg-amber-400/10 border border-amber-400/30 px-3 py-1.5 text-[11.5px] text-amber-200">
+                ⏰ Horários de hora em hora · Intervalo de almoço (12h às 14h) fechado.
+              </div>
+            </div>
+
+            <VipScheduler
+              participantId={pendingParticipationData.participantId}
+              eventId={eventId}
+              meetingEmail={email.trim()}
+              onBooked={handleMeetingBooked}
+            />
           </div>
         </div>
       )}
