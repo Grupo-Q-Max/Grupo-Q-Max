@@ -1226,7 +1226,6 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
       </div>
     );
   }
-  }
 
   // ---------- Operador escolhe quem gira ----------
   return (

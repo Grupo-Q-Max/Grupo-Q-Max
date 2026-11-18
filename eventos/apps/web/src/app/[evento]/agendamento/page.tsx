@@ -25,3 +25,4 @@ export default async function EventAgendamentoRootPage({ params, searchParams }:
     </PaperShell>
   );
 }
+

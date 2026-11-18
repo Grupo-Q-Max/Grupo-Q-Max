@@ -122,3 +122,4 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
     </div>
   );
 }
+
