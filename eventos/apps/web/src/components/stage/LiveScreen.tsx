@@ -45,6 +45,8 @@ function RarityText({ name }: { name: string }) {
 export default function LiveScreen({ event, eventId }: { event: EventTheme; eventId: number }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [qrUrl, setQrUrl] = useState("");
+  const [meetingQrUrl, setMeetingQrUrl] = useState("");
+  const [asideTab, setAsideTab] = useState<"ROULETTE" | "MEETING">("ROULETTE");
   const [privacyMode, setPrivacyMode] = useState(true);
   const [isStandby, setIsStandby] = useState(false);
   const lastMilestoneRef = useRef(0);
@@ -55,16 +57,28 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
   }
 
   useEffect(() => {
-    setQrUrl(`${window.location.origin}/finora-experience/${event.route}/cadastro`);
+    const origin = window.location.origin;
+    setQrUrl(`${origin}/finora-experience/${event.route}/cadastro`);
+    setMeetingQrUrl(`${origin}/finora-experience/${event.route}/agendamento`);
+
+    // Alterna a cada 10 segundos entre Cadastro e Reunião com CEO
+    const tabInterval = setInterval(() => {
+      setAsideTab((prev) => (prev === "ROULETTE" ? "MEETING" : "ROULETTE"));
+    }, 10000);
+
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const k = e.key.toLowerCase();
       if (k === "n") setIsStandby((v) => !v);
       else if (k === "f") toggleFullscreen();
       else if (k === "l") setPrivacyMode((v) => !v);
+      else if (k === "m") setAsideTab((prev) => (prev === "ROULETTE" ? "MEETING" : "ROULETTE"));
     }
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      clearInterval(tabInterval);
+    };
   }, [event.route]);
 
   async function fetchDashboard(id: number) {
@@ -115,11 +129,14 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
     </header>
   );
 
-  const qr = (size: number) => (
-    <div className="rounded-[22px] bg-white p-6" role="img" aria-label="QR Code para cadastro">
-      {qrUrl ? <QRCodeSVG value={qrUrl} size={size} level="M" /> : <div style={{ width: size, height: size }} />}
-    </div>
-  );
+  const qr = (size: number, customUrl?: string) => {
+    const targetUrl = customUrl || qrUrl;
+    return (
+      <div className="rounded-[22px] bg-white p-6 shadow-2xl" role="img" aria-label="QR Code">
+        {targetUrl ? <QRCodeSVG value={targetUrl} size={size} level="M" /> : <div style={{ width: size, height: size }} />}
+      </div>
+    );
+  };
 
   // Controles discretos para quem opera a TV sem teclado.
   const controls = (
@@ -196,11 +213,50 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
             ))}
           </ol>
         </div>
-        <aside className="flex flex-col items-center justify-center gap-8 rounded-[32px] bg-accent p-12 text-center text-ink-950">
-          {qr(412)}
-          <span className="text-[36px] font-bold">
-            {isCofre ? "Toda tentativa ganha um brinde" : "Todo giro ganha um brinde"}
-          </span>
+        <aside className="flex flex-col gap-6">
+          {asideTab === "MEETING" ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-7 rounded-[32px] bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] p-12 text-center text-[#3E2723] shadow-[0_0_50px_rgba(255,215,0,0.55)] border-4 border-white animate-fade-in">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#3E2723]/15 px-5 py-2 font-mono text-[24px] font-black uppercase tracking-wider text-[#3E2723]">
+                👑 REUNIÃO COM O CEO
+              </span>
+              <span className="font-display text-[52px] leading-none font-black tracking-[-0.03em] text-[#3E2723]">
+                Libere a Roleta VIP
+              </span>
+              {qr(340, meetingQrUrl)}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[30px] font-black text-[#3E2723]">
+                  Aponte a câmera para agendar
+                </span>
+                <span className="text-[22px] font-bold text-[#3E2723]/80">
+                  Vagas até 11 de Dezembro · Prêmio válido pós-reunião
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center gap-8 rounded-[32px] bg-accent p-12 text-center text-ink-950 animate-fade-in">
+              <span className="font-display text-[54px] leading-none font-extrabold tracking-[-0.03em]">
+                {isCofre ? "Sua vez no cofre" : "Sua vez de girar"}
+              </span>
+              {qr(340)}
+              <span className="text-[34px] font-bold">
+                {isCofre ? "Toda tentativa ganha um brinde" : "Todo giro ganha um brinde"}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setAsideTab("ROULETTE")}
+              className={`h-4 rounded-full transition-all cursor-pointer ${asideTab === "ROULETTE" ? "w-12 bg-accent" : "w-4 bg-white/20"}`}
+              title="Mostrar Roleta"
+            />
+            <button
+              type="button"
+              onClick={() => setAsideTab("MEETING")}
+              className={`h-4 rounded-full transition-all cursor-pointer ${asideTab === "MEETING" ? "w-12 bg-[#FFD700] shadow-[0_0_12px_#FFD700]" : "w-4 bg-white/20"}`}
+              title="Mostrar Reunião com CEO"
+            />
+          </div>
         </aside>
         {controls}
       </TvCanvas>
@@ -234,18 +290,54 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
           ))}
         </div>
       </main>
-      <aside className="flex flex-col gap-7">
-        <div className="flex flex-1 flex-col items-center justify-center gap-7 rounded-[28px] bg-accent p-10 text-center text-ink-950">
-          <span className="font-display text-[54px] leading-none font-extrabold tracking-[-0.03em]">
-            {isCofre ? "Sua vez no cofre" : "Sua vez de girar"}
-          </span>
-          {qr(312)}
-          <span className="text-[30px] font-semibold">Aponte a câmera do celular</span>
-        </div>
-        <div className="flex flex-col gap-2 rounded-[28px] border border-ink-line bg-ink-800 px-8 py-7">
-          <span className="font-mono text-xl tracking-[0.08em] text-ink-text-2">SORTEIO GERAL</span>
-          <span className="text-[34px] font-bold">Todo cadastro concorre</span>
-          <span className="text-[26px] text-ink-text-2">No encerramento, aqui no estande</span>
+      <aside className="flex flex-col gap-6">
+        {asideTab === "MEETING" ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-6 rounded-[28px] bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] p-9 text-center text-[#3E2723] shadow-[0_0_50px_rgba(255,215,0,0.55)] border-4 border-white animate-fade-in">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#3E2723]/15 px-4 py-1.5 font-mono text-[20px] font-black uppercase tracking-wider text-[#3E2723]">
+              👑 REUNIÃO COM O CEO
+            </span>
+            <span className="font-display text-[44px] leading-tight font-black tracking-[-0.03em] text-[#3E2723]">
+              Libere a Roleta VIP
+            </span>
+            {qr(270, meetingQrUrl)}
+            <div className="flex flex-col gap-1">
+              <span className="text-[26px] font-black text-[#3E2723]">
+                Aponte a câmera para agendar
+              </span>
+              <span className="text-[18px] font-bold text-[#3E2723]/80">
+                Vagas até 11 de Dezembro · Prêmio válido pós-reunião
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-7 rounded-[28px] bg-accent p-10 text-center text-ink-950 animate-fade-in">
+            <span className="font-display text-[54px] leading-none font-extrabold tracking-[-0.03em]">
+              {isCofre ? "Sua vez no cofre" : "Sua vez de girar"}
+            </span>
+            {qr(290)}
+            <span className="text-[28px] font-semibold">Aponte a câmera do celular</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-1 flex-col gap-1.5 rounded-[24px] border border-ink-line bg-ink-800 px-7 py-5">
+            <span className="font-mono text-lg tracking-[0.08em] text-ink-text-2">SORTEIO GERAL</span>
+            <span className="text-[28px] font-bold">Todo cadastro concorre</span>
+            <span className="text-[22px] text-ink-text-2">No encerramento, no estande</span>
+          </div>
+          <div className="flex flex-col gap-2.5 pr-2">
+            <button
+              type="button"
+              onClick={() => setAsideTab("ROULETTE")}
+              className={`h-4 rounded-full transition-all cursor-pointer ${asideTab === "ROULETTE" ? "w-10 bg-accent" : "w-4 bg-white/20"}`}
+              title="Mostrar Roleta"
+            />
+            <button
+              type="button"
+              onClick={() => setAsideTab("MEETING")}
+              className={`h-4 rounded-full transition-all cursor-pointer ${asideTab === "MEETING" ? "w-10 bg-[#FFD700] shadow-[0_0_12px_#FFD700]" : "w-4 bg-white/20"}`}
+              title="Mostrar Reunião com CEO"
+            />
+          </div>
         </div>
       </aside>
       {controls}

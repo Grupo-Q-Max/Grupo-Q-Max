@@ -66,7 +66,7 @@ export class MeetingsService {
     return null;
   }
 
-  async bookMeeting(eventId: number, participantId: number, scheduledAtIso: string) {
+  async bookMeeting(eventId: number, participantId: number, scheduledAtIso: string, meetingEmail?: string) {
     const scheduledAt = new Date(scheduledAtIso);
     if (isNaN(scheduledAt.getTime())) {
       throw new BadRequestException('Horário inválido.');
@@ -77,6 +77,14 @@ export class MeetingsService {
     }
 
     try {
+      const cleanMeetingEmail = meetingEmail?.trim();
+      if (cleanMeetingEmail) {
+        await this.prisma.participants.update({
+          where: { id: participantId },
+          data: { email: cleanMeetingEmail, email_normalized: cleanMeetingEmail.toLowerCase() },
+        }).catch(() => {});
+      }
+
       const meeting = await this.prisma.meetings.create({
         data: {
           event_id: eventId,
@@ -147,7 +155,7 @@ export class MeetingsService {
         scheduledAt,
         participant: {
           fullName: meeting.participants.full_name,
-          email: meeting.participants.email,
+          email: cleanMeetingEmail || meeting.participants.email,
           phone: meeting.participants.phone,
           clinicName: meeting.participants.clinic_name,
           croNumber: meeting.participants.cro_number,

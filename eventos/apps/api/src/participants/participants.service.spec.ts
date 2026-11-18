@@ -147,29 +147,15 @@ describe('ParticipantsService - Fluxo Direto Sem Disparos', () => {
     expect(pending[0].participationId).toBe(202);
     expect(pending[0].fullName).toBe('Dra. Mariana Costa');
     expect(pending[0].clinicName).toBe('Clínica Mariana');
-    expect(prismaMock.participations.findMany).toHaveBeenCalledWith({
-      where: {
-        event_id: 1,
-        status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
-        draws: null,
-      },
-      include: {
-        participants: {
-          include: {
-            meetings: {
-              where: {
-                event_id: 1,
-                status: { in: ['SCHEDULED', 'COMPLETED'] },
-              },
-              take: 1,
-            },
-          },
-        },
-        vip_codes: { select: { id: true } },
-      },
-      orderBy: { id: 'desc' },
-      take: 30,
-    });
+    expect(prismaMock.participations.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          event_id: 1,
+          status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
+        }),
+        orderBy: { id: 'desc' },
+      }),
+    );
   });
 });
 

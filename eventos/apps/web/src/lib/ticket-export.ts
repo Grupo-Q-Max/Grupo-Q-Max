@@ -108,8 +108,10 @@ export async function renderGoldenTicketCanvas(
     } catch {}
   }
 
-  const width = 1140;
-  const height = 640;
+  // Dimensões compactas e proporcionais (1200x480 - ratio 2.5:1)
+  // Tamanho ideal para caber perfeitamente 4 cupons por folha A4 sem esticar
+  const width = 1200;
+  const height = 480;
   canvas.width = width;
   canvas.height = height;
 
@@ -118,25 +120,25 @@ export async function renderGoldenTicketCanvas(
 
   ctx.clearRect(0, 0, width, height);
 
-  // Parâmetros do cartão e margens de corte / respiro (layout compacto proporcional)
-  const marginX = 20;
-  const marginY = 20;
+  // Parâmetros do cartão e margens de corte / respiro
+  const marginX = 16;
+  const marginY = 16;
   const cardW = width - marginX * 2;
   const cardH = height - marginY * 2;
   const cardX = marginX;
   const cardY = marginY;
 
-  const outerRadius = 28;
-  const stubWidth = 340;
+  const outerRadius = 24;
+  const stubWidth = 320;
   const stubX = cardX + cardW - stubWidth;
-  const notchR = 24; // Raio do entalhe de picote
+  const notchR = 20; // Raio do entalhe de picote
 
   // 1. Sombra suave externa do cartão
   ctx.save();
-  ctx.shadowColor = "rgba(255, 185, 0, 0.45)";
-  ctx.shadowBlur = 32;
+  ctx.shadowColor = "rgba(255, 185, 0, 0.4)";
+  ctx.shadowBlur = 24;
   ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 10;
+  ctx.shadowOffsetY = 8;
   traceNotchedTicketPath(ctx, cardX, cardY, cardW, cardH, outerRadius, stubX, notchR);
   ctx.fillStyle = "#FFD700";
   ctx.fill();
@@ -156,7 +158,7 @@ export async function renderGoldenTicketCanvas(
   ctx.fill();
 
   // 3. Fundo Escuro Interno com Entalhes Perfeitos
-  const borderWidth = 12; // Espessura da borda dourada rica
+  const borderWidth = 10; // Espessura da borda dourada rica
   const innerX = cardX + borderWidth;
   const innerY = cardY + borderWidth;
   const innerW = cardW - borderWidth * 2;
@@ -182,10 +184,10 @@ export async function renderGoldenTicketCanvas(
 
   // C. Padrão de segurança pontilhado dourado sutil no lado principal
   ctx.fillStyle = "rgba(255, 215, 0, 0.08)";
-  for (let px = innerX + 24; px < stubX - 10; px += 20) {
-    for (let py = innerY + 20; py < innerY + innerH; py += 20) {
+  for (let px = innerX + 24; px < stubX - 10; px += 22) {
+    for (let py = innerY + 18; py < innerY + innerH; py += 22) {
       ctx.beginPath();
-      ctx.arc(px, py, 1.4, 0, Math.PI * 2);
+      ctx.arc(px, py, 1.3, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -195,27 +197,27 @@ export async function renderGoldenTicketCanvas(
   // 4. Contorno interno dourado fino para realce
   traceNotchedTicketPath(ctx, innerX, innerY, innerW, innerH, innerRadius, stubX, innerNotchR);
   ctx.strokeStyle = "rgba(255, 215, 0, 0.55)";
-  ctx.lineWidth = 1.8;
+  ctx.lineWidth = 1.6;
   ctx.stroke();
 
   // 5. Linha Perfurada de Picote (Dashed Gold Tear-Line)
   ctx.save();
   ctx.strokeStyle = "rgba(255, 215, 0, 0.65)";
-  ctx.lineWidth = 2.5;
-  ctx.setLineDash([9, 9]);
+  ctx.lineWidth = 2.4;
+  ctx.setLineDash([8, 8]);
   ctx.beginPath();
-  ctx.moveTo(stubX, innerY + innerNotchR + 10);
-  ctx.lineTo(stubX, innerY + innerH - innerNotchR - 10);
+  ctx.moveTo(stubX, innerY + innerNotchR + 8);
+  ctx.lineTo(stubX, innerY + innerH - innerNotchR - 8);
   ctx.stroke();
   ctx.restore();
 
   // ========================================================
   // LADO ESQUERDO: CORPO PRINCIPAL DO BILHETE
   // ========================================================
-  const contentLeft = innerX + 36;
-  const headerY = innerY + 40;
+  const contentLeft = innerX + 32;
+  const headerY = innerY + 36;
 
-  // A. Logo Oficial da Finora em ouro metálico (marca registrada oficial com libélula odontológica)
+  // A. Logo Oficial da Finora em ouro metálico (Aumentada e nítida)
   let logo = logoImg;
   if (!logo) {
     try {
@@ -224,13 +226,12 @@ export async function renderGoldenTicketCanvas(
   }
 
   if (logo && logo.naturalWidth > 0) {
-    const logoH = 34;
+    const logoH = 46;
     const logoW = Math.round(logoH * (logo.naturalWidth / logo.naturalHeight || 3.58));
     ctx.drawImage(logo, contentLeft, headerY - logoH / 2, logoW, logoH);
   } else {
-    // Fallback caso imagem não carregue: Wordmark em ouro puro
     ctx.fillStyle = "#FFD700";
-    ctx.font = "900 20px monospace, 'Courier New', Courier";
+    ctx.font = "900 24px monospace, 'Courier New', Courier";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText("FINORA", contentLeft, headerY);
@@ -238,18 +239,18 @@ export async function renderGoldenTicketCanvas(
 
   // B. Badge Nobre "BILHETE DOURADO · VIP"
   const badgeText = "BILHETE DOURADO · VIP";
-  ctx.font = "900 12.5px monospace, 'Courier New', Courier";
+  ctx.font = "900 13px monospace, 'Courier New', Courier";
   const badgeTextWidth = ctx.measureText(badgeText).width;
-  const badgeH = 36;
-  const badgeW = badgeTextWidth + 52;
-  const badgeX = stubX - 32 - badgeW;
+  const badgeH = 34;
+  const badgeW = badgeTextWidth + 48;
+  const badgeX = stubX - 28 - badgeW;
   const badgeY = headerY - badgeH / 2;
 
   // Fundo com gradiente e borda dourada
   const badgeGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH);
   badgeGrad.addColorStop(0, "rgba(255, 215, 0, 0.35)");
   badgeGrad.addColorStop(1, "rgba(255, 153, 0, 0.45)");
-  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 18);
+  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 17);
   ctx.fillStyle = badgeGrad;
   ctx.fill();
   ctx.strokeStyle = "#FFD700";
@@ -257,37 +258,37 @@ export async function renderGoldenTicketCanvas(
   ctx.stroke();
 
   // Mini coroa dourada dentro do badge
-  const crownX = badgeX + 18;
+  const crownX = badgeX + 16;
   const crownY = headerY;
   ctx.fillStyle = "#FFE57F";
   ctx.beginPath();
-  ctx.moveTo(crownX - 7, crownY + 6);
-  ctx.lineTo(crownX + 7, crownY + 6);
+  ctx.moveTo(crownX - 7, crownY + 5);
+  ctx.lineTo(crownX + 7, crownY + 5);
   ctx.lineTo(crownX + 8, crownY - 3);
-  ctx.lineTo(crownX + 4, crownY + 1.5);
-  ctx.lineTo(crownX, crownY - 6);
-  ctx.lineTo(crownX - 4, crownY + 1.5);
+  ctx.lineTo(crownX + 4, crownY + 1.2);
+  ctx.lineTo(crownX, crownY - 5);
+  ctx.lineTo(crownX - 4, crownY + 1.2);
   ctx.lineTo(crownX - 8, crownY - 3);
   ctx.closePath();
   ctx.fill();
 
   // Texto do badge
   ctx.fillStyle = "#FFF9B8";
-  ctx.font = "900 12.5px monospace, 'Courier New', Courier";
+  ctx.font = "900 13px monospace, 'Courier New', Courier";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText(badgeText, crownX + 14, headerY);
+  ctx.fillText(badgeText, crownX + 13, headerY);
 
   // Linha divisória fina abaixo do cabeçalho
   ctx.strokeStyle = "rgba(255, 215, 0, 0.35)";
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.moveTo(contentLeft, headerY + 28);
-  ctx.lineTo(stubX - 32, headerY + 28);
+  ctx.lineTo(stubX - 28, headerY + 28);
   ctx.stroke();
 
   // C. Conteúdo Central
-  const bodyY = headerY + 56;
+  const bodyY = headerY + 44;
 
   // Nome do Evento em destaque dourado
   ctx.fillStyle = "#FFD700";
@@ -298,29 +299,29 @@ export async function renderGoldenTicketCanvas(
 
   // Título Nobre
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "900 38px 'Segoe UI', Inter, -apple-system, sans-serif";
-  ctx.fillText("Passe Oficial do Mentorado", contentLeft, bodyY + 24);
+  ctx.font = "900 34px 'Segoe UI', Inter, -apple-system, sans-serif";
+  ctx.fillText("Passe Oficial do Mentorado", contentLeft, bodyY + 22);
 
   // Subtítulo
   ctx.fillStyle = "#C2CEE3";
-  ctx.font = "600 14.5px 'Segoe UI', Inter, -apple-system, sans-serif";
+  ctx.font = "600 13.5px 'Segoe UI', Inter, -apple-system, sans-serif";
   ctx.fillText(
     "Acesso exclusivo ao Pool de Prêmios VIP e cupom oficial registrado para o Grande Sorteio no Telão.",
     contentLeft,
-    bodyY + 76
+    bodyY + 64
   );
 
   // D. Callout Oficial: Fotopolimerizador
-  const calloutY = bodyY + 116;
-  const calloutW = stubX - contentLeft - 32;
-  const calloutH = 48;
+  const calloutY = bodyY + 96;
+  const calloutW = stubX - contentLeft - 28;
+  const calloutH = 42;
 
   const calloutGrad = ctx.createLinearGradient(contentLeft, calloutY, contentLeft + calloutW, calloutY + calloutH);
-  calloutGrad.addColorStop(0, "rgba(255, 215, 0, 0.32)");
-  calloutGrad.addColorStop(0.5, "rgba(255, 153, 0, 0.28)");
-  calloutGrad.addColorStop(1, "rgba(255, 215, 0, 0.32)");
+  calloutGrad.addColorStop(0, "rgba(255, 215, 0, 0.35)");
+  calloutGrad.addColorStop(0.5, "rgba(255, 153, 0, 0.3)");
+  calloutGrad.addColorStop(1, "rgba(255, 215, 0, 0.35)");
 
-  roundRect(ctx, contentLeft, calloutY, calloutW, calloutH, 14);
+  roundRect(ctx, contentLeft, calloutY, calloutW, calloutH, 12);
   ctx.fillStyle = calloutGrad;
   ctx.fill();
   ctx.strokeStyle = "#FFD700";
@@ -329,21 +330,21 @@ export async function renderGoldenTicketCanvas(
 
   // Texto do callout com brilho
   ctx.fillStyle = "#FFF9B8";
-  ctx.font = "900 13px 'Segoe UI', Inter, sans-serif";
+  ctx.font = "900 13.5px 'Segoe UI', Inter, sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   ctx.fillText("✦ ESCANEIE O QR CODE AO LADO E CONCORRA A UM FOTOPOLIMERIZADOR !", contentLeft + 16, calloutY + calloutH / 2);
 
   // E. Rodapé: Portador Credenciado & Cupom Telão
-  const footerLineY = innerY + innerH - 110;
+  const footerLineY = innerY + innerH - 86;
   ctx.strokeStyle = "rgba(255, 215, 0, 0.35)";
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.moveTo(contentLeft, footerLineY);
-  ctx.lineTo(stubX - 32, footerLineY);
+  ctx.lineTo(stubX - 28, footerLineY);
   ctx.stroke();
 
-  const footerY = footerLineY + 16;
+  const footerY = footerLineY + 12;
 
   // Portador
   ctx.fillStyle = "#A7B2C6";
@@ -354,10 +355,10 @@ export async function renderGoldenTicketCanvas(
 
   ctx.fillStyle = "#FFFFFF";
   ctx.font = "900 22px 'Segoe UI', Inter, -apple-system, sans-serif";
-  ctx.fillText(ticket.participantName || "Mentorado Convidado", contentLeft, footerY + 18);
+  ctx.fillText(ticket.participantName || "Mentorado Convidado", contentLeft, footerY + 16);
 
   // Cupom Telão com fonte grande em ouro
-  const cupomX = stubX - 32;
+  const cupomX = stubX - 28;
   ctx.textAlign = "right";
   ctx.fillStyle = "#FFD700";
   ctx.font = "bold 11px monospace, 'Courier New', Courier";
@@ -365,8 +366,8 @@ export async function renderGoldenTicketCanvas(
 
   const formattedTicket = ticket.code.startsWith("#") ? ticket.code : `#${ticket.code}`;
   ctx.fillStyle = "#FFD700";
-  ctx.font = "900 40px monospace, 'Courier New', Courier";
-  ctx.fillText(formattedTicket, cupomX, footerY + 16);
+  ctx.font = "900 38px monospace, 'Courier New', Courier";
+  ctx.fillText(formattedTicket, cupomX, footerY + 14);
 
   // ========================================================
   // LADO DIREITO: CANHOTO DE SEGURANÇA COM QR CODE
@@ -377,8 +378,8 @@ export async function renderGoldenTicketCanvas(
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
   ctx.fillStyle = "#FFD700";
-  ctx.font = "900 13.5px monospace, 'Courier New', Courier";
-  ctx.fillText("ESCANEAR PARA ATIVAR", stubCenterX, innerY + 34);
+  ctx.font = "900 13px monospace, 'Courier New', Courier";
+  ctx.fillText("ESCANEAR PARA ATIVAR", stubCenterX, innerY + 24);
 
   // Gerar QR Code
   const origin =
@@ -389,7 +390,7 @@ export async function renderGoldenTicketCanvas(
 
   const qrCanvas = document.createElement("canvas");
   await QRCode.toCanvas(qrCanvas, activationUrl, {
-    width: 176,
+    width: 148,
     margin: 1,
     color: {
       dark: "#080D1A",
@@ -398,42 +399,42 @@ export async function renderGoldenTicketCanvas(
   });
 
   // Box branco do QR Code com borda dourada elegante
-  const qrBoxSize = 200;
+  const qrBoxSize = 168;
   const qrBoxX = stubCenterX - qrBoxSize / 2;
-  const qrBoxY = innerY + 60;
+  const qrBoxY = innerY + 48;
 
-  roundRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 18);
+  roundRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 16);
   ctx.fillStyle = "#FFFFFF";
   ctx.fill();
   ctx.strokeStyle = "#FFD700";
-  ctx.lineWidth = 3.5;
+  ctx.lineWidth = 3;
   ctx.stroke();
 
   // Desenhar QR Code dentro do box
-  ctx.drawImage(qrCanvas, qrBoxX + 12, qrBoxY + 12, 176, 176);
+  ctx.drawImage(qrCanvas, qrBoxX + 10, qrBoxY + 10, 148, 148);
 
   // Sub-legenda do QR
   ctx.fillStyle = "#C2CEE3";
-  ctx.font = "600 12px 'Segoe UI', Inter, sans-serif";
-  ctx.fillText("Abre cadastro com código pronto", stubCenterX, qrBoxY + qrBoxSize + 14);
+  ctx.font = "600 11px 'Segoe UI', Inter, sans-serif";
+  ctx.fillText("Abre cadastro com código pronto", stubCenterX, qrBoxY + qrBoxSize + 10);
 
-  // Bloco Inferior: Código VIP gigante estilo cupom
-  const codeBlockY = qrBoxY + qrBoxSize + 40;
+  // Bloco Inferior: Código VIP estilo cupom
+  const codeBlockY = qrBoxY + qrBoxSize + 32;
   ctx.fillStyle = "#A7B2C6";
-  ctx.font = "900 11.5px monospace, 'Courier New', Courier";
+  ctx.font = "900 11px monospace, 'Courier New', Courier";
   ctx.fillText("BILHETE VIP", stubCenterX, codeBlockY);
 
   ctx.fillStyle = "#FFD700";
-  ctx.font = "900 44px monospace, 'Courier New', Courier";
-  ctx.fillText(formattedTicket, stubCenterX, codeBlockY + 20);
+  ctx.font = "900 38px monospace, 'Courier New', Courier";
+  ctx.fillText(formattedTicket, stubCenterX, codeBlockY + 16);
 
   // Selo de Válido / Resgatado
   ctx.fillStyle = ticket.redeemedAt ? "#F59E0B" : "#10B981";
-  ctx.font = "bold 14px 'Segoe UI', Inter, sans-serif";
+  ctx.font = "bold 13px 'Segoe UI', Inter, sans-serif";
   ctx.fillText(
     ticket.redeemedAt ? "● Resgatado" : "✔ Válido p/ 1 Giro",
     stubCenterX,
-    codeBlockY + 70
+    codeBlockY + 58
   );
 }
 

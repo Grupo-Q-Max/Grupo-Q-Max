@@ -15,10 +15,11 @@ type Props = {
   onBooked?: () => void;
   skipHref?: string;
   inviteText?: string;
+  meetingEmail?: string;
 };
 
-export default function VipScheduler({ eventId, participantId, onBooked, skipHref, inviteText }: Props) {
-  // Gera os próximos dias úteis disponíveis
+export default function VipScheduler({ eventId, participantId, onBooked, skipHref, inviteText, meetingEmail }: Props) {
+  // Gera os dias úteis disponíveis até 11 de dezembro de 2026
   const dates = useMemo(() => {
     const list: Date[] = [];
     const now = new Date();
@@ -30,7 +31,10 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
       current.setDate(current.getDate() + 1);
     }
 
-    while (list.length < 12) {
+    // Limite oficial solicitado: até dia 11 de dezembro de 2026
+    const limitDate = new Date(2026, 11, 11, 23, 59, 59);
+
+    while (current <= limitDate) {
       const day = current.getDay();
       if (day !== 0 && day !== 6) { // Pula Sábado e Domingo
         list.push(new Date(current));
@@ -91,7 +95,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
     try {
       await fetchApi(`/meetings/event/${eventId}/book`, {
         method: "POST",
-        body: JSON.stringify({ participantId, scheduledAt: slot }),
+        body: JSON.stringify({ participantId, scheduledAt: slot, meetingEmail }),
       });
       if (onBooked) onBooked();
       else setDone(true);
@@ -150,6 +154,11 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
         <p className="text-[14px] leading-relaxed text-slate-300">
           {inviteText || "Reunião executiva de diagnóstico financeiro e planejamento tributário para sua clínica. Ao confirmar, você destrava automaticamente a Roleta VIP!"}
         </p>
+
+        {/* Aviso de Validade Estendida do Prêmio VIP */}
+        <div className="mt-1 rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 p-3 text-xs text-amber-200">
+          ⭐ <strong>Validade Estendida:</strong> O prêmio conquistado na <strong>Roleta VIP</strong> (descontos de 50% ou 100% no 1º honorário, mentorias e diagnósticos) <strong>valerá até depois da realização da sua reunião estratégica</strong>!
+        </div>
       </div>
 
       {/* 1. Seleção de Data */}

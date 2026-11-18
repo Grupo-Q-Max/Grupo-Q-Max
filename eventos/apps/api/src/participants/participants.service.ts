@@ -1107,6 +1107,34 @@ export class ParticipantsService {
 
     const isVip = Boolean(participation.vip_codes) || Boolean(meeting);
 
+    const vipDrawParticipation = await this.prisma.participations.findFirst({
+      where: {
+        participant_id: participation.participants.id,
+        event_id: participation.event_id,
+        draws: { is: { prizes: { is_vip: true } } },
+      },
+      include: {
+        draws: {
+          select: {
+            id: true,
+            source: true,
+            drawn_at: true,
+            prizes: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                image_url: true,
+                is_vip: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const existingVipDraw = vipDrawParticipation?.draws || (participation.draws?.prizes?.is_vip ? participation.draws : null);
+
     return {
       id: participation.id,
       status: participation.status,
@@ -1124,6 +1152,7 @@ export class ParticipantsService {
         state: participation.participants.state,
       },
       draw: participation.draws,
+      vipDraw: existingVipDraw,
     };
   }
 
@@ -1602,7 +1631,6 @@ export class ParticipantsService {
     const where: any = {
       event_id: eventId,
       status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
-      draws: null,
     };
 
     if (search && search.trim()) {
@@ -1617,7 +1645,27 @@ export class ParticipantsService {
     }
 
     const participations = await this.prisma.participations.findMany({
-      where,
+      where: {
+        ...where,
+        OR: [
+          { draws: null },
+          {
+            draws: { isNot: null },
+            participants: {
+              meetings: {
+                some: {
+                  event_id: eventId,
+                  status: { in: ['SCHEDULED', 'COMPLETED'] },
+                },
+              },
+            },
+          },
+          {
+            draws: { isNot: null },
+            vip_codes: { isNot: null },
+          },
+        ],
+      },
       include: {
         participants: {
           include: {
@@ -1631,31 +1679,141 @@ export class ParticipantsService {
           },
         },
         vip_codes: { select: { id: true } },
+        draws: {
+          include: {
+            prizes: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                image_url: true,
+                is_vip: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { id: 'desc' },
-      take: 30,
+      take: 40,
     });
 
-    return participations.map((p) => {
+    const resultList: any[] = [];
+    for (const p of participations) {
       const hasMeeting = Boolean(p.participants.meetings && p.participants.meetings.length > 0);
       const isVip = Boolean(p.vip_codes) || hasMeeting;
-      return {
-        participationId: p.id,
-        vip: isVip,
-        hasVipCode: Boolean(p.vip_codes),
-        hasMeeting,
-        participantId: p.participant_id,
-        fullName: p.participants.full_name,
-        cpfLastDigits: p.participants.cpf_last_digits,
-        phone: maskPhone(p.participants.phone_normalized),
-        clinicName: p.participants.clinic_name,
-        croNumber: p.participants.cro_number,
-        croState: p.participants.cro_state,
-        city: p.participants.city,
-        state: p.participants.state,
-        createdAt: p.created_at,
-      };
+
+      if (p.draws) {
+        if (!isVip) continue;
+        if (p.draws.prizes?.is_vip) continue;
+
+        const hasSecondaryVipDraw = await this.prisma.participations.findFirst({
+          where: {
+            event_id: eventId,
+            participant_id: p.participant_id,
+            id: { not: p.id },
+            draws: { is: { prizes: { is_vip: true } } },
+          },
+          select: { id: true },
+        });
+
+        if (hasSecondaryVipDraw) continue;
+
+        resultList.push({
+          participationId: p.id,
+          vip: true,
+          hasVipCode: Boolean(p.vip_codes),
+          hasMeeting,
+          pendingVipOnly: true,
+          normalPrize: p.draws.prizes,
+          participantId: p.participant_id,
+          fullName: p.participants.full_name,
+          cpfLastDigits: p.participants.cpf_last_digits,
+          phone: maskPhone(p.participants.phone_normalized),
+          clinicName: p.participants.clinic_name,
+          croNumber: p.participants.cro_number,
+          croState: p.participants.cro_state,
+          city: p.participants.city,
+          state: p.participants.state,
+          createdAt: p.created_at,
+        });
+      } else {
+        resultList.push({
+          participationId: p.id,
+          vip: isVip,
+          hasVipCode: Boolean(p.vip_codes),
+          hasMeeting,
+          pendingVipOnly: false,
+          participantId: p.participant_id,
+          fullName: p.participants.full_name,
+          cpfLastDigits: p.participants.cpf_last_digits,
+          phone: maskPhone(p.participants.phone_normalized),
+          clinicName: p.participants.clinic_name,
+          croNumber: p.participants.cro_number,
+          croState: p.participants.cro_state,
+          city: p.participants.city,
+          state: p.participants.state,
+          createdAt: p.created_at,
+        });
+      }
+    }
+
+    return resultList.slice(0, 30);
+  }
+
+  async findByCpfAndEvent(eventId: number, rawCpf: string) {
+    const cleanCpf = (rawCpf || '').replace(/\D/g, '');
+    if (cleanCpf.length !== 11) {
+      return { found: false, message: 'CPF inválido.' };
+    }
+
+    const cpfHash = hashCpf(cleanCpf);
+    const participant = await this.prisma.participants.findFirst({
+      where: { cpf_hash: cpfHash },
+      include: {
+        participations: {
+          where: { event_id: eventId },
+          include: {
+            draws: {
+              include: {
+                prizes: true,
+              },
+            },
+            vip_codes: true,
+          },
+          orderBy: { id: 'desc' },
+        },
+        meetings: {
+          where: { event_id: eventId, status: { notIn: ['CANCELED'] } },
+          orderBy: { id: 'desc' },
+        },
+      },
     });
+
+    if (!participant || participant.participations.length === 0) {
+      return { found: false };
+    }
+
+    const latestParticipation = participant.participations[0];
+    const hasMeeting = participant.meetings.length > 0;
+    const isVip = Boolean(latestParticipation.vip_codes) || hasMeeting;
+    const hasDrawn = Boolean(latestParticipation.draws);
+
+    return {
+      found: true,
+      participantId: participant.id,
+      participationId: latestParticipation.id,
+      fullName: participant.full_name,
+      phone: participant.phone,
+      email: participant.email?.includes('@visitante.') ? '' : (participant.email || ''),
+      clinicName: participant.clinic_name,
+      croNumber: participant.cro_number,
+      croState: participant.cro_state,
+      isVip,
+      hasDrawn,
+      hasScheduledMeeting: hasMeeting,
+      scheduledMeeting: hasMeeting ? participant.meetings[0] : null,
+      drawnPrize: latestParticipation.draws?.prizes?.name || null,
+    };
   }
 }
 

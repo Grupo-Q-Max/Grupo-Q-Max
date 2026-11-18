@@ -120,7 +120,7 @@ export default function GoldenTicket({
                 <img
                   src={FINORA_LOGO_GOLD_BASE64}
                   alt="Finora"
-                  className="h-7 sm:h-8 w-auto object-contain shrink-0"
+                  className="h-8 sm:h-10 w-auto object-contain shrink-0"
                 />
               </div>
 

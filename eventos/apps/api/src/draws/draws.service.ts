@@ -343,7 +343,7 @@ export class DrawsService {
 
         eventId = participation.event_id;
 
-        // Se já sorteou, retorna o prêmio existente (e o prêmio VIP complementar se houver)
+        // Se já sorteou, verifica se o participante é VIP e ainda precisa sortear a Roleta VIP
         if (participation.draws) {
           const existingDraw = participation.draws;
           const vipPart = await tx.participations.findFirst({
@@ -362,12 +362,119 @@ export class DrawsService {
             },
           });
 
+          // Checa se o participante possui acesso VIP (código VIP ou reunião com CEO agendada)
+          const hasMeeting = await tx.meetings.findFirst({
+            where: {
+              participant_id: participation.participant_id,
+              event_id: participation.event_id,
+              status: { in: ['SCHEDULED', 'COMPLETED'] },
+            },
+          });
+          const isVipUser = Boolean(participation.vip_codes) || Boolean(hasMeeting);
+
+          // Se o participante já girou o normal, mas agora é VIP e AINDA NÃO girou a VIP, realiza o giro VIP exclusivo!
+          if (isVipUser && !vipPart?.draws) {
+            const vipResult = await this.selectAndConsumePrize(
+              tx,
+              participation.event_id,
+              true,
+            );
+
+            const newVipPart = await tx.participations.create({
+              data: {
+                event_id: participation.event_id,
+                participant_id: participation.participant_id,
+                status: 'COMPLETED',
+                completed_at: new Date(),
+                device_id: participation.device_id,
+                ip_address: participation.ip_address,
+                user_agent: participation.user_agent,
+              },
+            });
+
+            const vipDraw = await tx.draws.create({
+              data: {
+                participation_id: newVipPart.id,
+                prize_id: vipResult.prize.id,
+                source: vipResult.source,
+                probability_used: vipResult.probabilityUsed,
+                forced_by_admin_id: null,
+              },
+            });
+
+            await tx.prize_stock_movements.create({
+              data: {
+                event_id: participation.event_id,
+                prize_id: vipResult.prize.id,
+                type: 'DRAW',
+                quantity: -1,
+                stock_before: vipResult.stockBefore,
+                stock_after: vipResult.stockAfter,
+                reason: 'Prêmio VIP entregue através de desbloqueio por agendamento de reunião.',
+              },
+            });
+
+            return {
+              success: true,
+              alreadyDrawn: false,
+              isVipOnly: true,
+              vip: true,
+              isDualDraw: true,
+
+              draw: {
+                id: existingDraw.id,
+                source: existingDraw.source,
+                drawnAt: existingDraw.drawn_at,
+              },
+
+              vipDraw: {
+                id: vipDraw.id,
+                source: vipDraw.source,
+                drawnAt: vipDraw.drawn_at,
+              },
+
+              participation: {
+                id: participation.id,
+                status: participation.status,
+              },
+
+              participant: {
+                id: participation.participants.id,
+                name: participation.participants.full_name,
+              },
+
+              prize: {
+                id: existingDraw.prizes.id,
+                name: existingDraw.prizes.name,
+                description: existingDraw.prizes.description,
+                imageUrl: existingDraw.prizes.image_url,
+                probability: existingDraw.probability_used,
+                stockRemaining: existingDraw.prizes.available_stock,
+              },
+
+              vipPrize: {
+                id: vipResult.prize.id,
+                name: vipResult.prize.name,
+                description: vipResult.prize.description,
+                imageUrl: vipResult.prize.image_url,
+                probability: vipResult.probabilityUsed,
+                stockRemaining: vipResult.stockAfter,
+              },
+
+              queue: {
+                consumed: false,
+                consumedQueueId: null,
+                nextPrize: null,
+              },
+            };
+          }
+
           const isDual = Boolean(vipPart?.draws);
 
           return {
             success: true,
             alreadyDrawn: true,
-            vip: Boolean(participation.vip_codes) || isDual,
+            vip: isVipUser || isDual,
             isDualDraw: isDual,
 
             draw: {

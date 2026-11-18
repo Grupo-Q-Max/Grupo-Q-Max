@@ -3,12 +3,18 @@ import { Throttle } from '@nestjs/throttler';
 import { MeetingsService } from './meetings.service';
 import { IsDateString, IsInt } from 'class-validator';
 
+import { IsDateString, IsEmail, IsInt, IsOptional } from 'class-validator';
+
 export class BookMeetingDto {
   @IsInt()
   participantId: number;
 
   @IsDateString()
   scheduledAt: string;
+
+  @IsOptional()
+  @IsEmail()
+  meetingEmail?: string;
 }
 
 export class UpdateStatusDto {
@@ -55,6 +61,6 @@ export class MeetingsController {
     @Param('eventId', ParseIntPipe) eventId: number,
     @Body() dto: BookMeetingDto,
   ) {
-    return this.meetingsService.bookMeeting(eventId, dto.participantId, dto.scheduledAt);
+    return this.meetingsService.bookMeeting(eventId, dto.participantId, dto.scheduledAt, dto.meetingEmail);
   }
 }

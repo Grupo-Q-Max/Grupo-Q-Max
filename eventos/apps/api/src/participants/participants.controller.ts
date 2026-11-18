@@ -125,4 +125,13 @@ export class ParticipantsController {
   validateWhatsapp(@Body('token') token: string) {
     return this.participantsService.validateWhatsapp(token);
   }
+
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Post('lookup-by-cpf')
+  lookupByCpf(
+    @Body('eventId') eventId: number,
+    @Body('cpf') cpf: string,
+  ) {
+    return this.participantsService.findByCpfAndEvent(Number(eventId), cpf);
+  }
 }

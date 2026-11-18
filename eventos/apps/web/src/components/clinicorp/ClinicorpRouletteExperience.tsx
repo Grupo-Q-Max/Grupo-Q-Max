@@ -48,6 +48,9 @@ type PendingParticipant = {
   participationId: number;
   participantId: number;
   vip?: boolean;
+  hasMeeting?: boolean;
+  pendingVipOnly?: boolean;
+  normalPrize?: { id: number; name: string; description?: string | null; imageUrl?: string | null; image_url?: string | null };
   fullName: string;
   cpfLastDigits: string;
   phone: string;
@@ -328,12 +331,27 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     );
     setIsDemoSpin(false);
     setResult(null);
-    setVipSpinStage("READY_NORMAL");
-    setStoredDrawResponse(null);
-    setNormalWonPrize(null);
-    setSuspenseStatus("");
-    setIsParticipantConfirmed(false);
-    setPhase("READY");
+
+    if (p.pendingVipOnly && p.normalPrize) {
+      setNormalWonPrize({
+        id: p.normalPrize.id,
+        name: p.normalPrize.name,
+        description: p.normalPrize.description || null,
+        imageUrl: p.normalPrize.imageUrl || p.normalPrize.image_url || null,
+      });
+      setVipSpinStage("WAITING_VIP");
+      setIsParticipantConfirmed(true);
+      setParticipantInfo("🌟 Já realizou o giro normal · ROLETA VIP LIBERADA!");
+      setStoredDrawResponse(null);
+      setPhase("READY");
+    } else {
+      setVipSpinStage("READY_NORMAL");
+      setStoredDrawResponse(null);
+      setNormalWonPrize(null);
+      setSuspenseStatus("");
+      setIsParticipantConfirmed(false);
+      setPhase("READY");
+    }
   }
 
   function startDemoMode(asVip = false) {
@@ -405,21 +423,62 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
               const displayName = partData.participant.fullName || partData.participant.firstName || "Participante";
 
               if (partData.draw) {
-                setResult({
-                  success: true,
-                  alreadyDrawn: true,
-                  draw: { id: partData.draw.id, source: partData.draw.source, drawnAt: partData.draw.drawn_at },
-                  participation: { id: partData.id, status: partData.status },
-                  participant: { id: partData.participant.id, name: displayName },
-                  prize: {
-                    id: partData.draw.prizes.id,
-                    name: partData.draw.prizes.name,
-                    description: partData.draw.prizes.description,
-                    imageUrl: partData.draw.prizes.image_url,
-                  },
-                });
+                const isVipEligible = Boolean(partData.isVip || partData.hasScheduledMeeting || partData.vipCode);
+                const hasPendingVipSpin = isVipEligible && !partData.vipDraw && !partData.draw.prizes?.is_vip;
+
+                if (!hasPendingVipSpin) {
+                  setResult({
+                    success: true,
+                    alreadyDrawn: true,
+                    draw: { id: partData.draw.id, source: partData.draw.source, drawnAt: partData.draw.drawn_at },
+                    participation: { id: partData.id, status: partData.status },
+                    participant: { id: partData.participant.id, name: displayName },
+                    prize: {
+                      id: partData.draw.prizes.id,
+                      name: partData.draw.prizes.name,
+                      description: partData.draw.prizes.description,
+                      imageUrl: partData.draw.prizes.image_url,
+                    },
+                    vipPrize: partData.vipDraw ? {
+                      id: partData.vipDraw.prizes.id,
+                      name: partData.vipDraw.prizes.name,
+                      description: partData.vipDraw.prizes.description,
+                      imageUrl: partData.vipDraw.prizes.image_url,
+                    } : undefined,
+                  });
+                  setParticipantName(displayName);
+                  setPhase("RESULT");
+                  return;
+                }
+
+                // Participante já girou o normal, mas agendou reunião e liberou o giro VIP!
+                setParticipationId(partData.id);
                 setParticipantName(displayName);
-                setPhase("RESULT");
+                setParticipantInfo("🌟 Já realizou o giro normal · ROLETA VIP LIBERADA!");
+                setSelected({
+                  participationId: partData.id,
+                  participantId: partData.participant.id,
+                  vip: true,
+                  pendingVipOnly: true,
+                  fullName: displayName,
+                  cpfLastDigits: "",
+                  phone: "",
+                  clinicName: partData.participant.clinicName || null,
+                  croNumber: partData.participant.croNumber || null,
+                  croState: partData.participant.croState || null,
+                  city: partData.participant.city || null,
+                  state: partData.participant.state || null,
+                  createdAt: new Date().toISOString(),
+                });
+                setNormalWonPrize({
+                  id: partData.draw.prizes.id,
+                  name: partData.draw.prizes.name,
+                  description: partData.draw.prizes.description,
+                  imageUrl: partData.draw.prizes.image_url,
+                });
+                setVipSpinStage("WAITING_VIP");
+                setIsParticipantConfirmed(true);
+                setPhase("READY");
                 return;
               }
 
@@ -682,7 +741,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   }
 
   async function handleSpinVip() {
-    if (phase === "DRAWING" || !storedDrawResponse?.vipPrize || vipPrizes.length === 0) return;
+    if (phase === "DRAWING" || vipPrizes.length === 0) return;
 
     setPhase("DRAWING");
     setVipSpinStage("SPINNING_VIP");
@@ -691,7 +750,53 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     triggerHaptic();
 
     try {
-      const vipTargetId = storedDrawResponse.vipPrize.id;
+      let vipDrawResponse = storedDrawResponse;
+      if (!vipDrawResponse?.vipPrize) {
+        if (isDemoSpin || !participationId) {
+          const demoVip = vipPrizes[Math.floor(Math.random() * vipPrizes.length)] || vipPrizes[0];
+          vipDrawResponse = {
+            success: true,
+            vip: true,
+            isDualDraw: true,
+            draw: { id: 9999, source: "AUTOMATIC", drawnAt: new Date().toISOString() },
+            vipDraw: { id: 9998, source: "AUTOMATIC", drawnAt: new Date().toISOString() },
+            participation: { id: 9999, status: "APPROVED" },
+            participant: { id: 9999, name: participantName || "Visitante VIP" },
+            prize: normalWonPrize || {
+              id: 1,
+              name: "Brinde",
+              description: null,
+              imageUrl: null,
+            },
+            vipPrize: {
+              id: demoVip.id,
+              name: demoVip.name,
+              description: demoVip.description,
+              imageUrl: demoVip.image_url,
+            },
+          };
+        } else {
+          const res = await fetch(`${getApiBaseUrl()}/draws/participation/${participationId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || "Erro ao realizar sorteio VIP.");
+          vipDrawResponse = data;
+        }
+        setStoredDrawResponse(vipDrawResponse);
+        if (vipDrawResponse?.prize && !normalWonPrize) {
+          setNormalWonPrize(vipDrawResponse.prize);
+        }
+      }
+
+      if (!vipDrawResponse || !vipDrawResponse.vipPrize) {
+        throw new Error("Não foi possível sortear o prêmio VIP.");
+      }
+
+      const currentFinalDraw = vipDrawResponse;
+      const targetVipPrize = vipDrawResponse.vipPrize;
+      const vipTargetId = targetVipPrize.id;
       const vipPrizeIndex = Math.max(0, vipPrizes.findIndex((p) => p.id === vipTargetId));
       const vipSliceDeg = 360 / Math.max(vipPrizes.length, 1);
       const vipTargetDeg = (360 - vipPrizeIndex * vipSliceDeg) % 360;
@@ -729,13 +834,13 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         setTimeout(() => {
           if (soundEnabled) {
             playWinFanfare();
-            if (storedDrawResponse.vipPrize) {
-              speakWinner(storedDrawResponse.participant.name, `${storedDrawResponse.prize.name} e ${storedDrawResponse.vipPrize.name}`);
+            if (currentFinalDraw.vipPrize) {
+              speakWinner(currentFinalDraw.participant.name, `${currentFinalDraw.prize?.name || "Brinde"} e ${currentFinalDraw.vipPrize.name}`);
             }
           }
 
           fireVictoryCelebration(eventAccent(), "#FFD700");
-          setResult(storedDrawResponse);
+          setResult(currentFinalDraw);
           setPhase("RESULT");
           setSuspenseStatus("");
         }, 3200);
@@ -1384,7 +1489,9 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
                         <span className="font-mono font-bold text-accent">{code(p.participantId)}</span>
                         <span className="truncate font-medium">
                           {p.vip && (
-                            <span className="mr-2 rounded-full bg-accent px-2 py-0.5 font-mono text-xs font-bold text-ink-950">VIP</span>
+                            <span className="mr-2 rounded-full bg-accent px-2 py-0.5 font-mono text-xs font-bold text-ink-950">
+                              {p.pendingVipOnly ? "VIP · GIRO 2" : "VIP"}
+                            </span>
                           )}
                           {p.fullName}
                           {p.clinicName ? ` · ${p.clinicName}` : ""}
