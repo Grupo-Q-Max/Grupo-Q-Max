@@ -221,6 +221,39 @@
             padding-left: 10px;
         }
         .icone-dente { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; fill: #0e9f9a; }
+        
+        /* Card elegante para perguntar se deseja adicionar o serviço na proposta */
+        .box-pergunta-servico {
+            margin-top: 8px;
+            padding: 10px 14px;
+            background: #f0fdf4;
+            border: 1.5px solid #86efac;
+            border-radius: 12px;
+            transition: all 0.25s ease;
+        }
+        .box-pergunta-servico .pergunta-titulo {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #166534;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .box-pergunta-servico .pergunta-opcoes {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .box-pergunta-servico label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 11.5px;
+            margin: 0;
+        }
     </style>
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
@@ -1175,61 +1208,106 @@
                         <div class="grid-2" id="secaoRegularizacoes">
                             <div class="input-group" id="grupoTemCRO">
                                 <label for="temCRO"><svg class="icone-dente" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3C4.5 3 3 5 3 7.5c0 2 .8 3.5 1.5 5 .6 1.4.8 3 1.2 4.8.4 1.9 1 3.7 2.1 3.7 1.3 0 1.4-2.3 1.9-4.2.3-1.2.8-1.8 1.3-1.8s1 .6 1.3 1.8c.5 1.9.6 4.2 1.9 4.2 1.1 0 1.7-1.8 2.1-3.7.4-1.8.6-3.4 1.2-4.8.7-1.5 1.5-3 1.5-5C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>Possui regularização CRO?</label>
-                                <select id="temCRO" onchange="toggleVencimentoItem('CRO'); gerarProposta()">
-                                    <option value="Sim" selected>Sim (Válido / A vencer)</option>
-                                    <option value="Vencido">Vencido (Adicionar regularização)</option>
-                                    <option value="Não">Não Possui (Adicionar regularização)</option>
+                                <select id="temCRO" onchange="toggleVencimentoItem('CRO'); verificarPerguntaAdicionarServico('CRO'); gerarProposta()">
+                                    <option value="Sim" selected>Sim (Válido / Regularizado)</option>
+                                    <option value="Vencido">Vencido / A Renovar</option>
+                                    <option value="Não">Não Possui</option>
                                 </select>
                                 <div id="boxVencimentoCRO" style="margin-top: 6px;">
                                     <label for="vencimentoCRO" style="font-size: 11px; font-weight: 700; color: #64748b;">Data de Vencimento / Anuidade CRO</label>
                                     <input type="date" id="vencimentoCRO" onchange="gerarProposta()" style="font-size: 12px; height: 36px;" />
                                 </div>
+                                <div class="box-pergunta-servico" id="boxPerguntaCRO" style="display:none;">
+                                    <div class="pergunta-titulo">
+                                        <span>❓ Deseja incluir a Inscrição/Regularização CRO na proposta comercial?</span>
+                                    </div>
+                                    <div class="pergunta-opcoes">
+                                        <label><input type="radio" name="incluirServicoCRO" value="sim" onchange="gerarProposta()"> <strong>Sim, incluir serviço na proposta</strong></label>
+                                        <label><input type="radio" name="incluirServicoCRO" value="nao" checked onchange="gerarProposta()"> <span>Não incluir (R$ 0,00)</span></label>
+                                    </div>
+                                </div>
                             </div>
                             <div class="input-group">
                                 <label for="temAlvara">Possui Alvará de Funcionamento?</label>
-                                <select id="temAlvara" onchange="toggleVencimentoItem('Alvara'); gerarProposta()">
-                                    <option value="Sim" selected>Sim (Válido / A vencer)</option>
-                                    <option value="Vencido">Vencido (Adicionar renovação)</option>
-                                    <option value="Não">Não Possui (Adicionar obtenção)</option>
+                                <select id="temAlvara" onchange="toggleVencimentoItem('Alvara'); verificarPerguntaAdicionarServico('Alvara'); gerarProposta()">
+                                    <option value="Sim" selected>Sim (Válido / Regularizado)</option>
+                                    <option value="Vencido">Vencido / A Renovar</option>
+                                    <option value="Não">Não Possui</option>
                                 </select>
                                 <div id="boxVencimentoAlvara" style="margin-top: 6px;">
                                     <label for="vencimentoAlvara" style="font-size: 11px; font-weight: 700; color: #64748b;">Data de Vencimento do Alvará</label>
                                     <input type="date" id="vencimentoAlvara" onchange="gerarProposta()" style="font-size: 12px; height: 36px;" />
                                 </div>
+                                <div class="box-pergunta-servico" id="boxPerguntaAlvara" style="display:none;">
+                                    <div class="pergunta-titulo">
+                                        <span>❓ Deseja incluir obtenção/renovação de Alvará na proposta comercial?</span>
+                                    </div>
+                                    <div class="pergunta-opcoes">
+                                        <label><input type="radio" name="incluirServicoAlvara" value="sim" onchange="gerarProposta()"> <strong>Sim, incluir serviço na proposta</strong></label>
+                                        <label><input type="radio" name="incluirServicoAlvara" value="nao" checked onchange="gerarProposta()"> <span>Não incluir (R$ 0,00)</span></label>
+                                    </div>
+                                </div>
                             </div>
                             <div class="input-group">
                                 <label for="temAVCB">Possui AVCB (Bombeiros)?</label>
-                                <select id="temAVCB" onchange="toggleVencimentoItem('AVCB'); gerarProposta()">
-                                    <option value="Sim" selected>Sim (Válido / A vencer)</option>
-                                    <option value="Vencido">Vencido (Adicionar regularização)</option>
-                                    <option value="Não">Não Possui (Adicionar regularização)</option>
+                                <select id="temAVCB" onchange="toggleVencimentoItem('AVCB'); verificarPerguntaAdicionarServico('AVCB'); gerarProposta()">
+                                    <option value="Sim" selected>Sim (Válido / Regularizado)</option>
+                                    <option value="Vencido">Vencido / A Renovar</option>
+                                    <option value="Não">Não Possui</option>
                                 </select>
                                 <div id="boxVencimentoAVCB" style="margin-top: 6px;">
                                     <label for="vencimentoAVCB" style="font-size: 11px; font-weight: 700; color: #64748b;">Data de Vencimento do AVCB</label>
                                     <input type="date" id="vencimentoAVCB" onchange="gerarProposta()" style="font-size: 12px; height: 36px;" />
                                 </div>
+                                <div class="box-pergunta-servico" id="boxPerguntaAVCB" style="display:none;">
+                                    <div class="pergunta-titulo">
+                                        <span>❓ Deseja incluir regularização/renovação de AVCB na proposta comercial?</span>
+                                    </div>
+                                    <div class="pergunta-opcoes">
+                                        <label><input type="radio" name="incluirServicoAVCB" value="sim" onchange="gerarProposta()"> <strong>Sim, incluir serviço na proposta</strong></label>
+                                        <label><input type="radio" name="incluirServicoAVCB" value="nao" checked onchange="gerarProposta()"> <span>Não incluir (R$ 0,00)</span></label>
+                                    </div>
+                                </div>
                             </div>
                             <div class="input-group">
                                 <label for="temVigilancia">Possui Vigilância Sanitária?</label>
-                                <select id="temVigilancia" onchange="toggleVencimentoItem('Vigilancia'); gerarProposta()">
-                                    <option value="Sim" selected>Sim (Válido / A vencer)</option>
-                                    <option value="Vencido">Vencido (Adicionar renovação)</option>
-                                    <option value="Não">Não Possui (Adicionar obtenção)</option>
+                                <select id="temVigilancia" onchange="toggleVencimentoItem('Vigilancia'); verificarPerguntaAdicionarServico('Vigilancia'); gerarProposta()">
+                                    <option value="Sim" selected>Sim (Válido / Regularizado)</option>
+                                    <option value="Vencido">Vencido / A Renovar</option>
+                                    <option value="Não">Não Possui</option>
                                 </select>
                                 <div id="boxVencimentoVigilancia" style="margin-top: 6px;">
                                     <label for="vencimentoVigilancia" style="font-size: 11px; font-weight: 700; color: #64748b;">Data de Vencimento da Vigilância Sanitária</label>
                                     <input type="date" id="vencimentoVigilancia" onchange="gerarProposta()" style="font-size: 12px; height: 36px;" />
+                                </div>
+                                <div class="box-pergunta-servico" id="boxPerguntaVigilancia" style="display:none;">
+                                    <div class="pergunta-titulo">
+                                        <span>❓ Deseja incluir obtenção/renovação de Vigilância na proposta comercial?</span>
+                                    </div>
+                                    <div class="pergunta-opcoes">
+                                        <label><input type="radio" name="incluirServicoVigilancia" value="sim" onchange="gerarProposta()"> <strong>Sim, incluir serviço na proposta</strong></label>
+                                        <label><input type="radio" name="incluirServicoVigilancia" value="nao" checked onchange="gerarProposta()"> <span>Não incluir (R$ 0,00)</span></label>
+                                    </div>
                                 </div>
                             </div>
 
                     <!-- SEÇÃO CERTIFICADO DIGITAL -->
                     <div class="input-group span-2" id="secaoCertificadoDigital" style="margin-top: 18px; display: block;">
                         <label for="certificadoDigital" style="font-weight: 700; color: #172033;">Certificado Digital</label>
-                        <select id="certificadoDigital" onchange="toggleCertificadoDigital(); toggleVencimentoItem('Certificado'); gerarProposta()" style="margin-top: 6px;">
+                        <select id="certificadoDigital" onchange="toggleCertificadoDigital(); toggleVencimentoItem('Certificado'); verificarPerguntaAdicionarServico('Certificado'); gerarProposta()" style="margin-top: 6px;">
                             <option value="Sim">Sim (Válido / A vencer - Upload .pfx/.p12)</option>
-                            <option value="Não" selected>Não Possui (Adicionar emissão na proposta)</option>
-                            <option value="Vencido">Vencido (Adicionar renovação na proposta)</option>
+                            <option value="Não" selected>Não Possui</option>
+                            <option value="Vencido">Vencido / A Renovar</option>
                         </select>
+                        <div class="box-pergunta-servico" id="boxPerguntaCertificado" style="display:none;">
+                            <div class="pergunta-titulo">
+                                <span>❓ Deseja incluir a emissão/renovação do Certificado Digital na proposta comercial?</span>
+                            </div>
+                            <div class="pergunta-opcoes">
+                                <label><input type="radio" name="incluirServicoCertificado" value="sim" onchange="gerarProposta()"> <strong>Sim, incluir na proposta (+ R$ 220,00)</strong></label>
+                                <label><input type="radio" name="incluirServicoCertificado" value="nao" checked onchange="gerarProposta()"> <span>Não incluir na proposta (R$ 0,00)</span></label>
+                            </div>
+                        </div>
                         <small id="lockHintCertificado" class="hint" style="display:none; color:#d97706;">Bloqueado: Certificado digital será emitido após constituição formal do CNPJ.</small>
                         
                         <div id="subSecaoUploadCertificado" style="display: none; margin-top: 14px; padding: 18px; border: 1.5px dashed #b9c5d2; border-radius: 15px; background: #f8fafc;">

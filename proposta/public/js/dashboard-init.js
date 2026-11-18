@@ -304,6 +304,21 @@ function inicializarStreamNotificacoes() {
     }
   });
 
+  eventSource.addEventListener("alerta_renovacao_certificado", (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      exibirToastNotificacao(
+        "SYS.NTF_RENOV",
+        "🔔 Rascunho Automático de Renovação",
+        `Certificado Digital de <strong>${escapeHTML(data.cliente)}</strong> a vencer em ${escapeHTML(String(data.diasRestantes))} dia(s) (${escapeHTML(data.dataVencimento)}). Rascunho <strong>#${escapeHTML(data.rascunhoNumero || '')}</strong> criado para contato!`
+      );
+      if (typeof carregarAlertasRenovacaoCertificados === "function") carregarAlertasRenovacaoCertificados();
+      if (typeof carregarPropostas === "function") carregarPropostas();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
   eventSource.addEventListener("desconto_respondido", (event) => {
     try {
       const data = JSON.parse(event.data);

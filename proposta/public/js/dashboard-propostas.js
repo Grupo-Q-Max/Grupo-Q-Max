@@ -990,7 +990,80 @@ async function carregarPropostas() {
     TODAS_PROPOSTAS_DASHBOARD = propostas;
     aplicarFiltrosDashboard();
   }
+
+  // Carregar alertas comerciais de certificados e vencimentos (com rascunhos automáticos)
+  if (typeof carregarAlertasRenovacaoCertificados === "function") {
+    carregarAlertasRenovacaoCertificados();
+  }
 }
+
+async function carregarAlertasRenovacaoCertificados() {
+  try {
+    const res = await fetch("/api/propostas/alertas-vencimentos", { headers: authHeaders });
+    if (!res.ok) return;
+    const alertas = await res.json();
+    const bloco = document.getElementById("blocoAlertasCertificados");
+    const container = document.getElementById("listaAlertasCertificadosContainer");
+    const badge = document.getElementById("badgeQtdAlertasCertificados");
+
+    if (!bloco || !container) return;
+
+    if (!Array.isArray(alertas) || alertas.length === 0) {
+      bloco.style.display = "none";
+      return;
+    }
+
+    if (badge) badge.textContent = String(alertas.length);
+    bloco.style.display = "block";
+
+    container.innerHTML = alertas.map(a => {
+      const telLimpo = String(a.telefone || "").replace(/\D/g, "");
+      const linkWa = telLimpo.length >= 10
+        ? `https://wa.me/55${telLimpo}?text=${encodeURIComponent(`Olá! Passando da equipe comercial para avisar que o Certificado Digital da sua empresa está a vencer (${a.dataVencimentoFmt} - ${a.mensagem}). Já preparamos a sua proposta de renovação com condição especial. Podemos dar andamento na emissão?`)}`
+        : null;
+
+      const linkEditarRascunho = a.rascunhoId ? `${APP_BASE_PATH}/index.html?rascunhoId=${a.rascunhoId}` : `${APP_BASE_PATH}/index.html`;
+
+      return `
+        <div style="background:#ffffff; border:1px solid #bae6fd; border-left:4px solid #0284c7; border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <strong style="color:#0f172a; font-size:14px;">${escapeHTML(a.cliente)}</strong>
+              <span style="background:${a.diasRestantes < 0 ? '#fee2e2' : '#fef3c7'}; color:${a.diasRestantes < 0 ? '#991b1b' : '#b45309'}; padding:2px 8px; border-radius:6px; font-weight:800; font-size:11px;">
+                ${escapeHTML(a.mensagem)} (${escapeHTML(a.dataVencimentoFmt)})
+              </span>
+            </div>
+            <div style="color:#64748b; font-size:12px; margin-top:4px;">
+              CNPJ: ${escapeHTML(a.cnpj || 'Não informado')} • Contato: ${escapeHTML(a.nomeSocio || a.email || 'Não informado')} • Resp. Comercial: <strong>${escapeHTML(a.vendedorNome || 'Comercial')}</strong>
+            </div>
+            ${a.rascunhoNumero ? `
+              <div style="color:#0369a1; font-size:12px; font-weight:700; margin-top:4px; display:flex; align-items:center; gap:6px;">
+                <span>📝 Rascunho de Proposta Criado:</span> 
+                <code style="background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:4px; font-size:11.5px;">${escapeHTML(a.rascunhoNumero)}</code>
+                <span style="color:#059669; font-weight:800;">(R$ 220,00)</span>
+              </div>
+            ` : ''}
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            ${a.rascunhoId ? `
+              <a href="${linkEditarRascunho}" target="_blank" style="background:#0284c7; color:#fff; text-decoration:none; padding:8px 14px; border-radius:8px; font-weight:700; font-size:12px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(2,132,199,0.25);">
+                ✏️ Editar Proposta de Renovação
+              </a>
+            ` : ''}
+            ${linkWa ? `
+              <a href="${linkWa}" target="_blank" style="background:#25d366; color:#fff; text-decoration:none; padding:8px 14px; border-radius:8px; font-weight:700; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                💬 Contatar no WhatsApp
+              </a>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    console.warn("Erro ao carregar alertas de renovação:", err);
+  }
+}
+window.carregarAlertasRenovacaoCertificados = carregarAlertasRenovacaoCertificados;
 
 function toggleDetalhes(id, botao) {
   const detalhes = document.getElementById(`detalhes-${id}`);

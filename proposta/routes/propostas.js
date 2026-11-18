@@ -145,6 +145,21 @@ router.get("/api/propostas", verificarToken, async (req, res, next) => {
   }
 });
 
+// --- ALERTAS DE VENCIMENTO & RENOVAÇÃO AUTOMÁTICA (1 MÊS ANTES) ---
+router.get("/api/propostas/alertas-vencimentos", verificarToken, async (req, res, next) => {
+  try {
+    const renovacaoCertificadoService = require("../services/renovacaoCertificadoService");
+    const alertas = await renovacaoCertificadoService.verificarVencimentosECriarRascunhos();
+    if (req.user.role === "Comercial") {
+      const meusAlertas = alertas.filter(a => Number(a.criadoPor) === Number(req.user.id));
+      return res.json(meusAlertas);
+    }
+    res.json(alertas);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // --- HISTÓRICO DE PROPOSTAS POR CNPJ ---
 router.get("/api/propostas/historico-cnpj/:cnpj", verificarToken, async (req, res, next) => {
   try {

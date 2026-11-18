@@ -452,6 +452,23 @@ function toggleVencimentoItem(tipo) {
 }
 window.toggleVencimentoItem = toggleVencimentoItem;
 
+function verificarPerguntaAdicionarServico(tipo) {
+  const campoId = tipo === "Certificado" ? "certificadoDigital" : `tem${tipo}`;
+  const select = document.getElementById(campoId);
+  const box = document.getElementById(`boxPergunta${tipo}`);
+  if (!select || !box) return;
+
+  const val = select.value;
+  if (val === "Não" || val === "Vencido") {
+    box.style.display = "block";
+  } else {
+    box.style.display = "none";
+    const radioNao = box.querySelector('input[type="radio"][value="nao"]');
+    if (radioNao) radioNao.checked = true;
+  }
+}
+window.verificarPerguntaAdicionarServico = verificarPerguntaAdicionarServico;
+
 function obterDadosOnboardingV2() {
   const arquivo = document.getElementById("arquivoCertificadoDigital")?.files?.[0];
   const elCnpjEst = document.getElementById("cnpjEstabelecido");
@@ -914,8 +931,9 @@ function obterItensCalculados() {
     return km > 50 ? v * 1.15 : v;
   }
 
+  const querCRO = document.querySelector('input[name="incluirServicoCRO"]:checked')?.value === 'sim';
   const croStatus = valorCampo("temCRO");
-  if (ehFinora && (croStatus === "Não" || croStatus === "Vencido")) {
+  if (ehFinora && (croStatus === "Não" || croStatus === "Vencido") && querCRO) {
     itens.push({
       servico: croStatus === "Vencido" ? "Regularização CRO (Renovação)" : "Inscrição CRO",
       valor: calcularValorConfigurado("cro", contexto, BASE.cro),
@@ -923,8 +941,9 @@ function obterItensCalculados() {
     });
   }
 
+  const querAlvara = document.querySelector('input[name="incluirServicoAlvara"]:checked')?.value === 'sim';
   const alvaraStatus = valorCampo("temAlvara");
-  if (ehContabilidade && (alvaraStatus === "Não" || alvaraStatus === "Vencido")) {
+  if (ehContabilidade && (alvaraStatus === "Não" || alvaraStatus === "Vencido") && querAlvara) {
     itens.push({
       servico: alvaraStatus === "Vencido" ? "Renovação Alvará Func." : "Alvará Func.",
       valor: calcularRegulatorio(metragem, distanciaKm),
@@ -932,8 +951,9 @@ function obterItensCalculados() {
     });
   }
 
+  const querAVCB = document.querySelector('input[name="incluirServicoAVCB"]:checked')?.value === 'sim';
   const avcbStatus = valorCampo("temAVCB");
-  if (ehContabilidade && (avcbStatus === "Não" || avcbStatus === "Vencido")) {
+  if (ehContabilidade && (avcbStatus === "Não" || avcbStatus === "Vencido") && querAVCB) {
     itens.push({
       servico: avcbStatus === "Vencido" ? "Renovação AVCB" : "AVCB",
       valor: calcularRegulatorio(metragem, distanciaKm),
@@ -941,8 +961,9 @@ function obterItensCalculados() {
     });
   }
 
+  const querVig = document.querySelector('input[name="incluirServicoVigilancia"]:checked')?.value === 'sim';
   const vigStatus = valorCampo("temVigilancia");
-  if (ehContabilidade && (vigStatus === "Não" || vigStatus === "Vencido")) {
+  if (ehContabilidade && (vigStatus === "Não" || vigStatus === "Vencido") && querVig) {
     itens.push({
       servico: vigStatus === "Vencido" ? "Renovação Vigilância San." : "Vigilância San.",
       valor: calcularRegulatorio(metragem, distanciaKm),
@@ -954,8 +975,9 @@ function obterItensCalculados() {
   const secaoCert = document.getElementById("secaoCertificadoDigital");
   const certVisivel = ehContabilidade && (!secaoCert || secaoCert.style.display !== "none");
   const cert = certVisivel ? valorCampo("certificadoDigital") : "";
+  const querCert = document.querySelector('input[name="incluirServicoCertificado"]:checked')?.value === 'sim';
 
-  if (cert === "Não") {
+  if (cert === "Não" && querCert) {
     itens.push({
       servico: "Certificado Digital",
       valor: calcularValorConfigurado(
@@ -967,7 +989,7 @@ function obterItensCalculados() {
     });
   }
 
-  if (cert === "Vencido") {
+  if (cert === "Vencido" && querCert) {
     itens.push({
       servico: "Renovação Certificado",
       valor: calcularValorConfigurado(
@@ -1515,11 +1537,13 @@ function restaurarEstadoFormulario(estado) {
 
   ["CRO", "Alvara", "AVCB", "Vigilancia", "Certificado"].forEach((tipo) => {
     if (typeof toggleVencimentoItem === "function") toggleVencimentoItem(tipo);
+    if (typeof verificarPerguntaAdicionarServico === "function") verificarPerguntaAdicionarServico(tipo);
   });
 
   // Atualiza visibilidade dos campos de data de vencimento
   ["CRO", "Alvara", "AVCB", "Vigilancia", "Certificado"].forEach((tipo) => {
     if (typeof toggleVencimentoItem === "function") toggleVencimentoItem(tipo);
+    if (typeof verificarPerguntaAdicionarServico === "function") verificarPerguntaAdicionarServico(tipo);
   });
   if (typeof toggleCertificadoDigital === "function") toggleCertificadoDigital();
 }
@@ -2337,6 +2361,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   ["CRO", "Alvara", "AVCB", "Vigilancia", "Certificado"].forEach((tipo) => {
     if (typeof toggleVencimentoItem === "function") toggleVencimentoItem(tipo);
+    if (typeof verificarPerguntaAdicionarServico === "function") verificarPerguntaAdicionarServico(tipo);
   });
 
   // Mostrar banner de rascunho se existir dados salvos
@@ -2858,6 +2883,8 @@ if (labelNomeEmpresa && inputNomeEmpresa) {
     setVal("temCRO", "Sim");
     const elVencCRO = document.getElementById("vencimentoCRO");
     if (elVencCRO) elVencCRO.value = "";
+    const boxPergCRO = document.getElementById("boxPerguntaCRO");
+    if (boxPergCRO) boxPergCRO.style.display = "none";
   }
 
   if (ehContabil) {
@@ -2872,6 +2899,11 @@ if (labelNomeEmpresa && inputNomeEmpresa) {
     setVal("temAlvara", "Sim");
     setVal("temAVCB", "Sim");
     setVal("temVigilancia", "Sim");
+  }
+
+  // Atualizar visibilidade das perguntas de inclusão de serviços
+  if (typeof verificarPerguntaAdicionarServico === "function") {
+    ["Certificado", "CRO", "Alvara", "AVCB", "Vigilancia"].forEach(verificarPerguntaAdicionarServico);
   }
 
   if (ehTech) {
