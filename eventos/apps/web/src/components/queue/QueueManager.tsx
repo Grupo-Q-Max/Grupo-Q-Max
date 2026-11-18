@@ -3,21 +3,20 @@
 import {
   ArrowDown,
   ArrowUp,
-  Check,
   Gift,
-  LoaderCircle,
   Plus,
   Trash2,
-  X,
   Sparkles,
   Layers,
-  ArrowRight,
   RefreshCw,
   Package,
   Wand2,
   CheckCircle2,
   AlertCircle,
   Crown,
+  Flame,
+  SlidersHorizontal,
+  Percent,
 } from "lucide-react";
 
 import {
@@ -35,6 +34,7 @@ type Prize = {
   available_stock: number;
   probability: string | number;
   active: boolean;
+  is_vip?: boolean;
 };
 
 type QueueItem = {
@@ -60,20 +60,38 @@ export default function QueueManager({
   const router = useRouter();
 
   const [queue, setQueue] = useState<QueueItem[]>(initialQueue);
-  const [openAdd, setOpenAdd] = useState(false);
-  const [selectedPrizeId, setSelectedPrizeId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"ALL" | "NORMAL" | "VIP">("ALL");
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [normalGenerateCount, setNormalGenerateCount] = useState<number>(50);
+  const [vipGenerateCount, setVipGenerateCount] = useState<number>(30);
 
-  const availablePrizes = useMemo(() => {
-    return prizes.filter((prize) => prize.active && prize.available_stock > 0);
-  }, [prizes]);
+  // Divide a fila em Normal e VIP mantendo a ordem relativa
+  const normalQueue = useMemo(
+    () => queue.filter((item) => !item.prizes.is_vip),
+    [queue],
+  );
 
-  const nextPrize = useMemo(() => {
-    return queue[0]?.prizes ?? null;
-  }, [queue]);
+  const vipQueue = useMemo(
+    () => queue.filter((item) => item.prizes.is_vip),
+    [queue],
+  );
+
+  // Prêmios disponíveis divididos por tipo
+  const normalPrizes = useMemo(
+    () => prizes.filter((p) => p.active && !p.is_vip),
+    [prizes],
+  );
+
+  const vipPrizes = useMemo(
+    () => prizes.filter((p) => p.active && p.is_vip),
+    [prizes],
+  );
+
+  const nextNormalPrize = normalQueue[0]?.prizes ?? null;
+  const nextVipPrize = vipQueue[0]?.prizes ?? null;
 
   const refreshQueue = useCallback(async () => {
     setRefreshing(true);
@@ -123,41 +141,49 @@ export default function QueueManager({
     }
   }
 
-  async function generateAutoQueue() {
+  async function generateAutoQueue(isVip: boolean, count: number, clearExisting = false) {
     setSaving(true);
     setError(null);
     setSuccess(null);
 
+    const poolLabel = isVip ? "VIP" : "Normal";
     try {
       const res = await fetchAdminProxy(`/prize-queue/event/${eventId}/generate-auto`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 12 }),
+        body: JSON.stringify({
+          count,
+          isVip,
+          clearExisting,
+        }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Erro ao gerar fila automática.");
+        throw new Error(data.message || `Erro ao gerar fila ${poolLabel} automática.`);
       }
 
-      setSuccess("Fila de 12 sorteios gerada com sucesso!");
+      setSuccess(`Fila ${poolLabel} gerada com ${count} itens baseados nas porcentagens do banco!`);
       await refreshQueue();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao gerar fila automática.");
+      setError(err instanceof Error ? err.message : `Erro ao gerar fila ${poolLabel}.`);
     } finally {
       setSaving(false);
     }
   }
 
-  async function clearAllQueue() {
-    if (!confirm("Tem certeza que deseja esvaziar a fila de sorteios?")) return;
+  async function clearPoolQueue(isVip?: boolean) {
+    const poolLabel = isVip === true ? "VIP" : isVip === false ? "Normal" : "Completa";
+    if (!confirm(`Tem certeza que deseja esvaziar a fila de sorteios ${poolLabel}?`)) return;
+
     setSaving(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const res = await fetchAdminProxy(`/prize-queue/event/${eventId}/clear`, {
+      const queryParam = isVip !== undefined ? `?isVip=${isVip}` : "";
+      const res = await fetchAdminProxy(`/prize-queue/event/${eventId}/clear${queryParam}`, {
         method: "DELETE",
       });
 
@@ -166,8 +192,8 @@ export default function QueueManager({
         throw new Error(data.message || "Erro ao limpar fila.");
       }
 
-      setSuccess("Fila de prêmios esvaziada!");
-      setQueue([]);
+      setSuccess(`Fila ${poolLabel} esvaziada com sucesso!`);
+      await refreshQueue();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao limpar fila.");
@@ -201,75 +227,48 @@ export default function QueueManager({
     }
   }
 
-  async function moveToTop(index: number) {
-    if (index <= 0 || index >= queue.length) return;
+  // Reordenação por Pool (Normal ou VIP)
+  async function handlePoolMove(isVip: boolean, index: number, direction: "up" | "down" | "top") {
+    const poolItems = isVip ? [...vipQueue] : [...normalQueue];
+    if (index < 0 || index >= poolItems.length) return;
 
-    const targetItem = queue[index];
-    const remaining = queue.filter((_, i) => i !== index);
-    const updatedQueue = [targetItem, ...remaining].map((item, idx) => ({
-      ...item,
-      position: idx + 1,
-    }));
+    let updatedPool: QueueItem[] = [];
 
-    setQueue(updatedQueue);
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const queueIds = updatedQueue.map((item) => item.id);
-      const res = await fetchAdminProxy(`/prize-queue/event/${eventId}/reorder`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueIds }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Erro ao reordenar a fila.");
-      }
-
-      setSuccess(`"${targetItem.prizes.name}" definido como Próximo Giro!`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao reordenar.");
-      await refreshQueue();
-    } finally {
-      setSaving(false);
+    if (direction === "top") {
+      if (index === 0) return;
+      const target = poolItems[index];
+      const rest = poolItems.filter((_, i) => i !== index);
+      updatedPool = [target, ...rest];
+    } else {
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= poolItems.length) return;
+      updatedPool = [...poolItems];
+      const temp = updatedPool[index];
+      updatedPool[index] = updatedPool[targetIndex];
+      updatedPool[targetIndex] = temp;
     }
-  }
 
-  async function handleMove(index: number, direction: "up" | "down") {
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= queue.length) return;
-
-    const newQueue = [...queue];
-    const temp = newQueue[index];
-    newQueue[index] = newQueue[targetIndex];
-    newQueue[targetIndex] = temp;
-
-    const updatedQueue = newQueue.map((item, idx) => ({
-      ...item,
-      position: idx + 1,
-    }));
-
-    setQueue(updatedQueue);
     setSaving(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const queueIds = updatedQueue.map((item) => item.id);
+      const queueIds = updatedPool.map((item) => item.id);
       const res = await fetchAdminProxy(`/prize-queue/event/${eventId}/reorder`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueIds }),
+        body: JSON.stringify({
+          queueIds,
+          isVip,
+        }),
       });
 
       if (!res.ok) {
-        throw new Error("Erro ao reordenar a fila.");
+        throw new Error("Erro ao salvar nova ordem da fila.");
       }
 
-      setSuccess("Ordem da fila atualizada!");
+      setSuccess(`Ordem da fila ${isVip ? "VIP" : "Normal"} atualizada!`);
+      await refreshQueue();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao reordenar.");
@@ -283,233 +282,554 @@ export default function QueueManager({
     <div className="space-y-6">
       {/* Toast Feedback */}
       {success && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#E3F6EA] border-2 border-[#B7E4C7] text-[#0F7A3D] text-sm font-bold animate-in fade-in">
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#E3F6EA] border-2 border-[#B7E4C7] text-[#0F7A3D] text-sm font-bold shadow-sm animate-in fade-in">
           <CheckCircle2 size={20} className="text-[#0F7A3D] shrink-0" />
           <span>{success}</span>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#FDE8EC] border-2 border-[#F5C2CD] text-[#A3112F] text-sm font-bold animate-in fade-in">
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#FDE8EC] border-2 border-[#F5C2CD] text-[#A3112F] text-sm font-bold shadow-sm animate-in fade-in">
           <AlertCircle size={20} className="text-[#A3112F] shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Banner Destaque Próximo Prêmio & Ações Rápidas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 relative overflow-hidden rounded-3xl bg-surface border-2 border-line-strong p-6 sm:p-8 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FFF3DC] border border-[#F2D19B] text-[#8A4B00] text-xs font-black uppercase tracking-wider">
-                <Sparkles size={14} className="text-[#8A4B00] animate-pulse" />
-                <span>PRÓXIMO PRÊMIO NA ROLETA</span>
-              </div>
-              <button
-                onClick={refreshQueue}
-                disabled={refreshing}
-                className="p-2.5 rounded-xl bg-[#EEF1F5] border border-line-strong text-text hover:text-text hover:bg-line-strong transition"
-                title="Atualizar Fila"
-              >
-                <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
-              </button>
-            </div>
+      {/* Barra de Filtro / Abas das Duas Filas */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-2 rounded-2xl bg-surface border-2 border-line">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setActiveTab("ALL")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition ${
+              activeTab === "ALL"
+                ? "bg-text text-paper shadow-md"
+                : "text-text hover:bg-line"
+            }`}
+          >
+            <SlidersHorizontal size={16} />
+            <span>Visão Lado a Lado (Ambas as Filas)</span>
+            <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-paper/20">
+              {queue.length}
+            </span>
+          </button>
 
-            {nextPrize ? (
-              <div className="my-3">
-                <h3 className="text-3xl sm:text-5xl font-black text-text tracking-tight leading-none mb-3">
-                  {nextPrize.name}
-                </h3>
-                <div className="flex flex-wrap items-center gap-3 text-sm font-medium">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#E3F6EA] border border-[#B7E4C7] text-[#0F7A3D] font-bold text-xs">
-                    Estoque: {nextPrize.available_stock} unidades disponíveis
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#E6F0FF] border border-[#B9D4F7] text-finora-600 font-bold text-xs">
-                    ⭐ Posição #1 na Fila de Giros
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="my-3">
-                <h3 className="text-2xl sm:text-3xl font-black text-text">
-                  Fila de prêmios vazia
-                </h3>
-                <p className="text-sm text-text mt-2 font-medium">
-                  A roleta usará o sorteio automático por peso ou você pode clicar no botão abaixo para gerar uma fila pronta com 12 prêmios!
-                </p>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setActiveTab("NORMAL")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition ${
+              activeTab === "NORMAL"
+                ? "bg-finora-600 text-white shadow-md"
+                : "text-text hover:bg-line"
+            }`}
+          >
+            <Gift size={16} />
+            <span>Fila Roleta Normal</span>
+            <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-white/20">
+              {normalQueue.length}
+            </span>
+          </button>
 
-          {/* Botões de Ação na Fila */}
-          <div className="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-line">
-            <button
-              onClick={generateAutoQueue}
-              disabled={saving || availablePrizes.length === 0}
-              className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-finora-600 hover:bg-finora-700 text-white font-black text-sm transition active:scale-95 disabled:opacity-50"
-            >
-              <Wand2 size={18} />
-              <span>Gerar Fila Automática (12 Giros)</span>
-            </button>
-
-            {queue.length > 0 && (
-              <button
-                onClick={clearAllQueue}
-                disabled={saving}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#FDE8EC] hover:bg-[#FAD4DC] border border-[#F5C2CD] text-[#A3112F] font-bold text-sm transition active:scale-95 disabled:opacity-50"
-              >
-                <Trash2 size={16} />
-                <span>Esvaziar Fila</span>
-              </button>
-            )}
-          </div>
+          <button
+            onClick={() => setActiveTab("VIP")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition ${
+              activeTab === "VIP"
+                ? "bg-gradient-to-r from-amber-600 to-yellow-600 text-white shadow-md"
+                : "text-text hover:bg-line"
+            }`}
+          >
+            <Crown size={16} className="text-yellow-300" />
+            <span>Fila Roleta VIP (CEO Hugo)</span>
+            <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-black/20">
+              {vipQueue.length}
+            </span>
+          </button>
         </div>
 
-        {/* Card Catálogo de Adição Rápida */}
-        <div className="rounded-3xl bg-surface border-2 border-line p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-black text-text flex items-center gap-2">
-                <Package size={20} className="text-[#0F7A3D]" />
-                <span>Adicionar à Fila</span>
-              </h4>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#EEF1F5] text-text border border-line-strong">
-                {availablePrizes.length} ativos
-              </span>
-            </div>
-            <p className="text-xs text-text font-medium mb-4">
-              Clique em qualquer brinde abaixo para colocar no fim da fila instantaneamente:
-            </p>
+        <button
+          onClick={refreshQueue}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-paper border border-line-strong hover:bg-line text-text font-bold text-xs transition"
+          title="Sincronizar Filas em Tempo Real"
+        >
+          <RefreshCw size={15} className={refreshing ? "animate-spin text-finora-600" : ""} />
+          <span>Atualizar Dados</span>
+        </button>
+      </div>
 
-            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-              {availablePrizes.length === 0 ? (
-                <p className="text-xs text-text-2 italic py-4 text-center">Nenhum prêmio ativo com estoque disponível.</p>
-              ) : (
-                availablePrizes.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => addPrizeById(p.id)}
+      {/* Renderização das Duas Filas (Lado a Lado ou Isolada) */}
+      <div
+        className={`grid gap-6 ${
+          activeTab === "ALL" ? "grid-cols-1 xl:grid-cols-2" : "grid-cols-1"
+        }`}
+      >
+        {/* ========================================================= */}
+        {/* COLUNA 1: FILA DA ROLETA NORMAL (BRINDES GERAIS)           */}
+        {/* ========================================================= */}
+        {(activeTab === "ALL" || activeTab === "NORMAL") && (
+          <div className="space-y-6">
+            {/* Card Destaque: Próximo Brinde Normal */}
+            <div className="relative overflow-hidden rounded-3xl bg-surface border-2 border-line-strong p-6 sm:p-7 flex flex-col justify-between shadow-sm">
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 rounded-full bg-finora-500/5 blur-2xl pointer-events-none" />
+
+              <div>
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black uppercase tracking-wider">
+                    <Gift size={14} className="text-emerald-600" />
+                    <span>ROLETA NORMAL · 1º GIRO</span>
+                  </div>
+                  <span className="text-xs font-black px-3 py-1 rounded-full bg-paper border border-line-strong text-text">
+                    {normalQueue.length} giros agendados
+                  </span>
+                </div>
+
+                {nextNormalPrize ? (
+                  <div className="my-2">
+                    <span className="text-xs font-bold text-text-2 uppercase tracking-wider">
+                      Próximo prêmio a sair no estande:
+                    </span>
+                    <h3 className="text-2xl sm:text-4xl font-black text-text tracking-tight leading-tight mt-1 mb-2">
+                      {nextNormalPrize.name}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold">
+                        Estoque: {nextNormalPrize.available_stock} un.
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-bold">
+                        <Percent size={12} /> {Number(nextNormalPrize.probability || 0)}% no banco
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-bold">
+                        Posição #1 na Fila
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="my-2 py-2">
+                    <h3 className="text-2xl font-black text-text">Fila Normal Vazia</h3>
+                    <p className="text-xs text-text-2 mt-1">
+                      A roleta normal sorteará dinamicamente ou gere uma fila volumosa abaixo.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Controles de Ação Fila Normal */}
+              <div className="mt-6 pt-5 border-t border-line flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <select
+                    value={normalGenerateCount}
+                    onChange={(e) => setNormalGenerateCount(Number(e.target.value))}
                     disabled={saving}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-[#EEF1F5] hover:bg-[#D2EFDC] border border-line-strong hover:border-[#B7E4C7] text-left transition group"
+                    className="px-3 py-2 rounded-xl bg-paper border border-line-strong text-xs font-black text-text focus:outline-none"
                   >
-                    <span className="font-bold text-text group-hover:text-[#0F7A3D] text-sm truncate">
-                      {p.name}
-                    </span>
-                    <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-[#E3F6EA] text-[#0F7A3D] border border-[#B7E4C7] shrink-0 ml-2 flex items-center gap-1">
-                      <Plus size={12} /> {p.available_stock} un.
-                    </span>
+                    <option value={30}>30 Giros</option>
+                    <option value={50}>50 Giros</option>
+                    <option value={100}>100 Giros</option>
+                  </select>
+
+                  <button
+                    onClick={() => generateAutoQueue(false, normalGenerateCount, false)}
+                    disabled={saving || normalPrizes.length === 0}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-finora-600 hover:bg-finora-700 text-white font-black text-xs transition active:scale-95 disabled:opacity-50"
+                  >
+                    <Wand2 size={15} />
+                    <span>Gerar Fila Normal Alta (% Real)</span>
                   </button>
-                ))
+                </div>
+
+                {normalQueue.length > 0 && (
+                  <button
+                    onClick={() => clearPoolQueue(false)}
+                    disabled={saving}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FDE8EC] hover:bg-[#FAD4DC] border border-[#F5C2CD] text-[#A3112F] font-bold text-xs transition active:scale-95 disabled:opacity-50"
+                  >
+                    <Trash2 size={14} />
+                    <span>Limpar Normal</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Adicionar Prêmio Rápido à Fila Normal */}
+            <div className="rounded-3xl bg-surface border-2 border-line p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-black text-text flex items-center gap-2">
+                  <Package size={16} className="text-emerald-600" />
+                  <span>Adicionar Brinde à Fila Normal</span>
+                </h4>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-paper border border-line-strong text-text-2">
+                  {normalPrizes.length} brindes cadastrados
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                {normalPrizes.length === 0 ? (
+                  <p className="text-xs text-text-2 italic col-span-2 py-3 text-center">
+                    Nenhum brinde normal cadastrado.
+                  </p>
+                ) : (
+                  normalPrizes.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => addPrizeById(p.id)}
+                      disabled={saving || p.available_stock <= 0}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-paper hover:bg-emerald-50 border border-line hover:border-emerald-200 text-left transition group disabled:opacity-40"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="font-bold text-text group-hover:text-emerald-800 text-xs truncate">
+                          {p.name}
+                        </p>
+                        <p className="text-[10px] text-text-2 font-semibold">
+                          {Number(p.probability)}% · {p.available_stock} un.
+                        </p>
+                      </div>
+                      <span className="p-1 rounded-lg bg-emerald-100 text-emerald-800 shrink-0">
+                        <Plus size={13} />
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Lista Ordenada da Fila Normal */}
+            <div className="rounded-3xl bg-surface border-2 border-line p-5">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
+                <div>
+                  <h4 className="text-base font-black text-text flex items-center gap-2">
+                    <Layers size={18} className="text-finora-600" />
+                    <span>Sequência da Roleta Normal</span>
+                  </h4>
+                  <p className="text-[11px] text-text-2 font-medium mt-0.5">
+                    Ordem cronológica exata em que cada participante receberá seu brinde no estande.
+                  </p>
+                </div>
+              </div>
+
+              {normalQueue.length === 0 ? (
+                <div className="text-center py-10 border-2 border-dashed border-line rounded-2xl bg-paper">
+                  <Gift size={36} className="mx-auto text-text-2 mb-2 opacity-50" />
+                  <p className="text-xs font-bold text-text">Fila de brindes normais vazia</p>
+                  <p className="text-[11px] text-text-2 mt-1">
+                    Clique em "Gerar Fila Normal Alta" acima para popular 50 giros proporcionais.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                  {normalQueue.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className={`flex items-center justify-between p-3 rounded-2xl border transition ${
+                        index === 0
+                          ? "bg-emerald-50/60 border-2 border-emerald-300"
+                          : "bg-paper border-line hover:border-line-strong"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                            index === 0
+                              ? "bg-emerald-600 text-white"
+                              : "bg-line text-text"
+                          }`}
+                        >
+                          #{index + 1}
+                        </span>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-black text-text text-xs sm:text-sm truncate">
+                              {item.prizes.name}
+                            </h5>
+                            {index === 0 && (
+                              <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded uppercase">
+                                Próximo
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-text-2 font-medium">
+                            Estoque: <span className="font-bold text-emerald-700">{item.prizes.available_stock} un.</span> · Chance: <span className="font-bold">{Number(item.prizes.probability)}%</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Ações */}
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        {index > 0 && (
+                          <button
+                            onClick={() => handlePoolMove(false, index, "top")}
+                            disabled={saving}
+                            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-[11px] transition active:scale-95"
+                            title="Colocar como #1 (Próximo Giro)"
+                          >
+                            <Flame size={12} />
+                            <span>#1</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handlePoolMove(false, index, "up")}
+                          disabled={index === 0 || saving}
+                          className="p-1.5 rounded-lg bg-line hover:bg-line-strong text-text disabled:opacity-20 transition"
+                          title="Subir posição"
+                        >
+                          <ArrowUp size={14} />
+                        </button>
+                        <button
+                          onClick={() => handlePoolMove(false, index, "down")}
+                          disabled={index === normalQueue.length - 1 || saving}
+                          className="p-1.5 rounded-lg bg-line hover:bg-line-strong text-text disabled:opacity-20 transition"
+                          title="Descer posição"
+                        >
+                          <ArrowDown size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleRemove(item.id)}
+                          disabled={saving}
+                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition ml-0.5"
+                          title="Remover da fila"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Tabela / Lista da Fila Numerada */}
-      <div className="rounded-3xl bg-surface border-2 border-line p-6 sm:p-8">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-line">
-          <div>
-            <h3 className="text-xl font-black text-text flex items-center gap-2">
-              <Layers size={22} className="text-finora-600" />
-              <span>Ordem da Fila de Sorteios</span>
-            </h3>
-            <p className="text-xs text-text font-medium mt-1">
-              {queue.length === 1 ? "1 prêmio agendado" : `${queue.length} prêmios agendados em sequência`}
-            </p>
-          </div>
-        </div>
+        {/* ========================================================= */}
+        {/* COLUNA 2: FILA DA ROLETA VIP (CEO HUGO / REUNIÃO)          */}
+        {/* ========================================================= */}
+        {(activeTab === "ALL" || activeTab === "VIP") && (
+          <div className="space-y-6">
+            {/* Card Destaque: Próximo Prêmio VIP */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1C1405] via-[#241A08] to-[#120D04] border-2 border-[#D4AF37] p-6 sm:p-7 flex flex-col justify-between text-white shadow-xl">
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-52 h-52 rounded-full bg-amber-400/10 blur-3xl pointer-events-none" />
 
-        {queue.length === 0 ? (
-          <div className="text-center py-14 border-2 border-dashed border-line rounded-3xl bg-paper">
-            <Gift size={44} className="mx-auto text-text-2 mb-3" />
-            <h4 className="text-lg font-bold text-text">Nenhum prêmio na fila</h4>
-            <p className="text-sm text-text-2 mt-1 max-w-md mx-auto">
-              Sua fila está vazia. Clique em <strong>"Gerar Fila Automática"</strong> acima ou selecione prêmios no painel lateral de adição rápida.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {queue.map((item, index) => (
-              <div
-                key={item.id}
-                className={`flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition ${
-                  index === 0
-                    ? "bg-[#EEF1F5] border-2 border-[#F2D19B]"
-                    : "bg-paper border-line-strong hover:bg-[#EEF1F5] hover:border-line-strong"
-                }`}
-              >
-                <div className="flex items-center gap-4 min-w-0">
-                  <span
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${
-                      index === 0
-                        ? "bg-warning text-white"
-                        : "bg-line text-text border border-line-strong"
-                    }`}
-                  >
-                    #{item.position || index + 1}
+              <div>
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#FFE57F] text-xs font-black uppercase tracking-wider">
+                    <Crown size={14} className="text-[#FFD700]" />
+                    <span>ROLETA VIP · REUNIÃO COM CEO</span>
+                  </div>
+                  <span className="text-xs font-black px-3 py-1 rounded-full bg-white/10 border border-[#D4AF37]/40 text-[#FFE57F]">
+                    {vipQueue.length} giros agendados
                   </span>
+                </div>
 
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h5 className="font-black text-text text-base sm:text-lg truncate">
-                        {item.prizes.name}
-                      </h5>
-                      {index === 0 && (
-                        <span className="text-[11px] font-black text-[#8A4B00] bg-[#FFF3DC] border border-[#F2D19B] px-2 py-0.5 rounded-md uppercase tracking-wider">
-                          Próximo Giro
-                        </span>
-                      )}
+                {nextVipPrize ? (
+                  <div className="my-2">
+                    <span className="text-xs font-bold text-amber-200/80 uppercase tracking-wider">
+                      Próximo prêmio nobre da Roleta VIP:
+                    </span>
+                    <h3 className="text-2xl sm:text-4xl font-black text-[#FFF4A3] tracking-tight leading-tight mt-1 mb-2 drop-shadow-sm">
+                      {nextVipPrize.name}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-200 font-bold">
+                        Estoque: {nextVipPrize.available_stock} un.
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-yellow-400/20 border border-yellow-400/40 text-yellow-200 font-bold">
+                        <Percent size={12} /> {Number(nextVipPrize.probability || 0)}% no banco
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-white/10 border border-white/20 text-white font-bold">
+                        Posição #1 na Fila VIP
+                      </span>
                     </div>
-                    <p className="text-xs text-text font-semibold mt-0.5">
-                      Estoque restante: <span className="text-[#0F7A3D] font-bold">{item.prizes.available_stock} un.</span>
+                  </div>
+                ) : (
+                  <div className="my-2 py-2">
+                    <h3 className="text-2xl font-black text-amber-100">Fila VIP Vazia</h3>
+                    <p className="text-xs text-amber-200/70 mt-1">
+                      A roleta VIP sorteará dinamicamente por peso ou gere uma fila volumosa abaixo.
                     </p>
                   </div>
+                )}
+              </div>
+
+              {/* Controles de Ação Fila VIP */}
+              <div className="mt-6 pt-5 border-t border-amber-500/30 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <select
+                    value={vipGenerateCount}
+                    onChange={(e) => setVipGenerateCount(Number(e.target.value))}
+                    disabled={saving}
+                    className="px-3 py-2 rounded-xl bg-black/40 border border-amber-500/40 text-xs font-black text-amber-200 focus:outline-none"
+                  >
+                    <option value={20}>20 Giros</option>
+                    <option value={30}>30 Giros</option>
+                    <option value={50}>50 Giros</option>
+                  </select>
+
+                  <button
+                    onClick={() => generateAutoQueue(true, vipGenerateCount, false)}
+                    disabled={saving || vipPrizes.length === 0}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-xs transition active:scale-95 shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                  >
+                    <Sparkles size={15} />
+                    <span>Gerar Fila VIP Alta (% Real)</span>
+                  </button>
                 </div>
 
-                {/* Controles de Subir, Descer, Tornar Próximo e Excluir */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {index > 0 && (
-                    <button
-                      onClick={() => moveToTop(index)}
-                      disabled={saving}
-                      className="hidden sm:flex items-center gap-1 px-3 py-2 rounded-full bg-[#FFF3DC] hover:bg-[#FDE7BE] text-[#8A4B00] border border-[#F2D19B] text-xs font-black transition active:scale-95"
-                      title="Mover diretamente para a posição #1 (Próximo Giro)"
-                    >
-                      <Crown size={13} className="text-[#8A4B00]" />
-                      <span>Tornar Próximo</span>
-                    </button>
-                  )}
-
+                {vipQueue.length > 0 && (
                   <button
-                    onClick={() => handleMove(index, "up")}
-                    disabled={index === 0 || saving}
-                    className="p-2.5 rounded-xl bg-line hover:bg-line-strong text-text disabled:opacity-20 transition"
-                    title="Subir posição na fila"
-                  >
-                    <ArrowUp size={16} />
-                  </button>
-
-                  <button
-                    onClick={() => handleMove(index, "down")}
-                    disabled={index === queue.length - 1 || saving}
-                    className="p-2.5 rounded-xl bg-line hover:bg-line-strong text-text disabled:opacity-20 transition"
-                    title="Descer posição na fila"
-                  >
-                    <ArrowDown size={16} />
-                  </button>
-
-                  <button
-                    onClick={() => handleRemove(item.id)}
+                    onClick={() => clearPoolQueue(true)}
                     disabled={saving}
-                    className="p-2.5 rounded-xl bg-[#FDE8EC] hover:bg-[#FAD4DC] text-[#A3112F] border border-[#F5C2CD] transition ml-1"
-                    title="Remover este prêmio da fila"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/60 hover:bg-red-900/80 border border-red-500/40 text-red-200 font-bold text-xs transition active:scale-95 disabled:opacity-50"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
+                    <span>Limpar VIP</span>
                   </button>
+                )}
+              </div>
+            </div>
+
+            {/* Adicionar Prêmio Rápido à Fila VIP */}
+            <div className="rounded-3xl bg-surface border-2 border-line p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-black text-text flex items-center gap-2">
+                  <Crown size={16} className="text-amber-600" />
+                  <span>Adicionar Prêmio à Fila VIP</span>
+                </h4>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-paper border border-line-strong text-text-2">
+                  {vipPrizes.length} prêmios nobres
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                {vipPrizes.length === 0 ? (
+                  <p className="text-xs text-text-2 italic col-span-2 py-3 text-center">
+                    Nenhum prêmio VIP cadastrado.
+                  </p>
+                ) : (
+                  vipPrizes.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => addPrizeById(p.id)}
+                      disabled={saving || p.available_stock <= 0}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-paper hover:bg-amber-50 border border-line hover:border-amber-300 text-left transition group disabled:opacity-40"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="font-bold text-text group-hover:text-amber-900 text-xs truncate">
+                          {p.name}
+                        </p>
+                        <p className="text-[10px] text-text-2 font-semibold">
+                          {Number(p.probability)}% · {p.available_stock} un.
+                        </p>
+                      </div>
+                      <span className="p-1 rounded-lg bg-amber-100 text-amber-900 shrink-0">
+                        <Plus size={13} />
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Lista Ordenada da Fila VIP */}
+            <div className="rounded-3xl bg-surface border-2 border-line p-5">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
+                <div>
+                  <h4 className="text-base font-black text-text flex items-center gap-2">
+                    <Crown size={18} className="text-amber-600" />
+                    <span>Sequência da Roleta VIP</span>
+                  </h4>
+                  <p className="text-[11px] text-text-2 font-medium mt-0.5">
+                    Ordem cronológica exata em que cada participante com reunião agendada receberá seu prêmio VIP.
+                  </p>
                 </div>
               </div>
-            ))}
+
+              {vipQueue.length === 0 ? (
+                <div className="text-center py-10 border-2 border-dashed border-line rounded-2xl bg-paper">
+                  <Crown size={36} className="mx-auto text-amber-600/50 mb-2" />
+                  <p className="text-xs font-bold text-text">Fila de prêmios VIP vazia</p>
+                  <p className="text-[11px] text-text-2 mt-1">
+                    Clique em "Gerar Fila VIP Alta" acima para popular 30 giros proporcionais.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                  {vipQueue.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className={`flex items-center justify-between p-3 rounded-2xl border transition ${
+                        index === 0
+                          ? "bg-amber-50/70 border-2 border-amber-400"
+                          : "bg-paper border-line hover:border-line-strong"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                            index === 0
+                              ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-sm"
+                              : "bg-line text-text"
+                          }`}
+                        >
+                          #{index + 1}
+                        </span>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-black text-text text-xs sm:text-sm truncate">
+                              {item.prizes.name}
+                            </h5>
+                            {index === 0 && (
+                              <span className="text-[10px] font-black text-amber-900 bg-amber-200 border border-amber-400 px-2 py-0.5 rounded uppercase">
+                                Próximo VIP
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-text-2 font-medium">
+                            Estoque: <span className="font-bold text-amber-800">{item.prizes.available_stock} un.</span> · Chance: <span className="font-bold">{Number(item.prizes.probability)}%</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Ações */}
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        {index > 0 && (
+                          <button
+                            onClick={() => handlePoolMove(true, index, "top")}
+                            disabled={saving}
+                            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold text-[11px] transition active:scale-95"
+                            title="Colocar como #1 (Próximo Giro VIP)"
+                          >
+                            <Crown size={12} />
+                            <span>#1</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handlePoolMove(true, index, "up")}
+                          disabled={index === 0 || saving}
+                          className="p-1.5 rounded-lg bg-line hover:bg-line-strong text-text disabled:opacity-20 transition"
+                          title="Subir posição"
+                        >
+                          <ArrowUp size={14} />
+                        </button>
+                        <button
+                          onClick={() => handlePoolMove(true, index, "down")}
+                          disabled={index === vipQueue.length - 1 || saving}
+                          className="p-1.5 rounded-lg bg-line hover:bg-line-strong text-text disabled:opacity-20 transition"
+                          title="Descer posição"
+                        >
+                          <ArrowDown size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleRemove(item.id)}
+                          disabled={saving}
+                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition ml-0.5"
+                          title="Remover da fila VIP"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import { AddPrizeQueueDto } from './dto/add-prize-queue.dto';
@@ -85,25 +86,40 @@ export class PrizeQueueController {
   generateAuto(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Body('count') count?: number,
+    @Body('isVip') isVip?: boolean,
+    @Body('clearExisting') clearExisting?: boolean,
     @AdminUserId() adminUserId?: number | null,
     @Ip() ipAddress?: string,
     @Headers('user-agent') userAgent?: string,
   ) {
-    return this.prizeQueueService.generateAutoQueue(eventId, count || 12, {
-      adminUserId,
-      ipAddress,
-      userAgent: userAgent ?? null,
-    });
+    return this.prizeQueueService.generateAutoQueue(
+      eventId,
+      count || 50,
+      isVip,
+      clearExisting ?? false,
+      {
+        adminUserId,
+        ipAddress,
+        userAgent: userAgent ?? null,
+      },
+    );
   }
 
   @Delete('event/:eventId/clear')
   clearQueue(
     @Param('eventId', ParseIntPipe) eventId: number,
+    @Query('isVip') isVipQuery?: string,
     @AdminUserId() adminUserId?: number | null,
     @Ip() ipAddress?: string,
     @Headers('user-agent') userAgent?: string,
   ) {
-    return this.prizeQueueService.clearQueue(eventId, {
+    const isVip =
+      isVipQuery === 'true'
+        ? true
+        : isVipQuery === 'false'
+          ? false
+          : undefined;
+    return this.prizeQueueService.clearQueue(eventId, isVip, {
       adminUserId,
       ipAddress,
       userAgent: userAgent ?? null,

@@ -1,4 +1,4 @@
-﻿import { ArrayMinSize, IsArray, IsInt, Min } from 'class-validator';
+﻿import { ArrayMinSize, IsArray, IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
 
 export class ReorderPrizeQueueDto {
   @IsArray()
@@ -6,4 +6,8 @@ export class ReorderPrizeQueueDto {
   @IsInt({ each: true })
   @Min(1, { each: true })
   queueIds: number[];
+
+  @IsOptional()
+  @IsBoolean()
+  isVip?: boolean;
 }

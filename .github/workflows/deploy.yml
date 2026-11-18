@@ -97,7 +97,7 @@ jobs:
 
       - name: Sincronizar Banco de Dados (DB Push)
         continue-on-error: true
-        run: npx prisma db push --skip-generate
+        run: npx prisma db push --accept-data-loss
 
       - name: Seed Sócios no Banco de Dados
         continue-on-error: true

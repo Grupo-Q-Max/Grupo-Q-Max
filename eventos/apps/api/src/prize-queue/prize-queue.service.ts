@@ -441,23 +441,53 @@ export class PrizeQueueService {
   ) {
     const current = await this.findByEvent(eventId);
 
-    const currentIds = current.map((item) => item.id);
+    let targetItems = current;
+    if (dto.isVip !== undefined) {
+      targetItems = current.filter((item) => item.prizes.is_vip === dto.isVip);
+    } else {
+      // Auto-detecta se a lista enviada corresponde inteiramente a um subconjunto VIP ou Normal
+      const isAllVip = current
+        .filter((item) => item.prizes.is_vip)
+        .map((item) => item.id);
+      const isAllNormal = current
+        .filter((item) => !item.prizes.is_vip)
+        .map((item) => item.id);
+
+      if (
+        dto.queueIds.length === isAllVip.length &&
+        isAllVip.every((id) => dto.queueIds.includes(id))
+      ) {
+        targetItems = current.filter((item) => item.prizes.is_vip);
+      } else if (
+        dto.queueIds.length === isAllNormal.length &&
+        isAllNormal.every((id) => dto.queueIds.includes(id))
+      ) {
+        targetItems = current.filter((item) => !item.prizes.is_vip);
+      }
+    }
+
+    const targetIds = targetItems.map((item) => item.id);
 
     if (
-      dto.queueIds.length !== currentIds.length ||
-      !currentIds.every((id) => dto.queueIds.includes(id))
+      dto.queueIds.length !== targetIds.length ||
+      !targetIds.every((id) => dto.queueIds.includes(id))
     ) {
       throw new BadRequestException(
-        'A nova ordem precisa conter exatamente todos os itens atuais da fila.',
+        'A nova ordem precisa conter exatamente todos os itens da fila correspondente.',
       );
     }
 
-    const before = current.map((item) => ({
+    const before = targetItems.map((item) => ({
       queueId: item.id,
       prizeId: item.prize_id,
       prizeName: item.prizes.name,
       position: item.position,
     }));
+
+    // Mantém as posições relativas do pool intactas sem alterar o outro pool
+    const availablePositions = targetItems
+      .map((item) => item.position)
+      .sort((a, b) => a - b);
 
     await this.prisma.$transaction(
       dto.queueIds.map((queueId, index) =>
@@ -465,9 +495,8 @@ export class PrizeQueueService {
           where: {
             id: queueId,
           },
-
           data: {
-            position: index + 1,
+            position: availablePositions[index],
           },
         }),
       ),
@@ -478,23 +507,19 @@ export class PrizeQueueService {
     await this.auditService.log({
       adminUserId: context?.adminUserId ?? null,
       eventId,
-
       actorType: 'ADMIN',
       action: 'PRIZE_QUEUE_REORDERED',
-
       entityType: 'PRIZE_QUEUE',
-
       description: 'Fila de prêmios reordenada.',
-
       beforeData: before,
-
-      afterData: after.map((item) => ({
-        queueId: item.id,
-        prizeId: item.prize_id,
-        prizeName: item.prizes.name,
-        position: item.position,
-      })),
-
+      afterData: after
+        .filter((item) => dto.queueIds.includes(item.id))
+        .map((item) => ({
+          queueId: item.id,
+          prizeId: item.prize_id,
+          prizeName: item.prizes.name,
+          position: item.position,
+        })),
       ipAddress: context?.ipAddress ?? null,
       userAgent: context?.userAgent ?? null,
     });
@@ -504,61 +529,162 @@ export class PrizeQueueService {
 
   async generateAutoQueue(
     eventId: number,
-    count = 12,
+    count = 50,
+    isVip?: boolean,
+    clearExisting = false,
     context?: RequestContext,
   ) {
     const event = await this.ensureEvent(eventId);
 
+    // Se solicitado para limpar previamente os itens deste pool
+    if (clearExisting) {
+      if (isVip !== undefined) {
+        const itemsToDelete = await this.prisma.prize_queue.findMany({
+          where: {
+            event_id: eventId,
+            status: 'WAITING',
+            prizes: { is_vip: isVip },
+          },
+          select: { id: true },
+        });
+        if (itemsToDelete.length > 0) {
+          await this.prisma.prize_queue.deleteMany({
+            where: { id: { in: itemsToDelete.map((i) => i.id) } },
+          });
+        }
+      } else {
+        await this.prisma.prize_queue.deleteMany({
+          where: {
+            event_id: eventId,
+            status: 'WAITING',
+          },
+        });
+      }
+      await this.normalizePositions(eventId);
+    }
+
+    const prizeWhere: any = {
+      event_id: event.id,
+      active: true,
+      available_stock: { gt: 0 },
+    };
+    if (isVip !== undefined) {
+      prizeWhere.is_vip = isVip;
+    }
+
     const activePrizes = await this.prisma.prizes.findMany({
-      where: {
-        event_id: event.id,
-        active: true,
-        available_stock: { gt: 0 },
-      },
+      where: prizeWhere,
       orderBy: { id: 'asc' },
     });
 
     if (activePrizes.length === 0) {
       throw new BadRequestException(
-        'Nenhum prêmio ativo com estoque disponível para criar fila.',
+        isVip !== undefined
+          ? `Nenhum prêmio ${isVip ? 'VIP' : 'Normal'} ativo com estoque disponível para criar fila.`
+          : 'Nenhum prêmio ativo com estoque disponível para criar fila.',
       );
     }
 
-    // Pega a maior posição atual
-    const currentQueue = await this.findByEvent(eventId);
-    let startPosition = currentQueue.length;
+    // Pega as probabilidades configuradas no banco
+    const weights = activePrizes.map((p) => Math.max(0, Number(p.probability) || 0));
+    const totalWeight = weights.reduce((acc, w) => acc + w, 0);
 
-    // Gera lista ponderada de prêmios
-    const newItemsData: {
-      event_id: number;
-      prize_id: number;
-      position: number;
-      status: 'WAITING';
-    }[] = [];
+    // Monta a distribuição proporcional exata às porcentagens
+    const allocations: { prize: typeof activePrizes[0]; count: number }[] = [];
+    let allocatedTotal = 0;
 
-    // Distribui os prêmios proporcionalmente
-    for (let i = 0; i < count; i++) {
-      const prize = activePrizes[i % activePrizes.length];
-      startPosition++;
-      newItemsData.push({
-        event_id: eventId,
-        prize_id: prize.id,
-        position: startPosition,
-        status: 'WAITING',
-      });
+    for (let i = 0; i < activePrizes.length; i++) {
+      const p = activePrizes[i];
+      let prizeTarget = 0;
+      if (totalWeight > 0) {
+        prizeTarget = Math.round(count * (weights[i] / totalWeight));
+      } else {
+        prizeTarget = Math.round(count / activePrizes.length);
+      }
+      // Se tiver peso > 0 e a contagem for razoável, garante ao menos 1 item
+      if (prizeTarget === 0 && (weights[i] > 0 || count >= activePrizes.length)) {
+        prizeTarget = 1;
+      }
+      // Respeita o estoque disponível
+      prizeTarget = Math.min(prizeTarget, p.available_stock);
+      allocations.push({ prize: p, count: prizeTarget });
+      allocatedTotal += prizeTarget;
     }
+
+    // Se faltou preencher até o count requisitado, adiciona aos prêmios com estoque restante
+    if (allocatedTotal < count) {
+      const sortedByWeight = [...allocations].sort(
+        (a, b) => Number(b.prize.probability) - Number(a.prize.probability),
+      );
+      for (const item of sortedByWeight) {
+        const canAdd = Math.min(
+          count - allocatedTotal,
+          item.prize.available_stock - item.count,
+        );
+        if (canAdd > 0) {
+          item.count += canAdd;
+          allocatedTotal += canAdd;
+        }
+        if (allocatedTotal >= count) break;
+      }
+    }
+
+    // Constrói a lista de IDs de prêmios
+    const prizeIdPool: number[] = [];
+    for (const item of allocations) {
+      for (let c = 0; c < item.count; c++) {
+        prizeIdPool.push(item.prize.id);
+      }
+    }
+
+    if (prizeIdPool.length === 0) {
+      throw new BadRequestException(
+        'Estoque insuficiente para alocar itens na fila.',
+      );
+    }
+
+    // Embaralha suavemente (Fisher-Yates) para dispersar proporcionalmente na sequência
+    for (let i = prizeIdPool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [prizeIdPool[i], prizeIdPool[j]] = [prizeIdPool[j], prizeIdPool[i]];
+    }
+
+    // Pega a maior posição atual para acrescentar após os itens existentes
+    const currentQueue = await this.prisma.prize_queue.findMany({
+      where: {
+        event_id: eventId,
+        status: 'WAITING',
+      },
+      orderBy: { position: 'desc' },
+      take: 1,
+    });
+    let startPosition = currentQueue.length > 0 ? currentQueue[0].position : 0;
+
+    const newItemsData = prizeIdPool.map((prizeId) => {
+      startPosition += 1;
+      return {
+        event_id: eventId,
+        prize_id: prizeId,
+        position: startPosition,
+        status: 'WAITING' as const,
+      };
+    });
 
     await this.prisma.prize_queue.createMany({
       data: newItemsData,
     });
 
+    await this.normalizePositions(eventId);
+
+    const poolLabel =
+      isVip === true ? 'VIP' : isVip === false ? 'Normal' : 'Geral';
     await this.auditService.log({
       adminUserId: context?.adminUserId ?? null,
       eventId,
       actorType: 'ADMIN',
       action: 'PRIZE_QUEUE_AUTO_GENERATED',
       entityType: 'PRIZE_QUEUE',
-      description: `Fila de prêmios preenchida automaticamente com ${count} itens.`,
+      description: `Fila de prêmios (${poolLabel}) preenchida com ${newItemsData.length} itens baseados nas porcentagens configuradas.`,
       ipAddress: context?.ipAddress ?? null,
       userAgent: context?.userAgent ?? null,
     });
@@ -566,28 +692,52 @@ export class PrizeQueueService {
     return this.findByEvent(eventId);
   }
 
-  async clearQueue(eventId: number, context?: RequestContext) {
+  async clearQueue(
+    eventId: number,
+    isVip?: boolean,
+    context?: RequestContext,
+  ) {
     await this.ensureEvent(eventId);
 
-    await this.prisma.prize_queue.deleteMany({
-      where: {
-        event_id: eventId,
-        status: 'WAITING',
-      },
-    });
+    if (isVip !== undefined) {
+      const itemsToDelete = await this.prisma.prize_queue.findMany({
+        where: {
+          event_id: eventId,
+          status: 'WAITING',
+          prizes: { is_vip: isVip },
+        },
+        select: { id: true },
+      });
+      if (itemsToDelete.length > 0) {
+        await this.prisma.prize_queue.deleteMany({
+          where: { id: { in: itemsToDelete.map((i) => i.id) } },
+        });
+      }
+    } else {
+      await this.prisma.prize_queue.deleteMany({
+        where: {
+          event_id: eventId,
+          status: 'WAITING',
+        },
+      });
+    }
 
+    await this.normalizePositions(eventId);
+
+    const poolLabel =
+      isVip === true ? 'VIP' : isVip === false ? 'Normal' : 'Geral';
     await this.auditService.log({
       adminUserId: context?.adminUserId ?? null,
       eventId,
       actorType: 'ADMIN',
       action: 'PRIZE_QUEUE_CLEARED',
       entityType: 'PRIZE_QUEUE',
-      description: 'Fila de prêmios esvaziada.',
+      description: `Fila de prêmios (${poolLabel}) esvaziada.`,
       ipAddress: context?.ipAddress ?? null,
       userAgent: context?.userAgent ?? null,
     });
 
-    return [];
+    return this.findByEvent(eventId);
   }
 
   async history(eventId: number) {
