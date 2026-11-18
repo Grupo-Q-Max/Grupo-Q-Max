@@ -281,7 +281,9 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
       },
     });
 
-    console.log(`[MeetingMail] Convite enviado com sucesso para ${bossEmail} e ${secondEmail}`);
+    console.log(
+      `[MeetingMail] Convite enviado com sucesso para ${[bossEmail, secondEmail, thirdEmail].filter(Boolean).join(', ')}`,
+    );
     return true;
   } catch (err: any) {
     console.error('[MeetingMail] Erro ao enviar convite por e-mail:', err.message);

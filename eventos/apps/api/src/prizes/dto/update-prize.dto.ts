@@ -1,4 +1,4 @@
-﻿import {
+import {
   IsBoolean,
   IsNumber,
   IsOptional,
