@@ -60,6 +60,7 @@ export type MeetingInvitePayload = {
     chairsCount?: number | null;
   };
   bossEmail: string;
+  secondEmail?: string;
 };
 
 export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<boolean> {
@@ -67,6 +68,7 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
     return false;
   }
   const { meetingId, scheduledAt, participant, bossEmail } = payload;
+  const secondEmail = payload.secondEmail || env('SECOND_MEETING_EMAIL') || 'rodrigo@grupoqmax.com.br';
   const user = env('EMAIL_USER') || env('SMTP_USER') || 'envio@qmax.com.br';
 
   const startTime = scheduledAt;
@@ -126,6 +128,7 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
     'LOCATION:Microsoft Teams (Online)',
     `ORGANIZER;CN="Hugo Ludwig Werninghaus (Grupo Q-Max)":mailto:${bossEmail}`,
     `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Hugo Ludwig Werninghaus":mailto:${bossEmail}`,
+    `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Equipe Q-Max / Finora":mailto:${secondEmail}`,
   ];
 
   if (participantEmail && !participantEmail.includes('@visitante.')) {
@@ -252,13 +255,16 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
     }
 
     const recipients = [bossEmail];
+    if (secondEmail && secondEmail !== bossEmail) {
+      recipients.push(secondEmail);
+    }
     if (participantEmail && !participantEmail.includes('@visitante.') && participantEmail.includes('@')) {
       recipients.push(participantEmail);
     }
 
     await transporter.sendMail({
       from: `"Grupo Q-Max & Finora" <${user}>`,
-      to: bossEmail,
+      to: [bossEmail, secondEmail],
       cc: participantEmail && !participantEmail.includes('@visitante.') ? participantEmail : undefined,
       subject: `📅 Reunião Estratégica: Hugo Werninghaus & ${participantName} (Invictus)`,
       html: htmlContent,
@@ -269,7 +275,7 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
       },
     });
 
-    console.log(`[MeetingMail] Convite enviado com sucesso para ${bossEmail}`);
+    console.log(`[MeetingMail] Convite enviado com sucesso para ${bossEmail} e ${secondEmail}`);
     return true;
   } catch (err: any) {
     console.error('[MeetingMail] Erro ao enviar convite por e-mail:', err.message);

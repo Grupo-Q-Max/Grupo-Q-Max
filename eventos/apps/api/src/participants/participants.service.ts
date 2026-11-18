@@ -198,7 +198,12 @@ export class ParticipantsService {
       return 'BLOCKED';
     }
 
-    if (checks.some((check) => check.decision === 'REVIEW')) {
+    // Alertas de IP ou DEVICE compartilhados no estande/evento não devem jogar a participação em REVIEW,
+    // garantindo que os novos participantes caiam imediatamente na fila do operador.
+    const nonNetworkReviews = checks.filter(
+      (check) => check.decision === 'REVIEW' && check.type !== 'DEVICE' && check.type !== 'IP',
+    );
+    if (nonNetworkReviews.length > 0) {
       return 'REVIEW';
     }
 
@@ -1596,7 +1601,7 @@ export class ParticipantsService {
   async findPendingDraws(eventId: number, search?: string) {
     const where: any = {
       event_id: eventId,
-      status: { in: ['PENDING', 'APPROVED'] },
+      status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
       draws: null,
     };
 

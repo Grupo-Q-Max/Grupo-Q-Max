@@ -150,7 +150,7 @@ describe('ParticipantsService - Fluxo Direto Sem Disparos', () => {
     expect(prismaMock.participations.findMany).toHaveBeenCalledWith({
       where: {
         event_id: 1,
-        status: { in: ['PENDING', 'APPROVED'] },
+        status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
         draws: null,
       },
       include: {

@@ -155,6 +155,7 @@ export class MeetingsService {
           chairsCount: meeting.participants.chairs_count,
         },
         bossEmail: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
+        secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
       }).catch((err) => {
         console.warn('[MeetingsService] Falha ao enviar convite por e-mail:', err.message);
       });

@@ -319,26 +319,17 @@ function RegistrationForm({
 
         {/* Confirmação do Grande Sorteio Geral */}
         <div className="px-5">
-          <div className="flex flex-col gap-2 rounded-2xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/15 to-amber-500/20 p-4 text-amber-200 shadow-lg animate-pop-burst">
+          <div className="flex flex-col gap-2.5 rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-500/15 via-slate-900/90 to-amber-950/30 p-4 text-amber-200 shadow-md">
             <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
-              <span className="text-lg">🎉</span>
+              <span className="text-lg">🏆</span>
               <span>Inscrição Confirmada no Grande Sorteio Geral (19/11)!</span>
             </div>
-            <div className="flex items-center gap-3 bg-slate-950/60 rounded-xl p-2.5 border border-amber-400/30">
-              <img
-                src="/fotopolimerizador.jpg"
-                alt="Fotopolimerizador"
-                className="h-16 w-16 object-contain rounded-lg bg-white/10 p-1 flex-none"
-              />
-              <div className="flex flex-col text-left">
-                <span className="text-[10px] font-mono font-bold uppercase text-amber-300">Prêmio Oficial</span>
-                <strong className="text-xs sm:text-sm text-white font-bold">Fotopolimerizador Odontológico</strong>
-                <span className="text-[11px] text-slate-300 leading-tight">Apuração ao vivo no dia 19/11.</span>
-              </div>
-            </div>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-              Além de participar no estande Finora, <strong>seu número de cadastro está automaticamente concorrendo ao Fotopolimerizador no Grande Sorteio Geral do dia 19/11</strong>! Fique atento às transmissões no telão do evento.
+              Seu cupom está registrado e concorrendo oficialmente ao <strong>Fotopolimerizador Odontológico</strong> no sorteio geral do dia 19/11 no telão.
             </p>
+            <div className="mt-1 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-200 font-semibold">
+              📍 <strong>Dias 20 e 21/11:</strong> Venha ao estande Finora com seu código PIN para girar a Roleta VIP e retirar brindes exclusivos!
+            </div>
           </div>
         </div>
 
@@ -375,73 +366,59 @@ function RegistrationForm({
       <div className="flex flex-1 flex-col gap-4.5 px-5 pt-2 pb-6">
         {error && <Alert>{error}</Alert>}
 
-        {/* Card Passo a Passo & Grande Sorteio Geral 19/11 */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-accent/40 bg-gradient-to-b from-slate-900/95 to-slate-950 p-4.5 shadow-lg">
+        {/* Banner Oficial Finora Experience - Sem imagem pesada, design luxuoso */}
+        <div className="flex flex-col gap-3.5 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-slate-900/95 via-slate-950 to-amber-950/20 p-4 sm:p-5 shadow-xl">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/20 px-3 py-1 font-mono text-[11px] font-extrabold uppercase tracking-wider text-accent border border-accent/30">
-              ⚡ Passo a Passo
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-accent border border-accent/30">
+              ✦ FINORA EXPERIENCE · INVICTUS 2026 ✦
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-[11.5px] font-bold text-amber-300 border border-amber-400/40">
-              🎁 Grande Sorteio Geral dia 19/11
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-[11px] font-bold text-amber-300 border border-amber-400/40">
+              ✨ Ativação VIP & Sorteio Geral
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-            <div className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-900/70 p-2.5">
-              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent/25 text-xs font-mono font-black text-accent">
+          {/* Destaque Dia 19 e Visita Dias 20 e 21 */}
+          <div className="rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-amber-500/20 p-3.5 text-center shadow-xs">
+            <div className="flex items-center justify-center gap-2 text-amber-300 font-display text-sm font-black uppercase tracking-wide">
+              <span>🗓️</span>
+              <span>Cadastros Realizados no Dia 19/11</span>
+            </div>
+            <p className="mt-1.5 text-xs sm:text-[13px] text-slate-200 leading-relaxed">
+              Compareça ao estande da Finora nos <strong>dias 20 ou 21/11</strong> com o seu <strong>código PIN</strong> para girar a <strong>Roleta VIP</strong> e retirar seus prêmios exclusivos!
+            </p>
+          </div>
+
+          {/* 3 Passos Minimalistas e Elegantes */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+            <div className="flex items-center gap-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 p-2.5">
+              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent/20 text-xs font-mono font-black text-accent">
                 1
               </span>
               <div className="flex flex-col">
-                <strong className="text-xs font-bold text-white">Preencha o Cadastro</strong>
-                <span className="text-[11px] text-slate-300 leading-tight">Insira seus dados rápidos abaixo para gerar seu código de acesso.</span>
+                <strong className="text-xs font-bold text-white">Preencha os Dados</strong>
+                <span className="text-[11px] text-slate-400 leading-tight">Gere seu código oficial</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-900/70 p-2.5">
-              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent/25 text-xs font-mono font-black text-accent">
+            <div className="flex items-center gap-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 p-2.5">
+              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-amber-400/20 text-xs font-mono font-black text-amber-300">
                 2
               </span>
               <div className="flex flex-col">
-                <strong className="text-xs font-bold text-white">Ativação no Estande</strong>
-                <span className="text-[11px] text-slate-300 leading-tight">Visite o estande Finora para participar e retirar brindes exclusivos.</span>
+                <strong className="text-xs font-bold text-amber-200">Guarde seu PIN</strong>
+                <span className="text-[11px] text-slate-400 leading-tight">Receba seu número único</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/40 bg-amber-950/30 p-2.5">
+            <div className="flex items-center gap-2.5 rounded-xl border border-amber-400/30 bg-amber-950/20 p-2.5">
               <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-amber-400 text-slate-950 text-xs font-mono font-black">
                 3
               </span>
               <div className="flex flex-col">
-                <strong className="text-xs font-bold text-amber-200">Grande Sorteio Geral</strong>
-                <span className="text-[11px] text-amber-300/90 leading-tight">Concorra automaticamente ao sorteio oficial no dia 19/11!</span>
+                <strong className="text-xs font-bold text-amber-200">Estande dias 20 e 21</strong>
+                <span className="text-[11px] text-amber-300/80 leading-tight">Gire a Roleta VIP</span>
               </div>
             </div>
-          </div>
-
-          {/* Card Recompensa Sorteio Geral 19/11 */}
-          <div className="flex flex-col sm:flex-row items-center gap-3.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-950/60 via-slate-900 to-amber-950/60 p-3 shadow-md">
-            <div className="relative h-20 w-20 flex-none overflow-hidden rounded-lg border border-amber-400/60 bg-white/5 shadow-inner">
-              <img
-                src="/fotopolimerizador.jpg"
-                alt="Fotopolimerizador - Grande Sorteio Geral"
-                className="h-full w-full object-contain p-1"
-              />
-            </div>
-            <div className="flex flex-1 flex-col text-center sm:text-left">
-              <span className="font-mono text-[10px] font-extrabold uppercase tracking-widest text-amber-300">
-                🏆 Grande Prêmio Oficial · Sorteio Geral 19/11
-              </span>
-              <strong className="text-sm font-bold text-white leading-snug">
-                Fotopolimerizador Odontológico
-              </strong>
-              <span className="text-[11px] text-slate-300 leading-tight mt-0.5">
-                O sorteio geral acontecerá exclusivamente no dia 19/11. Todo participante cadastrado concorre automaticamente!
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/20 to-amber-500/15 px-3.5 py-2.5 text-center text-xs font-semibold text-amber-200 shadow-xs">
-            📢 <strong>Atenção:</strong> Ao concluir o cadastro, você garante seu brinde no estande e <strong>estará concorrendo oficialmente ao Fotopolimerizador no dia 19/11</strong>!
           </div>
         </div>
 
