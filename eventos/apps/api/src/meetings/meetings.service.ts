@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { notifyLive } from '../live/live';
 import { sendMeetingInvite } from './meeting-mail.helper';
+import { getHugoBusyIntervals, createMicrosoftCalendarEvent } from './microsoft-calendar.helper';
 
 @Injectable()
 export class MeetingsService {
@@ -32,7 +33,11 @@ export class MeetingsService {
       },
     });
 
+    // 1. Horários já ocupados no banco de dados local
     const takenTimes = existingMeetings.map((m) => m.scheduled_at.toISOString());
+
+    // 2. Consulta 100% em tempo real na agenda do Hugo no Microsoft 365 (Graph API)
+    const hugoBusyIntervals = await getHugoBusyIntervals(dateString);
 
     const slots: Date[] = [];
     // Agendas de hora em hora (09h às 18h), com duração de 45 min e sem horários das 12h às 14h (almoço)
@@ -46,7 +51,19 @@ export class MeetingsService {
     const now = new Date();
     const availableSlots = slots.filter((slot) => {
       if (slot <= now) return false;
-      return !takenTimes.includes(slot.toISOString());
+      if (takenTimes.includes(slot.toISOString())) return false;
+
+      // Se houver conflito com qualquer evento na agenda do Microsoft 365 do Hugo, bloqueia o horário
+      const slotStart = slot.getTime();
+      const slotEnd = slotStart + 45 * 60 * 1000;
+
+      const collidesWithHugo = hugoBusyIntervals.some((busy) => {
+        const busyStart = busy.start.getTime();
+        const busyEnd = busy.end.getTime();
+        return slotStart < busyEnd && slotEnd > busyStart;
+      });
+
+      return !collidesWithHugo;
     });
 
     return availableSlots.map((s) => s.toISOString());
@@ -157,7 +174,24 @@ export class MeetingsService {
         );
       }
 
-      // 4. Dispara convite de calendário oficial do Outlook (.ics) para o chefe Hugo
+      // 4. Cria evento 100% automático no calendário do Hugo no Microsoft 365 (Teams)
+      createMicrosoftCalendarEvent({
+        bossEmail: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
+        secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
+        participantName: meeting.participants.full_name,
+        participantEmail: cleanMeetingEmail || meeting.participants.email,
+        phone: meeting.participants.phone,
+        clinicName: meeting.participants.clinic_name,
+        chairsCount: meeting.participants.chairs_count,
+        croNumber: meeting.participants.cro_number,
+        croState: meeting.participants.cro_state,
+        scheduledAt,
+        durationMinutes: 45,
+      }).catch((err) => {
+        console.warn('[MeetingsService] Falha ao criar evento no Microsoft Graph:', err.message);
+      });
+
+      // 5. Dispara convite de calendário oficial do Outlook (.ics) para o chefe Hugo
       sendMeetingInvite({
         meetingId: meeting.id,
         scheduledAt,
