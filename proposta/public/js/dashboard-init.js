@@ -263,9 +263,14 @@ function inicializarStreamNotificacoes() {
       if (usuario.role === "Diretor") {
         exibirToastNotificacao(
           "SYS.NTF_REQD",
-          "Novo Pedido de Desconto",
-          `Vendedor <strong>${escapeHTML(data.vendedorNome)}</strong> solicitou <strong>${escapeHTML(data.percentual)}%</strong> de desconto para a clínica <strong>${escapeHTML(data.nomeClinica)}</strong>.`
+          "⚠️ Novo Pedido de Desconto Comercial (>20%)",
+          `Comercial <strong>${escapeHTML(data.vendedorNome)}</strong> solicitou <strong>${escapeHTML(data.percentual)}%</strong> de desconto para a clínica <strong>${escapeHTML(data.nomeClinica)}</strong>. Aguarda aprovação do Diretor/Admin.`
         );
+        const bloco = document.getElementById("blocoSolicitacoes");
+        if (bloco) {
+          bloco.style.display = "block";
+          bloco.style.boxShadow = "0 0 25px rgba(245, 158, 11, 0.45)";
+        }
         if (typeof carregarSolicitacoes === "function") {
           carregarSolicitacoes();
         }
