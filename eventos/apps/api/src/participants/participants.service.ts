@@ -852,17 +852,6 @@ export class ParticipantsService {
             });
         });
       }
-
-      // NOVO: Auto-Agendamento Comercial Inteligente no final do cadastro
-      try {
-        const nextSlot = await this.meetingsService.getNextAvailableSlot(event.id, 5);
-        if (nextSlot) {
-          await this.meetingsService.bookMeeting(event.id, result.participant.id, nextSlot);
-          (result as any).autoBookedSlot = nextSlot;
-        }
-      } catch (err) {
-        console.error(`[Auto-Booking] Falha ao auto-agendar para participante ${result.participant.id}:`, err);
-      }
     }
 
     notifyLive(dto.eventId);

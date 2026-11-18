@@ -43,6 +43,12 @@ export class MeetingsController {
     return this.meetingsService.getAvailableSlots(eventId, dateString);
   }
 
+  @Get('event/:eventId/next-slot')
+  async getNextSlot(@Param('eventId', ParseIntPipe) eventId: number) {
+    const nextSlot = await this.meetingsService.getNextAvailableSlot(eventId, 7);
+    return { nextSlot };
+  }
+
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('event/:eventId/book')
   bookMeeting(

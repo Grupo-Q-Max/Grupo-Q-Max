@@ -308,12 +308,12 @@ export async function renderGoldenTicketCanvas(
   ctx.lineTo(contentLeft + 48, headerY + 14);
   ctx.stroke();
 
-  // Wordmark Finora Experience
-  ctx.fillStyle = "#FFF4A3";
-  ctx.font = "900 15px monospace, 'Courier New', Courier";
+  // Wordmark Finora (limpo, dourado e sem cortes: apenas FINORA)
+  ctx.fillStyle = "#FFD700";
+  ctx.font = "900 18px monospace, 'Courier New', Courier";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText("FINORA EXPERIENCE", contentLeft + 62, headerY);
+  ctx.fillText("FINORA", contentLeft + 62, headerY);
 
   // B. Badge Nobre "BILHETE DOURADO · VIP"
   const badgeText = "BILHETE DOURADO · VIP";

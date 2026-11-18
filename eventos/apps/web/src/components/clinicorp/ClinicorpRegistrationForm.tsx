@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CalendarCheck, CheckCircle2, LoaderCircle, Users } from "lucide-react";
+import { AlertCircle, ArrowRight, CalendarCheck, CheckCircle2, Clock, Crown, LoaderCircle, Sparkles, Users, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api-client";
 import Link from "next/link";
 import { StepBar } from "@/components/brand/Brand";
@@ -198,6 +198,20 @@ function RegistrationForm({
   const [loading, setLoading] = useState(false);
   const [offlineSaved, setOfflineSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [ceoModalOpen, setCeoModalOpen] = useState(false);
+  const [ceoNextSlot, setCeoNextSlot] = useState<string | null>(null);
+  const [bookingCeo, setBookingCeo] = useState(false);
+  const [pendingParticipationData, setPendingParticipationData] = useState<{
+    id: number;
+    participantId: number;
+    name: string;
+    isVip: boolean;
+    vipCode?: string;
+    alreadyRegistered: boolean;
+    hasDrawn: boolean;
+    drawnPrize: string | null;
+  } | null>(null);
+
   const [registeredParticipation, setRegisteredParticipation] = useState<{
     id: number;
     name: string;
@@ -208,6 +222,74 @@ function RegistrationForm({
     hasDrawn?: boolean;
     drawnPrize?: string | null;
   } | null>(null);
+
+  async function handleAcceptCeoMeeting() {
+    if (!pendingParticipationData) return;
+    setBookingCeo(true);
+    let chosenSlot = ceoNextSlot;
+
+    try {
+      if (!chosenSlot) {
+        const resSlot = await fetch(`${getApiBaseUrl()}/meetings/event/${eventId}/next-slot`).catch(() => null);
+        if (resSlot?.ok) {
+          const d = await resSlot.json();
+          chosenSlot = d.nextSlot;
+        }
+      }
+
+      if (chosenSlot) {
+        await fetch(`${getApiBaseUrl()}/meetings/event/${eventId}/book`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            participantId: pendingParticipationData.participantId,
+            scheduledAt: chosenSlot,
+          }),
+        });
+      }
+
+      confetti({
+        particleCount: 120,
+        spread: 90,
+        origin: { y: 0.6 },
+        colors: ["#FFD700", "#FF9900", "#FFF9B8", "#FFFFFF"],
+        disableForReducedMotion: true,
+      });
+
+      setRegisteredParticipation({
+        ...pendingParticipationData,
+        isVip: true,
+        autoBookedSlot: chosenSlot,
+      });
+      setCeoModalOpen(false);
+    } catch (e) {
+      console.error("Erro ao agendar reunião com CEO:", e);
+      setRegisteredParticipation({
+        ...pendingParticipationData,
+        isVip: true,
+      });
+      setCeoModalOpen(false);
+    } finally {
+      setBookingCeo(false);
+    }
+  }
+
+  function handleDeclineCeoMeeting() {
+    if (!pendingParticipationData) return;
+    setCeoModalOpen(false);
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ["#22C3DC", "#0077FF", "#4ADE80", "#FFFFFF"],
+      disableForReducedMotion: true,
+    });
+    setRegisteredParticipation({
+      ...pendingParticipationData,
+      isVip: false,
+      autoBookedSlot: null,
+    });
+  }
 
   useEffect(() => {
     setDeviceId(createDeviceId());
@@ -275,6 +357,38 @@ function RegistrationForm({
       const participation = result.participation || result;
 
       if (participation.status === "APPROVED" || participation.status === "PENDING" || result.alreadyRegistered) {
+        const isVipUser = Boolean(
+          result.vip ||
+            participation.vip ||
+            participation.vip_codes ||
+            result.participation?.vipCode ||
+            (vipStatus === "valid" && !result.error)
+        );
+
+        const partData = {
+          id: participation.id,
+          participantId: result.participant?.id || participation.participantId || participation.participant_id || participation.id,
+          name: fullName.trim() || result.participant?.fullName || "Participante",
+          isVip: isVipUser,
+          vipCode: result.participation?.vipCode || participation.vipCode || (vipStatus === "valid" ? vipCode.trim() : undefined),
+          alreadyRegistered: Boolean(result.alreadyRegistered),
+          hasDrawn: Boolean(result.participation?.hasDrawn),
+          drawnPrize: result.participation?.drawnPrize || null,
+        };
+
+        // Se NÃO for VIP e ainda não realizou o sorteio, abre o popup perguntando se quer marcar com o CEO para ter Roleta VIP!
+        if (!isVipUser && !partData.hasDrawn) {
+          setPendingParticipationData(partData);
+          setCeoModalOpen(true);
+          fetch(`${getApiBaseUrl()}/meetings/event/${eventId}/next-slot`)
+            .then((r) => r.json())
+            .then((d) => {
+              if (d?.nextSlot) setCeoNextSlot(d.nextSlot);
+            })
+            .catch(() => {});
+          return;
+        }
+
         confetti({
           particleCount: 90,
           spread: 80,
@@ -283,15 +397,8 @@ function RegistrationForm({
           disableForReducedMotion: true,
         });
         setRegisteredParticipation({
-          // PIN de retirada = id da participação (o que o balcão busca).
-          id: participation.id,
-          name: fullName.trim() || result.participant?.fullName || "Participante",
+          ...partData,
           autoBookedSlot: result.autoBookedSlot || null,
-          isVip: Boolean(result.vip || participation.vip || participation.vip_codes || result.participation?.vipCode || (vipStatus === "valid" && !result.error)),
-          vipCode: result.participation?.vipCode || participation.vipCode || (vipStatus === "valid" ? vipCode.trim() : undefined),
-          alreadyRegistered: Boolean(result.alreadyRegistered),
-          hasDrawn: Boolean(result.participation?.hasDrawn),
-          drawnPrize: result.participation?.drawnPrize || null,
         });
         return;
       }
@@ -724,6 +831,105 @@ function RegistrationForm({
         </button>
         <span className="text-center text-[13px] text-slate-400">Giro liberado no estande · Participação garantida no Grande Sorteio Geral dia 19/11</span>
       </StickyActions>
+
+      {/* Modal Popup: Convite de Reunião com o CEO para Destravar Roleta VIP */}
+      {ceoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-6 sm:p-8 text-white shadow-[0_20px_70px_rgba(255,215,0,0.45)] animate-pop-burst">
+            {/* Fechar no X recusa e vai para roleta normal */}
+            <button
+              type="button"
+              onClick={handleDeclineCeoMeeting}
+              aria-label="Fechar"
+              className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Ícone de Destaque Nobre */}
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] shadow-[0_0_25px_rgba(255,215,0,0.6)]">
+              <Crown size={32} className="text-[#3E2723]" />
+            </div>
+
+            <h3 className="mt-4 text-center font-display text-2xl sm:text-3xl font-black text-white leading-tight">
+              Deseja marcar uma reunião com nosso CEO?
+            </h3>
+
+            <p className="mt-2 text-center text-sm sm:text-[15px] text-[#C2CEE3] leading-relaxed">
+              Ao agendar um bate-papo exclusivo com nosso CEO durante o evento, você ganha acesso instantâneo à{" "}
+              <strong className="text-[#FFD700] font-black">Roleta VIP</strong>!
+            </p>
+
+            {/* Benefícios VIP */}
+            <div className="my-4 flex flex-col gap-2 rounded-2xl border border-[#FFD700]/40 bg-gradient-to-r from-[#FFD700]/15 via-[#FF9900]/10 to-[#FFD700]/15 p-4 text-xs sm:text-sm">
+              <div className="flex items-center gap-2 font-mono font-black text-[#FFD700] uppercase text-[11px]">
+                <Sparkles size={14} className="text-[#FFD700]" />
+                <span>O que você concorre na Roleta VIP:</span>
+              </div>
+              <ul className="grid grid-cols-1 gap-2 text-slate-200 text-xs sm:text-[13px] pt-1">
+                <li className="flex items-center gap-2.5">
+                  <span className="text-[#FFD700] text-base">👑</span>
+                  <span><strong>Mentoria Exclusiva com o CEO (2 horas)</strong></span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="text-[#FFD700] text-base">💎</span>
+                  <span><strong>100% ou 50% de Desconto no 1º Honorário</strong></span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="text-[#FFD700] text-base">📜</span>
+                  <span><strong>Certificado Oficial Finora & Diagnóstico Tributário</strong></span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Informação do Próximo Horário */}
+            {ceoNextSlot && (
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
+                <CalendarCheck size={18} className="text-[#FFD700] flex-none" />
+                <span>
+                  Horário sugerido:{" "}
+                  <strong className="text-white">
+                    {new Date(ceoNextSlot).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} às{" "}
+                    {new Date(ceoNextSlot).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  </strong>{" "}
+                  no estande Finora.
+                </span>
+              </div>
+            )}
+
+            {/* Ações */}
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleAcceptCeoMeeting}
+                disabled={bookingCeo}
+                className="w-full flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-6 font-display text-base sm:text-lg font-black text-[#3E2723] shadow-[0_10px_30px_rgba(255,215,0,0.5)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                {bookingCeo ? (
+                  <>
+                    <LoaderCircle size={20} className="animate-spin text-[#3E2723]" />
+                    <span>Liberando Roleta VIP…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sim, Agendar com CEO & Liberar Roleta VIP 🌟</span>
+                    <ArrowRight size={18} />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeclineCeoMeeting}
+                disabled={bookingCeo}
+                className="w-full py-2.5 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                Não, quero continuar apenas com a Roleta Normal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

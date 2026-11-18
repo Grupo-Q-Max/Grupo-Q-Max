@@ -164,6 +164,13 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   const [rotationNormal, setRotationNormal] = useState<number>(0);
   const [rotationVip, setRotationVip] = useState<number>(0);
   const [result, setResult] = useState<DrawResponse | null>(null);
+
+  // Sequência de Giros VIP: Normal primeiro -> Botão Roleta VIP -> Roleta VIP -> Suspense -> Parabéns
+  type VipSpinStage = "READY_NORMAL" | "SPINNING_NORMAL" | "WAITING_VIP" | "SPINNING_VIP" | "SUSPENSE";
+  const [vipSpinStage, setVipSpinStage] = useState<VipSpinStage>("READY_NORMAL");
+  const [storedDrawResponse, setStoredDrawResponse] = useState<DrawResponse | null>(null);
+  const [normalWonPrize, setNormalWonPrize] = useState<DrawPrize | null>(null);
+  const [suspenseStatus, setSuspenseStatus] = useState<string>("");
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isDemoSpin, setIsDemoSpin] = useState<boolean>(false);
@@ -296,6 +303,10 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     );
     setIsDemoSpin(false);
     setResult(null);
+    setVipSpinStage("READY_NORMAL");
+    setStoredDrawResponse(null);
+    setNormalWonPrize(null);
+    setSuspenseStatus("");
     setIsParticipantConfirmed(false);
     setPhase("READY");
   }
@@ -320,6 +331,10 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     setParticipantInfo(asVip ? "🌟 Bilhete VIP · Dupla Roleta Liberada" : "Giro de Demonstração");
     setIsDemoSpin(true);
     setResult(null);
+    setVipSpinStage("READY_NORMAL");
+    setStoredDrawResponse(null);
+    setNormalWonPrize(null);
+    setSuspenseStatus("");
     setIsParticipantConfirmed(true);
     setPhase("READY");
   }
@@ -332,6 +347,10 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     setParticipantInfo("");
     setIsDemoSpin(false);
     setIsParticipantConfirmed(false);
+    setVipSpinStage("READY_NORMAL");
+    setStoredDrawResponse(null);
+    setNormalWonPrize(null);
+    setSuspenseStatus("");
     setError(null);
     setPhase("READY");
     // Avisos que chegaram durante o giro foram ignorados: atualiza a fila agora.
@@ -468,7 +487,11 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
       if (e.code === "Space" || e.code === "Enter") {
         if (phase === "READY" && isParticipantConfirmed) {
           e.preventDefault();
-          handleSpin();
+          if (isVipSpin && vipSpinStage === "WAITING_VIP") {
+            handleSpinVip();
+          } else if (!isVipSpin || vipSpinStage === "READY_NORMAL") {
+            handleSpinNormal();
+          }
         } else if (phase === "RESULT") {
           e.preventDefault();
           returnToQueue();
@@ -494,11 +517,15 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
 
-  async function handleSpin() {
+  async function handleSpinNormal() {
     if (phase === "DRAWING" || normalPrizes.length === 0) return;
 
     setPhase("DRAWING");
+    if (isVipSpin) {
+      setVipSpinStage("SPINNING_NORMAL");
+    }
     setError(null);
+    setSuspenseStatus("");
     triggerHaptic();
 
     try {
@@ -559,6 +586,8 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         drawResponseData = data;
       }
 
+      setStoredDrawResponse(drawResponseData);
+
       // 1. Rotação da Roleta 1 (Normal / Brindes)
       const normalTargetId = drawResponseData.prize.id;
       const normalPrizeIndex = Math.max(0, normalPrizes.findIndex((p) => p.id === normalTargetId));
@@ -572,20 +601,6 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
       rotationRef.current = finalNormalRotation;
       setRotation(finalNormalRotation);
 
-      // 2. Rotação da Roleta 2 (VIP), se o participante for VIP
-      if (isVipSpin && drawResponseData.vipPrize && vipPrizes.length > 0) {
-        const vipTargetId = drawResponseData.vipPrize.id;
-        const vipPrizeIndex = Math.max(0, vipPrizes.findIndex((p) => p.id === vipTargetId));
-        const vipSliceDeg = 360 / Math.max(vipPrizes.length, 1);
-        const vipTargetDeg = (360 - vipPrizeIndex * vipSliceDeg) % 360;
-        const vipCurrent = ((rotationVipRef.current % 360) + 360) % 360;
-        // 9 giros completos para criar um timing dramático diferenciado
-        const finalVipRotation = rotationVipRef.current + 9 * 360 + ((vipTargetDeg - vipCurrent + 360) % 360);
-
-        rotationVipRef.current = finalVipRotation;
-        setRotationVip(finalVipRotation);
-      }
-
       if (stopTickerRef.current) {
         stopTickerRef.current();
       }
@@ -593,6 +608,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         setTickerCount((c) => c + 1);
       });
 
+      // Aguarda o giro físico da Roleta 1 (5 segundos)
       setTimeout(() => {
         if (stopTickerRef.current) {
           stopTickerRef.current();
@@ -601,20 +617,33 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
 
         if (soundEnabled) {
           playSlowdownSound();
-          playWinFanfare();
-          if (drawResponseData.vipPrize) {
-            speakWinner(drawResponseData.participant.name, `${drawResponseData.prize.name} e ${drawResponseData.vipPrize.name}`);
-          } else {
-            speakWinner(drawResponseData.participant.name, drawResponseData.prize.name);
-          }
         }
 
-        const rarity = getPrizeRarity(drawResponseData.prize.name);
-        const victoryColor = isVipSpin ? "#FFD700" : rarity === "COMMON" ? "#0077FF" : RARITY[rarity].color;
-        fireVictoryCelebration(eventAccent(), victoryColor);
+        // Se for VIP: para a Roleta 1, salva o brinde e destrava o botão "Rolar Roleta VIP"
+        if (isVipSpin) {
+          setNormalWonPrize(drawResponseData.prize);
+          setVipSpinStage("WAITING_VIP");
+          setPhase("READY");
+          triggerHaptic();
+          return;
+        }
 
-        setResult(drawResponseData);
-        setPhase("RESULT");
+        // Se NÃO for VIP (visitante comum): suspense dramático com delay antes de exibir os parabéns
+        setSuspenseStatus("🌟 CONFERINDO RESULTADO...");
+        setTimeout(() => {
+          if (soundEnabled) {
+            playWinFanfare();
+            speakWinner(drawResponseData.participant.name, drawResponseData.prize.name);
+          }
+
+          const rarity = getPrizeRarity(drawResponseData.prize.name);
+          const victoryColor = rarity === "COMMON" ? "#0077FF" : RARITY[rarity].color;
+          fireVictoryCelebration(eventAccent(), victoryColor);
+
+          setResult(drawResponseData);
+          setPhase("RESULT");
+          setSuspenseStatus("");
+        }, 2500);
       }, SPIN_MS);
     } catch (err) {
       if (stopTickerRef.current) {
@@ -623,6 +652,90 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
       }
       setError(err instanceof Error ? err.message : "Erro ao processar giro.");
       setPhase("READY");
+      if (isVipSpin) setVipSpinStage("READY_NORMAL");
+    }
+  }
+
+  async function handleSpinVip() {
+    if (phase === "DRAWING" || !storedDrawResponse?.vipPrize || vipPrizes.length === 0) return;
+
+    setPhase("DRAWING");
+    setVipSpinStage("SPINNING_VIP");
+    setError(null);
+    setSuspenseStatus("");
+    triggerHaptic();
+
+    try {
+      const vipTargetId = storedDrawResponse.vipPrize.id;
+      const vipPrizeIndex = Math.max(0, vipPrizes.findIndex((p) => p.id === vipTargetId));
+      const vipSliceDeg = 360 / Math.max(vipPrizes.length, 1);
+      const vipTargetDeg = (360 - vipPrizeIndex * vipSliceDeg) % 360;
+      const vipCurrent = ((rotationVipRef.current % 360) + 360) % 360;
+      // 9 giros para criar um timing diferenciado e empolgante
+      const finalVipRotation = rotationVipRef.current + 9 * 360 + ((vipTargetDeg - vipCurrent + 360) % 360);
+
+      rotationVipRef.current = finalVipRotation;
+      setRotationVip(finalVipRotation);
+
+      if (stopTickerRef.current) {
+        stopTickerRef.current();
+      }
+      stopTickerRef.current = startPhysicsTicker(SPIN_MS, soundEnabled, () => {
+        setTickerCount((c) => c + 1);
+      });
+
+      // Aguarda o giro físico da Roleta VIP (5 segundos)
+      setTimeout(() => {
+        if (stopTickerRef.current) {
+          stopTickerRef.current();
+          stopTickerRef.current = null;
+        }
+
+        if (soundEnabled) {
+          playSlowdownSound();
+        }
+
+        // Suspense maior e dramático antes de aparecer a tela de parabéns
+        setVipSpinStage("SUSPENSE");
+        setSuspenseStatus("👑 CONFERINDO SUA PREMIAÇÃO VIP EXCLUSIVA...");
+        triggerHaptic();
+
+        // Delay de suspense dramático de 3.2 segundos
+        setTimeout(() => {
+          if (soundEnabled) {
+            playWinFanfare();
+            if (storedDrawResponse.vipPrize) {
+              speakWinner(storedDrawResponse.participant.name, `${storedDrawResponse.prize.name} e ${storedDrawResponse.vipPrize.name}`);
+            }
+          }
+
+          fireVictoryCelebration(eventAccent(), "#FFD700");
+          setResult(storedDrawResponse);
+          setPhase("RESULT");
+          setSuspenseStatus("");
+        }, 3200);
+      }, SPIN_MS);
+    } catch (err) {
+      if (stopTickerRef.current) {
+        stopTickerRef.current();
+        stopTickerRef.current = null;
+      }
+      setError(err instanceof Error ? err.message : "Erro ao girar roleta VIP.");
+      setPhase("READY");
+      setVipSpinStage("WAITING_VIP");
+    }
+  }
+
+  // Alias para manter compatibilidade caso seja invocado por clique na roda
+  function handleSpin() {
+    if (isVipSpin) {
+      if (vipSpinStage === "WAITING_VIP") {
+        handleSpinVip();
+      } else if (vipSpinStage === "READY_NORMAL") {
+        handleSpinNormal();
+      }
+    } else {
+      handleSpinNormal();
     }
   }
 
@@ -849,8 +962,13 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   if (isParticipantConfirmed && (phase === "READY" || phase === "DRAWING")) {
     const spinning = phase === "DRAWING";
 
-    // CASO 1: VISITANTE VIP -> DUAS ROLETAS NA TELA (Roleta 1 Brindes + Roleta 2 VIP)
+    // CASO 1: VISITANTE VIP -> DUAS ROLETAS NA TELA (Roleta 1 Brindes + Roleta 2 VIP sequenciais)
     if (isVipSpin) {
+      const isSpinningNormal = phase === "DRAWING" && vipSpinStage === "SPINNING_NORMAL";
+      const isSpinningVip = phase === "DRAWING" && vipSpinStage === "SPINNING_VIP";
+      const isWaitingVip = vipSpinStage === "WAITING_VIP";
+      const isSuspense = vipSpinStage === "SUSPENSE";
+
       return (
         <div className="relative h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between items-center px-3 sm:px-6 py-2 select-none">
           {/* Efeito de ambiente futurista e dourado */}
@@ -911,20 +1029,20 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
           {/* ÁREA DAS DUAS ROLETAS LADO A LADO */}
           <div className="flex-1 min-h-0 w-full max-w-6xl flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 my-auto z-10 px-2 py-1">
             {/* Roleta 1: Brindes */}
-            <div className="flex flex-col items-center justify-center flex-1 w-full max-w-[min(85vw,calc(45dvh-40px),420px)] md:max-w-[460px]">
+            <div className={`flex flex-col items-center justify-center flex-1 w-full max-w-[min(85vw,calc(45dvh-40px),420px)] md:max-w-[460px] transition-all duration-500 ${isWaitingVip || isSpinningVip || isSuspense ? "opacity-85 scale-95" : "opacity-100 scale-100"}`}>
               <div className="flex items-center gap-2 mb-2 px-3 py-1 rounded-full border border-accent/40 bg-ink-800/80 backdrop-blur shadow-sm">
                 <span className="font-mono text-[11px] sm:text-xs font-black tracking-wider text-accent uppercase">
-                  ROLETA 1 · BRINDES
+                  {normalWonPrize ? `✔ BRINDE GANHO: ${normalWonPrize.name}` : "ROLETA 1 · BRINDES"}
                 </span>
               </div>
               <div className="relative flex items-center justify-center w-full aspect-square">
                 <Wheel
                   names={normalPrizes.map((p) => p.name)}
                   rotation={rotationNormal}
-                  spinning={spinning}
+                  spinning={isSpinningNormal}
                   durationMs={SPIN_MS}
                   tickerCount={tickerCount}
-                  onSpin={handleSpin}
+                  onSpin={vipSpinStage === "READY_NORMAL" ? handleSpinNormal : undefined}
                   variant="normal"
                 />
               </div>
@@ -938,8 +1056,8 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
             </div>
 
             {/* Roleta 2: Prêmios VIP Dourados */}
-            <div className="flex flex-col items-center justify-center flex-1 w-full max-w-[min(85vw,calc(45dvh-40px),420px)] md:max-w-[460px]">
-              <div className="flex items-center gap-2 mb-2 px-3 py-1 rounded-full border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37]/30 to-[#996515]/30 shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+            <div className={`flex flex-col items-center justify-center flex-1 w-full max-w-[min(85vw,calc(45dvh-40px),420px)] md:max-w-[460px] transition-all duration-500 ${isWaitingVip ? "scale-105 drop-shadow-[0_0_35px_rgba(255,215,0,0.5)]" : isSpinningVip || isSuspense ? "scale-105" : "opacity-75"}`}>
+              <div className={`flex items-center gap-2 mb-2 px-3 py-1 rounded-full border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37]/30 to-[#996515]/30 shadow-[0_0_15px_rgba(212,175,55,0.4)] ${isWaitingVip ? "animate-bounce" : ""}`}>
                 <Crown size={13} className="text-[#FFDF73]" />
                 <span className="font-mono text-[11px] sm:text-xs font-black tracking-wider text-[#FFDF73] uppercase">
                   ROLETA 2 · PRÊMIOS VIP 👑
@@ -949,39 +1067,63 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
                 <Wheel
                   names={vipPrizes.map((p) => p.name)}
                   rotation={rotationVip}
-                  spinning={spinning}
+                  spinning={isSpinningVip}
                   durationMs={SPIN_MS}
                   tickerCount={tickerCount}
-                  onSpin={handleSpin}
+                  onSpin={isWaitingVip ? handleSpinVip : undefined}
                   variant="vip"
                 />
               </div>
             </div>
           </div>
 
-          {/* Botão de Ação: Giro Duplo */}
-          <div className="flex-none w-full max-w-md flex flex-col items-center gap-1 pb-1 sm:pb-2 z-20">
-            <button
-              type="button"
-              onClick={handleSpin}
-              disabled={spinning}
-              className="w-full h-15 sm:h-18 rounded-full text-xl sm:text-2xl font-black active:scale-[0.98] transition-all cursor-pointer shadow-[0_12px_45px_rgba(255,213,79,0.6)] flex items-center justify-center gap-3 bg-gradient-to-r from-[#FFE57F] via-[#FFD54F] to-[#FFC107] text-[#3E2723] hover:brightness-110 animate-pulse-glow"
-            >
-              {spinning ? (
-                <>
-                  <LoaderCircle size={24} className="animate-spin text-[#3E2723]" />
-                  <span>Girando as 2 roletas…</span>
-                </>
-              ) : (
-                <>
-                  <span>GIRAR AS 2 ROLETAS VIP 🌟</span>
+          {/* Botão de Ação Sequencial */}
+          <div className="flex-none w-full max-w-md flex flex-col items-center gap-2 pb-1 sm:pb-2 z-20">
+            {isWaitingVip ? (
+              <>
+                <div className="flex flex-col items-center gap-0.5 text-center animate-pop-burst">
+                  <span className="text-xs sm:text-[13px] font-mono font-bold text-accent">
+                    🎉 Brinde Conquistado: <strong className="text-white underline">{normalWonPrize?.name}</strong>!
+                  </span>
+                  <span className="text-[11px] sm:text-xs text-[#FFDF73] font-bold uppercase tracking-wider">
+                    Agora libere o seu giro no Pool de Prêmios VIP:
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSpinVip}
+                  className="w-full h-15 sm:h-18 rounded-full text-xl sm:text-2xl font-black active:scale-[0.98] transition-all cursor-pointer shadow-[0_12px_45px_rgba(255,215,0,0.7)] flex items-center justify-center gap-3 bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] hover:brightness-110 animate-pulse-glow"
+                >
+                  <Crown size={26} className="text-[#3E2723] animate-bounce" />
+                  <span>ROLAR ROLETA VIP 🌟</span>
                   <ArrowRight size={24} className="animate-pulse text-[#3E2723]" />
-                </>
-              )}
-            </button>
+                </button>
+              </>
+            ) : isSpinningVip || isSuspense ? (
+              <div className="w-full h-15 sm:h-18 rounded-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#FFE57F]/30 via-[#FFD700]/30 to-[#FF9900]/30 border-2 border-[#FFD700] text-[#FFDF73] font-display text-lg sm:text-xl font-black shadow-[0_0_30px_rgba(255,215,0,0.4)] animate-pulse">
+                <LoaderCircle size={24} className="animate-spin text-[#FFDF73]" />
+                <span>{isSuspense ? "👑 APURANDO PREMIAÇÃO VIP EXCLUSIVA..." : "Girando a Roleta VIP…"}</span>
+              </div>
+            ) : isSpinningNormal ? (
+              <div className="w-full h-15 sm:h-18 rounded-full flex items-center justify-center gap-3 bg-accent/20 border-2 border-accent text-accent font-display text-lg sm:text-xl font-black shadow-[0_0_30px_rgba(var(--accent-rgb),0.3)] animate-pulse">
+                <LoaderCircle size={24} className="animate-spin text-accent" />
+                <span>Girando Roleta 1 (Brindes)…</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSpinNormal}
+                disabled={spinning}
+                className="w-full h-15 sm:h-18 rounded-full text-xl sm:text-2xl font-black active:scale-[0.98] transition-all cursor-pointer shadow-[0_12px_45px_rgba(34,195,220,0.4)] flex items-center justify-center gap-3 bg-accent text-ink-950 hover:brightness-110 animate-pulse-glow"
+              >
+                <span>GIRAR ROLETA 1 (BRINDES) 🎯</span>
+                <ArrowRight size={24} className="animate-pulse text-ink-950" />
+              </button>
+            )}
+
             <div className="flex items-center gap-1.5 text-xs font-mono text-ink-text-2">
               <kbd className="px-2 py-0.5 rounded bg-ink-800 border border-ink-line text-[11px] font-bold text-[#FFD700]">[Espaço]</kbd>
-              <span>ou clique em qualquer roleta para girar ambas!</span>
+              <span>{isWaitingVip ? "para rolar a Roleta VIP!" : "ou clique na roleta para girar"}</span>
             </div>
             {error && (
               <p role="alert" className="flex items-center gap-1.5 text-xs font-semibold text-[#FF8FA3]">
@@ -1080,7 +1222,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
             {spinning ? (
               <>
                 <LoaderCircle size={22} className="animate-spin text-ink-950" />
-                <span>Girando a roleta…</span>
+                <span>{suspenseStatus || "Girando a roleta…"}</span>
               </>
             ) : (
               <>
@@ -1124,7 +1266,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
               {spinning ? (
                 <>
                   <LoaderCircle size={26} className="animate-spin text-ink-950" />
-                  <span>Girando a roleta…</span>
+                  <span>{suspenseStatus || "Girando a roleta…"}</span>
                 </>
               ) : (
                 <>

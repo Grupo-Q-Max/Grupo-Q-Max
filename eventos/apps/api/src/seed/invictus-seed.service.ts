@@ -141,3 +141,4 @@ export class InvictusSeedService implements OnApplicationBootstrap {
     this.logger.log(`Prêmios do evento Invictus sincronizados com sucesso.`);
   }
 }
+

@@ -154,3 +154,4 @@ main().catch((err) => {
   console.error('[SEED] Erro ao sincronizar prêmios Invictus:', err.message);
   process.exit(0);
 });
+
