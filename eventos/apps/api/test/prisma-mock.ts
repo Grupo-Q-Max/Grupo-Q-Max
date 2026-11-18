@@ -64,6 +64,14 @@ export const createPrismaMock = () => ({
     create: jest.fn(),
     count: jest.fn().mockResolvedValue(0),
   },
+  meetings: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    findMany: jest.fn().mockResolvedValue([]),
+    create: jest.fn(),
+    update: jest.fn(),
+    count: jest.fn().mockResolvedValue(0),
+  },
   audit_logs: {
     create: jest.fn(),
     findMany: jest.fn().mockResolvedValue([]),

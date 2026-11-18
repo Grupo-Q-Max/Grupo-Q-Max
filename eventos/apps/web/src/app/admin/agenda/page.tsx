@@ -19,14 +19,14 @@ export default async function AdminAgendaPage({ searchParams }: Props) {
     <div className="adminShell">
       <AdminSidebar />
       <main className="adminMain adminPaper bg-paper text-text flex-1 min-w-0 overflow-hidden p-6 md:p-10 lg:p-14 relative z-0">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E6F0FF] rounded-full blur-[120px] pointer-events-none -z-10" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#EFEBFD] rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-finora-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
         <div className="max-w-6xl mx-auto space-y-10">
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-line">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="px-3 py-1 bg-[#E6F0FF] border border-[#B9D4F7] text-finora-600 text-xs font-bold uppercase tracking-widest rounded-lg">
+                <span className="px-3 py-1 bg-finora-500/15 border border-finora-500/30 text-finora-400 text-xs font-bold uppercase tracking-widest rounded-lg">
                   Funil Comercial
                 </span>
               </div>

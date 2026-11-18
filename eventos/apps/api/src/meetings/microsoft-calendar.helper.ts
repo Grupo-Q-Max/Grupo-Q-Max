@@ -245,6 +245,7 @@ export async function getHugoDetailedEvents(
 export async function createMicrosoftCalendarEvent(payload: {
   bossEmail?: string;
   secondEmail?: string;
+  thirdEmail?: string;
   participantName: string;
   participantEmail?: string | null;
   phone: string;
@@ -261,6 +262,7 @@ export async function createMicrosoftCalendarEvent(payload: {
   try {
     const bossEmail = payload.bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
     const secondEmail = payload.secondEmail || env('SECOND_MEETING_EMAIL') || 'rodrigo@grupoqmax.com.br';
+    const thirdEmail = payload.thirdEmail || env('THIRD_MEETING_EMAIL') || 'edvaldo.borges@grupoqmax.com.br';
     const {
       participantName,
       participantEmail,
@@ -283,6 +285,13 @@ export async function createMicrosoftCalendarEvent(payload: {
     if (secondEmail && secondEmail.includes('@') && secondEmail !== bossEmail) {
       attendees.push({
         emailAddress: { address: secondEmail, name: 'Rodrigo (Diretoria Q-Max)' },
+        type: 'required',
+      });
+    }
+
+    if (thirdEmail && thirdEmail.includes('@') && thirdEmail !== bossEmail && thirdEmail !== secondEmail) {
+      attendees.push({
+        emailAddress: { address: thirdEmail, name: 'Edvaldo Borges (Diretoria Q-Max)' },
         type: 'required',
       });
     }

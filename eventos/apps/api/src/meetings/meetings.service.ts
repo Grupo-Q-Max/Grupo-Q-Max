@@ -212,6 +212,7 @@ export class MeetingsService {
         const graphEventId = await createMicrosoftCalendarEvent({
           bossEmail: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
           secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
+          thirdEmail: process.env.THIRD_MEETING_EMAIL || 'edvaldo.borges@grupoqmax.com.br',
           participantName: meeting.participants.full_name,
           participantEmail: cleanMeetingEmail || meeting.participants.email,
           phone: meeting.participants.phone,
@@ -229,7 +230,7 @@ export class MeetingsService {
         console.warn('[MeetingsService] Falha ao criar evento no Microsoft Graph:', err.message);
       }
 
-      // 5. Dispara convite de calendário oficial do Outlook (.ics) para o chefe Hugo e Rodrigo
+      // 5. Dispara convite de calendário oficial do Outlook (.ics) para o chefe Hugo, Rodrigo e Edvaldo
       try {
         await sendMeetingInvite({
           meetingId: meeting.id,
@@ -245,6 +246,7 @@ export class MeetingsService {
           },
           bossEmail: process.env.BOSS_MEETING_EMAIL || 'hugo@grupoqmax.com.br',
           secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
+          thirdEmail: process.env.THIRD_MEETING_EMAIL || 'edvaldo.borges@grupoqmax.com.br',
         });
       } catch (err: any) {
         console.warn('[MeetingsService] Falha ao enviar convite por e-mail:', err.message);

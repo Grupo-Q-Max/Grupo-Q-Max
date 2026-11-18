@@ -189,6 +189,9 @@ export class PrizesService {
   ) {
     const current = await this.findOne(id);
 
+    const newStock =
+      dto.availableStock !== undefined ? dto.availableStock : dto.available_stock;
+
     const before = {
       name: current.name,
       description: current.description,
@@ -196,22 +199,52 @@ export class PrizesService {
       probability: current.probability.toString(),
       active: current.active,
       isVip: current.is_vip,
+      availableStock: current.available_stock,
     };
+
+    const updateData: any = {
+      name: dto.name,
+      description: dto.description,
+      image_url: dto.imageUrl,
+      probability: dto.probability,
+      active: dto.active,
+      is_vip: dto.isVip,
+    };
+
+    if (newStock !== undefined && Number.isFinite(newStock) && newStock >= 0) {
+      const parsedStock = Math.floor(newStock);
+      updateData.available_stock = parsedStock;
+      if (parsedStock > current.initial_stock) {
+        updateData.initial_stock = parsedStock;
+      }
+    }
 
     const updated = await this.prisma.prizes.update({
       where: {
         id,
       },
-
-      data: {
-        name: dto.name,
-        description: dto.description,
-        image_url: dto.imageUrl,
-        probability: dto.probability,
-        active: dto.active,
-        is_vip: dto.isVip,
-      },
+      data: updateData,
     });
+
+    if (
+      newStock !== undefined &&
+      Number.isFinite(newStock) &&
+      Math.floor(newStock) !== current.available_stock
+    ) {
+      const parsedStock = Math.floor(newStock);
+      await this.prisma.prize_stock_movements.create({
+        data: {
+          event_id: current.event_id,
+          prize_id: current.id,
+          type: parsedStock > current.available_stock ? 'MANUAL_ADD' : 'MANUAL_REMOVE',
+          quantity: Math.abs(parsedStock - current.available_stock),
+          stock_before: current.available_stock,
+          stock_after: parsedStock,
+          reason: 'Ajuste direto na edição do prêmio.',
+          admin_user_id: context?.adminUserId ?? null,
+        },
+      });
+    }
 
     const after = {
       name: updated.name,
@@ -220,6 +253,7 @@ export class PrizesService {
       probability: updated.probability.toString(),
       active: updated.active,
       isVip: updated.is_vip,
+      availableStock: updated.available_stock,
     };
 
     await this.auditService.log({

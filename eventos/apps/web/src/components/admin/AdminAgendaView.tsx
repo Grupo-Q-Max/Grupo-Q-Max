@@ -195,7 +195,7 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                 placeholder="Buscar mentorado ou assunto..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#F8FAFC] border border-line rounded-xl pl-9 pr-3.5 py-2 text-text text-xs font-medium focus:border-finora-600 focus:bg-white focus:ring-2 focus:ring-finora-600/20 outline-none transition-all"
+                className="w-full bg-surface border border-line-strong rounded-xl pl-9 pr-3.5 py-2 text-text text-xs font-medium focus:border-finora-500 focus:bg-surface focus:ring-2 focus:ring-finora-500/20 outline-none transition-all placeholder:text-text-2"
               />
             </div>
 
@@ -214,25 +214,25 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
 
         {/* Cards de Métricas Consolidadas */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-2 border-t border-line">
-          <div className="bg-[#F8FAFC] border border-line rounded-2xl px-3.5 py-2.5 text-center">
+          <div className="bg-surface border border-line-strong rounded-2xl px-3.5 py-2.5 text-center">
             <span className="block text-[10px] uppercase text-text-2 font-bold tracking-wider">Total Geral</span>
             <strong className="text-xl text-text font-mono font-black">{totalItems}</strong>
           </div>
-          <div className="bg-[#E6F0FF]/60 border border-[#B9D4F7] rounded-2xl px-3.5 py-2.5 text-center">
-            <span className="block text-[10px] uppercase text-finora-600 font-bold tracking-wider">Finora VIP</span>
-            <strong className="text-xl text-finora-600 font-mono font-black">{waitingCount}</strong>
+          <div className="bg-finora-500/10 border border-finora-500/30 rounded-2xl px-3.5 py-2.5 text-center">
+            <span className="block text-[10px] uppercase text-finora-400 font-bold tracking-wider">Finora VIP</span>
+            <strong className="text-xl text-finora-400 font-mono font-black">{waitingCount}</strong>
           </div>
-          <div className="bg-[#F5F3FF] border border-[#DDD6FE] rounded-2xl px-3.5 py-2.5 text-center">
-            <span className="block text-[10px] uppercase text-[#6366F1] font-bold tracking-wider">Teams / Outlook</span>
-            <strong className="text-xl text-[#6366F1] font-mono font-black">{microsoftMeetings.length}</strong>
+          <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-2xl px-3.5 py-2.5 text-center">
+            <span className="block text-[10px] uppercase text-indigo-300 font-bold tracking-wider">Teams / Outlook</span>
+            <strong className="text-xl text-indigo-300 font-mono font-black">{microsoftMeetings.length}</strong>
           </div>
-          <div className="bg-[#E3F6EA]/60 border border-[#B7E4C7] rounded-2xl px-3.5 py-2.5 text-center">
-            <span className="block text-[10px] uppercase text-[#0F7A3D] font-bold tracking-wider">Concluídas</span>
-            <strong className="text-xl text-[#0F7A3D] font-mono font-black">{completedCount}</strong>
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-3.5 py-2.5 text-center">
+            <span className="block text-[10px] uppercase text-emerald-400 font-bold tracking-wider">Concluídas</span>
+            <strong className="text-xl text-emerald-400 font-mono font-black">{completedCount}</strong>
           </div>
-          <div className="bg-[#FDE8EC]/60 border border-[#F5C2CD] rounded-2xl px-3.5 py-2.5 text-center col-span-2 sm:col-span-1">
-            <span className="block text-[10px] uppercase text-[#A3112F] font-bold tracking-wider">Faltas (No-Show)</span>
-            <strong className="text-xl text-[#A3112F] font-mono font-black">{noShowCount}</strong>
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl px-3.5 py-2.5 text-center col-span-2 sm:col-span-1">
+            <span className="block text-[10px] uppercase text-rose-400 font-bold tracking-wider">Faltas (No-Show)</span>
+            <strong className="text-xl text-rose-400 font-mono font-black">{noShowCount}</strong>
           </div>
         </div>
 
@@ -244,8 +244,8 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
               onClick={() => setFilterSource("ALL")}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 filterSource === "ALL"
-                  ? "bg-text text-white shadow-xs"
-                  : "bg-surface border border-line text-text-2 hover:text-text"
+                  ? "bg-finora-600 text-white shadow-md"
+                  : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
               }`}
             >
               Todos os Compromissos ({totalItems})
@@ -255,8 +255,8 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
               onClick={() => setFilterSource("FINORA")}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 filterSource === "FINORA"
-                  ? "bg-finora-600 text-white shadow-xs"
-                  : "bg-surface border border-line text-text-2 hover:text-text"
+                  ? "bg-finora-600 text-white shadow-md"
+                  : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
               }`}
             >
               <Sparkles size={12} />
@@ -267,8 +267,8 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
               onClick={() => setFilterSource("MICROSOFT")}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 filterSource === "MICROSOFT"
-                  ? "bg-[#6366F1] text-white shadow-xs"
-                  : "bg-surface border border-line text-text-2 hover:text-text"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
               }`}
             >
               <Calendar size={12} />
@@ -351,13 +351,13 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                       return (
                         <div
                           key={item.id}
-                          className="bg-gradient-to-br from-[#FAF5FF] via-surface to-[#F5F3FF] border border-[#DDD6FE] rounded-3xl p-5.5 transition-all hover:-translate-y-1 hover:shadow-md relative overflow-hidden flex flex-col justify-between"
+                          className="bg-surface border border-indigo-500/30 rounded-3xl p-5.5 transition-all hover:-translate-y-1 hover:border-indigo-500/60 hover:shadow-xl relative overflow-hidden flex flex-col justify-between"
                         >
-                          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#6366F1] to-[#A855F7]" />
+                          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500" />
 
                           <div>
                             {/* Header: Horário & Badge de Origem */}
-                            <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[#E9D5FF]/60">
+                            <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-line">
                               <div>
                                 <span className="text-2xl font-black text-text font-mono">
                                   {startFormatted}
@@ -369,7 +369,7 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                                 )}
                               </div>
 
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#EDE9FE] text-[#6D28D9] text-[10px] font-bold uppercase tracking-wide border border-[#DDD6FE]">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-500/15 text-indigo-300 text-[10px] font-bold uppercase tracking-wide border border-indigo-500/30">
                                 <Calendar size={11} />
                                 <span>Outlook / Teams</span>
                               </span>
@@ -378,7 +378,7 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                             {/* Assunto e Detalhes */}
                             <div className="space-y-2.5">
                               <div>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-[#7C3AED]">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
                                   Agenda Hugo Werninghaus
                                 </span>
                                 <h4 className="text-base font-bold text-text leading-snug mt-0.5" title={item.subject}>
@@ -387,8 +387,8 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                               </div>
 
                               {item.location && (
-                                <div className="flex items-center gap-2 text-xs text-text-2 bg-white/70 px-3 py-1.5 rounded-xl border border-[#E9D5FF]/40">
-                                  <MapPin size={14} className="text-[#7C3AED] shrink-0" />
+                                <div className="flex items-center gap-2 text-xs text-text-2 bg-paper/70 px-3 py-1.5 rounded-xl border border-line">
+                                  <MapPin size={14} className="text-indigo-400 shrink-0" />
                                   <span className="truncate">{item.location}</span>
                                 </div>
                               )}
@@ -396,7 +396,7 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                               {item.organizerName && item.organizerName !== "Hugo Werninghaus" && (
                                 <div className="flex items-center gap-2 text-xs text-text-2">
                                   <UserRound size={14} className="text-text-2 shrink-0" />
-                                  <span>Organizado por: <strong>{item.organizerName}</strong></span>
+                                  <span>Organizado por: <strong className="text-text">{item.organizerName}</strong></span>
                                 </div>
                               )}
 
@@ -404,22 +404,22 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                               <div className="flex items-center gap-2 text-xs">
                                 <span className="text-text-2">Status:</span>
                                 {item.msResponse === "organizer" && (
-                                  <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                  <span className="text-emerald-400 font-bold bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/30">
                                     Organizador (Hugo)
                                   </span>
                                 )}
                                 {item.msResponse === "accepted" && (
-                                  <span className="text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                                  <span className="text-sky-300 font-bold bg-sky-500/15 px-2 py-0.5 rounded-md border border-sky-500/30">
                                     Aceito no Calendário
                                   </span>
                                 )}
                                 {item.msResponse === "tentative" && (
-                                  <span className="text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                  <span className="text-amber-300 font-bold bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
                                     Provisório
                                   </span>
                                 )}
                                 {item.msResponse === "notResponded" && (
-                                  <span className="text-purple-700 font-semibold bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                  <span className="text-purple-300 font-bold bg-purple-500/15 px-2 py-0.5 rounded-md border border-purple-500/30">
                                     Pendente de Aceite
                                   </span>
                                 )}
@@ -428,20 +428,20 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                           </div>
 
                           {/* Ações / Link do Teams */}
-                          <div className="mt-5 pt-3 border-t border-[#E9D5FF]/60 flex items-center justify-between gap-2">
+                          <div className="mt-5 pt-3 border-t border-line flex items-center justify-between gap-2">
                             {item.teamsUrl ? (
                               <a
                                 href={item.teamsUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full py-2.5 px-3 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                                className="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                               >
                                 <Video size={14} />
                                 <span>Entrar no Microsoft Teams</span>
                                 <ExternalLink size={12} className="opacity-70" />
                               </a>
                             ) : (
-                              <div className="w-full py-2 px-3 rounded-xl bg-white/60 border border-[#E9D5FF] text-text-2 text-xs text-center font-medium">
+                              <div className="w-full py-2 px-3 rounded-xl bg-paper/80 border border-line-strong text-text-2 text-xs text-center font-medium">
                                 Compromisso Bloqueado no Site 🔒
                               </div>
                             )}
@@ -459,14 +459,14 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                     return (
                       <div
                         key={meeting.id}
-                        className={`border rounded-3xl p-5.5 transition-all hover:-translate-y-1 hover:shadow-md relative overflow-hidden flex flex-col justify-between ${
+                        className={`border rounded-3xl p-5.5 transition-all hover:-translate-y-1 hover:shadow-xl relative overflow-hidden flex flex-col justify-between ${
                           isHotLead
-                            ? "bg-[#FFF9EE] border-[#F2D19B]"
+                            ? "bg-gradient-to-br from-surface via-surface to-[#221805] border-2 border-[#D4AF37]"
                             : meeting.status === "SCHEDULED"
-                            ? "bg-surface border-[#B9D4F7]"
+                            ? "bg-surface border-finora-500/30 hover:border-finora-500/60"
                             : meeting.status === "COMPLETED"
-                            ? "bg-[#E3F6EA]/70 border-[#B7E4C7]"
-                            : "bg-[#FDE8EC]/70 border-[#F5C2CD] opacity-75"
+                            ? "bg-surface border-emerald-500/30 hover:border-emerald-500/60"
+                            : "bg-surface border-rose-500/30 opacity-75"
                         }`}
                       >
                         {isHotLead && (
@@ -486,22 +486,22 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                             </div>
 
                             {meeting.status === "SCHEDULED" && isHotLead && (
-                              <span className="px-2.5 py-1 rounded-full bg-[#FFF3DC] text-[#8A4B00] text-[10px] font-bold uppercase border border-[#F2D19B] flex items-center gap-1 shadow-xs">
+                              <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase border border-amber-500/40 flex items-center gap-1 shadow-xs">
                                 🔥 Lead Quente ({meeting.participants.chairs_count} cad.)
                               </span>
                             )}
                             {meeting.status === "SCHEDULED" && !isHotLead && (
-                              <span className="px-2.5 py-1 rounded-full bg-[#E6F0FF] text-finora-600 text-[10px] font-bold uppercase border border-[#B9D4F7]">
+                              <span className="px-2.5 py-1 rounded-full bg-finora-500/15 text-finora-400 text-[10px] font-bold uppercase border border-finora-500/30">
                                 Aguardando
                               </span>
                             )}
                             {meeting.status === "COMPLETED" && (
-                              <span className="px-2.5 py-1 rounded-full bg-[#E3F6EA] text-[#0F7A3D] text-[10px] font-bold uppercase flex items-center gap-1 border border-[#B7E4C7]">
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-bold uppercase flex items-center gap-1 border border-emerald-500/30">
                                 <UserCheck size={12} /> Concluída
                               </span>
                             )}
                             {meeting.status === "NO_SHOW" && (
-                              <span className="px-2.5 py-1 rounded-full bg-[#FDE8EC] text-[#A3112F] text-[10px] font-bold uppercase flex items-center gap-1 border border-[#F5C2CD]">
+                              <span className="px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-400 text-[10px] font-bold uppercase flex items-center gap-1 border border-rose-500/30">
                                 <UserX size={12} /> Faltou
                               </span>
                             )}
@@ -510,7 +510,7 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                           {/* Body: Lead Details */}
                           <div className="space-y-2.5">
                             <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full bg-[#E6F0FF] text-finora-600 flex items-center justify-center shrink-0 mt-0.5">
+                              <div className="w-8 h-8 rounded-full bg-finora-500/15 text-finora-400 flex items-center justify-center shrink-0 mt-0.5">
                                 <UserRound size={16} />
                               </div>
                               <div className="min-w-0 flex-1">
@@ -579,7 +579,7 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                             <button
                               type="button"
                               onClick={() => updateStatus(meeting.id, "COMPLETED")}
-                              className="flex-1 py-2.5 rounded-xl bg-[#E3F6EA] hover:bg-[#D2EFDC] border border-[#B7E4C7] text-[#0F7A3D] text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                              className="flex-1 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
                             >
                               <UserCheck size={16} />
                               <span>Concluída</span>
@@ -587,7 +587,7 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                             <button
                               type="button"
                               onClick={() => updateStatus(meeting.id, "NO_SHOW")}
-                              className="flex-1 py-2.5 rounded-xl bg-[#FDE8EC] hover:bg-[#FAD4DC] border border-[#F5C2CD] text-[#A3112F] text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                              className="flex-1 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
                             >
                               <UserX size={16} />
                               <span>Faltou</span>

@@ -107,8 +107,8 @@ export default async function PrizesPage(props: { searchParams: Promise<{ event?
             
             <div className="divide-y divide-line">
               {prizes.map((prize: any) => (
-                <div key={prize.id} className="p-4 sm:p-6 hover:bg-[#EEF1F5] transition-colors flex flex-col md:flex-row md:items-center gap-4 md:gap-6 group">
-                  <div className="w-14 h-14 rounded-2xl bg-[#EEF1F5] border border-line-strong flex items-center justify-center text-text-2 shrink-0 group-hover:scale-105 group-hover:border-[#B9D4F7] group-hover:text-finora-600 transition-all">
+                <div key={prize.id} className="p-4 sm:p-6 hover:bg-white/[0.04] transition-all flex flex-col md:flex-row md:items-center gap-4 md:gap-6 group">
+                  <div className="w-14 h-14 rounded-2xl bg-surface border border-line-strong flex items-center justify-center text-text-2 shrink-0 group-hover:scale-105 group-hover:border-finora-500/50 group-hover:text-finora-400 transition-all">
                     <Gift size={28} />
                   </div>
                   
@@ -117,11 +117,11 @@ export default async function PrizesPage(props: { searchParams: Promise<{ event?
                       <strong className="text-lg font-bold text-text truncate">
                         {prize.name}
                       </strong>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${prize.active ? "bg-[#E3F6EA] text-[#0F7A3D] border border-[#B7E4C7]" : "bg-[#EEF1F5] text-text-2 border border-line-strong"}`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${prize.active ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-surface text-text-2 border border-line-strong"}`}>
                         {prize.active ? "Ativo" : "Inativo"}
                       </span>
                       {prize.is_vip && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#FFF4D6] text-[#8A5D00] border border-[#F5D58A]">VIP</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/40">VIP</span>
                       )}
                     </div>
                     <p className="text-sm text-text-2 line-clamp-1">
@@ -130,23 +130,23 @@ export default async function PrizesPage(props: { searchParams: Promise<{ event?
                     <StockHistory prizeId={prize.id} />
                   </div>
 
-                  <div className="flex items-center justify-between md:justify-start gap-6 sm:gap-10 bg-surface p-3 rounded-xl border border-line">
+                  <div className="flex items-center justify-between md:justify-start gap-6 sm:gap-10 bg-paper/60 p-3 rounded-xl border border-line">
                     <div className="text-center px-2">
                       <span className="text-[10px] font-bold text-text-2 uppercase tracking-widest block mb-1">
                         Estoque
                       </span>
-                      <strong className={`text-lg font-black ${prize.available_stock === 0 ? "text-[#A3112F]" : prize.available_stock <= 5 ? "text-[#B45309]" : "text-text"}`}>
+                      <strong className={`text-lg font-black ${prize.available_stock === 0 ? "text-rose-400" : prize.available_stock <= 5 ? "text-amber-400" : "text-text"}`}>
                         {prize.available_stock}
                       </strong>
                     </div>
                     
-                    <div className="w-px h-8 bg-[#EEF1F5]"></div>
+                    <div className="w-px h-8 bg-line-strong"></div>
 
                     <div className="text-center px-2">
                       <span className="text-[10px] font-bold text-text-2 uppercase tracking-widest block mb-1">
                         Chance
                       </span>
-                      <strong className="text-lg font-black text-finora-600">
+                      <strong className="text-lg font-black text-finora-400">
                         {Number(prize.probability)}%
                       </strong>
                     </div>

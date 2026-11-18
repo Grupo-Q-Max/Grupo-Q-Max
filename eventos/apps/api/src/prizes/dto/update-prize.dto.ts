@@ -35,4 +35,14 @@ export class UpdatePrizeDto {
   @IsOptional()
   @IsBoolean()
   isVip?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  availableStock?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  available_stock?: number;
 }

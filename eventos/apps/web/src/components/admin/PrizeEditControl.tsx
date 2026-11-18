@@ -67,6 +67,7 @@ export default function PrizeEditControl({
   const [minInterval, setMinInterval] = useState<number>(parsed.minInterval);
   const [initialDelay, setInitialDelay] = useState<number>(parsed.initialDelay);
   const [probability, setProbability] = useState(String(Number(prize.probability)));
+  const [stock, setStock] = useState<number>(prize.available_stock);
   const [active, setActive] = useState(prize.active);
   const [isVip, setIsVip] = useState(Boolean(prize.is_vip));
   const [saving, setSaving] = useState(false);
@@ -91,6 +92,7 @@ export default function PrizeEditControl({
     setMinInterval(p.minInterval);
     setInitialDelay(p.initialDelay);
     setProbability(String(Number(prize.probability)));
+    setStock(prize.available_stock);
     setActive(prize.active);
     setIsVip(Boolean(prize.is_vip));
     setError(null);
@@ -108,6 +110,11 @@ export default function PrizeEditControl({
 
     if (!Number.isFinite(chance) || chance < 0 || chance > 100) {
       setError("Informe uma probabilidade válida entre 0 e 100%.");
+      return;
+    }
+
+    if (!Number.isFinite(stock) || stock < 0) {
+      setError("Informe uma quantidade de estoque válida maior ou igual a 0.");
       return;
     }
 
@@ -135,6 +142,7 @@ export default function PrizeEditControl({
           name: name.trim(),
           description: finalDescription.trim() || undefined,
           probability: chance,
+          availableStock: Math.floor(stock),
           active,
           isVip,
         }),
@@ -201,17 +209,31 @@ export default function PrizeEditControl({
               </div>
               <section>
                 <strong>{prize.name}</strong>
-                <span>Estoque disponível: {prize.available_stock}</span>
+                <span>Estoque disponível: {stock} unidades</span>
               </section>
             </div>
 
-            <div className={ui.field}>
-              <label>Nome do prêmio</label>
-              <input
-                className={ui.input}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className={ui.field}>
+                <label>Nome do prêmio</label>
+                <input
+                  className={ui.input}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+
+              <div className={ui.field}>
+                <label>Quantidade em Estoque</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className={ui.input}
+                  value={stock}
+                  onChange={(e) => setStock(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                />
+              </div>
             </div>
 
             <div className={ui.field}>

@@ -61,6 +61,7 @@ export type MeetingInvitePayload = {
   };
   bossEmail: string;
   secondEmail?: string;
+  thirdEmail?: string;
 };
 
 export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<boolean> {
@@ -69,6 +70,7 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
   }
   const { meetingId, scheduledAt, participant, bossEmail } = payload;
   const secondEmail = payload.secondEmail || env('SECOND_MEETING_EMAIL') || 'rodrigo@grupoqmax.com.br';
+  const thirdEmail = payload.thirdEmail || env('THIRD_MEETING_EMAIL') || 'edvaldo.borges@grupoqmax.com.br';
   const user = env('EMAIL_USER') || env('SMTP_USER') || 'envio@qmax.com.br';
 
   const startTime = scheduledAt;
@@ -128,7 +130,8 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
     'LOCATION:Microsoft Teams (Online)',
     `ORGANIZER;CN="Hugo Ludwig Werninghaus (Grupo Q-Max)":mailto:${bossEmail}`,
     `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Hugo Ludwig Werninghaus":mailto:${bossEmail}`,
-    `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Equipe Q-Max / Finora":mailto:${secondEmail}`,
+    `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Rodrigo (Diretoria Q-Max)":mailto:${secondEmail}`,
+    `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Edvaldo Borges":mailto:${thirdEmail}`,
   ];
 
   if (participantEmail && !participantEmail.includes('@visitante.')) {
@@ -258,13 +261,16 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
     if (secondEmail && secondEmail !== bossEmail) {
       recipients.push(secondEmail);
     }
+    if (thirdEmail && thirdEmail !== bossEmail && thirdEmail !== secondEmail) {
+      recipients.push(thirdEmail);
+    }
     if (participantEmail && !participantEmail.includes('@visitante.') && participantEmail.includes('@')) {
       recipients.push(participantEmail);
     }
 
     await transporter.sendMail({
       from: `"Grupo Q-Max & Finora" <${user}>`,
-      to: [bossEmail, secondEmail],
+      to: [bossEmail, secondEmail, thirdEmail].filter(Boolean),
       cc: participantEmail && !participantEmail.includes('@visitante.') ? participantEmail : undefined,
       subject: `📅 Reunião Estratégica: Hugo Werninghaus & ${participantName} (Invictus)`,
       html: htmlContent,
