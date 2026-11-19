@@ -116,23 +116,29 @@ export async function getHugoBusyIntervals(
         const viewData = await viewRes.json();
         const events = viewData?.value || [];
         for (const evt of events) {
-          // Se o evento foi cancelado ou é dia inteiro, ignora
+          // Se o evento foi cancelado ou status Livre (free), ignora
           if (evt.isCancelled === true) continue;
-          if (evt.isAllDay === true) continue;
+          if (evt.showAs && evt.showAs.toLowerCase() === 'free') continue;
 
-          // Se o evento existe na agenda do Hugo (mesmo que ele NÃO tenha aceitado ainda: notResponded ou tentative),
-          // considera ocupado para proteger a agenda e não permitir conflitos!
+          const subj = (evt.subject || '').toLowerCase();
+          // Banners gerais do congresso ("invictus ccl" como um todo) não bloqueiam a agenda individual
+          if (subj.includes('invictus ccl')) {
+            continue;
+          }
+
+          // Se for evento de dia inteiro com status ocupado/ausente, bloqueia o dia
+          if (evt.isAllDay === true) {
+            const start = new Date(`${dateString}T00:00:00-03:00`);
+            const end = new Date(`${dateString}T23:59:59-03:00`);
+            busySlots.push({ start, end });
+            continue;
+          }
+
+          // Puxa a duração exata de QUALQUER reunião externa na agenda e bloqueia o intervalo integral
           if (evt.start?.dateTime && evt.end?.dateTime) {
             const start = parseGraphDateTime(evt.start.dateTime);
             const end = parseGraphDateTime(evt.end.dateTime);
-            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-              const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-              const subj = (evt.subject || '').toLowerCase();
-              // Eventos de dia inteiro ou muito longos (>= 5 horas) e banners do evento/congresso (ex: "InvictuS CCL")
-              // representam o congresso como um todo, não bloqueiam os slots individuais de 45 min no estande.
-              if (durationHours >= 5 || subj.includes('invictus')) {
-                continue;
-              }
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
               busySlots.push({ start, end });
             }
           }
@@ -169,12 +175,12 @@ export async function getHugoBusyIntervals(
         for (const item of scheduleItems) {
           // Ignora status 'free'; bloqueia 'busy', 'tentative', 'oof' (fora do escritório), 'workingElsewhere'
           if (item.status && item.status.toLowerCase() !== 'free') {
+            const subj = (item.subject || '').toLowerCase();
+            if (subj.includes('invictus ccl')) continue;
+
             const start = parseGraphDateTime(item.start.dateTime);
             const end = parseGraphDateTime(item.end.dateTime);
-            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-              const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-              // Blocos de dia inteiro ou muito longos (>= 5 horas) são eventos gerais do congresso, não reuniões individuais
-              if (durationHours >= 5) continue;
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
               busySlots.push({ start, end });
             }
           }

@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, Globe, LoaderCircle } from "lucide-react";
+import { AlertCircle, ArrowRight, CalendarCheck, Globe, LoaderCircle } from "lucide-react";
+import Link from "next/link";
 import { getApiBaseUrl } from "@/lib/api-client";
 import { StepBar } from "@/components/brand/Brand";
 import { Alert, Check, Field, PaperHeading, StickyActions, primaryButton } from "@/components/form/Paper";
@@ -384,6 +385,33 @@ function RegistrationForm({
 
       <div className="flex flex-1 flex-col gap-4.5 px-5 pt-2 pb-6">
         {error && <Alert>{error}</Alert>}
+
+        {/* Atalho VIP: Já fez o cadastro? Agende com o sócio */}
+        <Link
+          href={`/${route}/agendamento`}
+          className="group relative flex items-center justify-between gap-3 overflow-hidden rounded-2xl border-2 border-[#FFD700] bg-gradient-to-r from-[#2A1B05] via-[#1B1203] to-[#2A1B05] p-4 text-white shadow-[0_0_25px_rgba(255,215,0,0.25)] hover:border-[#FFE57F] hover:shadow-[0_0_35px_rgba(255,215,0,0.4)] transition-all cursor-pointer animate-pulse-glow"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] shadow-md group-hover:scale-105 transition-transform">
+              <CalendarCheck size={22} className="text-[#3E2723]" />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#FFD700] flex items-center gap-1.5">
+                <span>✦ JÁ FEZ O CADASTRO?</span>
+                <span className="rounded-full bg-[#FFD700]/20 px-2 py-0.5 text-[10px] text-[#FFE57F]">AGENDAMENTO VIP</span>
+              </span>
+              <strong className="text-[14px] sm:text-[15px] font-extrabold text-white leading-tight mt-0.5">
+                Agende uma reunião aqui com nosso sócio
+              </strong>
+              <span className="text-xs text-slate-300 mt-0.5">
+                Bate-papo VIP com Hugo Werninghaus · Clique para agendar ➔
+              </span>
+            </div>
+          </div>
+          <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#FFD700]/20 text-[#FFD700] group-hover:bg-[#FFD700] group-hover:text-[#3E2723] transition-colors">
+            <ArrowRight size={18} />
+          </div>
+        </Link>
 
         {/* Banner Oficial Finora Experience - Sem imagem pesada, design luxuoso */}
         <div className="flex flex-col gap-3.5 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-slate-900/95 via-slate-950 to-amber-950/20 p-4 sm:p-5 shadow-xl">
