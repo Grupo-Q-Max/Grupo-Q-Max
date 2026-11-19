@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CircleCheck, Clock, Crown, LoaderCircle, Sparkles } from "lucide-react";
+import { Calendar, CircleCheck, Clock, Crown, LoaderCircle, Sparkles } from "lucide-react";
 import { addMinutes, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { fetchApi } from "@/lib/api-client";
@@ -19,37 +19,59 @@ type Props = {
 };
 
 export default function VipScheduler({ eventId, participantId, onBooked, skipHref, inviteText, meetingEmail }: Props) {
-  // Gera os dias úteis disponíveis até 11 de dezembro de 2026
-  const dates = useMemo(() => {
+  // Gera todos os dias disponíveis de 22/11/2026 até 28/02/2027 (incluindo fins de semana)
+  const allDates = useMemo(() => {
     const list: Date[] = [];
+    // Data inicial obrigatória: a partir de 22/11/2026 (dias 19, 20 e 21 bloqueados)
+    const minDate = new Date(2026, 10, 22, 0, 0, 0, 0);
+    // Data final obrigatória: até final de Fevereiro de 2027
+    const limitDate = new Date(2027, 1, 28, 23, 59, 59);
+
     const now = new Date();
-    const current = new Date(now);
+    const current = new Date(now.getTime() < minDate.getTime() ? minDate : now);
     current.setHours(0, 0, 0, 0);
 
-    // Se já passou das 17h, começa a partir do próximo dia
-    if (now.getHours() >= 17) {
+    // Se já passou das 19h no mesmo dia, avança para o dia seguinte
+    if (now >= minDate && now.getHours() >= 19) {
       current.setDate(current.getDate() + 1);
     }
 
-    // Limite oficial solicitado: até dia 11 de dezembro de 2026
-    const limitDate = new Date(2026, 11, 11, 23, 59, 59);
-
     while (current <= limitDate) {
-      const day = current.getDay();
-      if (day !== 0 && day !== 6) { // Pula Sábado e Domingo
-        list.push(new Date(current));
-      }
+      // Aberto todos os dias, incluindo sábados e domingos
+      list.push(new Date(current));
       current.setDate(current.getDate() + 1);
     }
 
     if (list.length === 0) {
-      list.push(new Date());
+      list.push(minDate);
     }
 
     return list;
   }, []);
 
-  const [date, setDate] = useState(dates[0] || new Date());
+  // Meses disponíveis para navegação ágil
+  const months = useMemo(() => {
+    const mSet = new Map<string, { key: string; label: string; count: number }>();
+    for (const d of allDates) {
+      const key = format(d, "yyyy-MM");
+      if (!mSet.has(key)) {
+        const label = format(d, "MMM 'de' yyyy", { locale: ptBR });
+        mSet.set(key, { key, label, count: 0 });
+      }
+      mSet.get(key)!.count += 1;
+    }
+    return Array.from(mSet.values());
+  }, [allDates]);
+
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    return allDates[0] ? format(allDates[0], "yyyy-MM") : "2026-11";
+  });
+
+  const datesForMonth = useMemo(() => {
+    return allDates.filter((d) => format(d, "yyyy-MM") === selectedMonth);
+  }, [allDates, selectedMonth]);
+
+  const [date, setDate] = useState<Date>(allDates[0] || new Date(2026, 10, 22));
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState<string | null>(null);
   const durationMinutes = 45; // Duração fixa oficial de 45 minutos
@@ -181,26 +203,67 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
       </div>
 
       {/* 1. Seleção de Data */}
-      <div className="flex flex-col gap-2.5 px-5 pt-1">
-        <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-          <span>1. Escolha a Data da Reunião</span>
-        </span>
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-          {dates.map((d) => {
+      <div className="flex flex-col gap-3 px-5 pt-1">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+            <Calendar size={14} className="text-accent" />
+            <span>1. Escolha a Data da Reunião (Disponível até Final de Fev)</span>
+          </span>
+          <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            Segunda a Domingo · 08h às 19h
+          </span>
+        </div>
+
+        {/* Abas de Navegação por Mês */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {months.map((m) => {
+            const isSelected = selectedMonth === m.key;
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => {
+                  setSelectedMonth(m.key);
+                  const firstInMonth = allDates.find((d) => format(d, "yyyy-MM") === m.key);
+                  if (firstInMonth) setDate(firstInMonth);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
+                  isSelected
+                    ? "bg-accent text-ink-950 shadow-sm"
+                    : "bg-white/[0.04] text-slate-300 hover:bg-white/[0.08] hover:text-white border border-white/10"
+                }`}
+              >
+                {m.label} ({m.count} dias)
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Grade de Dias do Mês Selecionado */}
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-56 overflow-y-auto pr-1">
+          {datesForMonth.map((d) => {
             const on = format(d, "yyyy-MM-dd") === format(date, "yyyy-MM-dd");
+            const dayOfWeek = d.getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
             return (
               <button
                 key={d.toISOString()}
                 type="button"
                 aria-pressed={on}
                 onClick={() => setDate(d)}
-                className={`flex h-16 flex-col items-center justify-center gap-0.5 rounded-xl transition-all cursor-pointer ${
+                className={`flex h-16 flex-col items-center justify-center gap-0.5 rounded-xl transition-all cursor-pointer relative ${
                   on
                     ? "border-2 border-accent bg-accent/20 text-white shadow-[0_0_15px_rgba(var(--accent-rgb),0.35)]"
                     : "border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08] hover:text-white"
                 }`}
               >
-                <strong className="text-[13px] capitalize font-bold">{format(d, "EEE", { locale: ptBR })}</strong>
+                <div className="flex items-center gap-1">
+                  <strong className="text-[13px] capitalize font-bold">{format(d, "EEE", { locale: ptBR })}</strong>
+                  {isWeekend && (
+                    <span className="text-[9px] font-extrabold text-amber-400" title="Fim de Semana Liberado">⭐</span>
+                  )}
+                </div>
                 <span className="text-[11px] font-mono text-slate-400">{format(d, "dd/MM")}</span>
               </button>
             );

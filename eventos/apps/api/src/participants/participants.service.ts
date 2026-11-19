@@ -13,7 +13,9 @@ import { leadEvents } from '../common/domain-events';
 import * as crypto from 'crypto';
 
 import {
+  decryptCpf,
   encryptCpf,
+  formatCpf,
   hashCpf,
   isValidCpf,
   normalizeCpf,
@@ -981,7 +983,7 @@ export class ParticipantsService implements OnModuleInit {
       throw new NotFoundException('Evento não encontrado.');
     }
 
-    return this.prisma.participations.findMany({
+    const records = await this.prisma.participations.findMany({
       where: {
         event_id: eventId,
       },
@@ -1005,6 +1007,7 @@ export class ParticipantsService implements OnModuleInit {
             id: true,
             full_name: true,
             cpf_last_digits: true,
+            cpf_encrypted: true,
             phone: true,
             email: true,
             cro_number: true,
@@ -1061,6 +1064,28 @@ export class ParticipantsService implements OnModuleInit {
       },
 
       take: 500,
+    });
+
+    return records.map((record) => {
+      const p = record.participants;
+      const decrypted = p?.cpf_encrypted ? decryptCpf(p.cpf_encrypted) : '';
+      const formattedCpf = decrypted
+        ? formatCpf(decrypted)
+        : p?.cpf_last_digits
+        ? `***.***.***-${p.cpf_last_digits}`
+        : '';
+
+      return {
+        ...record,
+        participants: p
+          ? {
+              ...p,
+              cpf: decrypted,
+              cpf_formatted: formattedCpf,
+              cpf_encrypted: undefined,
+            }
+          : p,
+      };
     });
   }
 
@@ -1346,6 +1371,7 @@ export class ParticipantsService implements OnModuleInit {
     const headers = [
       'ID Participação',
       'Nome Completo',
+      'CPF',
       'VIP / Mentorado',
       'Código VIP Utilizado',
       'WhatsApp / Telefone',
@@ -1376,6 +1402,8 @@ export class ParticipantsService implements OnModuleInit {
       const isVip = Boolean(p.vip_codes);
       const cleanPhone = (part.phone || '').replace(/\D/g, '');
       const waLink = cleanPhone ? `https://wa.me/55${cleanPhone.replace(/^55/, '')}` : '-';
+      const decryptedCpf = part.cpf_encrypted ? decryptCpf(part.cpf_encrypted) : '';
+      const displayCpf = decryptedCpf ? formatCpf(decryptedCpf) : (part.cpf_last_digits ? `***.***.***-${part.cpf_last_digits}` : '-');
       const chairsDesc =
         part.chairs_count === 6
           ? '6 ou mais (Grande Porte / VIP)'
@@ -1388,6 +1416,7 @@ export class ParticipantsService implements OnModuleInit {
       return [
         escapeCsv(p.id),
         escapeCsv(part.full_name),
+        escapeCsv(displayCpf),
         escapeCsv(isVip ? 'SIM (VIP / Mentorado)' : 'NÃO'),
         escapeCsv(p.vip_codes?.code || '-'),
         escapeCsv(part.phone),
@@ -1442,6 +1471,7 @@ export class ParticipantsService implements OnModuleInit {
 
     const headers = [
       'Nome Completo',
+      'CPF',
       'Primeiro Nome',
       'Sobrenome',
       'VIP / Mentorado',
@@ -1479,6 +1509,8 @@ export class ParticipantsService implements OnModuleInit {
       const lastName = names.slice(1).join(' ') || '';
       const cleanPhone = (part.phone || '').replace(/\D/g, '');
       const waLink = cleanPhone ? `https://wa.me/55${cleanPhone.replace(/^55/, '')}` : '';
+      const decryptedCpf = part.cpf_encrypted ? decryptCpf(part.cpf_encrypted) : '';
+      const displayCpf = decryptedCpf ? formatCpf(decryptedCpf) : (part.cpf_last_digits ? `***.***.***-${part.cpf_last_digits}` : '');
 
       const chairsTag =
         part.chairs_count && part.chairs_count >= 6
@@ -1511,6 +1543,7 @@ export class ParticipantsService implements OnModuleInit {
 
       return [
         escapeCsv(part.full_name),
+        escapeCsv(displayCpf),
         escapeCsv(firstName),
         escapeCsv(lastName),
         escapeCsv(isVip ? 'SIM' : 'NÃO'),
@@ -1580,6 +1613,7 @@ export class ParticipantsService implements OnModuleInit {
       'Classificação Comercial',
       'Score de Prioridade',
       'Nome Completo',
+      'CPF',
       'Primeiro Nome',
       'Sobrenome',
       'VIP / Mentorado',
@@ -1620,6 +1654,8 @@ export class ParticipantsService implements OnModuleInit {
         meeting && (meeting.status === 'SCHEDULED' || meeting.status === 'COMPLETED'),
       );
       const hasClaimedPrize = Boolean(draw?.claimed_at);
+      const decryptedCpf = part.cpf_encrypted ? decryptCpf(part.cpf_encrypted) : '';
+      const displayCpf = decryptedCpf ? formatCpf(decryptedCpf) : (part.cpf_last_digits ? `***.***.***-${part.cpf_last_digits}` : '');
 
       let classification = '⚪ GERAL (Visitante)';
       let priorityScore = 3;
@@ -1694,6 +1730,7 @@ export class ParticipantsService implements OnModuleInit {
           escapeCsv(classification),
           escapeCsv(priorityScore),
           escapeCsv(part.full_name),
+          escapeCsv(displayCpf),
           escapeCsv(firstName),
           escapeCsv(lastName),
           escapeCsv(isVip ? 'SIM' : 'NÃO'),
@@ -1876,12 +1913,12 @@ export class ParticipantsService implements OnModuleInit {
 
   async findByCpfAndEvent(eventId: number, rawCpf: string) {
     const cleanCpf = (rawCpf || '').replace(/\D/g, '');
-    if (cleanCpf.length !== 11) {
-      return { found: false, message: 'CPF inválido.' };
+    if (cleanCpf.length < 10 || cleanCpf.length > 11) {
+      return { found: false, message: 'CPF ou documento inválido.' };
     }
 
     const cpfHash = hashCpf(cleanCpf);
-    const participant = await this.prisma.participants.findFirst({
+    let participant = await this.prisma.participants.findFirst({
       where: { cpf_hash: cpfHash },
       include: {
         participations: {
@@ -1897,20 +1934,111 @@ export class ParticipantsService implements OnModuleInit {
           orderBy: { id: 'desc' },
         },
         meetings: {
-          where: { event_id: eventId, status: { notIn: ['CANCELED'] } },
+          where: { status: { notIn: ['CANCELED'] } },
           orderBy: { id: 'desc' },
         },
       },
     });
 
-    if (!participant || participant.participations.length === 0) {
+    // Fallback 1: Se não encontrou por hash exato, busca pelos últimos 4 dígitos e valida via decryptCpf
+    if (!participant && cleanCpf.length === 11) {
+      const candidates = await this.prisma.participants.findMany({
+        where: {
+          cpf_last_digits: cleanCpf.slice(-4),
+        },
+        include: {
+          participations: {
+            where: { event_id: eventId },
+            include: {
+              draws: { include: { prizes: true } },
+              vip_codes: true,
+            },
+            orderBy: { id: 'desc' },
+          },
+          meetings: {
+            where: { status: { notIn: ['CANCELED'] } },
+            orderBy: { id: 'desc' },
+          },
+        },
+      });
+
+      for (const cand of candidates) {
+        const decrypted = cand.cpf_encrypted ? decryptCpf(cand.cpf_encrypted) : '';
+        if (decrypted && normalizeCpf(decrypted) === cleanCpf) {
+          participant = cand;
+          break;
+        }
+      }
+    }
+
+    // Fallback 2: Caso o usuário tenha digitado o celular no campo de CPF
+    if (!participant) {
+      const phoneCandidates = await this.prisma.participants.findMany({
+        where: {
+          OR: [
+            { phone_normalized: cleanCpf },
+            { phone: cleanCpf },
+          ],
+        },
+        include: {
+          participations: {
+            where: { event_id: eventId },
+            include: {
+              draws: { include: { prizes: true } },
+              vip_codes: true,
+            },
+            orderBy: { id: 'desc' },
+          },
+          meetings: {
+            where: { status: { notIn: ['CANCELED'] } },
+            orderBy: { id: 'desc' },
+          },
+        },
+      });
+
+      if (phoneCandidates.length > 0) {
+        participant = phoneCandidates[0];
+      }
+    }
+
+    if (!participant) {
       return { found: false };
     }
 
-    const latestParticipation = participant.participations[0];
-    const hasMeeting = participant.meetings.length > 0;
-    const isVip = Boolean(latestParticipation.vip_codes) || hasMeeting;
-    const hasDrawn = Boolean(latestParticipation.draws);
+    let latestParticipation = participant.participations?.[0];
+
+    // Se o participante já tem cadastro mas não possui participação neste evento específico,
+    // reutiliza a participação de outro evento ou auto-cria para este evento
+    if (!latestParticipation) {
+      const anyParticipation = await this.prisma.participations.findFirst({
+        where: { participant_id: participant.id },
+        include: {
+          draws: { include: { prizes: true } },
+          vip_codes: true,
+        },
+        orderBy: { id: 'desc' },
+      });
+
+      if (anyParticipation) {
+        latestParticipation = anyParticipation;
+      } else {
+        latestParticipation = await this.prisma.participations.create({
+          data: {
+            event_id: eventId,
+            participant_id: participant.id,
+            status: 'APPROVED',
+          },
+          include: {
+            draws: { include: { prizes: true } },
+            vip_codes: true,
+          },
+        });
+      }
+    }
+
+    const hasMeeting = (participant.meetings && participant.meetings.length > 0) || false;
+    const isVip = Boolean(latestParticipation?.vip_codes) || hasMeeting;
+    const hasDrawn = Boolean(latestParticipation?.draws);
 
     return {
       found: true,
@@ -1926,7 +2054,7 @@ export class ParticipantsService implements OnModuleInit {
       hasDrawn,
       hasScheduledMeeting: hasMeeting,
       scheduledMeeting: hasMeeting ? participant.meetings[0] : null,
-      drawnPrize: latestParticipation.draws?.prizes?.name || null,
+      drawnPrize: latestParticipation?.draws?.prizes?.name || null,
     };
   }
 }

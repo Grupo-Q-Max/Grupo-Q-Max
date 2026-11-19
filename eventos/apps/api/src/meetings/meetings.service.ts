@@ -18,6 +18,11 @@ export class MeetingsService {
   ) {}
 
   async getAvailableSlots(eventId: number, dateString: string) {
+    // Bloqueia dias anteriores a 22/11/2026 e posteriores a 28/02/2027
+    if (dateString < '2026-11-22' || dateString > '2027-02-28') {
+      return [];
+    }
+
     const startDate = new Date(`${dateString}T00:00:00.000-03:00`);
     if (isNaN(startDate.getTime())) {
       throw new BadRequestException('Formato de data inválido. Use YYYY-MM-DD');
@@ -43,9 +48,8 @@ export class MeetingsService {
     const hugoBusyIntervals = await getHugoBusyIntervals(dateString);
 
     const slots: Date[] = [];
-    // Agendas de hora em hora (09h às 18h), com duração de 45 min e sem horários das 12h às 14h (almoço)
-    for (let hour = 9; hour <= 18; hour++) {
-      if (hour >= 12 && hour < 14) continue;
+    // Agenda aberta o dia todo das 08h às 19h (Horário de Brasília), com duração de 45 min
+    for (let hour = 8; hour <= 19; hour++) {
       const hStr = hour.toString().padStart(2, '0');
       const isoStr = `${dateString}T${hStr}:00:00.000-03:00`;
       slots.push(new Date(isoStr));
@@ -80,12 +84,16 @@ export class MeetingsService {
     return availableSlots.map((s) => s.toISOString());
   }
 
-  async getNextAvailableSlot(eventId: number, maxDaysAhead: number = 5): Promise<string | null> {
+  async getNextAvailableSlot(eventId: number, maxDaysAhead: number = 100): Promise<string | null> {
     const today = new Date();
+    const minDate = new Date(2026, 10, 22, 0, 0, 0, 0);
+    const start = today < minDate ? minDate : today;
+
     for (let dayOffset = 0; dayOffset < maxDaysAhead; dayOffset++) {
-      const targetDate = new Date(today);
+      const targetDate = new Date(start);
       targetDate.setDate(targetDate.getDate() + dayOffset);
-      const dateString = targetDate.toISOString().split('T')[0];
+      const dateString = targetDate.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+      if (dateString < '2026-11-22' || dateString > '2027-02-28') continue;
       const slots = await this.getAvailableSlots(eventId, dateString);
       if (slots && slots.length > 0) {
         return slots[0];
@@ -104,12 +112,18 @@ export class MeetingsService {
       throw new BadRequestException('Não é possível agendar no passado.');
     }
 
-    // Validação do fuso América/São Paulo para intervalo 12h-14h
+    // Bloqueia dias anteriores a 22/11/2026 e posteriores a 28/02/2027
+    const dateSp = scheduledAt.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    if (dateSp < '2026-11-22' || dateSp > '2027-02-28') {
+      throw new BadRequestException('A agenda para consultorias estratégicas está aberta de 22/11/2026 até 28/02/2027.');
+    }
+
+    // Validação do horário no fuso América/São Paulo (08h às 19h)
     const hourSp = Number(
       scheduledAt.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false }),
     );
-    if (hourSp >= 12 && hourSp < 14) {
-      throw new BadRequestException('Horário indisponível (intervalo das 12h às 14h).');
+    if (hourSp < 8 || hourSp > 19) {
+      throw new BadRequestException('Horário fora do expediente da agenda (08h às 19h).');
     }
 
     // 1. Bloqueio rigoroso: verifica se já existe agendamento ativo no banco de dados para esse horário (mesmo antes do aceite)

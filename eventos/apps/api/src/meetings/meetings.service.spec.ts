@@ -33,7 +33,7 @@ describe('MeetingsService - Agendamento e Integração Teams / Hugo e Edvaldo', 
   });
 
   it('deve agendar reunião com sucesso e disparar convites para Hugo, Rodrigo e Edvaldo', async () => {
-    const scheduledDate = new Date('2026-11-20T14:00:00.000-03:00');
+    const scheduledDate = new Date('2026-11-23T14:00:00.000-03:00');
 
     // Mocks do banco de dados
     prismaMock.meetings.findFirst.mockResolvedValue(null);

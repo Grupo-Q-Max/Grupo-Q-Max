@@ -32,6 +32,20 @@ type FoundParticipant = {
   drawnPrize?: string | null;
 };
 
+function createDeviceId() {
+  if (typeof window === "undefined") return "FINORA-SERVER";
+  const existing = window.localStorage.getItem("finora-clinicorp-device-id");
+  if (existing) return existing;
+
+  const generated =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? `FINORA-${crypto.randomUUID()}`
+      : `FINORA-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  window.localStorage.setItem("finora-clinicorp-device-id", generated);
+  return generated;
+}
+
 export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
   const [cpf, setCpf] = useState("");
   const [loading, setLoading] = useState(false);
@@ -119,6 +133,7 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
           clinicName: newClinicName.trim() || "Clínica não informada",
           privacyConsent: true,
           marketingConsent: true,
+          deviceId: createDeviceId(),
         }),
       });
 
@@ -174,7 +189,7 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
             <Crown size={15} className="text-amber-400" /> REUNIÃO COM O CEO · ROLETA VIP
           </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 border border-amber-400/30">
-            Até 11 de Dezembro
+            Até 28 de Fevereiro
           </span>
         </div>
 

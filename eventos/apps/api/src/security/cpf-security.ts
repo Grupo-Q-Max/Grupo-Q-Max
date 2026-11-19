@@ -1,4 +1,4 @@
-import { createCipheriv, createHmac, randomBytes } from 'crypto';
+import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'crypto';
 
 export function normalizeCpf(value: string): string {
   return String(value ?? '').replace(/\D/g, '');
@@ -113,4 +113,38 @@ export function encryptCpf(cpf: string): string {
     authTag.toString('base64'),
     encrypted.toString('base64'),
   ].join('.');
+}
+
+export function decryptCpf(encryptedCpf?: string | null): string {
+  if (!encryptedCpf) return '';
+  try {
+    const parts = encryptedCpf.split('.');
+    if (parts.length !== 4 || parts[0] !== 'v1') {
+      return '';
+    }
+    const iv = Buffer.from(parts[1], 'base64');
+    const authTag = Buffer.from(parts[2], 'base64');
+    const encrypted = Buffer.from(parts[3], 'base64');
+
+    const decipher = createDecipheriv('aes-256-gcm', getEncryptionKey(), iv);
+    decipher.setAuthTag(authTag);
+
+    const decrypted = Buffer.concat([
+      decipher.update(encrypted),
+      decipher.final(),
+    ]);
+
+    return decrypted.toString('utf8');
+  } catch {
+    return '';
+  }
+}
+
+export function formatCpf(cpf: string): string {
+  if (!cpf) return '';
+  const clean = cpf.replace(/\D/g, '');
+  if (clean.length === 11) {
+    return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6, 9)}-${clean.slice(9)}`;
+  }
+  return cpf;
 }

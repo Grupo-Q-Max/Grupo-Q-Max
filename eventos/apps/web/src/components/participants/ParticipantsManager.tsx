@@ -70,6 +70,8 @@ type Participant = {
   participants: {
     id: number;
     full_name: string;
+    cpf?: string;
+    cpf_formatted?: string;
     cpf_last_digits: string;
     phone: string;
     email: string;
@@ -392,6 +394,8 @@ export default function ParticipantsManager({
 
       const searchable = [
         participant.full_name,
+        participant.cpf,
+        participant.cpf_formatted,
         participant.email,
         participant.phone,
         participant.cro_number,
@@ -429,7 +433,7 @@ export default function ParticipantsManager({
       "UF",
       "Qtd Cadeiras",
       "Classificação Lead",
-      "CPF (Final)",
+      "CPF",
       "Status Participação",
       "Girou Roleta",
       "Prêmio Ganho",
@@ -480,7 +484,7 @@ export default function ParticipantsManager({
         escapeCsvField(p.state || ""),
         escapeCsvField(p.chairs_count ?? ""),
         escapeCsvField(leadClassification),
-        escapeCsvField(p.cpf_last_digits ? `***.***.***-${p.cpf_last_digits}` : ""),
+        escapeCsvField(p.cpf_formatted || p.cpf || (p.cpf_last_digits ? `***.***.***-${p.cpf_last_digits}` : "")),
         escapeCsvField(item.status),
         escapeCsvField(spun ? "SIM" : "NÃO"),
         escapeCsvField(prizeName),
@@ -898,15 +902,13 @@ export default function ParticipantsManager({
                       )}
                     </div>
 
-                    <span>
-                      CRO{" "}
-                      {
-                        participant.cro_number
-                      }
-                      /
-                      {
-                        participant.cro_state
-                      }
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                      <span>
+                        CRO {participant.cro_number}/{participant.cro_state}
+                      </span>
+                      <span className="text-emerald-400 font-mono text-[11px] font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                        CPF: {participant.cpf_formatted || participant.cpf || (participant.cpf_last_digits ? `***.***.***-${participant.cpf_last_digits}` : "-")}
+                      </span>
                     </span>
                   </div>
 
@@ -1133,13 +1135,12 @@ export default function ParticipantsManager({
                     <span>
                       CPF
                     </span>
-                    <strong>
-                      ***.***.***-
-                      {
-                        selected
-                          .participants
-                          .cpf_last_digits
-                      }
+                    <strong className="font-mono text-emerald-400">
+                      {selected.participants.cpf_formatted ||
+                        selected.participants.cpf ||
+                        (selected.participants.cpf_last_digits
+                          ? `***.***.***-${selected.participants.cpf_last_digits}`
+                          : "-")}
                     </strong>
                   </div>
 
