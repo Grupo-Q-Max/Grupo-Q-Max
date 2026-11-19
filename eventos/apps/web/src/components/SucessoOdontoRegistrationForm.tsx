@@ -678,7 +678,7 @@ function RegistrationForm({
           disabled={
             loading ||
             (!isForeigner && (cpf.length === 14 && !isCpfValid)) ||
-            (isForeigner && foreignDoc.trim().length < 4) ||
+            (isForeigner && foreignDoc.trim().length < 2) ||
             vipStatus === "checking" ||
             vipStatus === "invalid"
           }

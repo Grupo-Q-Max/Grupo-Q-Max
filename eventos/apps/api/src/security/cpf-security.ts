@@ -1,4 +1,4 @@
-﻿import { createCipheriv, createHmac, randomBytes } from 'crypto';
+import { createCipheriv, createHmac, randomBytes } from 'crypto';
 
 export function normalizeCpf(value: string): string {
   return String(value ?? '').replace(/\D/g, '');

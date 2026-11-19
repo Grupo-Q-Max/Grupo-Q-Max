@@ -412,7 +412,19 @@ function RegistrationForm({
           ...partData,
           autoBookedSlot: result.autoBookedSlot || null,
         });
-        setCeoModalOpen(false);
+
+        // Abre o popup convidando para o diagnóstico empresarial e liberando prêmio da Roleta VIP!
+        if (!partData.hasDrawn) {
+          setCeoModalOpen(true);
+          fetch(`${getApiBaseUrl()}/meetings/event/${eventId}/next-slot`)
+            .then((r) => r.json())
+            .then((d) => {
+              if (d?.nextSlot) setCeoNextSlot(d.nextSlot);
+            })
+            .catch(() => {});
+        } else {
+          setCeoModalOpen(false);
+        }
         setTicketModalOpen(false);
         return;
       }
@@ -720,6 +732,79 @@ function RegistrationForm({
                   className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] font-bold text-xs uppercase tracking-wider text-[#3E2723] hover:brightness-110 transition-all cursor-pointer shadow-md"
                 >
                   Concluir & Ir para o Estande 🚀
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Popup: Convite de Reunião para Diagnóstico Empresarial & Prêmio da Roleta VIP */}
+        {ceoModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+            <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-6 sm:p-8 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst my-auto">
+              <button
+                type="button"
+                onClick={() => setCeoModalOpen(false)}
+                aria-label="Fechar"
+                className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer z-10"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] shadow-[0_0_25px_rgba(255,215,0,0.6)]">
+                <Crown size={32} className="text-[#3E2723]" />
+              </div>
+
+              <div className="text-center mt-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3.5 py-1 font-mono text-[11px] font-black uppercase tracking-wider text-[#FFDF73]">
+                  ✨ OPORTUNIDADE EXCLUSIVA VIP
+                </span>
+                <h3 className="mt-2.5 font-display text-2xl sm:text-3xl font-black text-white leading-tight">
+                  Deseja agendar uma reunião para fazer um Diagnóstico Empresarial?
+                </h3>
+              </div>
+
+              <div className="my-4 rounded-2xl border-2 border-[#FFD700] bg-gradient-to-r from-[#FFD700]/25 via-[#FF9900]/20 to-[#FFD700]/25 p-4 text-center shadow-[0_0_25px_rgba(255,215,0,0.3)]">
+                <p className="font-display text-sm sm:text-[15px] font-black text-[#FFF9B8] uppercase leading-snug">
+                  🎁 Marcando e participando da reunião, você ganha o prêmio sorteado da Roleta VIP!
+                </p>
+                <p className="mt-1.5 text-xs text-slate-200 leading-relaxed">
+                  Bate-papo estratégico de <strong>45 minutos</strong> com <strong>Hugo Werninghaus</strong> (CEO Grupo Q-Max) para diagnóstico financeiro e tributário da sua clínica.
+                </p>
+              </div>
+
+              {ceoNextSlot && (
+                <div className="mb-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
+                  <CalendarCheck size={18} className="text-[#FFD700] flex-none" />
+                  <span>
+                    Próximo horário disponível:{" "}
+                    <strong className="text-white">
+                      {new Date(ceoNextSlot).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} às{" "}
+                      {new Date(ceoNextSlot).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </strong>
+                  </span>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCeoModalOpen(false);
+                    setSchedulerModalOpen(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-6 font-display text-sm sm:text-base font-black text-[#3E2723] shadow-[0_10px_30px_rgba(255,215,0,0.5)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  <CalendarCheck size={18} />
+                  <span>Sim, Agendar Meu Diagnóstico & Liberar Roleta VIP 🌟</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCeoModalOpen(false)}
+                  className="w-full py-2.5 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  Prefiro não agendar agora, ver meu código PIN ➔
                 </button>
               </div>
             </div>
@@ -1079,7 +1164,7 @@ function RegistrationForm({
           disabled={
             loading ||
             (!isForeigner && (cpf.length === 14 && !isCpfValid)) ||
-            (isForeigner && foreignDoc.trim().length < 4) ||
+            (isForeigner && foreignDoc.trim().length < 2) ||
             vipStatus === "checking" ||
             vipStatus === "invalid"
           }
@@ -1095,175 +1180,6 @@ function RegistrationForm({
         </button>
         <span className="text-center text-[13px] text-slate-400">Giro liberado no estande · Participação garantida no Grande Sorteio Geral dia 19/11</span>
       </StickyActions>
-
-      {/* Modal Popup: Convite de Reunião com o CEO para Destravar Roleta VIP */}
-      {ceoModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-6 sm:p-8 text-white shadow-[0_20px_70px_rgba(255,215,0,0.45)] animate-pop-burst">
-            {/* Fechar no X recusa e vai para roleta normal */}
-            <button
-              type="button"
-              onClick={handleDeclineCeoMeeting}
-              aria-label="Fechar"
-              className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-
-            {/* Ícone de Destaque Nobre */}
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] shadow-[0_0_25px_rgba(255,215,0,0.6)]">
-              <Crown size={32} className="text-[#3E2723]" />
-            </div>
-
-            <h3 className="mt-4 text-center font-display text-2xl sm:text-3xl font-black text-white leading-tight">
-              {pendingParticipationData?.isVip
-                ? "Agende sua Consultoria VIP com o CEO"
-                : "Deseja marcar uma reunião com nosso CEO?"}
-            </h3>
-
-            <p className="mt-2 text-center text-sm sm:text-[15px] text-[#C2CEE3] leading-relaxed">
-              {pendingParticipationData?.isVip ? (
-                <>
-                  Como participante VIP, garanta seu horário de consultoria estratégica individual de <strong>45 minutos</strong> com nosso CEO Hugo Werninghaus!
-                </>
-              ) : (
-                <>
-                  Ao agendar um bate-papo exclusivo com nosso CEO durante o evento, você ganha acesso instantâneo à{" "}
-                  <strong className="text-[#FFD700] font-black">Roleta VIP</strong>!
-                </>
-              )}
-            </p>
-
-            {/* Benefícios VIP */}
-            <div className="my-4 flex flex-col gap-2 rounded-2xl border border-[#FFD700]/40 bg-gradient-to-r from-[#FFD700]/15 via-[#FF9900]/10 to-[#FFD700]/15 p-4 text-xs sm:text-sm">
-              <div className="flex items-center gap-2 font-mono font-black text-[#FFD700] uppercase text-[11px]">
-                <Sparkles size={14} className="text-[#FFD700]" />
-                <span>O que você concorre na Roleta VIP:</span>
-              </div>
-              <ul className="grid grid-cols-1 gap-2 text-slate-200 text-xs sm:text-[13px] pt-1">
-                <li className="flex items-center gap-2.5">
-                  <span className="text-[#FFD700] text-base">👑</span>
-                  <span><strong>Mentoria Exclusiva com o CEO (2 horas)</strong></span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <span className="text-[#FFD700] text-base">💎</span>
-                  <span><strong>100% ou 50% de Desconto no 1º Honorário</strong></span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <span className="text-[#FFD700] text-base">📜</span>
-                  <span><strong>Certificado Oficial Finora & Diagnóstico Tributário</strong></span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Informação do Próximo Horário */}
-            {ceoNextSlot && (
-              <div className="mb-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
-                <CalendarCheck size={18} className="text-[#FFD700] flex-none" />
-                <span>
-                  Horário sugerido:{" "}
-                  <strong className="text-white">
-                    {new Date(ceoNextSlot).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} às{" "}
-                    {new Date(ceoNextSlot).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                  </strong>{" "}
-                  no estande Finora.
-                </span>
-              </div>
-            )}
-
-            {/* Ações */}
-            <div className="flex flex-col gap-2.5 pt-1">
-              {ceoNextSlot && (
-                <button
-                  type="button"
-                  onClick={handleQuickBookNextSlot}
-                  disabled={bookingCeo}
-                  className="w-full flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-6 font-display text-base font-black text-[#3E2723] shadow-[0_10px_30px_rgba(255,215,0,0.5)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
-                >
-                  {bookingCeo ? (
-                    <>
-                      <LoaderCircle size={18} className="animate-spin text-[#3E2723]" />
-                      <span>Confirmando agendamento automático...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Confirmar Reunião no Horário Sugerido ⚡</span>
-                      <ArrowRight size={18} />
-                    </>
-                  )}
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={handleAcceptCeoMeeting}
-                disabled={bookingCeo}
-                className={`w-full flex items-center justify-center gap-2 rounded-full py-3 px-6 font-display text-sm sm:text-base font-bold transition-all cursor-pointer ${
-                  ceoNextSlot
-                    ? "border border-[#FFD700]/50 bg-[#FFD700]/15 text-[#FFE57F] hover:bg-[#FFD700]/25"
-                    : "bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] font-black py-3.5"
-                }`}
-              >
-                <span>{ceoNextSlot ? "📅 Escolher Outro Dia ou Horário" : "Sim, Escolher Horário & Liberar Roleta VIP 🌟"}</span>
-                <ArrowRight size={16} />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDeclineCeoMeeting}
-                disabled={bookingCeo}
-                className="w-full py-2.5 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
-              >
-                {pendingParticipationData?.isVip
-                  ? "Pular agendamento e acessar meu bilhete VIP ➔"
-                  : "Prefiro não agendar agora, ir para a roleta padrão ➔"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Popup: Agendamento com o CEO em Popup Dedicado */}
-      {schedulerModalOpen && pendingParticipationData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-4 sm:p-6 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst my-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setSchedulerModalOpen(false);
-                handleDeclineCeoMeeting();
-              }}
-              aria-label="Fechar"
-              className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer z-10"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="text-center mb-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3.5 py-1 font-mono text-[11px] font-black uppercase tracking-wider text-[#FFDF73]">
-                <Crown size={14} className="text-[#FFD700]" />
-                AGENDAMENTO EXCLUSIVO COM O CEO
-              </span>
-              <h3 className="mt-2 font-display text-2xl sm:text-3xl font-black text-white leading-tight">
-                Selecione o Dia e Horário
-              </h3>
-              <p className="mt-1 text-xs sm:text-sm text-[#C2CEE3]">
-                Reunião estratégica de <strong>45 minutos</strong> com <strong>Hugo Werninghaus (CEO Grupo Q-Max)</strong> via Microsoft Teams.
-              </p>
-              <div className="mt-2.5 inline-flex items-center gap-2 rounded-xl bg-amber-400/10 border border-amber-400/30 px-3 py-1.5 text-[11.5px] text-amber-200">
-                ⏰ Horários de hora em hora · Intervalo de almoço (12h às 14h) fechado.
-              </div>
-            </div>
-
-            <VipScheduler
-              participantId={pendingParticipationData.participantId}
-              eventId={eventId}
-              meetingEmail={email.trim()}
-              onBooked={handleMeetingBooked}
-            />
-          </div>
-        </div>
-      )}
     </form>
   );
 }

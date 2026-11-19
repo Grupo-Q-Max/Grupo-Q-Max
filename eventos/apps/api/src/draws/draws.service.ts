@@ -1245,7 +1245,7 @@ export class DrawsService {
       }
     }
 
-    // 2. Buscar participações do evento e todos os cadastros da base
+    // 2. Buscar participações exclusivas do evento especificado (impede mistura entre eventos)
     const participations = await this.prisma.participations.findMany({
       where: {
         event_id: eventId,
@@ -1274,29 +1274,10 @@ export class DrawsService {
       },
     });
 
-    const allRegistered = await this.prisma.participants.findMany({
-      select: {
-        id: true,
-        full_name: true,
-        cpf_last_digits: true,
-        phone: true,
-        email: true,
-        cro_number: true,
-        cro_state: true,
-        clinic_name: true,
-        city: true,
-        state: true,
-        created_at: true,
-      },
-      orderBy: {
-        id: 'asc',
-      },
-    }).catch(() => []);
-
     const uniqueMap = new Map<number, any>();
     const seenPhones = new Set<string>();
 
-    // Processa participações explícitas
+    // Processa participações explícitas deste evento
     for (const p of participations) {
       const part = p.participants;
       if (!part) continue;
@@ -1324,34 +1305,6 @@ export class DrawsService {
         city: part.city,
         state: part.state,
         registeredAt: p.created_at,
-      });
-    }
-
-    // Inclui todos os outros participantes cadastrados que ainda não estão no pool
-    for (const part of allRegistered) {
-      if (!part || alreadyWonIds.has(part.id) || uniqueMap.has(part.id)) continue;
-
-      const cleanPhone = (part.phone || '').replace(/\D/g, '');
-      if (cleanPhone.length >= 10) {
-        if (seenPhones.has(cleanPhone)) continue;
-        seenPhones.add(cleanPhone);
-      }
-
-      uniqueMap.set(part.id, {
-        participationId: part.id,
-        participantId: part.id,
-        ticketCode: `#${String(part.id).padStart(4, '0')}`,
-        fullName: part.full_name,
-        cpfLastDigits: part.cpf_last_digits,
-        phone: part.phone || null,
-        email: part.email || null,
-        cro: part.cro_number
-          ? `${part.cro_number}/${part.cro_state || ''}`
-          : null,
-        clinicName: part.clinic_name || 'Clínica não informada',
-        city: part.city,
-        state: part.state,
-        registeredAt: part.created_at,
       });
     }
 

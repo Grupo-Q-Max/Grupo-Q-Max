@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -53,13 +54,82 @@ import { FraudRulesService } from '../fraud-rules/fraud-rules.service';
 import { MeetingsService } from '../meetings/meetings.service';
 
 @Injectable()
-export class ParticipantsService {
+export class ParticipantsService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly whatsappService: WhatsappService,
     private readonly fraudRulesService: FraudRulesService,
     private readonly meetingsService: MeetingsService,
   ) {}
+
+  async onModuleInit() {
+    try {
+      await this.deleteByNameTerms([
+        'Rodrigo Dante Penhalves',
+        'Rodrigo Dante',
+        'Rodrigo Penhalves',
+        'Rodrigo Sante Penhalves',
+      ]);
+    } catch (err) {
+      console.warn('[ParticipantsService] Limpeza automática ignorada:', err);
+    }
+  }
+
+  async deleteByNameTerms(nameTerms: string[]) {
+    const filters = nameTerms.map((term) => ({
+      full_name: { contains: term },
+    }));
+
+    const found = await this.prisma.participants.findMany({
+      where: {
+        OR: filters,
+      },
+      select: { id: true, full_name: true },
+    });
+
+    if (!found || found.length === 0) return { deletedCount: 0 };
+
+    for (const p of found) {
+      const partIds = (
+        await this.prisma.participations.findMany({
+          where: { participant_id: p.id },
+          select: { id: true },
+        })
+      ).map((x) => x.id);
+
+      if (partIds.length > 0) {
+        await this.prisma.vip_codes.updateMany({
+          where: { participation_id: { in: partIds } },
+          data: { participation_id: null, redeemed_at: null },
+        });
+        await this.prisma.draws.deleteMany({
+          where: { participation_id: { in: partIds } },
+        });
+        await this.prisma.fraud_checks.deleteMany({
+          where: { participation_id: { in: partIds } },
+        });
+        await this.prisma.participations.deleteMany({
+          where: { id: { in: partIds } },
+        });
+      }
+
+      await this.prisma.meetings.deleteMany({
+        where: { participant_id: p.id },
+      });
+      await this.prisma.message_queue.deleteMany({
+        where: { participant_id: p.id },
+      });
+      await this.prisma.event_participants.deleteMany({
+        where: { participant_id: p.id },
+      });
+      await this.prisma.participants.delete({
+        where: { id: p.id },
+      });
+      console.log(`[ParticipantsService] Cadastro deletado com sucesso: ${p.full_name} (ID: ${p.id})`);
+    }
+
+    return { deletedCount: found.length };
+  }
 
   private getClientIp(context?: RequestContext): string | null {
     return context?.ipAddress ?? null;

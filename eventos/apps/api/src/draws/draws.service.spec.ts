@@ -193,6 +193,30 @@ describe('DrawsService', () => {
       expect(eligible.totalEligible).toBe(1);
       expect(eligible.participants[0].participantId).toBe(10);
     });
+
+    it('deve filtrar exclusivamente participantes do eventId informado', async () => {
+      prismaMock.audit_logs.findMany.mockResolvedValue([]);
+      prismaMock.participations.findMany.mockImplementation((args: any) => {
+        expect(args.where.event_id).toBe(2);
+        return Promise.resolve([
+          {
+            id: 99,
+            created_at: new Date(),
+            participants: {
+              id: 99,
+              full_name: 'Dr. Participante Invictus',
+              phone: '11988887777',
+              clinic_name: 'Clínica Invictus',
+            },
+          },
+        ]);
+      });
+
+      const eligible = await service.getEligibleForGrandDraw(2);
+      expect(eligible.eventId).toBe(2);
+      expect(eligible.totalEligible).toBe(1);
+      expect(eligible.participants[0].fullName).toBe('Dr. Participante Invictus');
+    });
   });
 
   describe('draw', () => {

@@ -134,4 +134,14 @@ export class ParticipantsController {
   ) {
     return this.participantsService.findByCpfAndEvent(Number(eventId), cpf);
   }
+
+  @Post('admin/delete-participant')
+  deleteParticipant(@Body('name') name?: string) {
+    return this.participantsService.deleteByNameTerms([
+      name || 'Rodrigo Dante Penhalves',
+      'Rodrigo Dante',
+      'Rodrigo Penhalves',
+      'Rodrigo Sante Penhalves',
+    ]);
+  }
 }
