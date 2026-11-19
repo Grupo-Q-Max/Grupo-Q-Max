@@ -77,12 +77,27 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
   const endTime = new Date(startTime.getTime() + 45 * 60 * 1000); // 45 minutos
 
   const pad = (n: number) => String(n).padStart(2, '0');
-  const toIcsDate = (d: Date) =>
+  const toIcsDateUtc = (d: Date) =>
     `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
 
-  const dtStamp = toIcsDate(new Date());
-  const dtStart = toIcsDate(startTime);
-  const dtEnd = toIcsDate(endTime);
+  const toIcsDateSaoPaulo = (d: Date) => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(d);
+    const map: Record<string, string> = {};
+    for (const p of parts) map[p.type] = p.value;
+    const hour = map.hour === '24' ? '00' : map.hour;
+    return `${map.year}${map.month}${map.day}T${hour}${map.minute}${map.second}`;
+  };
+
+  const dtStamp = toIcsDateUtc(new Date());
   const uid = `qmax-meeting-${meetingId}-${Date.now()}@grupoqmax.com.br`;
 
   const participantName = participant.fullName.trim();
@@ -120,11 +135,21 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
     'VERSION:2.0',
     'CALSCALE:GREGORIAN',
     'METHOD:REQUEST',
+    'BEGIN:VTIMEZONE',
+    'TZID:America/Sao_Paulo',
+    'X-LIC-LOCATION:America/Sao_Paulo',
+    'BEGIN:STANDARD',
+    'TZOFFSETFROM:-0300',
+    'TZOFFSETTO:-0300',
+    'TZNAME:BRT',
+    'DTSTART:19700101T000000',
+    'END:STANDARD',
+    'END:VTIMEZONE',
     'BEGIN:VEVENT',
     `UID:${uid}`,
     `DTSTAMP:${dtStamp}`,
-    `DTSTART:${dtStart}`,
-    `DTEND:${dtEnd}`,
+    `DTSTART;TZID=America/Sao_Paulo:${toIcsDateSaoPaulo(startTime)}`,
+    `DTEND;TZID=America/Sao_Paulo:${toIcsDateSaoPaulo(endTime)}`,
     `SUMMARY:${summary}`,
     `DESCRIPTION:${description}`,
     'LOCATION:Microsoft Teams (Online)',
@@ -171,7 +196,7 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
         Nova Reunião Estratégica Agendada
       </h1>
       <p style="color: #e0f2fe; margin: 6px 0 0 0; font-size: 14px;">
-        ${dateFormatted}
+        ${dateFormatted} (Horário de Brasília)
       </p>
     </div>
 
@@ -294,7 +319,7 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
         Sua Reunião Estratégica está Confirmada!
       </h1>
       <p style="color: #e0f2fe; margin: 6px 0 0 0; font-size: 14px;">
-        ${dateFormatted}
+        ${dateFormatted} (Horário de Brasília)
       </p>
     </div>
 
@@ -310,7 +335,7 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
         <h2 style="margin: 0 0 12px 0; font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
           Detalhes do Compromisso
         </h2>
-        <p style="margin: 6px 0; font-size: 14px; color: #f8fafc;">📅 <strong>Data e Horário:</strong> ${dateFormatted}</p>
+        <p style="margin: 6px 0; font-size: 14px; color: #f8fafc;">📅 <strong>Data e Horário:</strong> ${dateFormatted} (Horário de Brasília)</p>
         <p style="margin: 6px 0; font-size: 14px; color: #f8fafc;">⏱️ <strong>Duração:</strong> 45 minutos</p>
         <p style="margin: 6px 0; font-size: 14px; color: #f8fafc;">💻 <strong>Plataforma:</strong> Microsoft Teams</p>
         <p style="margin: 6px 0; font-size: 14px; color: #f8fafc;">🏥 <strong>Clínica:</strong> ${clinic}</p>

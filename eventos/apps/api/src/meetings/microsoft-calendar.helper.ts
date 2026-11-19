@@ -56,6 +56,34 @@ export type BusySlot = {
   end: Date;
 };
 
+export function parseGraphDateTime(dtStr: string): Date {
+  if (!dtStr) return new Date(NaN);
+  if (dtStr.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dtStr)) {
+    return new Date(dtStr);
+  }
+  return new Date(`${dtStr}-03:00`);
+}
+
+export function formatToSaoPauloIsoNoZ(d: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+
+  const map: Record<string, string> = {};
+  for (const p of parts) {
+    map[p.type] = p.value;
+  }
+  const hour = map.hour === '24' ? '00' : map.hour;
+  return `${map.year}-${map.month}-${map.day}T${hour}:${map.minute}:${map.second}`;
+}
+
 /**
  * Consulta a disponibilidade real de hugo@grupoqmax.com.br no Microsoft 365
  * para a data solicitada e retorna todos os intervalos ocupados.
@@ -95,8 +123,8 @@ export async function getHugoBusyIntervals(
           // Se o evento existe na agenda do Hugo (mesmo que ele NÃO tenha aceitado ainda: notResponded ou tentative),
           // considera ocupado para proteger a agenda e não permitir conflitos!
           if (evt.start?.dateTime && evt.end?.dateTime) {
-            const start = new Date(evt.start.dateTime + '-03:00');
-            const end = new Date(evt.end.dateTime + '-03:00');
+            const start = parseGraphDateTime(evt.start.dateTime);
+            const end = parseGraphDateTime(evt.end.dateTime);
             if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
               const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
               const subj = (evt.subject || '').toLowerCase();
@@ -141,8 +169,8 @@ export async function getHugoBusyIntervals(
         for (const item of scheduleItems) {
           // Ignora status 'free'; bloqueia 'busy', 'tentative', 'oof' (fora do escritório), 'workingElsewhere'
           if (item.status && item.status.toLowerCase() !== 'free') {
-            const start = new Date(item.start.dateTime + '-03:00');
-            const end = new Date(item.end.dateTime + '-03:00');
+            const start = parseGraphDateTime(item.start.dateTime);
+            const end = parseGraphDateTime(item.end.dateTime);
             if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
               const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
               // Blocos de dia inteiro ou muito longos (>= 5 horas) são eventos gerais do congresso, não reuniões individuais
@@ -213,8 +241,10 @@ export async function getHugoDetailedEvents(
 
     for (const evt of events) {
       if (evt.isCancelled === true) continue;
-      const startIso = evt.start?.dateTime ? `${evt.start.dateTime}-03:00` : '';
-      const endIso = evt.end?.dateTime ? `${evt.end.dateTime}-03:00` : '';
+      const startD = parseGraphDateTime(evt.start?.dateTime);
+      const endD = parseGraphDateTime(evt.end?.dateTime);
+      const startIso = !isNaN(startD.getTime()) ? startD.toISOString() : '';
+      const endIso = !isNaN(endD.getTime()) ? endD.toISOString() : '';
 
       result.push({
         id: evt.id,
@@ -276,10 +306,6 @@ export async function createMicrosoftCalendarEvent(payload: {
     const startTime = scheduledAt;
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
 
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const toIsoStringNoZ = (d: Date) =>
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-
     const attendees: Array<{ emailAddress: { address: string; name: string }; type: 'required' | 'optional' }> = [];
 
     if (secondEmail && secondEmail.includes('@') && secondEmail !== bossEmail) {
@@ -321,11 +347,11 @@ export async function createMicrosoftCalendarEvent(payload: {
         `,
       },
       start: {
-        dateTime: toIsoStringNoZ(startTime),
+        dateTime: formatToSaoPauloIsoNoZ(startTime),
         timeZone: 'America/Sao_Paulo',
       },
       end: {
-        dateTime: toIsoStringNoZ(endTime),
+        dateTime: formatToSaoPauloIsoNoZ(endTime),
         timeZone: 'America/Sao_Paulo',
       },
       location: {

@@ -93,5 +93,25 @@ describe('MeetingsService - Agendamento e Integração Teams / Hugo e Edvaldo', 
       }),
     );
   });
+
+  it('deve formatar data para o fuso de Brasília (America/Sao_Paulo) sem descompasso de UTC', () => {
+    // 14:00 UTC deve ser exatamente 11:00 em America/Sao_Paulo
+    const utcDate = new Date('2026-11-19T14:00:00.000Z');
+    const formatted = msHelper.formatToSaoPauloIsoNoZ(utcDate);
+    expect(formatted).toBe('2026-11-19T11:00:00');
+
+    // 17:00 UTC deve ser exatamente 14:00 em America/Sao_Paulo
+    const utcDate2 = new Date('2026-11-19T17:00:00.000Z');
+    const formatted2 = msHelper.formatToSaoPauloIsoNoZ(utcDate2);
+    expect(formatted2).toBe('2026-11-19T14:00:00');
+  });
+
+  it('deve fazer parse de data do Microsoft Graph respeitando o fuso de Brasília', () => {
+    const d1 = msHelper.parseGraphDateTime('2026-11-19T11:00:00');
+    expect(d1.toISOString()).toBe('2026-11-19T14:00:00.000Z');
+
+    const d2 = msHelper.parseGraphDateTime('2026-11-19T14:00:00Z');
+    expect(d2.toISOString()).toBe('2026-11-19T14:00:00.000Z');
+  });
 });
 
