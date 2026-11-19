@@ -68,7 +68,7 @@ export default function GoldenTicket({
   const formattedTicket = ticketNumber
     ? typeof ticketNumber === "number"
       ? `#${String(ticketNumber).padStart(4, "0")}`
-      : ticketNumber.startsWith("#")
+      : typeof ticketNumber === "string" && ticketNumber.startsWith("#")
       ? ticketNumber
       : `#${ticketNumber}`
     : null;
@@ -217,7 +217,7 @@ export default function GoldenTicket({
                 BILHETE VIP
               </span>
               <span className="font-mono text-2xl sm:text-3xl font-black tracking-widest text-[#FFD700] select-all drop-shadow-[0_0_12px_rgba(255,215,0,0.5)]">
-                {code.startsWith("#") ? code : `#${code}`}
+                {(code || "").startsWith("#") ? code : `#${code || "VIP"}`}
               </span>
               <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-400">
                 <ShieldCheck size={13} /> {redeemedAt ? "Resgatado" : "Válido p/ 1 Giro"}

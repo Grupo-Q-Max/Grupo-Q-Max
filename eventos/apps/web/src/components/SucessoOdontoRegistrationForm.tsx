@@ -62,7 +62,11 @@ function formatCpf(value: string) {
 }
 
 function formatPhone(value: string) {
-  const numbers = onlyNumbers(value).slice(0, 11);
+  let numbers = onlyNumbers(value);
+  if (numbers.startsWith("55") && numbers.length > 11) {
+    numbers = numbers.substring(2);
+  }
+  numbers = numbers.slice(0, 11);
   if (numbers.length <= 10) {
     return numbers
       .replace(/(\d{2})(\d)/, "($1) $2")
@@ -207,9 +211,9 @@ function RegistrationForm({
         return;
       }
     } else {
-      const cleanDoc = foreignDoc.trim().replace(/[^a-zA-Z0-9]/g, '');
-      if (cleanDoc.length < 4) {
-        setError("Por favor, informe um número de documento/passaporte válido com pelo menos 4 caracteres.");
+      const doc = foreignDoc.trim();
+      if (!doc || doc.length < 2) {
+        setError("Por favor, informe seu passaporte ou documento de identificação (mínimo 2 caracteres).");
         return;
       }
 
@@ -323,7 +327,7 @@ function RegistrationForm({
           </div>
         )}
 
-        {isVip && (
+        {isVip ? (
           <div className="px-5 pt-2">
             <GoldenTicket
               code={registeredParticipation.vipCode || `#${String(registeredParticipation.participationId).padStart(4, "0")}`}
@@ -335,6 +339,20 @@ function RegistrationForm({
               className="my-2"
             />
           </div>
+        ) : (
+          Boolean(registeredParticipation.participationId) && (
+            <div className="px-5 pt-2">
+              <div className="holographic-card flex items-center justify-between rounded-card bg-ink-950/90 px-6 py-5 text-ink-text shadow-[0_12px_40px_rgba(34,195,220,0.2)] border border-accent/40 animate-pop-burst">
+                <div className="flex flex-col">
+                  <span className="font-mono text-[11px] font-bold tracking-[0.08em] text-accent uppercase">SEU CÓDIGO DE RETIRADA / PIN</span>
+                  <span className="text-xs text-ink-text-2 mt-0.5">Apresente no balcão Finora</span>
+                </div>
+                <span className="font-mono text-[32px] font-black tracking-[0.05em] text-accent">
+                  #{String(registeredParticipation.participationId).padStart(4, "0")}
+                </span>
+              </div>
+            </div>
+          )
         )}
 
         {/* Confirmação do Grande Sorteio Geral */}

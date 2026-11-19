@@ -63,7 +63,11 @@ function formatCpf(value: string) {
 }
 
 function formatPhone(value: string) {
-  const numbers = onlyNumbers(value).slice(0, 11);
+  let numbers = onlyNumbers(value);
+  if (numbers.startsWith("55") && numbers.length > 11) {
+    numbers = numbers.substring(2);
+  }
+  numbers = numbers.slice(0, 11);
   if (numbers.length <= 10) {
     return numbers
       .replace(/(\d{2})(\d)/, "($1) $2")
@@ -317,9 +321,9 @@ function RegistrationForm({
         return;
       }
     } else {
-      const cleanDoc = foreignDoc.trim().replace(/[^a-zA-Z0-9]/g, '');
-      if (cleanDoc.length < 4) {
-        setError("Por favor, informe um número de documento/passaporte válido com pelo menos 4 caracteres.");
+      const doc = foreignDoc.trim();
+      if (!doc || doc.length < 2) {
+        setError("Por favor, informe seu passaporte ou documento de identificação (mínimo 2 caracteres).");
         return;
       }
 
@@ -394,19 +398,6 @@ function RegistrationForm({
           drawnPrize: result.participation?.drawnPrize || null,
         };
 
-        // Para TODOS os participantes (inclusive VIP) que ainda não realizaram o sorteio, oferece agendamento exclusivo com o CEO!
-        if (!partData.hasDrawn) {
-          setPendingParticipationData(partData);
-          setCeoModalOpen(true);
-          fetch(`${getApiBaseUrl()}/meetings/event/${eventId}/next-slot`)
-            .then((r) => r.json())
-            .then((d) => {
-              if (d?.nextSlot) setCeoNextSlot(d.nextSlot);
-            })
-            .catch(() => {});
-          return;
-        }
-
         confetti({
           particleCount: 90,
           spread: 80,
@@ -414,10 +405,14 @@ function RegistrationForm({
           colors: ["#22C3DC", "#FFD700", "#0077FF", "#4ADE80", "#FFFFFF"],
           disableForReducedMotion: true,
         });
+
+        // Exibe imediatamente a tela de confirmação oficial com o PIN e bilhete!
+        setPendingParticipationData(partData);
         setRegisteredParticipation({
           ...partData,
           autoBookedSlot: result.autoBookedSlot || null,
         });
+        setCeoModalOpen(false);
         setTicketModalOpen(false);
         return;
       }
@@ -450,11 +445,12 @@ function RegistrationForm({
 
   // Passo 2: confirmação imediata (sem WhatsApp e com suporte a já cadastrado)
   if (registeredParticipation) {
-    const isVip = registeredParticipation.isVip;
-    const isAlready = registeredParticipation.alreadyRegistered;
-    const hasDrawn = registeredParticipation.hasDrawn;
+    const isVip = Boolean(registeredParticipation.isVip);
+    const isAlready = Boolean(registeredParticipation.alreadyRegistered);
+    const hasDrawn = Boolean(registeredParticipation.hasDrawn);
     const drawnPrize = registeredParticipation.drawnPrize;
-    const nameParts = registeredParticipation.name.trim().split(/\s+/);
+    const safeName = String(registeredParticipation.name || "Participante").trim();
+    const nameParts = safeName.split(/\s+/);
     const firstName =
       (nameParts[0]?.toLowerCase().startsWith("dr") && nameParts.length > 1)
         ? `${nameParts[0]} ${nameParts[1]}`
@@ -503,16 +499,16 @@ function RegistrationForm({
         <div className="flex flex-col gap-3 px-5">
           {isVip ? (
             <GoldenTicket
-              code={registeredParticipation.vipCode || `#${String(registeredParticipation.id).padStart(4, "0")}`}
+              code={registeredParticipation.vipCode || `#${String(registeredParticipation.id || 0).padStart(4, "0")}`}
               eventName={_eventName}
               eventSlug={route}
-              participantName={registeredParticipation.name}
+              participantName={safeName}
               ticketNumber={registeredParticipation.id}
               showPrintButton={false}
               className="my-1"
             />
           ) : (
-            registeredParticipation.id && (
+            Boolean(registeredParticipation.id) && (
               <div className="holographic-card flex items-center justify-between rounded-card bg-ink-950/90 px-6 py-5 text-ink-text shadow-[0_12px_40px_rgba(34,195,220,0.2)] border border-accent/40 animate-pop-burst">
                 <div className="flex flex-col">
                   <span className="font-mono text-[11px] font-bold tracking-[0.08em] text-accent uppercase">SEU CÓDIGO DE RETIRADA</span>
@@ -531,10 +527,46 @@ function RegistrationForm({
               <div className="flex flex-col gap-1">
                 <strong>
                   Conversa VIP às{" "}
-                  {new Date(registeredParticipation.autoBookedSlot).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  {(() => {
+                    try {
+                      const d = new Date(registeredParticipation.autoBookedSlot);
+                      return !isNaN(d.getTime()) ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+                    } catch {
+                      return "";
+                    }
+                  })()}
                 </strong>
                 <span className="text-sm leading-[1.4] text-text-2">Vá até o estande neste horário para falar com nossos especialistas.</span>
               </div>
+            </div>
+          )}
+
+          {/* Convite Opcional: Agendar Consultoria com o CEO Hugo Werninghaus */}
+          {!hasDrawn && (
+            <div className="flex flex-col gap-2.5 rounded-2xl border-2 border-[#FFD700]/70 bg-gradient-to-br from-[#2A1B05] via-[#1B1203] to-[#2A1B05] p-4 text-white shadow-[0_0_25px_rgba(255,215,0,0.25)]">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#FFD700] flex items-center gap-1.5">
+                  <Crown size={14} className="text-[#FFD700]" />
+                  <span>CONSULTORIA VIP COM O CEO</span>
+                </span>
+                <span className="rounded-full bg-[#FFD700]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#FFE57F]">
+                  45 MINUTOS
+                </span>
+              </div>
+              <p className="text-xs sm:text-[13px] text-slate-200 leading-relaxed">
+                Deseja conversar pessoalmente com nosso sócio? Agende uma reunião estratégica individual com <strong>Hugo Werninghaus</strong> (CEO Grupo Q-Max).
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingParticipationData(registeredParticipation as any);
+                  setSchedulerModalOpen(true);
+                }}
+                className="mt-1 flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-2.5 px-4 font-display text-xs sm:text-sm font-black text-[#3E2723] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-md"
+              >
+                <CalendarCheck size={16} />
+                <span>Agendar Reunião com o Sócio ➔</span>
+              </button>
             </div>
           )}
 
@@ -690,6 +722,50 @@ function RegistrationForm({
                   Concluir & Ir para o Estande 🚀
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Popup: Agendamento com o CEO em Popup Dedicado */}
+        {schedulerModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
+            <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-4 sm:p-6 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst my-auto">
+              <button
+                type="button"
+                onClick={() => setSchedulerModalOpen(false)}
+                aria-label="Fechar"
+                className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer z-10"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="text-center mb-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3.5 py-1 font-mono text-[11px] font-black uppercase tracking-wider text-[#FFDF73]">
+                  <Crown size={14} className="text-[#FFD700]" />
+                  AGENDAMENTO EXCLUSIVO COM O CEO
+                </span>
+                <h3 className="mt-2 font-display text-2xl sm:text-3xl font-black text-white leading-tight">
+                  Selecione o Dia e Horário
+                </h3>
+                <p className="mt-1 text-xs sm:text-sm text-[#C2CEE3]">
+                  Reunião estratégica de <strong>45 minutos</strong> com <strong>Hugo Werninghaus (CEO Grupo Q-Max)</strong> via Microsoft Teams.
+                </p>
+                <div className="mt-2.5 inline-flex items-center gap-2 rounded-xl bg-amber-400/10 border border-amber-400/30 px-3 py-1.5 text-[11.5px] text-amber-200">
+                  ⏰ Horários de hora em hora · Intervalo de almoço (12h às 14h) fechado.
+                </div>
+              </div>
+
+              <VipScheduler
+                participantId={
+                  pendingParticipationData?.participantId ||
+                  (registeredParticipation as any)?.participantId ||
+                  registeredParticipation?.id ||
+                  0
+                }
+                eventId={eventId}
+                meetingEmail={email.trim()}
+                onBooked={handleMeetingBooked}
+              />
             </div>
           </div>
         )}

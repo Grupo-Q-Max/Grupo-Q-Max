@@ -85,8 +85,11 @@ function getEncryptionKey(): Buffer {
 }
 
 export function hashCpf(cpf: string): string {
+  const norm = String(cpf || '').startsWith('EXT-')
+    ? String(cpf).trim().toUpperCase()
+    : normalizeCpf(cpf);
   return createHmac('sha256', getCpfHashKey())
-    .update(normalizeCpf(cpf))
+    .update(norm)
     .digest('hex');
 }
 

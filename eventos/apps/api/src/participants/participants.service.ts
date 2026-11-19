@@ -283,19 +283,19 @@ export class ParticipantsService {
     let cpfLastDigits: string;
 
     if (dto.isForeigner) {
-      const cleanDoc = (dto.foreignDocument || dto.cpf || '')
-        .trim()
-        .replace(/[^a-zA-Z0-9]/g, '')
-        .toUpperCase();
+      const rawDoc = String(dto.foreignDocument || dto.cpf || '').trim();
 
-      if (!cleanDoc || cleanDoc.length < 4) {
+      if (!rawDoc || rawDoc.length < 2) {
         throw new BadRequestException(
-          'Informe um número de documento/passaporte válido com pelo menos 4 caracteres.',
+          'Informe um número de documento/passaporte válido com pelo menos 2 caracteres.',
         );
       }
 
+      // Permite letras, números, hífens, pontos, barras e caracteres do documento
+      const cleanDoc = rawDoc.replace(/[\r\n\t]/g, ' ').slice(0, 40).toUpperCase();
+
       const cCode = (dto.countryCode || 'INTL')
-        .replace(/[^a-zA-Z0-9]/g, '')
+        .replace(/[^a-zA-Z0-9+]/g, '')
         .toUpperCase()
         .slice(0, 10);
 

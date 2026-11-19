@@ -41,10 +41,15 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
       }
       current.setDate(current.getDate() + 1);
     }
+
+    if (list.length === 0) {
+      list.push(new Date());
+    }
+
     return list;
   }, []);
 
-  const [date, setDate] = useState(dates[0]);
+  const [date, setDate] = useState(dates[0] || new Date());
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState<string | null>(null);
   const durationMinutes = 45; // Duração fixa oficial de 45 minutos
@@ -54,12 +59,21 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!date) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
     setSlots([]);
     setSlot(null);
-    fetchApi<string[]>(`/meetings/event/${eventId}/available-slots?date=${format(date, "yyyy-MM-dd")}`)
+
+    let dateStr = "";
+    try {
+      dateStr = format(date, "yyyy-MM-dd");
+    } catch {
+      dateStr = format(new Date(), "yyyy-MM-dd");
+    }
+
+    fetchApi<string[]>(`/meetings/event/${eventId}/available-slots?date=${dateStr}`)
       .then((data) => {
         if (cancelled) return;
         const available = Array.isArray(data) ? data : [];
@@ -75,8 +89,23 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
     };
   }, [date, eventId]);
 
-  const startTimeFormatted = slot ? format(parseISO(slot), "HH:mm") : "";
-  const endTimeFormatted = slot ? format(addMinutes(parseISO(slot), durationMinutes), "HH:mm") : "";
+  const startTimeFormatted = useMemo(() => {
+    if (!slot) return "";
+    try {
+      return format(parseISO(slot), "HH:mm");
+    } catch {
+      return "";
+    }
+  }, [slot]);
+
+  const endTimeFormatted = useMemo(() => {
+    if (!slot) return "";
+    try {
+      return format(addMinutes(parseISO(slot), durationMinutes), "HH:mm");
+    } catch {
+      return "";
+    }
+  }, [slot, durationMinutes]);
 
   async function book() {
     if (!slot) return;
