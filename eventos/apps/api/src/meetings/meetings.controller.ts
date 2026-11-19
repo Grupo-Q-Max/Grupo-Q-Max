@@ -63,7 +63,7 @@ export class MeetingsController {
     return { nextSlot };
   }
 
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post('event/:eventId/book')
   bookMeeting(
     @Param('eventId', ParseIntPipe) eventId: number,

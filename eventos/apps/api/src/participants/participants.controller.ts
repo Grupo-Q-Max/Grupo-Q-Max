@@ -20,7 +20,7 @@ import { ParticipantsService } from './participants.service';
 export class ParticipantsController {
   constructor(private readonly participantsService: ParticipantsService) {}
 
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Throttle({ default: { limit: 300, ttl: 60_000 } })
   @Post('register')
   register(
     @Body()

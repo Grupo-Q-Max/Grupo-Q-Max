@@ -18,7 +18,7 @@ import { AdminUserId } from '../security/admin-user-id.decorator';
 export class DrawsController {
   constructor(private readonly drawsService: DrawsService) {}
 
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Throttle({ default: { limit: 300, ttl: 60_000 } })
   @Post('participation/:participationId')
   draw(
     @Param('participationId', ParseIntPipe)

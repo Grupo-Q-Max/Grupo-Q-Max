@@ -29,7 +29,7 @@ import { InvictusSeedService } from './seed/invictus-seed.service';
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 500 }]),
     PrismaModule,
     HealthModule,
     AuditModule,
