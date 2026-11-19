@@ -282,15 +282,15 @@ export default function QueueManager({
     <div className="space-y-6">
       {/* Toast Feedback */}
       {success && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#E3F6EA] border-2 border-[#B7E4C7] text-[#0F7A3D] text-sm font-bold shadow-sm animate-in fade-in">
-          <CheckCircle2 size={20} className="text-[#0F7A3D] shrink-0" />
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-bold shadow-sm animate-in fade-in">
+          <CheckCircle2 size={20} className="text-emerald-400 shrink-0" />
           <span>{success}</span>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#FDE8EC] border-2 border-[#F5C2CD] text-[#A3112F] text-sm font-bold shadow-sm animate-in fade-in">
-          <AlertCircle size={20} className="text-[#A3112F] shrink-0" />
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm font-bold shadow-sm animate-in fade-in">
+          <AlertCircle size={20} className="text-rose-400 shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -372,8 +372,8 @@ export default function QueueManager({
 
               <div>
                 <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black uppercase tracking-wider">
-                    <Gift size={14} className="text-emerald-600" />
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-wider">
+                    <Gift size={14} className="text-emerald-400" />
                     <span>ROLETA NORMAL · 1º GIRO</span>
                   </div>
                   <span className="text-xs font-black px-3 py-1 rounded-full bg-paper border border-line-strong text-text">
@@ -390,13 +390,13 @@ export default function QueueManager({
                       {nextNormalPrize.name}
                     </h3>
                     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">
                         Estoque: {nextNormalPrize.available_stock} un.
                       </span>
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-bold">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 font-bold">
                         <Percent size={12} /> {Number(nextNormalPrize.probability || 0)}% no banco
                       </span>
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-bold">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-paper border border-line-strong text-text-2 font-bold">
                         Posição #1 na Fila
                       </span>
                     </div>
@@ -428,7 +428,7 @@ export default function QueueManager({
                   <button
                     onClick={() => generateAutoQueue(false, normalGenerateCount, false)}
                     disabled={saving || normalPrizes.length === 0}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-finora-600 hover:bg-finora-700 text-white font-black text-xs transition active:scale-95 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-finora-600 hover:bg-finora-700 text-white font-black text-xs transition active:scale-95 disabled:opacity-50 shadow-md"
                   >
                     <Wand2 size={15} />
                     <span>Gerar Fila Normal Alta (% Real)</span>
@@ -439,7 +439,7 @@ export default function QueueManager({
                   <button
                     onClick={() => clearPoolQueue(false)}
                     disabled={saving}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FDE8EC] hover:bg-[#FAD4DC] border border-[#F5C2CD] text-[#A3112F] font-bold text-xs transition active:scale-95 disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-bold text-xs transition active:scale-95 disabled:opacity-50"
                   >
                     <Trash2 size={14} />
                     <span>Limpar Normal</span>
@@ -449,10 +449,10 @@ export default function QueueManager({
             </div>
 
             {/* Adicionar Prêmio Rápido à Fila Normal */}
-            <div className="rounded-3xl bg-surface border-2 border-line p-5">
+            <div className="rounded-3xl bg-surface border border-line-strong p-5">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-black text-text flex items-center gap-2">
-                  <Package size={16} className="text-emerald-600" />
+                  <Package size={16} className="text-emerald-400" />
                   <span>Adicionar Brinde à Fila Normal</span>
                 </h4>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-paper border border-line-strong text-text-2">
@@ -471,17 +471,17 @@ export default function QueueManager({
                       key={p.id}
                       onClick={() => addPrizeById(p.id)}
                       disabled={saving || p.available_stock <= 0}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-paper hover:bg-emerald-50 border border-line hover:border-emerald-200 text-left transition group disabled:opacity-40"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-paper hover:bg-emerald-500/10 border border-line-strong hover:border-emerald-500/40 text-left transition group disabled:opacity-40"
                     >
                       <div className="min-w-0 pr-2">
-                        <p className="font-bold text-text group-hover:text-emerald-800 text-xs truncate">
+                        <p className="font-bold text-text group-hover:text-emerald-300 text-xs truncate">
                           {p.name}
                         </p>
                         <p className="text-[10px] text-text-2 font-semibold">
                           {Number(p.probability)}% · {p.available_stock} un.
                         </p>
                       </div>
-                      <span className="p-1 rounded-lg bg-emerald-100 text-emerald-800 shrink-0">
+                      <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0">
                         <Plus size={13} />
                       </span>
                     </button>
@@ -491,11 +491,11 @@ export default function QueueManager({
             </div>
 
             {/* Lista Ordenada da Fila Normal */}
-            <div className="rounded-3xl bg-surface border-2 border-line p-5">
+            <div className="rounded-3xl bg-surface border border-line-strong p-5">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
                 <div>
                   <h4 className="text-base font-black text-text flex items-center gap-2">
-                    <Layers size={18} className="text-finora-600" />
+                    <Layers size={18} className="text-cyan-400" />
                     <span>Sequência da Roleta Normal</span>
                   </h4>
                   <p className="text-[11px] text-text-2 font-medium mt-0.5">
@@ -505,7 +505,7 @@ export default function QueueManager({
               </div>
 
               {normalQueue.length === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed border-line rounded-2xl bg-paper">
+                <div className="text-center py-10 border-2 border-dashed border-line-strong rounded-2xl bg-paper">
                   <Gift size={36} className="mx-auto text-text-2 mb-2 opacity-50" />
                   <p className="text-xs font-bold text-text">Fila de brindes normais vazia</p>
                   <p className="text-[11px] text-text-2 mt-1">
@@ -519,7 +519,7 @@ export default function QueueManager({
                       key={item.id}
                       className={`flex items-center justify-between p-3 rounded-2xl border transition ${
                         index === 0
-                          ? "bg-emerald-50/60 border-2 border-emerald-300"
+                          ? "bg-emerald-950/40 border-2 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)]"
                           : "bg-paper border-line hover:border-line-strong"
                       }`}
                     >
@@ -527,7 +527,7 @@ export default function QueueManager({
                         <span
                           className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
                             index === 0
-                              ? "bg-emerald-600 text-white"
+                              ? "bg-emerald-500 text-slate-950 font-black shadow-sm"
                               : "bg-line text-text"
                           }`}
                         >
@@ -540,13 +540,13 @@ export default function QueueManager({
                               {item.prizes.name}
                             </h5>
                             {index === 0 && (
-                              <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded uppercase">
+                              <span className="text-[10px] font-black text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded uppercase">
                                 Próximo
                               </span>
                             )}
                           </div>
                           <p className="text-[11px] text-text-2 font-medium">
-                            Estoque: <span className="font-bold text-emerald-700">{item.prizes.available_stock} un.</span> · Chance: <span className="font-bold">{Number(item.prizes.probability)}%</span>
+                            Estoque: <span className="font-bold text-emerald-400">{item.prizes.available_stock} un.</span> · Chance: <span className="font-bold text-text">{Number(item.prizes.probability)}%</span>
                           </p>
                         </div>
                       </div>
@@ -557,7 +557,7 @@ export default function QueueManager({
                           <button
                             onClick={() => handlePoolMove(false, index, "top")}
                             disabled={saving}
-                            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-[11px] transition active:scale-95"
+                            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-bold text-[11px] transition active:scale-95"
                             title="Colocar como #1 (Próximo Giro)"
                           >
                             <Flame size={12} />
@@ -583,7 +583,7 @@ export default function QueueManager({
                         <button
                           onClick={() => handleRemove(item.id)}
                           disabled={saving}
-                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition ml-0.5"
+                          className="p-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition ml-0.5"
                           title="Remover da fila"
                         >
                           <Trash2 size={14} />
@@ -707,17 +707,17 @@ export default function QueueManager({
                       key={p.id}
                       onClick={() => addPrizeById(p.id)}
                       disabled={saving || p.available_stock <= 0}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-paper hover:bg-amber-50 border border-line hover:border-amber-300 text-left transition group disabled:opacity-40"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-paper hover:bg-amber-500/10 border border-line-strong hover:border-amber-500/40 text-left transition group disabled:opacity-40"
                     >
                       <div className="min-w-0 pr-2">
-                        <p className="font-bold text-text group-hover:text-amber-900 text-xs truncate">
+                        <p className="font-bold text-text group-hover:text-amber-300 text-xs truncate">
                           {p.name}
                         </p>
                         <p className="text-[10px] text-text-2 font-semibold">
                           {Number(p.probability)}% · {p.available_stock} un.
                         </p>
                       </div>
-                      <span className="p-1 rounded-lg bg-amber-100 text-amber-900 shrink-0">
+                      <span className="p-1 rounded-lg bg-amber-500/20 text-amber-300 shrink-0">
                         <Plus size={13} />
                       </span>
                     </button>
@@ -727,11 +727,11 @@ export default function QueueManager({
             </div>
 
             {/* Lista Ordenada da Fila VIP */}
-            <div className="rounded-3xl bg-surface border-2 border-line p-5">
+            <div className="rounded-3xl bg-surface border border-line-strong p-5">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
                 <div>
                   <h4 className="text-base font-black text-text flex items-center gap-2">
-                    <Crown size={18} className="text-amber-600" />
+                    <Crown size={18} className="text-amber-400" />
                     <span>Sequência da Roleta VIP</span>
                   </h4>
                   <p className="text-[11px] text-text-2 font-medium mt-0.5">
@@ -741,8 +741,8 @@ export default function QueueManager({
               </div>
 
               {vipQueue.length === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed border-line rounded-2xl bg-paper">
-                  <Crown size={36} className="mx-auto text-amber-600/50 mb-2" />
+                <div className="text-center py-10 border-2 border-dashed border-line-strong rounded-2xl bg-paper">
+                  <Crown size={36} className="mx-auto text-amber-400/50 mb-2" />
                   <p className="text-xs font-bold text-text">Fila de prêmios VIP vazia</p>
                   <p className="text-[11px] text-text-2 mt-1">
                     Clique em "Gerar Fila VIP Alta" acima para popular 30 giros proporcionais.
@@ -755,7 +755,7 @@ export default function QueueManager({
                       key={item.id}
                       className={`flex items-center justify-between p-3 rounded-2xl border transition ${
                         index === 0
-                          ? "bg-amber-50/70 border-2 border-amber-400"
+                          ? "bg-amber-950/40 border-2 border-amber-400/60 shadow-[0_0_25px_rgba(255,215,0,0.2)]"
                           : "bg-paper border-line hover:border-line-strong"
                       }`}
                     >
@@ -763,7 +763,7 @@ export default function QueueManager({
                         <span
                           className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
                             index === 0
-                              ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-sm"
+                              ? "bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-black shadow-sm"
                               : "bg-line text-text"
                           }`}
                         >
@@ -776,13 +776,13 @@ export default function QueueManager({
                               {item.prizes.name}
                             </h5>
                             {index === 0 && (
-                              <span className="text-[10px] font-black text-amber-900 bg-amber-200 border border-amber-400 px-2 py-0.5 rounded uppercase">
+                              <span className="text-[10px] font-black text-amber-200 bg-amber-500/20 border border-amber-400/50 px-2 py-0.5 rounded uppercase">
                                 Próximo VIP
                               </span>
                             )}
                           </div>
                           <p className="text-[11px] text-text-2 font-medium">
-                            Estoque: <span className="font-bold text-amber-800">{item.prizes.available_stock} un.</span> · Chance: <span className="font-bold">{Number(item.prizes.probability)}%</span>
+                            Estoque: <span className="font-bold text-amber-300">{item.prizes.available_stock} un.</span> · Chance: <span className="font-bold text-text">{Number(item.prizes.probability)}%</span>
                           </p>
                         </div>
                       </div>
@@ -793,10 +793,10 @@ export default function QueueManager({
                           <button
                             onClick={() => handlePoolMove(true, index, "top")}
                             disabled={saving}
-                            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold text-[11px] transition active:scale-95"
+                            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 font-bold text-[11px] transition active:scale-95"
                             title="Colocar como #1 (Próximo Giro VIP)"
                           >
-                            <Crown size={12} />
+                            <Crown size={12} className="text-amber-400" />
                             <span>#1</span>
                           </button>
                         )}
@@ -819,7 +819,7 @@ export default function QueueManager({
                         <button
                           onClick={() => handleRemove(item.id)}
                           disabled={saving}
-                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition ml-0.5"
+                          className="p-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition ml-0.5"
                           title="Remover da fila VIP"
                         >
                           <Trash2 size={14} />

@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { FinoraLogo } from "@/components/brand/Brand";
 import { RARITY, getPrizeRarity } from "./rarity";
 
-const COMMON_FILLS = ["#131B2E", "#1E2A47"];
-const VIP_FILLS = ["#1F160A", "#2E210D", "#1A1208", "#382910"];
+const COMMON_FILLS = ["#10192D", "#1A2645"];
+const VIP_FILLS = ["#1B1307", "#2D1E0A", "#160F06", "#38270E"];
 const LED_COUNT = 24;
 
 // 24 LEDs distribuídos em círculo ao redor da borda da roleta
@@ -19,12 +19,60 @@ const LED_DOTS = Array.from({ length: LED_COUNT }, (_, i) => {
   };
 });
 
+// Formatador inteligente para que os itens da roleta fiquem nítidos, elegantes e legíveis
+export function formatWheelLabel(rawName: string) {
+  const lower = (rawName || "").toLowerCase();
+
+  if (lower.includes("mentoria") || lower.includes("ceo")) {
+    return { title: "MENTORIA CEO", subtitle: "Hugo Werninghaus" };
+  }
+  if (lower.includes("100%")) {
+    return { title: "100% ISENÇÃO", subtitle: "1º Honorário" };
+  }
+  if (lower.includes("50%")) {
+    return { title: "50% DESCONTO", subtitle: "1º Honorário" };
+  }
+  if (lower.includes("diagnóstico") || lower.includes("diagnostico")) {
+    return { title: "DIAGNÓSTICO", subtitle: "Estratégico" };
+  }
+  if (lower.includes("certificado")) {
+    return { title: "CERTIFICADO", subtitle: "Finora" };
+  }
+  if (lower.includes("copo térmico") || lower.includes("copo termico")) {
+    return { title: "COPO TÉRMICO", subtitle: "Finora" };
+  }
+  if (lower.includes("copo")) {
+    return { title: "COPO EXCLUSIVO", subtitle: "Finora" };
+  }
+  if (lower.includes("caderno")) {
+    return { title: "CADERNO", subtitle: "Finora" };
+  }
+  if (lower.includes("garrafa")) {
+    return { title: "GARRAFA INOX", subtitle: "Finora" };
+  }
+  if (lower.includes("espelho")) {
+    return { title: "ESPELHO", subtitle: "Finora" };
+  }
+  if (lower.includes("chaveiro")) {
+    return { title: "CHAVEIRO", subtitle: "Metal Finora" };
+  }
+  if (lower.includes("pin")) {
+    return { title: "PIN EXCLUSIVO", subtitle: "Invictus" };
+  }
+
+  // Divisão harmoniosa para outros prêmios longos
+  const parts = rawName.split(" ");
+  if (parts.length > 1 && rawName.length > 13) {
+    const mid = Math.ceil(parts.length / 2);
+    return {
+      title: parts.slice(0, mid).join(" ").toUpperCase(),
+      subtitle: parts.slice(mid).join(" "),
+    };
+  }
+  return { title: rawName.toUpperCase(), subtitle: "" };
+}
+
 // Roda da roleta de altíssima fidelidade física e performance GPU:
-// - Disco giratório acelerado via hardware (translateZ(0) + will-change)
-// - Aro estático com casing metálico profundo (evita re-rasterização por frame)
-// - Pinos metálicos prateados com relevo 3D
-// - Ponteiro com clique mecânico sincronizado ao ticker de desaceleração
-// - LEDs dinâmicos de alta intensidade
 export default function Wheel({
   names,
   rotation,
@@ -105,7 +153,7 @@ export default function Wheel({
       {/* Halo de luz leve sem blur pesado (otimizado para mobile) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-4 rounded-full opacity-40"
+        className="pointer-events-none absolute -inset-4 rounded-full opacity-45"
         style={{
           background: isVip
             ? "radial-gradient(circle, #FFD700 0%, #D4AF37 35%, transparent 72%)"
@@ -125,7 +173,7 @@ export default function Wheel({
 
       {/* Disco Giratório com Aceleração de Hardware GPU (will-change + translateZ) */}
       <div
-        className="absolute inset-0 overflow-hidden rounded-full shadow-[inset_0_0_35px_rgba(0,0,0,0.8)]"
+        className="absolute inset-0 overflow-hidden rounded-full shadow-[inset_0_0_35px_rgba(0,0,0,0.85)]"
         style={{
           background,
           transform: `rotate(${rotation}deg) translateZ(0)`,
@@ -134,23 +182,51 @@ export default function Wheel({
           transition: spinning ? `transform ${durationMs}ms cubic-bezier(0.15, 0.75, 0.15, 1)` : "none",
         }}
       >
-        {/* Nomes dos Prêmios nas Fatias */}
+        {/* Nomes dos Prêmios nas Fatias com Formatação de Alta Nitidez */}
         {names.map((name, i) => {
-          const dark = getPrizeRarity(name) !== "COMMON";
+          const { title, subtitle } = formatWheelLabel(name);
           return (
             <div
               key={`${name}-${i}`}
-              className="absolute inset-0 flex justify-center"
+              className="absolute inset-0 flex justify-center pointer-events-none"
               style={{ transform: `rotate(${i * step}deg)` }}
             >
-              <span
-                className={`mt-[7%] line-clamp-2 text-center text-[clamp(12px,3.4cqw,20px)] font-black leading-tight select-none ${
-                  dark ? "text-ink-950 font-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.4)]" : "text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
-                }`}
-                style={{ maxWidth: `${Math.min(72, 2 * 44 * Math.sin((step * Math.PI) / 360))}%` }}
+              <div
+                className="mt-[6.5%] flex flex-col items-center text-center select-none"
+                style={{
+                  maxWidth: `${Math.min(76, 2 * 46 * Math.sin((step * Math.PI) / 360))}%`,
+                  WebkitFontSmoothing: "antialiased",
+                  MozOsxFontSmoothing: "grayscale",
+                  textRendering: "optimizeLegibility",
+                }}
               >
-                {name}
-              </span>
+                <span
+                  className={`font-black uppercase tracking-tight leading-[1.08] ${
+                    isVip
+                      ? "text-[#FFFDF5] drop-shadow-[0_2px_5px_rgba(0,0,0,0.98)] drop-shadow-[0_0_6px_rgba(255,215,0,0.4)]"
+                      : "text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.98)]"
+                  }`}
+                  style={{
+                    fontSize: "clamp(11px, 3.2cqw, 17px)",
+                  }}
+                >
+                  {title}
+                </span>
+                {subtitle && (
+                  <span
+                    className={`font-bold uppercase tracking-wider leading-none mt-0.5 ${
+                      isVip
+                        ? "text-[#FFE57F] drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
+                        : "text-cyan-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
+                    }`}
+                    style={{
+                      fontSize: "clamp(8.5px, 2.1cqw, 11px)",
+                    }}
+                  >
+                    {subtitle}
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}
@@ -163,7 +239,9 @@ export default function Wheel({
             style={{
               left: pin.left,
               top: pin.top,
-              background: "radial-gradient(circle at 35% 35%, #FFFFFF 0%, #CBD5E1 45%, #64748B 85%, #334155 100%)",
+              background: isVip
+                ? "radial-gradient(circle at 35% 35%, #FFFFFF 0%, #F59E0B 45%, #B45309 85%, #78350F 100%)"
+                : "radial-gradient(circle at 35% 35%, #FFFFFF 0%, #CBD5E1 45%, #64748B 85%, #334155 100%)",
             }}
           />
         ))}

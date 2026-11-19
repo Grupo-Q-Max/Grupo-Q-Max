@@ -139,18 +139,18 @@ export default function FraudRuleEditControl({ rule }: Props) {
 
       {open && mounted && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-paper backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               setOpen(false);
             }
           }}
         >
-          <div className="bg-surface border border-line rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-surface border border-line-strong rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
             <div className="px-6 py-5 border-b border-line flex justify-between items-start bg-paper">
               <div>
-                <span className="text-[10px] font-black text-finora-600 uppercase tracking-widest mb-1 block">
-                  ANTIFRAUDE
+                <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1 block">
+                  SEGURANÇA ANTIFRAUDE
                 </span>
                 <h2 className="text-xl font-black text-text">
                   {ruleLabels[rule.type] || rule.type}
@@ -162,7 +162,7 @@ export default function FraudRuleEditControl({ rule }: Props) {
 
               <button
                 type="button"
-                className="w-8 h-8 rounded-full bg-[#EEF1F5] hover:bg-line-strong flex items-center justify-center text-text-2 hover:text-text transition-colors"
+                className="w-8 h-8 rounded-full bg-line hover:bg-line-strong flex items-center justify-center text-text-2 hover:text-text transition-colors"
                 onClick={() => setOpen(false)}
               >
                 <X size={16} />
@@ -170,13 +170,13 @@ export default function FraudRuleEditControl({ rule }: Props) {
             </div>
 
             <div className="p-6 overflow-y-auto space-y-6">
-              <label className="flex items-start gap-4 p-4 rounded-2xl border border-line cursor-pointer hover:bg-paper transition-colors">
+              <label className="flex items-start gap-4 p-4 rounded-2xl border border-line-strong cursor-pointer hover:bg-paper transition-colors">
                 <div className="pt-1">
                   <input
                     type="checkbox"
                     checked={enabled}
                     onChange={(event) => setEnabled(event.target.checked)}
-                    className="w-5 h-5 rounded border-line-strong text-finora-600 focus:ring-finora-600 focus:ring-offset-surface bg-surface"
+                    className="w-5 h-5 rounded border-line-strong text-cyan-500 focus:ring-cyan-500 focus:ring-offset-surface bg-surface"
                   />
                 </div>
                 <div>
@@ -195,7 +195,7 @@ export default function FraudRuleEditControl({ rule }: Props) {
                   type="number"
                   min="1"
                   step="1"
-                  className="w-full bg-surface border border-line rounded-xl px-4 py-3 text-text focus:outline-none focus:border-finora-600 focus:ring-1 focus:ring-finora-600"
+                  className="w-full bg-surface border border-line-strong rounded-xl px-4 py-3 text-text focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                   value={maxAllowed}
                   onChange={(event) => setMaxAllowed(event.target.value)}
                 />
@@ -214,12 +214,12 @@ export default function FraudRuleEditControl({ rule }: Props) {
                     type="button"
                     className={`flex items-center text-left gap-4 p-4 rounded-xl border transition-colors ${
                       action === "BLOCK"
-                        ? "bg-[#FDE8EC] border-[#F5C2CD] text-[#A3112F]"
-                        : "bg-paper border-line text-text-2 hover:bg-[#EEF1F5]"
+                        ? "bg-rose-500/15 border-rose-500/40 text-rose-300"
+                        : "bg-paper border-line-strong text-text-2 hover:bg-line"
                     }`}
                     onClick={() => setAction("BLOCK")}
                   >
-                    <X size={20} className={action === "BLOCK" ? "text-[#A3112F]" : "text-text-2"} />
+                    <X size={20} className={action === "BLOCK" ? "text-rose-400" : "text-text-2"} />
                     <div>
                       <strong className="block font-bold mb-0.5 text-text">Bloquear</strong>
                       <span className="text-xs">Não permite nova participação.</span>
@@ -230,12 +230,12 @@ export default function FraudRuleEditControl({ rule }: Props) {
                     type="button"
                     className={`flex items-center text-left gap-4 p-4 rounded-xl border transition-colors ${
                       action === "REVIEW"
-                        ? "bg-[#FFF3DC] border-[#F2D19B] text-[#8A4B00]"
-                        : "bg-paper border-line text-text-2 hover:bg-[#EEF1F5]"
+                        ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
+                        : "bg-paper border-line-strong text-text-2 hover:bg-line"
                     }`}
                     onClick={() => setAction("REVIEW")}
                   >
-                    <AlertTriangle size={20} className={action === "REVIEW" ? "text-[#8A4B00]" : "text-text-2"} />
+                    <AlertTriangle size={20} className={action === "REVIEW" ? "text-amber-400" : "text-text-2"} />
                     <div>
                       <strong className="block font-bold mb-0.5 text-text">Analisar</strong>
                       <span className="text-xs">Envia para revisão da equipe.</span>
@@ -246,12 +246,12 @@ export default function FraudRuleEditControl({ rule }: Props) {
                     type="button"
                     className={`flex items-center text-left gap-4 p-4 rounded-xl border transition-colors ${
                       action === "ALLOW_WITH_ALERT"
-                        ? "bg-[#E6F0FF] border-[#B9D4F7] text-finora-600"
-                        : "bg-paper border-line text-text-2 hover:bg-[#EEF1F5]"
+                        ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-300"
+                        : "bg-paper border-line-strong text-text-2 hover:bg-line"
                     }`}
                     onClick={() => setAction("ALLOW_WITH_ALERT")}
                   >
-                    <Check size={20} className={action === "ALLOW_WITH_ALERT" ? "text-finora-600" : "text-text-2"} />
+                    <Check size={20} className={action === "ALLOW_WITH_ALERT" ? "text-cyan-400" : "text-text-2"} />
                     <div>
                       <strong className="block font-bold mb-0.5 text-text">Permitir com Alerta</strong>
                       <span className="text-xs">Aceita, mas registra um alerta de segurança.</span>
@@ -266,17 +266,17 @@ export default function FraudRuleEditControl({ rule }: Props) {
                 </label>
                 <textarea
                   rows={3}
-                  className="w-full bg-surface border border-line rounded-xl px-4 py-3 text-text text-sm focus:outline-none focus:border-finora-600 focus:ring-1 focus:ring-finora-600 resize-none"
+                  className="w-full bg-surface border border-line-strong rounded-xl px-4 py-3 text-text text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 resize-none"
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                   placeholder="Explique rapidamente a finalidade desta regra..."
                 />
               </div>
 
-              <div className="bg-[#E6F0FF] border border-[#B9D4F7] rounded-xl p-4 flex items-center gap-3 text-finora-600">
-                <ShieldCheck size={20} />
+              <div className="bg-cyan-500/15 border border-cyan-500/30 rounded-xl p-4 flex items-center gap-3 text-cyan-300">
+                <ShieldCheck size={20} className="shrink-0 text-cyan-400" />
                 <div className="text-sm">
-                  <strong className="font-bold">Resumo: </strong>
+                  <strong className="font-bold text-white">Resumo: </strong>
                   Até {maxAllowed || 0} {Number(maxAllowed) === 1 ? "participação" : "participações"}. 
                   Depois: {actionLabels[action]}.
                 </div>
@@ -284,12 +284,12 @@ export default function FraudRuleEditControl({ rule }: Props) {
             </div>
 
             <div className="px-6 py-4 border-t border-line bg-paper flex items-center justify-end gap-3 shrink-0">
-              {error && <span className="text-[#A3112F] text-sm font-medium mr-auto">{error}</span>}
-              {success && <span className="text-[#0F7A3D] text-sm font-medium flex items-center gap-1 mr-auto"><Check size={16} /> Salvo</span>}
+              {error && <span className="text-rose-400 text-sm font-bold mr-auto">{error}</span>}
+              {success && <span className="text-emerald-400 text-sm font-bold flex items-center gap-1 mr-auto"><Check size={16} /> Salvo com sucesso</span>}
 
               <button
                 type="button"
-                className="px-5 py-2.5 rounded-full font-bold text-text-2 hover:text-text hover:bg-[#EEF1F5] transition-colors"
+                className="px-5 py-2.5 rounded-full font-bold text-text-2 hover:text-text hover:bg-line transition-colors"
                 disabled={saving}
                 onClick={() => setOpen(false)}
               >
@@ -298,7 +298,7 @@ export default function FraudRuleEditControl({ rule }: Props) {
 
               <button
                 type="button"
-                className="px-6 py-2.5 rounded-full font-bold text-white bg-finora-600 hover:bg-finora-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-full font-bold text-white bg-finora-600 hover:bg-finora-700 transition-all flex items-center gap-2 disabled:opacity-50 shadow-md"
                 disabled={saving}
                 onClick={handleSave}
               >

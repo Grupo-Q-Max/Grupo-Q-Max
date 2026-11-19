@@ -44,9 +44,8 @@ function RarityText({ name }: { name: string }) {
 // Telão ao vivo do estande (TV 16:9).
 export default function LiveScreen({ event, eventId }: { event: EventTheme; eventId: number }) {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [qrUrl, setQrUrl] = useState("");
-  const [meetingQrUrl, setMeetingQrUrl] = useState("");
-  const [asideTab, setAsideTab] = useState<"ROULETTE" | "MEETING">("ROULETTE");
+  const [qrUrl, setQrUrl] = useState(`https://eventos.finora.com.br/finora-experience/${event.route}/cadastro`);
+  const [meetingQrUrl, setMeetingQrUrl] = useState(`https://eventos.finora.com.br/finora-experience/${event.route}/agendamento`);
   const [privacyMode, setPrivacyMode] = useState(true);
   const [isStandby, setIsStandby] = useState(false);
   const lastMilestoneRef = useRef(0);
@@ -57,14 +56,11 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
   }
 
   useEffect(() => {
-    const origin = window.location.origin;
-    setQrUrl(`${origin}/finora-experience/${event.route}/cadastro`);
-    setMeetingQrUrl(`${origin}/finora-experience/${event.route}/agendamento`);
-
-    // Alterna a cada 10 segundos entre Cadastro e Reunião com CEO
-    const tabInterval = setInterval(() => {
-      setAsideTab((prev) => (prev === "ROULETTE" ? "MEETING" : "ROULETTE"));
-    }, 10000);
+    if (typeof window !== "undefined") {
+      const origin = window.location.origin;
+      setQrUrl(`${origin}/finora-experience/${event.route}/cadastro`);
+      setMeetingQrUrl(`${origin}/finora-experience/${event.route}/agendamento`);
+    }
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -72,12 +68,10 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
       if (k === "n") setIsStandby((v) => !v);
       else if (k === "f") toggleFullscreen();
       else if (k === "l") setPrivacyMode((v) => !v);
-      else if (k === "m") setAsideTab((prev) => (prev === "ROULETTE" ? "MEETING" : "ROULETTE"));
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      clearInterval(tabInterval);
     };
   }, [event.route]);
 
@@ -132,7 +126,7 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
   const qr = (size: number, customUrl?: string) => {
     const targetUrl = customUrl || qrUrl;
     return (
-      <div className="rounded-[22px] bg-white p-6 shadow-2xl" role="img" aria-label="QR Code">
+      <div className="rounded-[22px] bg-white p-5 shadow-2xl shrink-0 flex items-center justify-center" role="img" aria-label="QR Code">
         {targetUrl ? <QRCodeSVG value={targetUrl} size={size} level="M" /> : <div style={{ width: size, height: size }} />}
       </div>
     );
@@ -202,8 +196,8 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
             <span className="text-[15px] font-black text-[#FFD700] flex items-center gap-1.5">
               📅 Já se cadastrou? Aponte para agendar
             </span>
-            <span className="inline-block text-[12.5px] font-semibold text-amber-200/80 bg-amber-500/15 border border-amber-400/30 px-2.5 py-1 rounded-lg">
-              ⭐ Vagas até 11 de Dezembro · Prêmio válido pós-reunião
+            <span className="inline-block text-[12.5px] font-semibold text-amber-200/90 bg-amber-500/15 border border-amber-400/30 px-2.5 py-1 rounded-lg">
+              ⭐ Vagas até Janeiro de 2027 · Prêmio válido pós-reunião
             </span>
           </div>
         </div>
