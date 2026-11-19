@@ -23,13 +23,27 @@ export class RegisterParticipantDto {
   @MaxLength(190)
   fullName: string;
 
+  @IsOptional()
+  @IsBoolean()
+  isForeigner?: boolean;
+
+  @IsOptional()
   @IsString()
-  @MinLength(11)
-  @MaxLength(20)
+  @MaxLength(100)
+  countryCode?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  foreignDocument?: string;
+
+  @IsString()
+  @MinLength(4)
+  @MaxLength(50)
   cpf: string;
 
   @IsString()
-  @MinLength(10)
+  @MinLength(7)
   @MaxLength(30)
   phone: string;
 

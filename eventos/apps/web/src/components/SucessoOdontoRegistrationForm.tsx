@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, LoaderCircle } from "lucide-react";
+import { AlertCircle, Globe, LoaderCircle } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api-client";
 import { StepBar } from "@/components/brand/Brand";
 import { Alert, Check, Field, PaperHeading, StickyActions, primaryButton } from "@/components/form/Paper";
@@ -103,6 +103,9 @@ function RegistrationForm({
 
   const [deviceId, setDeviceId] = useState("");
   const [fullName, setFullName] = useState("");
+  const [isForeigner, setIsForeigner] = useState(false);
+  const [countryCode, setCountryCode] = useState("+351");
+  const [foreignDoc, setForeignDoc] = useState("");
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -192,14 +195,27 @@ function RegistrationForm({
     const cleanCpf = onlyNumbers(cpf);
     const cleanPhone = onlyNumbers(phone);
 
-    if (cleanCpf.length !== 11 || !isCpfValid) {
-      setError("Por favor, digite um CPF válido.");
-      return;
-    }
+    if (!isForeigner) {
+      if (cleanCpf.length !== 11 || !isCpfValid) {
+        setError("Por favor, digite um CPF válido.");
+        return;
+      }
 
-    if (cleanPhone.length < 10) {
-      setError("Por favor, informe um WhatsApp válido com DDD.");
-      return;
+      if (cleanPhone.length < 10) {
+        setError("Por favor, informe um WhatsApp válido com DDD.");
+        return;
+      }
+    } else {
+      const cleanDoc = foreignDoc.trim().replace(/[^a-zA-Z0-9]/g, '');
+      if (cleanDoc.length < 4) {
+        setError("Por favor, informe um número de documento/passaporte válido com pelo menos 4 caracteres.");
+        return;
+      }
+
+      if (cleanPhone.length < 7) {
+        setError("Por favor, informe um telefone/WhatsApp internacional válido (mínimo 7 dígitos).");
+        return;
+      }
     }
 
     if (!acceptTerms) {
@@ -213,12 +229,15 @@ function RegistrationForm({
       const res = await postRegistration({
         eventId,
         fullName: fullName.trim(),
-        cpf: cleanCpf,
+        isForeigner,
+        countryCode: isForeigner ? countryCode : undefined,
+        foreignDocument: isForeigner ? foreignDoc.trim() : undefined,
+        cpf: isForeigner ? foreignDoc.trim() : cleanCpf,
         phone: cleanPhone,
         email: email.trim() || undefined,
         clinicName: clinicName.trim() || undefined,
         croNumber: cro.trim() || undefined,
-        croState: croState.trim() || "SP",
+        croState: isForeigner ? undefined : (croState.trim() || "SP"),
         deviceId,
         vipCode: vipCode.trim() || undefined,
         marketingConsent: acceptMarketing,
@@ -437,27 +456,120 @@ function RegistrationForm({
         )}
 
         <Field id="c-nome" label="Nome completo" autoComplete="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-        <Field
-          id="c-cpf"
-          label="CPF"
-          inputMode="numeric"
-          required
-          maxLength={14}
-          placeholder="000.000.000-00"
-          value={cpf}
-          onChange={(e) => setCpf(formatCpf(e.target.value))}
-          error={cpf.length === 14 && !isCpfValid ? "CPF inválido. Confira os números." : undefined}
-        />
+
+        {/* Seletor de Nacionalidade: Brasileiro x Estrangeiro */}
+        <div className="flex flex-col gap-1.5 pt-1">
+          <label className="text-xs font-semibold text-slate-300">Nacionalidade / Documento</label>
+          <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-white/5 border border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                setIsForeigner(false);
+                setError(null);
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                !isForeigner
+                  ? "bg-accent text-slate-950 shadow-md font-black"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <span>🇧🇷 Brasileiro (CPF)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsForeigner(true);
+                setError(null);
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                isForeigner
+                  ? "bg-amber-400 text-slate-950 shadow-md font-black"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <span>🌐 Estrangeiro (Passaporte)</span>
+            </button>
+          </div>
+        </div>
+
+        {!isForeigner ? (
+          <Field
+            id="c-cpf"
+            label="CPF"
+            inputMode="numeric"
+            required
+            maxLength={14}
+            placeholder="000.000.000-00"
+            value={cpf}
+            onChange={(e) => setCpf(formatCpf(e.target.value))}
+            error={cpf.length === 14 && !isCpfValid ? "CPF inválido. Confira os números." : undefined}
+          />
+        ) : (
+          <div className="flex flex-col gap-3 rounded-2xl border border-amber-400/30 bg-amber-950/20 p-4 animate-fade-in">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300">
+              <Globe size={15} />
+              <span>Visitante Internacional / Estrangeiro</span>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="c-country" className="text-xs font-semibold text-slate-300">
+                País de Origem / Código do País *
+              </label>
+              <select
+                id="c-country"
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-3.5 text-sm text-white outline-none focus:border-amber-400"
+              >
+                <option value="+351">🇵🇹 Portugal (+351)</option>
+                <option value="+1">🇺🇸 Estados Unidos (+1)</option>
+                <option value="+54">🇦🇷 Argentina (+54)</option>
+                <option value="+595">🇵🇾 Paraguai (+595)</option>
+                <option value="+598">🇺🇾 Uruguai (+598)</option>
+                <option value="+56">🇨🇱 Chile (+56)</option>
+                <option value="+34">🇪🇸 Espanha (+34)</option>
+                <option value="+39">🇮🇹 Itália (+39)</option>
+                <option value="+33">🇫🇷 França (+33)</option>
+                <option value="+49">🇩🇪 Alemanha (+49)</option>
+                <option value="+44">🇬🇧 Reino Unido (+44)</option>
+                <option value="+52">🇲🇽 México (+52)</option>
+                <option value="+57">🇨🇴 Colômbia (+57)</option>
+                <option value="+51">🇵🇪 Peru (+51)</option>
+                <option value="+591">🇧🇴 Bolívia (+591)</option>
+                <option value="OUTRO">🌐 Outro País / Internacional</option>
+              </select>
+            </div>
+
+            <Field
+              id="c-passport"
+              label="Passaporte ou Documento de Identificação (DNI / ID) *"
+              required
+              maxLength={30}
+              placeholder="Ex: Passaporte ou DNI do seu país"
+              value={foreignDoc}
+              onChange={(e) => setForeignDoc(e.target.value.toUpperCase())}
+              hint="Informe o número do seu documento oficial de identificação estrangeiro."
+            />
+          </div>
+        )}
+
         <Field
           id="c-wpp"
-          label="WhatsApp"
+          label={isForeigner ? "WhatsApp / Telefone Internacional" : "WhatsApp"}
           type="tel"
           inputMode="tel"
           required
-          maxLength={15}
-          placeholder="(00) 00000-0000"
+          maxLength={isForeigner ? 25 : 15}
+          placeholder={isForeigner ? "+351 912 345 678" : "(00) 00000-0000"}
           value={phone}
-          onChange={(e) => setPhone(formatPhone(e.target.value))}
+          onChange={(e) => {
+            if (isForeigner) {
+              setPhone(e.target.value);
+            } else {
+              setPhone(formatPhone(e.target.value));
+            }
+          }}
+          hint={isForeigner ? "Informe seu número com código do país (DDI)." : "Seu número de contato no evento."}
         />
         <Field id="c-mail" label="E-mail (opcional)" type="email" inputMode="email" placeholder="voce@clinica.com.br" value={email} onChange={(e) => setEmail(e.target.value)} />
 
@@ -517,7 +629,13 @@ function RegistrationForm({
       <StickyActions>
         <button
           type="submit"
-          disabled={loading || (cpf.length === 14 && !isCpfValid) || vipStatus === "checking" || vipStatus === "invalid"}
+          disabled={
+            loading ||
+            (!isForeigner && (cpf.length === 14 && !isCpfValid)) ||
+            (isForeigner && foreignDoc.trim().length < 4) ||
+            vipStatus === "checking" ||
+            vipStatus === "invalid"
+          }
           className={primaryButton}
         >
           {loading ? (

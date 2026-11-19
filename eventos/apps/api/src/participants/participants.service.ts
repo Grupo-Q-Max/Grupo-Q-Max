@@ -279,20 +279,57 @@ export class ParticipantsService {
       );
     }
 
-    const cpf = normalizeCpf(dto.cpf);
+    let cpf: string;
+    let cpfLastDigits: string;
 
-    if (!isValidCpf(cpf)) {
-      throw new BadRequestException(
-        'O CPF digitado é inválido. Por favor, confira os 11 dígitos.',
-      );
+    if (dto.isForeigner) {
+      const cleanDoc = (dto.foreignDocument || dto.cpf || '')
+        .trim()
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .toUpperCase();
+
+      if (!cleanDoc || cleanDoc.length < 4) {
+        throw new BadRequestException(
+          'Informe um número de documento/passaporte válido com pelo menos 4 caracteres.',
+        );
+      }
+
+      const cCode = (dto.countryCode || 'INTL')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .toUpperCase()
+        .slice(0, 10);
+
+      cpf = `EXT-${cCode}-${cleanDoc}`;
+      cpfLastDigits = cleanDoc.slice(-4).padStart(4, '0');
+    } else {
+      cpf = normalizeCpf(dto.cpf);
+
+      if (!isValidCpf(cpf)) {
+        throw new BadRequestException(
+          'O CPF digitado é inválido. Por favor, confira os 11 dígitos.',
+        );
+      }
+
+      cpfLastDigits = cpf.slice(-4);
     }
 
-    const phone = normalizePhone(dto.phone);
+    let phone: string;
+    if (dto.isForeigner) {
+      const cleanDigits = String(dto.phone || '').replace(/\D/g, '');
+      if (cleanDigits.length < 7 || cleanDigits.length > 20) {
+        throw new BadRequestException(
+          'Número de telefone/WhatsApp internacional inválido. Informe o código do país e número.',
+        );
+      }
+      phone = cleanDigits;
+    } else {
+      phone = normalizePhone(dto.phone);
 
-    if (phone.length < 10 || phone.length > 11) {
-      throw new BadRequestException(
-        'Número de WhatsApp inválido. Digite o DDD e número com 10 ou 11 dígitos.',
-      );
+      if (phone.length < 10 || phone.length > 11) {
+        throw new BadRequestException(
+          'Número de WhatsApp inválido. Digite o DDD e número com 10 ou 11 dígitos.',
+        );
+      }
     }
 
     const cpfHash = hashCpf(cpf);
@@ -309,8 +346,6 @@ export class ParticipantsService {
     const state = dto.state ? normalizeState(dto.state) : null;
 
     const cpfEncrypted = encryptCpf(cpf);
-
-    const cpfLastDigits = cpf.slice(-4);
 
     const ipAddress = this.getClientIp(context);
 
