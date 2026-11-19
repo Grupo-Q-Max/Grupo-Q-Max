@@ -363,3 +363,53 @@ export async function createMicrosoftCalendarEvent(payload: {
   }
 }
 
+export async function deleteMicrosoftCalendarEvent(eventId: string, bossEmail?: string): Promise<boolean> {
+  const token = await getMicrosoftGraphAppToken();
+  if (!token || !eventId) return false;
+  const email = bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
+  try {
+    const res = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(email)}/events/${encodeURIComponent(eventId)}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.status === 204 || res.status === 404;
+  } catch (err: any) {
+    console.warn('[MicrosoftCalendar] Erro ao deletar evento:', err.message);
+    return false;
+  }
+}
+
+export async function deleteMicrosoftEventsMatching(params: {
+  bossEmail?: string;
+  searchTerm: string;
+  startDateTime?: string;
+  endDateTime?: string;
+}): Promise<number> {
+  const token = await getMicrosoftGraphAppToken();
+  if (!token) return 0;
+  const bossEmail = params.bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
+  const start = params.startDateTime || '2026-11-01T00:00:00Z';
+  const end = params.endDateTime || '2027-02-01T23:59:59Z';
+  try {
+    const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(bossEmail)}/calendarView?startDateTime=${start}&endDateTime=${end}&$top=200`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return 0;
+    const data = await res.json();
+    const events = (data.value || []).filter((e: any) => {
+      const subject = (e.subject || '').toLowerCase();
+      const term = params.searchTerm.toLowerCase();
+      return subject.includes(term);
+    });
+    let count = 0;
+    for (const e of events) {
+      const del = await deleteMicrosoftCalendarEvent(e.id, bossEmail);
+      if (del) count++;
+    }
+    return count;
+  } catch (err: any) {
+    console.warn('[MicrosoftCalendar] Erro ao buscar e deletar eventos matching:', err.message);
+    return 0;
+  }
+}
+
+

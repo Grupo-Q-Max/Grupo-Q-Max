@@ -1245,7 +1245,7 @@ export class DrawsService {
       }
     }
 
-    // 2. Buscar todas as participações do evento com status válido
+    // 2. Buscar participações do evento e todos os cadastros da base
     const participations = await this.prisma.participations.findMany({
       where: {
         event_id: eventId,
@@ -1274,29 +1274,38 @@ export class DrawsService {
       },
     });
 
+    const allRegistered = await this.prisma.participants.findMany({
+      select: {
+        id: true,
+        full_name: true,
+        cpf_last_digits: true,
+        phone: true,
+        email: true,
+        cro_number: true,
+        cro_state: true,
+        clinic_name: true,
+        city: true,
+        state: true,
+        created_at: true,
+      },
+      orderBy: {
+        id: 'asc',
+      },
+    }).catch(() => []);
+
     const uniqueMap = new Map<number, any>();
     const seenPhones = new Set<string>();
 
+    // Processa participações explícitas
     for (const p of participations) {
       const part = p.participants;
       if (!part) continue;
 
-      // REGRA ANTIDUPLICIDADE 1: Ganhadores anteriores do Grande Sorteio NÃO podem concorrer novamente
-      if (alreadyWonIds.has(part.id)) {
-        continue;
-      }
+      if (alreadyWonIds.has(part.id) || uniqueMap.has(part.id)) continue;
 
-      // REGRA ANTIDUPLICIDADE 2: Deduplicação por ID do participante
-      if (uniqueMap.has(part.id)) {
-        continue;
-      }
-
-      // REGRA ANTIDUPLICIDADE 3: Deduplicação por telefone sanitizado (evita mesma pessoa com 2 cupons)
       const cleanPhone = (part.phone || '').replace(/\D/g, '');
       if (cleanPhone.length >= 10) {
-        if (seenPhones.has(cleanPhone)) {
-          continue;
-        }
+        if (seenPhones.has(cleanPhone)) continue;
         seenPhones.add(cleanPhone);
       }
 
@@ -1315,6 +1324,34 @@ export class DrawsService {
         city: part.city,
         state: part.state,
         registeredAt: p.created_at,
+      });
+    }
+
+    // Inclui todos os outros participantes cadastrados que ainda não estão no pool
+    for (const part of allRegistered) {
+      if (!part || alreadyWonIds.has(part.id) || uniqueMap.has(part.id)) continue;
+
+      const cleanPhone = (part.phone || '').replace(/\D/g, '');
+      if (cleanPhone.length >= 10) {
+        if (seenPhones.has(cleanPhone)) continue;
+        seenPhones.add(cleanPhone);
+      }
+
+      uniqueMap.set(part.id, {
+        participationId: part.id,
+        participantId: part.id,
+        ticketCode: `#${String(part.id).padStart(4, '0')}`,
+        fullName: part.full_name,
+        cpfLastDigits: part.cpf_last_digits,
+        phone: part.phone || null,
+        email: part.email || null,
+        cro: part.cro_number
+          ? `${part.cro_number}/${part.cro_state || ''}`
+          : null,
+        clinicName: part.clinic_name || 'Clínica não informada',
+        city: part.city,
+        state: part.state,
+        registeredAt: part.created_at,
       });
     }
 
@@ -1348,7 +1385,7 @@ export class DrawsService {
     }
 
     const safeQty = Math.max(1, Math.min(Number(quantity) || 1, totalEligible));
-    const grandPrize = prizeName?.trim() || 'Grande Prêmio de Encerramento';
+    const grandPrize = prizeName?.trim() || 'Fotopolimerizador';
 
     // Sorteia N ganhadores únicos sem repetição
     const availablePool = [...participants];
@@ -1480,10 +1517,28 @@ export class DrawsService {
         description: log.description,
         actorType: log.actor_type,
         participantId: log.entity_id ? Number(log.entity_id) : null,
-        prizeName: meta.prizeName || 'Grande Prêmio',
+        prizeName: meta.prizeName || 'Fotopolimerizador',
         position: meta.position || 1,
         isDelivered: isClaimed,
       };
     });
+  }
+
+  /**
+   * Zera o histórico de sorteios finais (reset completo para novo sorteio geral)
+   */
+  async resetGrandDrawHistory(eventId: number) {
+    const deleted = await this.prisma.audit_logs.deleteMany({
+      where: {
+        action: {
+          in: ['GRAND_DRAW_COMPLETED', 'GRAND_DRAW_CLAIMED'],
+        },
+      },
+    });
+    return {
+      success: true,
+      deletedCount: deleted.count,
+      message: 'Histórico do Grande Sorteio Geral zerado com sucesso.',
+    };
   }
 }

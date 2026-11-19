@@ -20,6 +20,7 @@ import {
   Clock,
   Search,
   CheckCircle2,
+  Trash2,
 } from "lucide-react";
 import { getAdminProxyUrl } from "@/lib/api-client";
 import { useToast } from "@/components/ui/Toast";
@@ -111,6 +112,51 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
       fetchAgenda(true);
     } catch {
       toast.error("Erro ao atualizar o status da reunião.");
+    }
+  }
+
+  async function deleteMeeting(meetingId: number | string) {
+    if (typeof meetingId === "string" && meetingId.startsWith("ms-")) {
+      toast.error("Compromissos externos da Microsoft devem ser cancelados pelo Outlook / Teams.");
+      return;
+    }
+
+    if (!confirm("Tem certeza que deseja excluir esta reunião agendada pelo site? Isso também cancelará o compromisso no calendário do Teams/Outlook do Hugo.")) {
+      return;
+    }
+
+    try {
+      const proxyUrl = getAdminProxyUrl();
+      const res = await fetch(`${proxyUrl}/meetings/${meetingId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Falha ao excluir reunião");
+      }
+      toast.success("Reunião excluída com sucesso do site e do calendário!");
+      fetchAgenda(true);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao excluir a reunião.");
+    }
+  }
+
+  async function deleteAllSiteMeetings() {
+    if (!confirm("⚠️ ATENÇÃO: Tem certeza que deseja apagar TODAS as reuniões agendadas pelo site neste evento? Elas também serão canceladas na agenda do Teams do Hugo.")) {
+      return;
+    }
+
+    try {
+      const proxyUrl = getAdminProxyUrl();
+      const res = await fetch(`${proxyUrl}/meetings/event/${eventId}/all`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Falha ao apagar reuniões do site");
+      toast.success(data.message || "Todas as reuniões do site foram excluídas com sucesso!");
+      fetchAgenda(true);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao excluir reuniões em lote.");
     }
   }
 
@@ -209,6 +255,19 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
               <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
               <span>Sincronizar</span>
             </button>
+
+            {finoraMeetings.length > 0 && (
+              <button
+                type="button"
+                onClick={deleteAllSiteMeetings}
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
+                title="Excluir todas as reuniões agendadas pelo site neste evento"
+              >
+                <Trash2 size={14} />
+                <span>Limpar Reuniões do Site</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -505,6 +564,14 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                                 <UserX size={12} /> Faltou
                               </span>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => deleteMeeting(meeting.id)}
+                              className="p-1 rounded-lg text-rose-400/60 hover:text-rose-300 hover:bg-rose-500/20 border border-transparent hover:border-rose-500/30 transition-all cursor-pointer ml-1"
+                              title="Excluir reunião (desmarca no site e cancela no Teams)"
+                            >
+                              <Trash2 size={13} />
+                            </button>
                           </div>
 
                           {/* Body: Lead Details */}
@@ -594,8 +661,16 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                             </button>
                           </div>
                         ) : (
-                          <div className="mt-5 pt-3 border-t border-line text-center text-xs text-text-2 font-medium">
-                            Atendimento registrado
+                          <div className="mt-5 pt-3 border-t border-line flex items-center justify-between text-xs text-text-2 font-medium">
+                            <span>Atendimento registrado</span>
+                            <button
+                              type="button"
+                              onClick={() => deleteMeeting(meeting.id)}
+                              className="inline-flex items-center gap-1 text-[11px] text-rose-400 hover:text-rose-300 hover:underline cursor-pointer"
+                            >
+                              <Trash2 size={11} />
+                              <span>Excluir</span>
+                            </button>
                           </div>
                         )}
                       </div>

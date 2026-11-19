@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { MeetingsService } from './meetings.service';
 import { IsDateString, IsEmail, IsInt, IsOptional } from 'class-validator';
@@ -37,6 +37,16 @@ export class MeetingsController {
     @Body() dto: UpdateStatusDto,
   ) {
     return this.meetingsService.updateMeetingStatus(meetingId, dto.status);
+  }
+
+  @Delete(':id')
+  deleteMeeting(@Param('id', ParseIntPipe) meetingId: number) {
+    return this.meetingsService.deleteMeeting(meetingId);
+  }
+
+  @Delete('event/:eventId/all')
+  deleteAllMeetings(@Param('eventId', ParseIntPipe) eventId: number) {
+    return this.meetingsService.deleteAllSiteMeetings(eventId);
   }
 
   @Get('event/:eventId/available-slots')

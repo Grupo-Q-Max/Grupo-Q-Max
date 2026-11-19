@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Ip,
@@ -125,5 +126,13 @@ export class DrawsController {
     participantId: number,
   ) {
     return this.drawsService.claimGrandPrize(eventId, participantId);
+  }
+
+  @Delete('event/:eventId/grand-draw/history')
+  resetGrandDrawHistory(
+    @Param('eventId', ParseIntPipe)
+    eventId: number,
+  ) {
+    return this.drawsService.resetGrandDrawHistory(eventId);
   }
 }

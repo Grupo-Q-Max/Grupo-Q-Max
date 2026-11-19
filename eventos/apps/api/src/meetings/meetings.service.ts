@@ -1,9 +1,14 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { notifyLive } from '../live/live';
 import { sendMeetingInvite } from './meeting-mail.helper';
-import { getHugoBusyIntervals, createMicrosoftCalendarEvent, getHugoDetailedEvents } from './microsoft-calendar.helper';
+import {
+  getHugoBusyIntervals,
+  createMicrosoftCalendarEvent,
+  getHugoDetailedEvents,
+  deleteMicrosoftEventsMatching,
+} from './microsoft-calendar.helper';
 
 @Injectable()
 export class MeetingsService {
@@ -421,5 +426,79 @@ export class MeetingsService {
     }
 
     return meeting;
+  }
+
+  async deleteMeeting(meetingId: number) {
+    const meeting = await this.prisma.meetings.findUnique({
+      where: { id: meetingId },
+      include: {
+        participants: true,
+      },
+    });
+
+    if (!meeting) {
+      throw new NotFoundException('Reunião não encontrada.');
+    }
+
+    // 1. Cancela mensagens agendadas de lembrete pendentes no WhatsApp
+    await this.prisma.message_queue.deleteMany({
+      where: {
+        event_id: meeting.event_id,
+        participant_id: meeting.participant_id,
+        status: 'PENDING',
+      },
+    }).catch(() => {});
+
+    // 2. Remove do banco de dados
+    await this.prisma.meetings.delete({
+      where: { id: meetingId },
+    });
+
+    // 3. Remove evento correspondente da agenda do Hugo no Microsoft Teams/Outlook (assíncrono)
+    if (meeting.participants?.full_name) {
+      deleteMicrosoftEventsMatching({
+        searchTerm: meeting.participants.full_name,
+      }).catch((err) => console.warn('[MeetingsService] Falha ao deletar evento Teams:', err.message));
+    }
+
+    return { success: true, message: 'Reunião excluída com sucesso.' };
+  }
+
+  async deleteAllSiteMeetings(eventId: number) {
+    const meetings = await this.prisma.meetings.findMany({
+      where: { event_id: eventId },
+      include: { participants: true },
+    });
+
+    if (meetings.length === 0) {
+      return { success: true, count: 0, message: 'Nenhuma reunião agendada pelo site para excluir.' };
+    }
+
+    const participantIds = meetings.map((m) => m.participant_id);
+
+    // 1. Remove mensagens de lembrete pendentes no WhatsApp
+    await this.prisma.message_queue.deleteMany({
+      where: {
+        event_id: eventId,
+        participant_id: { in: participantIds },
+        status: 'PENDING',
+      },
+    }).catch(() => {});
+
+    // 2. Remove todas as reuniões do site deste evento
+    const result = await this.prisma.meetings.deleteMany({
+      where: { event_id: eventId },
+    });
+
+    // 3. Remove todos os eventos agendados pelo Finora no calendário do Hugo no Microsoft Teams/Outlook
+    deleteMicrosoftEventsMatching({
+      searchTerm: '[Reunião Estratégica] Hugo Werninghaus',
+    }).catch((err) => console.warn('[MeetingsService] Falha ao deletar eventos em massa no Teams:', err.message));
+
+    return {
+      success: true,
+      count: result.count,
+      message: `${result.count} reunião(ões) agendada(s) pelo site excluída(s) com sucesso.`,
+    };
   }
 }

@@ -239,7 +239,7 @@ export const secondaryButton =
 // Rodapé fixo com a ação principal.
 export function StickyActions({ children }: { children: ReactNode }) {
   return (
-    <div className="sticky bottom-0 flex flex-col gap-2.5 border-t border-white/10 bg-[#070B16]/90 px-5 pt-4 pb-6 backdrop-blur-xl">
+    <div className="sticky bottom-0 z-30 flex flex-col gap-2.5 border-t border-white/10 bg-[#070B16]/95 px-5 pt-3.5 pb-6 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.7)]">
       {children}
     </div>
   );

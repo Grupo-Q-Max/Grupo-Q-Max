@@ -16,6 +16,7 @@ import {
   Trophy,
   Sparkles,
   Gift,
+  Trash2,
 } from "lucide-react";
 import { getAdminProxyUrl } from "@/lib/api-client";
 import { playTickSound, playSlowdownSound, playWinSound, playApplauseSound, announcePrizeVoice } from "@/lib/audio";
@@ -180,6 +181,21 @@ export default function GrandDrawExperience({ eventId, eventName, initialPartici
       // ignore
     } finally {
       setClaimingId(null);
+    }
+  }
+
+  async function handleResetHistory() {
+    if (!confirm("⚠️ ATENÇÃO: Deseja apagar todo o histórico do Grande Sorteio Geral? Todos os participantes voltarão a ficar elegíveis.")) return;
+    try {
+      const res = await fetch(`${getAdminProxyUrl()}/draws/event/${eventId}/grand-draw/history`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setHistoryLogs([]);
+        reloadParticipants();
+      }
+    } catch {
+      // ignore
     }
   }
 
@@ -481,7 +497,8 @@ export default function GrandDrawExperience({ eventId, eventName, initialPartici
               value={prizeName}
               onChange={(e) => setPrizeName(e.target.value)}
               disabled={isDrawing || !!winner}
-              className="h-14 rounded-field bg-white px-4 text-lg font-semibold text-text outline-none disabled:opacity-60"
+              placeholder="Ex: Fotopolimerizador"
+              className="h-14 rounded-field bg-ink-950 border border-ink-line px-4 text-lg font-bold text-white outline-none focus:border-accent disabled:opacity-60 shadow-inner"
             />
           </label>
           {!winner ? (
@@ -593,7 +610,21 @@ export default function GrandDrawExperience({ eventId, eventName, initialPartici
         ) : historyLogs.length === 0 ? (
           <p className="py-10 text-ink-text-2">Nenhum sorteio geral registrado neste evento até o momento.</p>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center pb-2 border-b border-ink-line">
+              <span className="font-mono text-xs tracking-wider text-ink-text-2 uppercase">
+                Histórico de Vencedores ({historyLogs.length})
+              </span>
+              <button
+                type="button"
+                onClick={handleResetHistory}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition-all cursor-pointer"
+              >
+                <Trash2 size={13} />
+                <span>Zerar Histórico</span>
+              </button>
+            </div>
+            <ul className="flex flex-col gap-3">
             {historyLogs.map((log) => (
               <li
                 key={log.id}
@@ -635,6 +666,7 @@ export default function GrandDrawExperience({ eventId, eventName, initialPartici
               </li>
             ))}
           </ul>
+        </div>
         )}
       </section>
     </div>

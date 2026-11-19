@@ -200,7 +200,6 @@ function RegistrationForm({
   const [offlineSaved, setOfflineSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ceoModalOpen, setCeoModalOpen] = useState(false);
-  const [day19ModalOpen, setDay19ModalOpen] = useState(false);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [schedulerModalOpen, setSchedulerModalOpen] = useState(false);
   const [ceoNextSlot, setCeoNextSlot] = useState<string | null>(null);
@@ -256,6 +255,7 @@ function RegistrationForm({
 
   function handleMeetingBooked() {
     if (!pendingParticipationData) return;
+    setCeoModalOpen(false);
     setSchedulerModalOpen(false);
     confetti({
       particleCount: 120,
@@ -268,7 +268,7 @@ function RegistrationForm({
       ...pendingParticipationData,
       isVip: true,
     });
-    setTicketModalOpen(true);
+    setTicketModalOpen(false);
   }
 
   function handleDeclineCeoMeeting() {
@@ -284,10 +284,10 @@ function RegistrationForm({
     });
     setRegisteredParticipation({
       ...pendingParticipationData,
-      isVip: false,
+      isVip: Boolean(pendingParticipationData.isVip),
       autoBookedSlot: null,
     });
-    setTicketModalOpen(true);
+    setTicketModalOpen(false);
   }
 
   useEffect(() => {
@@ -375,8 +375,8 @@ function RegistrationForm({
           drawnPrize: result.participation?.drawnPrize || null,
         };
 
-        // Se NÃO for VIP e ainda não realizou o sorteio, abre o popup perguntando se quer marcar com o CEO para ter Roleta VIP!
-        if (!isVipUser && !partData.hasDrawn) {
+        // Para TODOS os participantes (inclusive VIP) que ainda não realizaram o sorteio, oferece agendamento exclusivo com o CEO!
+        if (!partData.hasDrawn) {
           setPendingParticipationData(partData);
           setCeoModalOpen(true);
           fetch(`${getApiBaseUrl()}/meetings/event/${eventId}/next-slot`)
@@ -399,7 +399,7 @@ function RegistrationForm({
           ...partData,
           autoBookedSlot: result.autoBookedSlot || null,
         });
-        setTicketModalOpen(true);
+        setTicketModalOpen(false);
         return;
       }
 
@@ -442,7 +442,7 @@ function RegistrationForm({
         : nameParts[0] || "Participante";
 
     return (
-      <div className="flex flex-1 flex-col pb-6 overscroll-y-contain">
+      <div className="flex flex-1 flex-col pb-36 sm:pb-32 overscroll-y-contain">
         <PaperHeading
           eyebrow={
             <>
@@ -616,85 +616,6 @@ function RegistrationForm({
           </span>
         </StickyActions>
 
-        {/* Modal Popup Especial: Grande Sorteio Geral Dia 19 & Visita dias 20 e 21 */}
-        {day19ModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-            <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border-2 border-amber-400 bg-[#080d1a] p-6 sm:p-8 text-white shadow-[0_20px_70px_rgba(255,215,0,0.4)] animate-pop-burst">
-              <button
-                type="button"
-                onClick={() => {
-                  setDay19ModalOpen(false);
-                  setTicketModalOpen(true);
-                }}
-                aria-label="Fechar"
-                className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 shadow-[0_0_30px_rgba(255,215,0,0.6)]">
-                <Trophy size={32} className="text-[#3E2723]" />
-              </div>
-
-              <div className="mt-4 text-center">
-                <span className="inline-block rounded-full bg-amber-400/20 px-3 py-1 font-mono text-[11px] font-extrabold uppercase tracking-wider text-amber-300 border border-amber-400/40">
-                  ✦ COMUNICADO OFICIAL DO EVENTO ✦
-                </span>
-                <h3 className="mt-2 font-display text-2xl sm:text-3xl font-black text-white leading-tight">
-                  Inscrição Confirmada!
-                </h3>
-              </div>
-
-              {/* Caixa do Código PIN */}
-              <div className="my-4 flex flex-col items-center justify-center rounded-2xl border border-amber-400/40 bg-gradient-to-b from-amber-500/15 to-transparent p-3.5 text-center">
-                <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-amber-300">
-                  Seu Código de Participação & Roleta
-                </span>
-                <span className="font-mono text-3xl font-black text-white tracking-widest drop-shadow-[0_0_12px_rgba(255,215,0,0.6)] mt-1">
-                  #{String(registeredParticipation.id).padStart(4, "0")}
-                </span>
-              </div>
-
-              {/* Informações Oficiais */}
-              <div className="flex flex-col gap-3 text-left">
-                <div className="rounded-xl border border-amber-400/30 bg-white/5 p-3.5">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-amber-300">
-                    <Gift size={16} />
-                    <span>Grande Sorteio Geral (Hoje, 19/11)</span>
-                  </div>
-                  <p className="mt-1 text-xs sm:text-[13px] text-slate-200 leading-relaxed">
-                    Hoje, dia 19/11, acontecerá o sorteio oficial do <strong>Fotopolimerizador Odontológico</strong> no telão principal! Seu cupom está registrado e você concorre automaticamente.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-accent/40 bg-accent/10 p-3.5">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
-                    <Sparkles size={16} />
-                    <span>Roleta VIP no Estande Finora (Dias 20 e 21/11)</span>
-                  </div>
-                  <p className="mt-1 text-xs sm:text-[13px] text-slate-200 leading-relaxed">
-                    Compareça ao estande da Finora nos <strong>dias 20 ou 21/11</strong> com o seu <strong>código PIN</strong> acima para girar a <strong>Roleta VIP</strong> e retirar brindes exclusivos!
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDay19ModalOpen(false);
-                    setTicketModalOpen(true);
-                  }}
-                  className="w-full flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-6 font-display text-base font-black text-[#3E2723] shadow-[0_10px_30px_rgba(255,215,0,0.4)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
-                >
-                  <span>Entendido, Acessar Meu Bilhete</span>
-                  <ArrowRight size={18} />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Modal Popup: Bilhete / Cupom Oficial em Popup */}
         {ticketModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
@@ -764,7 +685,7 @@ function RegistrationForm({
         title="Cadastro · Roleta de Prêmios & Sorteio Geral"
       />
 
-      <div className="flex flex-1 flex-col gap-4.5 px-5 pt-2 pb-6">
+      <div className="flex flex-1 flex-col gap-5 px-5 pt-2 pb-32 sm:pb-28">
         {error && <Alert>{error}</Alert>}
 
         {/* Banner Oficial Finora Experience - Sem imagem pesada, design luxuoso */}
@@ -975,12 +896,22 @@ function RegistrationForm({
             </div>
 
             <h3 className="mt-4 text-center font-display text-2xl sm:text-3xl font-black text-white leading-tight">
-              Deseja marcar uma reunião com nosso CEO?
+              {pendingParticipationData?.isVip
+                ? "Agende sua Consultoria VIP com o CEO"
+                : "Deseja marcar uma reunião com nosso CEO?"}
             </h3>
 
             <p className="mt-2 text-center text-sm sm:text-[15px] text-[#C2CEE3] leading-relaxed">
-              Ao agendar um bate-papo exclusivo com nosso CEO durante o evento, você ganha acesso instantâneo à{" "}
-              <strong className="text-[#FFD700] font-black">Roleta VIP</strong>!
+              {pendingParticipationData?.isVip ? (
+                <>
+                  Como participante VIP, garanta seu horário de consultoria estratégica individual de <strong>45 minutos</strong> com nosso CEO Hugo Werninghaus!
+                </>
+              ) : (
+                <>
+                  Ao agendar um bate-papo exclusivo com nosso CEO durante o evento, você ganha acesso instantâneo à{" "}
+                  <strong className="text-[#FFD700] font-black">Roleta VIP</strong>!
+                </>
+              )}
             </p>
 
             {/* Benefícios VIP */}
@@ -1061,9 +992,11 @@ function RegistrationForm({
                 type="button"
                 onClick={handleDeclineCeoMeeting}
                 disabled={bookingCeo}
-                className="w-full py-2 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="w-full py-2.5 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
-                Não, quero continuar apenas com a Roleta Normal
+                {pendingParticipationData?.isVip
+                  ? "Pular agendamento e acessar meu bilhete VIP ➔"
+                  : "Prefiro não agendar agora, ir para a roleta padrão ➔"}
               </button>
             </div>
           </div>
