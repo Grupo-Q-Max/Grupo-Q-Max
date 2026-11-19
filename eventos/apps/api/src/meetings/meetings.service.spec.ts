@@ -69,7 +69,7 @@ describe('MeetingsService - Agendamento e Integração Teams / Hugo e Edvaldo', 
     const msEventSpy = jest.spyOn(msHelper, 'createMicrosoftCalendarEvent').mockResolvedValue('ms-teams-event-123');
     const mailSpy = jest.spyOn(mailHelper, 'sendMeetingInvite').mockResolvedValue(true);
 
-    const result = await service.bookMeeting(3, 50, scheduledDate, 'carolina@clinica.com.br');
+    const result = await service.bookMeeting(3, 50, scheduledDate.toISOString(), 'carolina@clinica.com.br');
 
     expect(result).toBeDefined();
     expect(result.id).toBe(99);
