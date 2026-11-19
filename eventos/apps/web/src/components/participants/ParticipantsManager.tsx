@@ -139,7 +139,7 @@ function statusInfo(status: string) {
       return {
         label: "Aprovado",
         className:
-          "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-bold border-[#B7E4C7] bg-[#E3F6EA] text-[#0F7A3D]",
+          "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-bold border-emerald-500/30 bg-emerald-500/15 text-emerald-400",
         icon: CheckCircle2,
       };
 
@@ -147,7 +147,7 @@ function statusInfo(status: string) {
       return {
         label: "Bloqueado",
         className:
-          "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-bold border-[#F5C2CD] bg-[#FDE8EC] text-[#A3112F]",
+          "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-bold border-rose-500/30 bg-rose-500/15 text-rose-400",
         icon: XCircle,
       };
 
@@ -560,7 +560,7 @@ export default function ParticipantsManager({
   return (
     <>
       <section className="flex flex-col gap-2.5">
-        <div className="flex h-11 items-center gap-2 rounded-full border-[1.5px] border-line-strong bg-surface px-4 text-text-2 focus-within:border-finora-600 [&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:text-sm [&_input]:text-text [&_input]:outline-none [&_button]:grid [&_button]:size-7 [&_button]:place-items-center [&_button]:rounded-full [&_button]:bg-[#EEF1F5]">
+        <div className="flex h-11 items-center gap-2 rounded-full border-[1.5px] border-line-strong bg-surface px-4 text-text-2 focus-within:border-finora-600 [&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:text-sm [&_input]:text-text [&_input]:outline-none [&_button]:grid [&_button]:size-7 [&_button]:place-items-center [&_button]:rounded-full [&_button]:bg-surface">
           <Search size={17} />
 
           <input
@@ -587,12 +587,12 @@ export default function ParticipantsManager({
           )}
         </div>
 
-        <div className="[&>button]:inline-flex [&>button]:h-9 [&>button]:items-center [&>button]:gap-2 [&>button]:rounded-full [&>button]:border [&>button]:border-line [&>button]:bg-surface [&>button]:px-3.5 [&>button]:text-[13px] [&>button]:font-semibold [&>button]:text-text-2 [&_span]:min-w-[22px] [&_span]:rounded-full [&_span]:bg-[#EEF1F5] [&_span]:px-2 [&_span]:py-0.5 [&_span]:text-[11px] [&_span]:font-bold [&_span]:text-text flex items-center flex-wrap gap-2">
+        <div className="[&>button]:inline-flex [&>button]:h-9 [&>button]:items-center [&>button]:gap-2 [&>button]:rounded-full [&>button]:border [&>button]:border-line [&>button]:bg-surface [&>button]:px-3.5 [&>button]:text-[13px] [&>button]:font-semibold [&>button]:text-text-2 [&_span]:min-w-[22px] [&_span]:rounded-full [&_span]:bg-surface [&_span]:px-2 [&_span]:py-0.5 [&_span]:text-[11px] [&_span]:font-bold [&_span]:text-text flex items-center flex-wrap gap-2">
           <button
             type="button"
             className={
               filter === "ALL"
-                ? "border-finora-600! bg-[#E6F0FF]! text-finora-600! [&>span]:bg-finora-600! [&>span]:text-white!"
+                ? "border-finora-600! bg-cyan-500/15! text-cyan-400! [&>span]:bg-finora-600! [&>span]:text-white!"
                 : ""
             }
             onClick={() =>
@@ -681,7 +681,7 @@ export default function ParticipantsManager({
             type="button"
             className={
               filter === "SPUN"
-                ? "border-finora-600! bg-[#E6F0FF]! text-finora-600! [&>span]:bg-finora-600! [&>span]:text-white!"
+                ? "border-finora-600! bg-cyan-500/15! text-cyan-400! [&>span]:bg-finora-600! [&>span]:text-white!"
                 : ""
             }
             onClick={() =>
@@ -698,7 +698,7 @@ export default function ParticipantsManager({
             type="button"
             className={
               filter === "PENDING_SPIN"
-                ? "border-finora-600! bg-[#E6F0FF]! text-finora-600! [&>span]:bg-finora-600! [&>span]:text-white!"
+                ? "border-finora-600! bg-cyan-500/15! text-cyan-400! [&>span]:bg-finora-600! [&>span]:text-white!"
                 : ""
             }
             onClick={() =>
@@ -715,7 +715,7 @@ export default function ParticipantsManager({
             type="button"
             className={
               filter === "BLOCKED"
-                ? "border-finora-600! bg-[#E6F0FF]! text-finora-600! [&>span]:bg-finora-600! [&>span]:text-white!"
+                ? "border-finora-600! bg-cyan-500/15! text-cyan-400! [&>span]:bg-finora-600! [&>span]:text-white!"
                 : ""
             }
             onClick={() =>
@@ -734,7 +734,7 @@ export default function ParticipantsManager({
             type="button"
             className={
               filter === "REVIEW"
-                ? "border-finora-600! bg-[#E6F0FF]! text-finora-600! [&>span]:bg-finora-600! [&>span]:text-white!"
+                ? "border-finora-600! bg-cyan-500/15! text-cyan-400! [&>span]:bg-finora-600! [&>span]:text-white!"
                 : ""
             }
             onClick={() =>
@@ -771,7 +771,7 @@ export default function ParticipantsManager({
               <button
                 type="button"
                 onClick={() => handleExportCsv(true)}
-                className="px-3.5 py-1.5 rounded-full bg-[#EEF1F5] hover:bg-line-strong border border-line-strong text-text text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                className="px-3.5 py-1.5 rounded-full bg-surface hover:bg-line-strong border border-line-strong text-text text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95"
                 title="Exportar apenas os participantes filtrados na tela"
               >
                 <Download size={14} className="text-text" />
@@ -805,7 +805,7 @@ export default function ParticipantsManager({
         </div>
 
         {filtered.length === 0 ? (
-          <div className="flex min-h-[250px] flex-col items-center justify-center text-center text-text-2 [&>div]:mb-2.5 [&>div]:grid [&>div]:size-11 [&>div]:place-items-center [&>div]:rounded-xl [&>div]:bg-[#E6F0FF] [&>div]:text-finora-600 [&_strong]:text-[15px] [&_strong]:text-text [&_p]:mt-1 [&_p]:text-sm">
+          <div className="flex min-h-[250px] flex-col items-center justify-center text-center text-text-2 [&>div]:mb-2.5 [&>div]:grid [&>div]:size-11 [&>div]:place-items-center [&>div]:rounded-xl [&>div]:bg-cyan-500/15 [&>div]:text-cyan-400 [&_strong]:text-[15px] [&_strong]:text-text [&_p]:mt-1 [&_p]:text-sm">
             <div>
               <Search size={22} />
             </div>
@@ -858,7 +858,7 @@ export default function ParticipantsManager({
                   <div className={`grid size-10 place-items-center rounded-xl relative ${
                     isAnyVip
                       ? "bg-amber-100 text-amber-800 ring-2 ring-amber-400"
-                      : "bg-[#E6F0FF] text-finora-600"
+                      : "bg-cyan-500/15 text-cyan-400"
                   }`}>
                     <UserRound
                       size={18}
@@ -968,7 +968,7 @@ export default function ParticipantsManager({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex size-8 items-center justify-center rounded-lg bg-[#E3F6EA] text-[#0F7A3D] hover:bg-[#25D366] hover:text-white transition-all shadow-xs cursor-pointer active:scale-95"
+                        className="inline-flex size-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-[#25D366] hover:text-white transition-all shadow-xs cursor-pointer active:scale-95"
                         title={`Chamar ${participant.full_name.split(' ')[0]} no WhatsApp Web`}
                         aria-label={`Chamar ${participant.full_name} no WhatsApp Web`}
                       >
@@ -1099,7 +1099,7 @@ export default function ParticipantsManager({
                           <MessageSquare size={19} />
                         </div>
                         <div>
-                          <h4 className="text-sm font-extrabold text-[#0F7A3D] leading-tight">Contato Comercial Direto</h4>
+                          <h4 className="text-sm font-extrabold text-emerald-400 leading-tight">Contato Comercial Direto</h4>
                           <p className="text-[11px] text-text-2">Abre WhatsApp Web com abordagem personalizada</p>
                         </div>
                       </div>
@@ -1182,7 +1182,7 @@ export default function ParticipantsManager({
                             href={waUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0F7A3D] hover:underline"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:underline"
                           >
                             <MessageSquare size={12} />
                             Zap
@@ -1219,7 +1219,7 @@ export default function ParticipantsManager({
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 max-sm:grid-cols-1 [&>div]:rounded-lg [&>div]:bg-[#E6F0FF] [&>div]:p-3 [&>div]:text-finora-600 [&_span]:mt-2 [&_span]:block [&_span]:text-xs [&_span]:text-text-2 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-sm [&_strong]:text-text">
+                <div className="grid grid-cols-3 gap-2 max-sm:grid-cols-1 [&>div]:rounded-lg [&>div]:bg-cyan-500/15 [&>div]:p-3 [&>div]:text-cyan-400 [&_span]:mt-2 [&_span]:block [&_span]:text-xs [&_span]:text-text-2 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-sm [&_strong]:text-text">
                   <div>
                     <Building2
                       size={17}
@@ -1334,7 +1334,7 @@ export default function ParticipantsManager({
                 {selected.draws?.[0] && (
                   <div className="mt-3 flex flex-col gap-2">
                     {selected.status === 'COMPLETED' ? (
-                      <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-[#E3F6EA] border border-[#B7E4C7] text-[#0F7A3D] rounded-xl text-xs font-semibold">
+                      <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-semibold">
                         <CheckCircle2 size={15} />
                         <span>Prêmio Entregue no Balcão</span>
                       </div>
@@ -1355,7 +1355,7 @@ export default function ParticipantsManager({
                     )}
 
                     {claimFeedback && (
-                      <p className={`text-xs px-2 py-1 rounded-lg ${claimFeedback.type === 'success' ? 'bg-[#E3F6EA] text-[#0F7A3D] border border-[#B7E4C7]' : 'bg-[#FDE8EC] text-[#A3112F] border border-[#F5C2CD]'}`}>
+                      <p className={`text-xs px-2 py-1 rounded-lg ${claimFeedback.type === 'success' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'}`}>
                         {claimFeedback.message}
                       </p>
                     )}
@@ -1364,7 +1364,7 @@ export default function ParticipantsManager({
                       type="button"
                       disabled={resendingWhatsapp}
                       onClick={() => handleResendWhatsapp(selected.id)}
-                      className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-[#EEF1F5] hover:bg-line-strong text-text border border-line-strong rounded-xl text-xs font-medium transition-all disabled:opacity-50 mt-1"
+                      className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-surface hover:bg-line-strong text-text border border-line-strong rounded-xl text-xs font-medium transition-all disabled:opacity-50 mt-1"
                     >
                       {resendingWhatsapp ? (
                         <LoaderCircle size={14} className="animate-spin" />
@@ -1374,7 +1374,7 @@ export default function ParticipantsManager({
                       <span>Reenviar Mensagem WhatsApp</span>
                     </button>
                     {whatsappFeedback && (
-                      <p className={`text-xs px-2 py-1 rounded-lg ${whatsappFeedback.type === 'success' ? 'bg-[#E3F6EA] text-[#0F7A3D] border border-[#B7E4C7]' : 'bg-[#FDE8EC] text-[#A3112F] border border-[#F5C2CD]'}`}>
+                      <p className={`text-xs px-2 py-1 rounded-lg ${whatsappFeedback.type === 'success' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'}`}>
                         {whatsappFeedback.message}
                       </p>
                     )}
@@ -1435,7 +1435,7 @@ export default function ParticipantsManager({
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 rounded-lg bg-[#E3F6EA] p-2.5 text-sm font-semibold text-[#0F7A3D]">
+                  <div className="flex items-center gap-2 rounded-lg bg-emerald-500/15 p-2.5 text-sm font-semibold text-emerald-400">
                     <CheckCircle2
                       size={17}
                     />

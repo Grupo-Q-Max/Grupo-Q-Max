@@ -174,19 +174,19 @@ export default function AdminUsersManagement({ initialUsers }: Props) {
         );
       case "ADMIN":
         return (
-          <span className="px-3 py-1 rounded-xl text-xs font-black bg-[#E6F0FF] text-finora-600 border border-[#B9D4F7] flex items-center gap-1.5">
+          <span className="px-3 py-1 rounded-xl text-xs font-black bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex items-center gap-1.5">
             <Shield size={13} className="text-finora-600" /> ADMIN
           </span>
         );
       case "OPERATOR":
         return (
-          <span className="px-3 py-1 rounded-xl text-xs font-black bg-[#E3F6EA] text-[#0F7A3D] border border-[#B7E4C7] flex items-center gap-1.5">
-            <UserRound size={13} className="text-[#0F7A3D]" /> OPERADOR
+          <span className="px-3 py-1 rounded-xl text-xs font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+            <UserRound size={13} className="text-emerald-400" /> OPERADOR
           </span>
         );
       default:
         return (
-          <span className="px-3 py-1 rounded-xl text-xs font-bold bg-[#EEF1F5] text-text border border-line-strong">
+          <span className="px-3 py-1 rounded-xl text-xs font-bold bg-surface text-text border border-line-strong">
             {userRole}
           </span>
         );
@@ -214,7 +214,7 @@ export default function AdminUsersManagement({ initialUsers }: Props) {
             type="button"
             onClick={reloadUsers}
             disabled={loading}
-            className="p-3 rounded-2xl bg-[#EEF1F5] border border-line-strong text-text hover:text-text hover:bg-line-strong transition"
+            className="p-3 rounded-2xl bg-surface border border-line-strong text-text hover:text-text hover:bg-line-strong transition"
             title="Atualizar lista de administradores"
           >
             <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
@@ -296,7 +296,7 @@ export default function AdminUsersManagement({ initialUsers }: Props) {
                   <tr key={u.id} className="hover:bg-paper transition-colors">
                     <td className="p-4 sm:p-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#E6F0FF] border border-[#B9D4F7] flex items-center justify-center text-finora-600 font-black text-sm shrink-0">
+                        <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-black text-sm shrink-0">
                           {u.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -319,12 +319,12 @@ export default function AdminUsersManagement({ initialUsers }: Props) {
                     </td>
                     <td className="p-4 sm:p-5 text-center">
                       {u.active ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#0F7A3D] bg-[#E3F6EA] border border-[#B7E4C7] px-3 py-1 rounded-full">
-                          <CheckCircle2 size={13} className="text-[#0F7A3D]" /> Ativo
+                        <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 rounded-full">
+                          <CheckCircle2 size={13} className="text-emerald-400" /> Ativo
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#A3112F] bg-[#FDE8EC] border border-[#F5C2CD] px-3 py-1 rounded-full">
-                          <XCircle size={13} className="text-[#A3112F]" /> Inativo
+                        <span className="inline-flex items-center gap-1.5 text-xs font-black text-rose-400 bg-rose-500/15 border border-rose-500/30 px-3 py-1 rounded-full">
+                          <XCircle size={13} className="text-rose-400" /> Inativo
                         </span>
                       )}
                     </td>
@@ -346,7 +346,7 @@ export default function AdminUsersManagement({ initialUsers }: Props) {
                             setResettingUser(u);
                             setNewPassword("");
                           }}
-                          className="px-3.5 py-2 rounded-full bg-[#EEF1F5] hover:bg-line-strong text-text text-xs font-bold border border-line-strong transition flex items-center gap-1.5"
+                          className="px-3.5 py-2 rounded-full bg-surface hover:bg-line-strong text-text text-xs font-bold border border-line-strong transition flex items-center gap-1.5"
                           title="Alterar senha deste administrador"
                         >
                           <KeyRound size={13} className="text-[#8A4B00]" />
@@ -358,8 +358,8 @@ export default function AdminUsersManagement({ initialUsers }: Props) {
                           onClick={() => handleToggleActive(u)}
                           className={`px-3.5 py-2 rounded-full text-xs font-bold border transition ${
                             u.active
-                              ? "bg-[#FDE8EC] hover:bg-[#FAD4DC] text-[#A3112F] border-[#F5C2CD]"
-                              : "bg-[#E3F6EA] hover:bg-[#D2EFDC] text-[#0F7A3D] border-[#B7E4C7]"
+                              ? "bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border-rose-500/30"
+                              : "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border-emerald-500/30"
                           }`}
                         >
                           {u.active ? "Desativar" : "Ativar"}
@@ -380,7 +380,7 @@ export default function AdminUsersManagement({ initialUsers }: Props) {
           <div className="bg-surface border border-line p-6 md:p-8 rounded-3xl max-w-md w-full animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-4 border-b border-line mb-5">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-[#E6F0FF] border border-[#B9D4F7] flex items-center justify-center text-finora-600">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
                   <UserPlus size={20} />
                 </div>
                 <div>
@@ -469,7 +469,7 @@ export default function AdminUsersManagement({ initialUsers }: Props) {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="flex-1 py-3 rounded-xl bg-[#EEF1F5] hover:bg-line-strong text-xs font-bold text-text transition-all"
+                  className="flex-1 py-3 rounded-xl bg-surface hover:bg-line-strong text-xs font-bold text-text transition-all"
                 >
                   Cancelar
                 </button>
@@ -530,7 +530,7 @@ export default function AdminUsersManagement({ initialUsers }: Props) {
                 <button
                   type="button"
                   onClick={() => setResettingUser(null)}
-                  className="flex-1 py-2.5 rounded-xl bg-[#EEF1F5] text-xs font-bold text-text"
+                  className="flex-1 py-2.5 rounded-xl bg-surface text-xs font-bold text-text"
                 >
                   Cancelar
                 </button>

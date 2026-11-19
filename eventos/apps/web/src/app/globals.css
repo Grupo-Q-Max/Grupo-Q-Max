@@ -80,6 +80,8 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
 }
 
 html {
@@ -98,7 +100,7 @@ body {
 
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 button,
@@ -191,158 +193,7 @@ textarea {
   box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
 }
 
-/* ROLETA AO VIVO: composição usada pelo totem em produção */
 
-.clinicorpKioskTools {
-  position: fixed;
-
-  z-index: 9998;
-
-  right: 18px;
-  bottom: 18px;
-
-  display: flex;
-  align-items: center;
-
-  gap: 6px;
-
-  padding: 5px;
-
-  border:
-    1px solid
-    rgba(22, 96, 78, 0.09);
-
-  border-radius: 11px;
-
-  background:
-    rgba(255, 255, 255, 0.72);
-
-  backdrop-filter:
-    blur(16px);
-
-  box-shadow:
-    0 12px 32px
-    rgba(35, 74, 62, 0.08);
-}
-
-.clinicorpKioskToolButton,
-.clinicorpConnectionStatus {
-  width: 31px;
-  height: 31px;
-
-  display: grid;
-  place-items: center;
-
-  border-radius: 8px;
-
-  border: 0;
-
-  background:
-    transparent;
-
-  color: #71857e;
-}
-
-.clinicorpKioskToolButton {
-  cursor: pointer;
-
-  transition:
-    background 140ms ease,
-    color 140ms ease,
-    transform 140ms ease;
-}
-
-.clinicorpKioskToolButton:hover {
-  background: #e8f3ee;
-
-  color: #176f5c;
-
-  transform:
-    translateY(-1px);
-}
-
-.clinicorpConnectionStatus.online {
-  color: #1c8068;
-}
-
-.clinicorpConnectionStatus.offline {
-  color: #ba5955;
-
-  background: #fff0ef;
-}
-
-.clinicorpOfflineBanner {
-  position: fixed;
-
-  z-index: 10000;
-
-  top: 16px;
-  left: 50%;
-
-  transform:
-    translateX(-50%);
-
-  width:
-    min(
-      500px,
-      calc(100% - 32px)
-    );
-
-  min-height: 48px;
-
-  padding:
-    9px 14px;
-
-  display: grid;
-
-  grid-template-columns:
-    24px
-    auto;
-
-  align-items: center;
-
-  column-gap: 8px;
-
-  border:
-    1px solid
-    rgba(178, 71, 67, 0.16);
-
-  border-radius: 12px;
-
-  background:
-    rgba(255, 244, 243, 0.96);
-
-  backdrop-filter:
-    blur(18px);
-
-  color: #ad504d;
-
-  box-shadow:
-    0 18px 45px
-    rgba(111, 52, 49, 0.12);
-}
-
-.clinicorpOfflineBanner > svg {
-  grid-row:
-    1 / span 2;
-}
-
-.clinicorpOfflineBanner strong {
-  font-size: 9px;
-}
-
-.clinicorpOfflineBanner span {
-  color: #9b6b69;
-
-  font-size: 7px;
-}
-
-@media (max-width: 600px) {
-  .clinicorpKioskTools {
-    right: 10px;
-    bottom: 10px;
-  }
-}
 
 /* ============================================================
    SHELL DO ADMIN — LUXURY COMMAND CENTER (GRUPO Q-MAX INSPIRATION)

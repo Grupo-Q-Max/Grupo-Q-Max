@@ -42,7 +42,7 @@ export default function StockHistory({ prizeId }: { prizeId: number }) {
   return (
     <details className="mt-2 text-sm" onToggle={(e) => load(e.currentTarget.open)}>
       <summary className="cursor-pointer font-semibold text-finora-400 hover:text-finora-300 transition-colors">Histórico de estoque</summary>
-      {error && <p className="mt-2 text-[#A3112F]">{error}</p>}
+      {error && <p className="mt-2 text-rose-400">{error}</p>}
       {!movements && !error && <p className="mt-2 text-text-2">Carregando…</p>}
       {movements && movements.length === 0 && <p className="mt-2 text-text-2">Sem movimentações.</p>}
       {movements && movements.length > 0 && (

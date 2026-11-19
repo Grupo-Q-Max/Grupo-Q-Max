@@ -129,8 +129,8 @@ export default function SystemConfigDiagnostics() {
           <div
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors ${
               isFullyOperational
-                ? "bg-[#E3F6EA] border-[#B7E4C7] text-[#0F7A3D]"
-                : "bg-[#FDE8EC] border-[#F5C2CD] text-[#A3112F]"
+                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                : "bg-rose-500/15 border-rose-500/30 text-rose-400"
             }`}
           >
             <span className="relative flex h-2.5 w-2.5">
@@ -170,14 +170,14 @@ export default function SystemConfigDiagnostics() {
         <div className="bg-surface border-2 border-line p-5 rounded-2xl backdrop-blur flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#E3F6EA] border border-[#B7E4C7] flex items-center justify-center text-[#0F7A3D]">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                 <Database size={20} />
               </div>
               <span
                 className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${
                   isDbConnected
-                    ? "bg-[#E3F6EA] text-[#0F7A3D] border-[#B7E4C7]"
-                    : "bg-[#FDE8EC] text-[#A3112F] border-[#F5C2CD]"
+                    ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                    : "bg-rose-500/15 text-rose-400 border-rose-500/30"
                 }`}
               >
                 {isDbConnected ? "CONECTADO" : "FALHA DE CONEXÃO"}
@@ -193,7 +193,7 @@ export default function SystemConfigDiagnostics() {
 
           <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-xs">
             <span className="text-text-2">Latência do Banco:</span>
-            <span className="font-mono font-bold text-[#0F7A3D]">
+            <span className="font-mono font-bold text-emerald-400">
               {health?.database?.latencyMs !== undefined
                 ? `${health.database.latencyMs} ms`
                 : "N/A"}
@@ -204,7 +204,7 @@ export default function SystemConfigDiagnostics() {
         {/* 2. Z-API (WhatsApp) */}
         <div
           className={`bg-surface border-2 ${
-            !isZapiConnected ? "border-[#F5C2CD] bg-[#FDE8EC]" : "border-line"
+            !isZapiConnected ? "border-rose-500/30 bg-rose-500/15" : "border-line"
           } p-5 rounded-2xl backdrop-blur flex flex-col justify-between relative overflow-hidden`}
         >
           <div>
@@ -212,8 +212,8 @@ export default function SystemConfigDiagnostics() {
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
                   isZapiConnected
-                    ? "bg-[#E3F6EA] border-[#B7E4C7] text-[#0F7A3D]"
-                    : "bg-[#FDE8EC] border-[#F5C2CD] text-[#A3112F]"
+                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                    : "bg-rose-500/15 border-rose-500/30 text-rose-400"
                 }`}
               >
                 <Radio size={20} />
@@ -221,8 +221,8 @@ export default function SystemConfigDiagnostics() {
               <span
                 className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border flex items-center gap-1 ${
                   isZapiConnected
-                    ? "bg-[#E3F6EA] text-[#0F7A3D] border-[#B7E4C7]"
-                    : "bg-[#FDE8EC] text-[#A3112F] border-[#F5C2CD]"
+                    ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                    : "bg-rose-500/15 text-rose-400 border-rose-500/30"
                 }`}
               >
                 {isZapiConnected ? (
@@ -249,12 +249,12 @@ export default function SystemConfigDiagnostics() {
 
           {/* Alerta Destacado se Expirado / Desconectado */}
           {!isZapiConnected && (
-            <div className="mt-3 p-3 bg-[#FDE8EC] border border-[#F5C2CD] rounded-xl text-xs text-[#A3112F]">
-              <div className="flex items-center gap-1.5 font-bold text-[#A3112F] mb-1">
+            <div className="mt-3 p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-xs text-rose-400">
+              <div className="flex items-center gap-1.5 font-bold text-rose-400 mb-1">
                 <AlertTriangle size={14} />
                 <span>Assinatura ou QR Code Necessário</span>
               </div>
-              <p className="text-[11px] leading-tight text-[#A3112F]">
+              <p className="text-[11px] leading-tight text-rose-400">
                 A assinatura da Z-API expirou ou a instância foi desconectada do WhatsApp. Revalide a assinatura ou leia o QR Code no painel da Z-API.
               </p>
             </div>
@@ -274,10 +274,10 @@ export default function SystemConfigDiagnostics() {
         <div className="bg-surface border-2 border-line p-5 rounded-2xl backdrop-blur flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#E6F0FF] border border-[#B9D4F7] flex items-center justify-center text-finora-600">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
                 <Shield size={20} />
               </div>
-              <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-[#E6F0FF] text-finora-600 border border-[#B9D4F7]">
+              <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
                 BLINDADO & ATIVO
               </span>
             </div>
@@ -311,7 +311,7 @@ export default function SystemConfigDiagnostics() {
             </div>
             <strong
               className={`font-bold text-sm block mt-1 ${
-                healthError ? "text-[#A3112F]" : "text-[#0F7A3D]"
+                healthError ? "text-rose-400" : "text-emerald-400"
               }`}
             >
               {healthError ? "ERRO DE CONEXÃO" : health?.status?.toUpperCase() || "HEALTHY"}

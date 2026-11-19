@@ -108,7 +108,7 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
           <button
             type="button"
             onClick={handleExportCsv}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#EEF1F5] hover:bg-line-strong text-text border border-line-strong text-xs font-bold transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface hover:bg-line-strong text-text border border-line-strong text-xs font-bold transition-all cursor-pointer"
           >
             <FileSpreadsheet size={15} />
             <span>Exportar CSV/Excel</span>
@@ -118,7 +118,7 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
           <button
             type="button"
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-finora-600 hover:bg-finora-700 text-white text-xs font-bold transition-all border border-[#B9D4F7] cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-finora-600 hover:bg-finora-700 text-white text-xs font-bold transition-all border border-cyan-500/30 cursor-pointer"
           >
             <Printer size={15} />
             <span>Imprimir PDF</span>
@@ -138,7 +138,7 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
               {event.name}
             </h1>
             <p className="text-xs text-text-2 print:text-slate-600 mt-1">
-              Status: <strong className="text-[#0F7A3D] print:text-black uppercase">{event.status}</strong> • Emissão: {now.toLocaleString("pt-BR")}
+              Status: <strong className="text-emerald-400 print:text-black uppercase">{event.status}</strong> • Emissão: {now.toLocaleString("pt-BR")}
             </p>
           </div>
 
@@ -151,17 +151,17 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
 
         {/* 1. KPIs Principais do Evento */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-surface p-5 rounded-2xl border border-line hover:border-[#B9D4F7] transition-colors print:bg-slate-100 print:border-slate-300">
+          <div className="bg-surface p-5 rounded-2xl border border-line hover:border-cyan-500/40 transition-colors print:bg-slate-100 print:border-slate-300">
             <span className="text-xs text-text-2 print:text-slate-600 block">Total de Cadastros</span>
             <strong className="text-2xl font-black text-text print:text-black block mt-1">
               {summary.totalParticipations}
             </strong>
-            <small className="text-[11px] text-[#0F7A3D] font-bold mt-0.5 block">
+            <small className="text-[11px] text-emerald-400 font-bold mt-0.5 block">
               {approvalRate}% de aprovação
             </small>
           </div>
 
-          <div className="bg-surface p-5 rounded-2xl border border-line hover:border-[#B9D4F7] transition-colors print:bg-slate-100 print:border-slate-300">
+          <div className="bg-surface p-5 rounded-2xl border border-line hover:border-cyan-500/40 transition-colors print:bg-slate-100 print:border-slate-300">
             <span className="text-xs text-text-2 print:text-slate-600 block">Visitantes Únicos (CPF)</span>
             <strong className="text-2xl font-black text-text print:text-black block mt-1">
               {summary.uniqueParticipants}
@@ -181,22 +181,22 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
             </small>
           </div>
 
-          <div className="bg-surface p-5 rounded-2xl border border-line hover:border-[#B7E4C7] transition-colors print:bg-slate-100 print:border-slate-300">
+          <div className="bg-surface p-5 rounded-2xl border border-line hover:border-emerald-500/30 transition-colors print:bg-slate-100 print:border-slate-300">
             <span className="text-xs text-text-2 print:text-slate-600 block">Entregues (Balcão)</span>
-            <strong className="text-2xl font-black text-[#0F7A3D] print:text-emerald-700 block mt-1">
+            <strong className="text-2xl font-black text-emerald-400 print:text-emerald-700 block mt-1">
               {summary.completed ?? summary.deliveredPrizes}
             </strong>
-            <small className="text-[11px] text-[#0F7A3D] font-bold mt-0.5 block">
+            <small className="text-[11px] text-emerald-400 font-bold mt-0.5 block">
               Entregas concluídas
             </small>
           </div>
 
-          <div className="bg-surface p-5 rounded-2xl border border-line hover:border-[#F5C2CD] transition-colors print:bg-slate-100 print:border-slate-300 col-span-2 lg:col-span-1">
+          <div className="bg-surface p-5 rounded-2xl border border-line hover:border-rose-500/30 transition-colors print:bg-slate-100 print:border-slate-300 col-span-2 lg:col-span-1">
             <span className="text-xs text-text-2 print:text-slate-600 block">Bloqueios Antifraude</span>
-            <strong className="text-2xl font-black text-[#A3112F] print:text-rose-700 block mt-1">
+            <strong className="text-2xl font-black text-rose-400 print:text-rose-700 block mt-1">
               {summary.blocked}
             </strong>
-            <small className="text-[11px] text-[#A3112F] font-bold mt-0.5 block">
+            <small className="text-[11px] text-rose-400 font-bold mt-0.5 block">
               Duplicados impedidos
             </small>
           </div>
@@ -213,7 +213,7 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
                 Proporção & Share de Cada Brinde Ganho (%)
               </h3>
             </div>
-            <span className="text-[11px] font-bold text-finora-600 bg-[#E6F0FF] border border-[#B9D4F7] px-3 py-1 rounded-full font-mono uppercase tracking-widest">
+            <span className="text-[11px] font-bold text-cyan-400 bg-cyan-500/15 border border-cyan-500/30 px-3 py-1 rounded-full font-mono uppercase tracking-widest">
               Sorteados: {totalDelivered} unid
             </span>
           </div>
@@ -282,7 +282,7 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
                           {prize.name}
                         </strong>
                       </div>
-                      <span className="text-[11px] font-black text-finora-600 font-mono bg-[#E6F0FF] px-1.5 py-0.5 rounded">
+                      <span className="text-[11px] font-black text-cyan-400 font-mono bg-cyan-500/15 px-1.5 py-0.5 rounded">
                         {sharePercent}%
                       </span>
                     </div>
@@ -299,10 +299,10 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
                       <strong
                         className={`font-mono font-bold ${
                           prize.availableStock === 0
-                            ? "text-[#A3112F]"
+                            ? "text-rose-400"
                             : prize.availableStock <= 5
                             ? "text-[#8A4B00]"
-                            : "text-[#0F7A3D]"
+                            : "text-emerald-400"
                         }`}
                       >
                         {prize.availableStock} / {prize.initialStock}
@@ -395,10 +395,10 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
                         <span
                           className={`px-2.5 py-1 rounded border text-[10px] font-black tracking-wider uppercase ${
                             prize.availableStock === 0
-                              ? "bg-[#FDE8EC] text-[#A3112F] border-[#F5C2CD]"
+                              ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
                               : prize.availableStock <= 5
                               ? "bg-[#FFF3DC] text-[#8A4B00] border-[#F2D19B]"
-                              : "bg-[#E3F6EA] text-[#0F7A3D] border-[#B7E4C7]"
+                              : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                           }`}
                         >
                           {prize.availableStock} un
@@ -424,7 +424,7 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
                 Fluxo de Atendimento & Horários de Pico do Estande
               </h3>
             </div>
-            <span className="text-[10px] uppercase tracking-widest text-finora-600 font-bold bg-[#E6F0FF] border border-[#B9D4F7] px-3 py-1 rounded-full print:hidden flex items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-bold bg-cyan-500/15 border border-cyan-500/30 px-3 py-1 rounded-full print:hidden flex items-center gap-1.5">
               <TrendingUp size={13} />
               Pico Estimado: 14h - 16h
             </span>
@@ -455,8 +455,8 @@ export default function ExecutiveReportView({ data, canExport, funnel }: Props) 
                 <div
                   className={`w-full max-w-[36px] rounded-t-xl transition-all border-t border-x ${
                     item.isPeak
-                      ? "bg-finora-600 border-[#B9D4F7]"
-                      : "bg-[#EEF1F5] border-line-strong hover:bg-line-strong"
+                      ? "bg-finora-600 border-cyan-500/30"
+                      : "bg-surface border-line-strong hover:bg-line-strong"
                   }`}
                   style={{ height: `${item.percent}%` }}
                 />

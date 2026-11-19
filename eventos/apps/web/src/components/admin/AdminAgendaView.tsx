@@ -218,7 +218,7 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
       <div className="bg-surface border border-line p-6 rounded-3xl shadow-xs space-y-5">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#E6F0FF] text-finora-600 flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shrink-0">
               <CalendarClock size={22} />
             </div>
             <div>

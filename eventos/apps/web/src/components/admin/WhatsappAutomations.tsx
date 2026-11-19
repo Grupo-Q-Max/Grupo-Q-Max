@@ -84,14 +84,14 @@ export default function WhatsappAutomations({ eventId }: Props) {
 
       <div className="bg-surface border border-line rounded-3xl p-6 flex flex-col">
         <div className="flex items-start gap-3 mb-6 pb-6 border-b border-line">
-          <div className="w-10 h-10 rounded-xl bg-[#E6F0FF] flex items-center justify-center border border-[#B9D4F7] shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center border border-cyan-500/30 shrink-0">
             <Info size={18} className="text-finora-600" />
           </div>
           <div>
             <h2 className="text-text font-black text-lg">Templates Automáticos</h2>
             <p className="text-text-2 text-xs mt-0.5">
               Configure as mensagens que o sistema enviará automaticamente nos gatilhos. 
-              <br/>Variáveis disponíveis: <code className="bg-[#EEF1F5] px-1 py-0.5 rounded text-finora-600">{'{nome}'}</code>, <code className="bg-[#EEF1F5] px-1 py-0.5 rounded text-finora-600">{'{premio}'}</code>. Deixe em branco para desativar a automação correspondente.
+              <br/>Variáveis disponíveis: <code className="bg-surface px-1 py-0.5 rounded text-finora-600">{'{nome}'}</code>, <code className="bg-surface px-1 py-0.5 rounded text-finora-600">{'{premio}'}</code>. Deixe em branco para desativar a automação correspondente.
             </p>
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function WhatsappAutomations({ eventId }: Props) {
           <button
             type="submit"
             disabled={saving}
-            className="mt-4 py-3.5 px-4 rounded-full flex items-center justify-center gap-2 font-black transition-all bg-finora-600 hover:bg-finora-700 text-white disabled:bg-[#EEF1F5] disabled:text-text-2"
+            className="mt-4 py-3.5 px-4 rounded-full flex items-center justify-center gap-2 font-black transition-all bg-finora-600 hover:bg-finora-700 text-white disabled:bg-surface disabled:text-text-2"
           >
             {saving ? <LoaderCircle size={18} className="animate-spin" /> : <Save size={18} />}
             {saving ? "Salvando..." : "Salvar Configurações"}

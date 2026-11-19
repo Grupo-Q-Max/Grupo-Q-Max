@@ -95,9 +95,8 @@ export default async function FraudPage({ searchParams }: PageProps) {
   return (
     <div className="adminShell">
       <AdminSidebar />
-      <main className="adminMain adminPaper bg-paper text-text flex-1 flex flex-col h-screen overflow-hidden relative">
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 space-y-8">
-          <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-line">
+      <main className="adminMain adminPaper bg-paper text-text flex-1 min-w-0 overflow-y-auto p-4 md:p-8 relative z-10 space-y-8 min-h-dvh">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-line">
             <div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-black uppercase tracking-widest mb-3">
                 <ShieldCheck size={14} className="text-cyan-400" />
@@ -275,7 +274,6 @@ export default async function FraudPage({ searchParams }: PageProps) {
               </p>
             </div>
           </div>
-        </div>
       </main>
     </div>
   );

@@ -56,7 +56,7 @@ export default function EventDeleteControl({ eventId, eventName }: Props) {
     <>
       <button
         type="button"
-        className="p-3 rounded-2xl bg-surface border border-line text-text-2 hover:text-[#A3112F] hover:bg-[#FAD4DC] hover:border-[#F5C2CD] transition-all"
+        className="p-3 rounded-2xl bg-surface border border-line text-text-2 hover:text-rose-400 hover:bg-rose-500/25 hover:border-rose-500/30 transition-all"
         title="Apagar Evento"
         onClick={() => setOpen(true)}
       >
@@ -70,10 +70,10 @@ export default function EventDeleteControl({ eventId, eventName }: Props) {
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="bg-surface border border-[#F5C2CD] rounded-3xl w-full max-w-md overflow-hidden flex flex-col">
+          <div className="bg-surface border border-rose-500/30 rounded-3xl w-full max-w-md overflow-hidden flex flex-col">
             <div className="px-6 py-5 border-b border-line flex justify-between items-start bg-paper">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#FDE8EC] border border-[#F5C2CD] flex items-center justify-center text-[#A3112F] shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
                   <AlertTriangle size={20} />
                 </div>
                 <div>
@@ -84,7 +84,7 @@ export default function EventDeleteControl({ eventId, eventName }: Props) {
 
               <button
                 type="button"
-                className="w-8 h-8 rounded-full bg-[#EEF1F5] hover:bg-line-strong flex items-center justify-center text-text-2 hover:text-text transition-colors"
+                className="w-8 h-8 rounded-full bg-surface hover:bg-line-strong flex items-center justify-center text-text-2 hover:text-text transition-colors"
                 onClick={() => setOpen(false)}
               >
                 <X size={16} />
@@ -96,12 +96,12 @@ export default function EventDeleteControl({ eventId, eventName }: Props) {
                 Você está prestes a excluir permanentemente o evento <strong className="text-text">{eventName}</strong>.
               </p>
               
-              <div className="mt-4 p-4 rounded-xl bg-[#FDE8EC] border border-[#F5C2CD] text-[#A3112F] text-sm font-medium">
+              <div className="mt-4 p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-sm font-medium">
                 Esta ação apagará <strong>todos</strong> os dados relacionados: participantes, prêmios, histórico, regras antifraude e configurações de WhatsApp.
               </div>
 
               {error && (
-                <div className="mt-4 text-[#A3112F] text-sm font-bold text-center">
+                <div className="mt-4 text-rose-400 text-sm font-bold text-center">
                   {error}
                 </div>
               )}
@@ -110,7 +110,7 @@ export default function EventDeleteControl({ eventId, eventName }: Props) {
             <div className="px-6 py-4 border-t border-line bg-paper flex items-center justify-end gap-3">
               <button
                 type="button"
-                className="px-5 py-2.5 rounded-full font-bold text-text-2 hover:text-text hover:bg-[#EEF1F5] transition-colors"
+                className="px-5 py-2.5 rounded-full font-bold text-text-2 hover:text-text hover:bg-line-strong transition-colors"
                 disabled={saving}
                 onClick={() => setOpen(false)}
               >

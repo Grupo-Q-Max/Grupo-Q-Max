@@ -112,10 +112,10 @@ export default function ExcelUploader({ eventId, messageTemplate }: Props) {
   }
 
   return (
-    <div className="bg-surface border-2 border-[#B7E4C7] rounded-3xl p-6 flex flex-col gap-6">
+    <div className="bg-surface border-2 border-emerald-500/30 rounded-3xl p-6 flex flex-col gap-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h2 className="font-black text-lg text-[#0F7A3D] flex items-center gap-2">
+          <h2 className="font-black text-lg text-emerald-400 flex items-center gap-2">
             <FileSpreadsheet size={22} />
             <span>🎯 Disparo Inteligente por Excel</span>
           </h2>
@@ -136,7 +136,7 @@ export default function ExcelUploader({ eventId, messageTemplate }: Props) {
           <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={analyzing || enqueuing}
-            className="w-full sm:w-auto py-3 px-6 rounded-xl font-black transition-all bg-[#EEF1F5] hover:bg-line-strong text-[#0F7A3D] border border-[#B7E4C7] disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
+            className="w-full sm:w-auto py-3 px-6 rounded-xl font-black transition-all bg-surface hover:bg-line-strong text-emerald-400 border border-emerald-500/30 disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
           >
             {analyzing ? <LoaderCircle size={18} className="animate-spin" /> : <Upload size={18} />}
             Importar Planilha
@@ -157,24 +157,24 @@ export default function ExcelUploader({ eventId, messageTemplate }: Props) {
           </div>
           
           <div className="flex flex-col items-center justify-center text-center p-3 border-t md:border-t-0 md:border-l border-line">
-            <span className="text-[10px] uppercase font-bold text-[#A3112F] tracking-wider">Já Cadastrados</span>
-            <span className="text-3xl font-black text-[#A3112F] mt-1">{analysis.duplicateRegistered}</span>
+            <span className="text-[10px] uppercase font-bold text-rose-400 tracking-wider">Já Cadastrados</span>
+            <span className="text-3xl font-black text-rose-400 mt-1">{analysis.duplicateRegistered}</span>
           </div>
 
-          <div className="flex flex-col items-center justify-center text-center p-3 border-t md:border-t-0 md:border-l border-[#B7E4C7] bg-[#E3F6EA] md:rounded-r-xl">
-            <span className="text-[10px] uppercase font-bold text-[#0F7A3D] tracking-wider">Prontos p/ Enviar</span>
-            <span className="text-3xl font-black text-[#0F7A3D] mt-1">{analysis.ready.length}</span>
+          <div className="flex flex-col items-center justify-center text-center p-3 border-t md:border-t-0 md:border-l border-emerald-500/30 bg-emerald-500/15 md:rounded-r-xl">
+            <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Prontos p/ Enviar</span>
+            <span className="text-3xl font-black text-emerald-400 mt-1">{analysis.ready.length}</span>
           </div>
         </div>
       )}
 
       {analysis && analysis.ready.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-[#E3F6EA] border border-[#B7E4C7] rounded-2xl gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-emerald-500/15 border border-emerald-500/30 rounded-2xl gap-4">
           <div className="flex items-start gap-3">
-            <CheckCircle2 size={24} className="text-[#0F7A3D] shrink-0 mt-0.5" />
+            <CheckCircle2 size={24} className="text-emerald-400 shrink-0 mt-0.5" />
             <div className="text-sm text-text">
               <strong className="text-text block mb-1">Tudo pronto para o disparo!</strong>
-              O sistema usará o texto salvo na seção <strong className="text-[#0F7A3D]">"Mensagem de Cadastro"</strong> que fica logo abaixo nesta tela.
+              O sistema usará o texto salvo na seção <strong className="text-emerald-400">"Mensagem de Cadastro"</strong> que fica logo abaixo nesta tela.
               
               <div className="my-2 p-2 bg-paper rounded-lg border border-line text-xs text-text-2 italic line-clamp-2">
                 {messageTemplate ? `"${messageTemplate}"` : "⚠️ NENHUMA MENSAGEM CONFIGURADA!"}
@@ -188,7 +188,7 @@ export default function ExcelUploader({ eventId, messageTemplate }: Props) {
             <select
               value={batchSize}
               onChange={(e) => setBatchSize(Number(e.target.value))}
-              className="bg-[#E3F6EA] border border-[#B7E4C7] text-[#0F7A3D] font-bold rounded-xl px-4 py-3.5 outline-none w-full sm:w-auto cursor-pointer"
+              className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold rounded-xl px-4 py-3.5 outline-none w-full sm:w-auto cursor-pointer"
             >
               <option value={10}>Lote de 10</option>
               <option value={20}>Lote de 20</option>

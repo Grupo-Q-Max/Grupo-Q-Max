@@ -248,16 +248,16 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
       {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface border border-line p-6 rounded-3xl">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E3F6EA] border border-[#B7E4C7] text-[#0F7A3D] text-xs font-black uppercase tracking-wider mb-2">
-            <Sparkles size={14} className="text-[#0F7A3D]" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-wider mb-2">
+            <Sparkles size={14} className="text-emerald-400" />
             <span>CONFIGURAÇÃO DE MENSAGENS AUTOMÁTICAS</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-text flex items-center gap-2">
-            <MessageSquare size={24} className="text-[#0F7A3D]" />
+            <MessageSquare size={24} className="text-emerald-400" />
             <span>Gerenciador de Notificações por WhatsApp</span>
           </h2>
           <p className="text-xs sm:text-sm text-text font-medium mt-1">
-            Personalize os textos automáticos enviados aos participantes durante o evento <strong className="text-[#0F7A3D]">{eventName}</strong>.
+            Personalize os textos automáticos enviados aos participantes durante o evento <strong className="text-emerald-400">{eventName}</strong>.
           </p>
         </div>
 
@@ -279,11 +279,11 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
           onClick={() => setActiveTab("PRIZE")}
           className={`p-4 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
             activeTab === "PRIZE"
-              ? "bg-[#E3F6EA] border-[#B7E4C7] text-text"
+              ? "bg-emerald-500/15 border-emerald-500/30 text-text"
               : "bg-surface border-line text-text hover:border-line-strong"
           }`}
         >
-          <div className={`p-2.5 rounded-xl ${activeTab === "PRIZE" ? "bg-finora-600 text-white" : "bg-[#EEF1F5] text-text"}`}>
+          <div className={`p-2.5 rounded-xl ${activeTab === "PRIZE" ? "bg-finora-600 text-white" : "bg-surface text-text"}`}>
             <Gift size={20} />
           </div>
           <div>
@@ -297,11 +297,11 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
           onClick={() => setActiveTab("REGISTRATION")}
           className={`p-4 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
             activeTab === "REGISTRATION"
-              ? "bg-[#E3F6EA] border-[#B7E4C7] text-text"
+              ? "bg-emerald-500/15 border-emerald-500/30 text-text"
               : "bg-surface border-line text-text hover:border-line-strong"
           }`}
         >
-          <div className={`p-2.5 rounded-xl ${activeTab === "REGISTRATION" ? "bg-finora-600 text-white" : "bg-[#EEF1F5] text-text"}`}>
+          <div className={`p-2.5 rounded-xl ${activeTab === "REGISTRATION" ? "bg-finora-600 text-white" : "bg-surface text-text"}`}>
             <CheckCircle2 size={20} />
           </div>
           <div>
@@ -315,11 +315,11 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
           onClick={() => setActiveTab("RESEND")}
           className={`p-4 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
             activeTab === "RESEND"
-              ? "bg-[#E3F6EA] border-[#B7E4C7] text-text"
+              ? "bg-emerald-500/15 border-emerald-500/30 text-text"
               : "bg-surface border-line text-text hover:border-line-strong"
           }`}
         >
-          <div className={`p-2.5 rounded-xl ${activeTab === "RESEND" ? "bg-finora-600 text-white" : "bg-[#EEF1F5] text-text"}`}>
+          <div className={`p-2.5 rounded-xl ${activeTab === "RESEND" ? "bg-finora-600 text-white" : "bg-surface text-text"}`}>
             <RotateCcw size={20} />
           </div>
           <div>
@@ -333,11 +333,11 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
           onClick={() => setActiveTab("VIP")}
           className={`p-4 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
             activeTab === "VIP"
-              ? "bg-[#E3F6EA] border-[#B7E4C7] text-text"
+              ? "bg-emerald-500/15 border-emerald-500/30 text-text"
               : "bg-surface border-line text-text hover:border-line-strong"
           }`}
         >
-          <div className={`p-2.5 rounded-xl ${activeTab === "VIP" ? "bg-finora-600 text-white" : "bg-[#EEF1F5] text-text"}`}>
+          <div className={`p-2.5 rounded-xl ${activeTab === "VIP" ? "bg-finora-600 text-white" : "bg-surface text-text"}`}>
             <CheckCircle2 size={20} />
           </div>
           <div>
@@ -354,7 +354,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-base font-black text-text flex items-center gap-2">
               <span>Modelo da Mensagem</span>
-              <span className="text-xs font-mono text-[#0F7A3D] bg-[#E3F6EA] px-2.5 py-0.5 rounded-full border border-[#B7E4C7]">
+              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                 {activeTab === "PRIZE" ? "Roleta" : activeTab === "REGISTRATION" ? "Cadastro" : activeTab === "VIP" ? "Cofre VIP" : "Lembrete"}
               </span>
             </h3>
@@ -363,7 +363,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
               <button
                 type="button"
                 onClick={() => setShowCatalog(true)}
-                className="text-xs px-3 py-1.5 rounded-full bg-[#E3F6EA] text-[#0F7A3D] border border-[#B7E4C7] hover:bg-[#D2EFDC] font-bold flex items-center gap-1.5 transition cursor-pointer"
+                className="text-xs px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 font-bold flex items-center gap-1.5 transition cursor-pointer"
               >
                 <Sparkles size={14} />
                 <span>Modelos Prontos</span>
@@ -372,7 +372,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
               <button
                 type="button"
                 onClick={handleResetCurrent}
-                className="text-xs px-3 py-1.5 rounded-full text-text-2 hover:text-text hover:bg-[#EEF1F5] font-bold flex items-center gap-1.5 transition cursor-pointer"
+                className="text-xs px-3 py-1.5 rounded-full text-text-2 hover:text-text hover:bg-line-strong font-bold flex items-center gap-1.5 transition cursor-pointer"
               >
                 <RotateCcw size={14} />
                 <span>Padrão</span>
@@ -389,14 +389,14 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
               <button
                 type="button"
                 onClick={() => insertTag("{nome}")}
-                className="px-3 py-1.5 rounded-full bg-[#EEF1F5] hover:bg-[#D2EFDC] text-[#0F7A3D] border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
+                className="px-3 py-1.5 rounded-full bg-surface hover:bg-emerald-500/25 text-emerald-400 border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
               >
                 + &#123;nome&#125;
               </button>
               <button
                 type="button"
                 onClick={() => insertTag("{evento}")}
-                className="px-3 py-1.5 rounded-full bg-[#EEF1F5] hover:bg-[#D2EFDC] text-[#0F7A3D] border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
+                className="px-3 py-1.5 rounded-full bg-surface hover:bg-emerald-500/25 text-emerald-400 border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
               >
                 + &#123;evento&#125;
               </button>
@@ -404,7 +404,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
                 <button
                   type="button"
                   onClick={() => insertTag("{premio}")}
-                  className="px-3 py-1.5 rounded-full bg-[#EEF1F5] hover:bg-[#D2EFDC] text-[#0F7A3D] border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-full bg-surface hover:bg-emerald-500/25 text-emerald-400 border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
                 >
                   + &#123;premio&#125;
                 </button>
@@ -413,7 +413,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
                 <button
                   type="button"
                   onClick={() => insertTag("{link_validacao}")}
-                  className="px-3 py-1.5 rounded-full bg-[#EEF1F5] hover:bg-[#D2EFDC] text-[#0F7A3D] border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-full bg-surface hover:bg-emerald-500/25 text-emerald-400 border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
                 >
                   + &#123;link_validacao&#125;
                 </button>
@@ -422,7 +422,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
                 <button
                   type="button"
                   onClick={() => insertTag("{data_hora}")}
-                  className="px-3 py-1.5 rounded-full bg-[#EEF1F5] hover:bg-[#D2EFDC] text-[#0F7A3D] border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-full bg-surface hover:bg-emerald-500/25 text-emerald-400 border border-line-strong font-mono text-xs font-bold transition cursor-pointer"
                 >
                   + &#123;data_hora&#125;
                 </button>
@@ -480,7 +480,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
         <div className="lg:col-span-5 bg-surface border border-line p-6 rounded-3xl flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Smartphone size={20} className="text-[#0F7A3D]" />
+              <Smartphone size={20} className="text-emerald-400" />
               <h3 className="text-base font-black text-text">Visualização em Tempo Real no WhatsApp</h3>
             </div>
 
@@ -497,7 +497,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
 
           <div className="mt-6 space-y-3">
             <div className="p-4 rounded-2xl bg-paper border border-line text-xs text-text space-y-2">
-              <div className="flex items-center gap-2 font-bold text-[#0F7A3D]">
+              <div className="flex items-center gap-2 font-bold text-emerald-400">
                 <Info size={16} />
                 <span>Dica Anti-Spam (Spintax)</span>
               </div>
@@ -509,7 +509,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
             </div>
             
             <div className="p-4 rounded-2xl bg-paper border border-line text-xs text-text space-y-2">
-              <div className="flex items-center gap-2 font-bold text-[#0F7A3D]">
+              <div className="flex items-center gap-2 font-bold text-emerald-400">
                 <Info size={16} />
                 <span>Formatação sem detalhes extras de produto</span>
               </div>
@@ -528,14 +528,14 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
             <div className="flex items-center justify-between mb-4 pb-4 border-b border-line">
               <div>
                 <h3 className="text-xl font-black text-text flex items-center gap-2">
-                  <Sparkles size={20} className="text-[#0F7A3D]" />
+                  <Sparkles size={20} className="text-emerald-400" />
                   Modelos de Mensagem (Ideias)
                 </h3>
                 <p className="text-sm text-text-2 mt-1">Copie modelos prontos de Spintax para evitar bloqueios.</p>
               </div>
               <button 
                 onClick={() => setShowCatalog(false)}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#EEF1F5] text-text-2 hover:text-text hover:bg-line-strong transition"
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface text-text-2 hover:text-text hover:bg-line-strong transition"
               >
                 <AlertCircle size={20} className="rotate-45" />
               </button>
@@ -543,11 +543,11 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
             
             <div className="flex-1 overflow-auto pr-2 space-y-4">
               {SPINTAX_TEMPLATES.map((tpl, i) => (
-                <div key={i} className="p-5 rounded-2xl border border-line bg-paper hover:border-[#B7E4C7] transition">
+                <div key={i} className="p-5 rounded-2xl border border-line bg-paper hover:border-emerald-500/30 transition">
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h4 className="text-text font-bold text-base">{tpl.title}</h4>
-                      <p className="text-[#0F7A3D] text-xs">{tpl.description}</p>
+                      <p className="text-emerald-400 text-xs">{tpl.description}</p>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -555,7 +555,7 @@ export default function WhatsappTemplateManager({ eventId, eventName }: Props) {
                           navigator.clipboard.writeText(tpl.content);
                           toast.success("Modelo copiado para a área de transferência!");
                         }}
-                        className="px-3 py-1.5 rounded-full bg-[#EEF1F5] hover:bg-line-strong text-text text-xs font-bold flex items-center gap-1.5 transition"
+                        className="px-3 py-1.5 rounded-full bg-surface hover:bg-line-strong text-text text-xs font-bold flex items-center gap-1.5 transition"
                       >
                         <Copy size={14} />
                         Copiar

@@ -107,7 +107,7 @@ export default function EventEditControl({ event }: Props) {
     <>
       <button
         type="button"
-        className="p-3 rounded-2xl bg-surface border border-line text-text-2 hover:text-finora-600 hover:bg-[#D6E7FF] hover:border-[#B9D4F7] transition-all"
+        className="p-3 rounded-2xl bg-surface border border-line text-text-2 hover:text-finora-600 hover:bg-[#D6E7FF] hover:border-cyan-500/40 transition-all"
         title="Editar Evento"
         onClick={() => {
           resetForm();
@@ -139,7 +139,7 @@ export default function EventEditControl({ event }: Props) {
 
               <button
                 type="button"
-                className="w-8 h-8 rounded-full bg-[#EEF1F5] hover:bg-line-strong flex items-center justify-center text-text-2 hover:text-text transition-colors"
+                className="w-8 h-8 rounded-full bg-surface hover:bg-line-strong flex items-center justify-center text-text-2 hover:text-text transition-colors"
                 onClick={() => setOpen(false)}
               >
                 <X size={16} />
@@ -210,7 +210,7 @@ export default function EventEditControl({ event }: Props) {
               )}
 
               {error && (
-                <div className="p-4 rounded-xl bg-[#FDE8EC] border border-[#F5C2CD] text-[#A3112F] text-sm font-bold text-center">
+                <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-sm font-bold text-center">
                   {error}
                 </div>
               )}
@@ -219,7 +219,7 @@ export default function EventEditControl({ event }: Props) {
             <div className="px-6 py-4 border-t border-line bg-paper flex items-center justify-end gap-3 shrink-0">
               <button
                 type="button"
-                className="px-5 py-2.5 rounded-full font-bold text-text-2 hover:text-text hover:bg-[#EEF1F5] transition-colors"
+                className="px-5 py-2.5 rounded-full font-bold text-text-2 hover:text-text hover:bg-line-strong transition-colors"
                 disabled={saving}
                 onClick={() => setOpen(false)}
               >

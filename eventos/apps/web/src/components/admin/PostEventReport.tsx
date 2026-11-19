@@ -30,7 +30,7 @@ export default function PostEventReport({ report }: { report: EventReport }) {
                   {s.note && <span className="ml-2 text-text-2">{pct(s.value, s.base)}% {s.note}</span>}
                 </span>
               </div>
-              <div className="h-3 overflow-hidden rounded-r-[4px] bg-[#EEF1F5]">
+              <div className="h-3 overflow-hidden rounded-r-[4px] bg-surface">
                 <div className="h-full rounded-r-[4px] bg-finora-600" style={{ width: `${pct(s.value, f.registered)}%` }} />
               </div>
             </li>

@@ -392,7 +392,7 @@ export default function StockControl({
                   className={
                     operation ===
                     "ADD"
-                      ? "flex min-h-11 items-center justify-center gap-2 rounded-full border text-sm font-semibold border-finora-600 bg-[#E6F0FF] text-finora-600"
+                      ? "flex min-h-11 items-center justify-center gap-2 rounded-full border text-sm font-semibold border-finora-600 bg-cyan-500/15 text-cyan-400"
                       : "flex min-h-11 items-center justify-center gap-2 rounded-full border text-sm font-semibold border-line bg-surface text-text-2"
                   }
                   onClick={() =>
@@ -408,7 +408,7 @@ export default function StockControl({
                   className={
                     operation ===
                     "REMOVE"
-                      ? "flex min-h-11 items-center justify-center gap-2 rounded-full border text-sm font-semibold border-[#F5C2CD] bg-[#FDE8EC] text-[#A3112F]"
+                      ? "flex min-h-11 items-center justify-center gap-2 rounded-full border text-sm font-semibold border-rose-500/30 bg-rose-500/15 text-rose-400"
                       : "flex min-h-11 items-center justify-center gap-2 rounded-full border text-sm font-semibold border-line bg-surface text-text-2"
                   }
                   onClick={() =>
@@ -452,7 +452,7 @@ export default function StockControl({
                 <div
                   className={
                     projectedStock < 0
-                      ? "flex h-11 items-center rounded-field border border-[#F5C2CD] bg-[#FDE8EC] px-3 font-mono text-base font-bold text-[#A3112F]"
+                      ? "flex h-11 items-center rounded-field border border-rose-500/30 bg-rose-500/15 px-3 font-mono text-base font-bold text-rose-400"
                       : "flex h-11 items-center rounded-field border border-line bg-paper px-3 font-mono text-base font-bold text-text"
                   }
                 >

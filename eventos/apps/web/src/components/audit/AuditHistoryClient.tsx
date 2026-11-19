@@ -273,12 +273,12 @@ export default function AuditHistoryClient() {
   const totalAdminActions = auditLogs.length;
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 space-y-6 bg-paper font-sans selection:bg-[#E6F0FF] h-screen max-w-6xl mx-auto w-full">
+    <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 space-y-6 bg-paper font-sans selection:bg-cyan-500/15 h-screen max-w-6xl mx-auto w-full">
 
       {/* Cabeçalho Premium */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-line relative z-10">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E6F0FF] border border-[#B9D4F7] text-finora-600 text-xs font-bold uppercase tracking-widest mb-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs font-bold uppercase tracking-widest mb-3">
             <History size={14} />
             Relatórios
           </div>
@@ -293,7 +293,7 @@ export default function AuditHistoryClient() {
         <button
           onClick={() => loadData(true)}
           disabled={refreshing || loading}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold text-text bg-surface border border-line-strong hover:bg-[#EEF1F5] hover:text-text transition-all group disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold text-text bg-surface border border-line-strong hover:bg-line-strong hover:text-text transition-all group disabled:opacity-50"
         >
           <RefreshCw size={14} className={refreshing ? "animate-spin text-finora-600" : "text-text-2 group-hover:text-finora-600"} />
           <span>{refreshing ? "Atualizando..." : "Sincronizar"}</span>
@@ -301,7 +301,7 @@ export default function AuditHistoryClient() {
       </header>
 
       {error && (
-        <div className="p-4 rounded-xl bg-[#FDE8EC] border border-[#F5C2CD] text-[#A3112F] text-sm font-bold flex items-center gap-3 relative z-10">
+        <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-sm font-bold flex items-center gap-3 relative z-10">
           <ShieldAlert size={18} />
           {error}
         </div>
@@ -309,8 +309,8 @@ export default function AuditHistoryClient() {
 
       {/* Cards de Métricas Premium */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
-        <div className="bg-surface border border-line p-5 rounded-2xl flex items-center gap-4 hover:border-[#B9D4F7] transition-colors">
-          <div className="w-12 h-12 rounded-xl bg-[#E6F0FF] border border-[#B9D4F7] flex items-center justify-center text-finora-600 shrink-0">
+        <div className="bg-surface border border-line p-5 rounded-2xl flex items-center gap-4 hover:border-cyan-500/40 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
             <UserPlus size={24} />
           </div>
           <div>
@@ -323,8 +323,8 @@ export default function AuditHistoryClient() {
           </div>
         </div>
 
-        <div className="bg-surface border border-line p-5 rounded-2xl flex items-center gap-4 hover:border-[#B7E4C7] transition-colors">
-          <div className="w-12 h-12 rounded-xl bg-[#E3F6EA] border border-[#B7E4C7] flex items-center justify-center text-[#0F7A3D] shrink-0">
+        <div className="bg-surface border border-line p-5 rounded-2xl flex items-center gap-4 hover:border-emerald-500/30 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
             <PackageCheck size={24} />
           </div>
           <div>
@@ -337,8 +337,8 @@ export default function AuditHistoryClient() {
           </div>
         </div>
 
-        <div className="bg-surface border border-line p-5 rounded-2xl flex items-center gap-4 hover:border-[#B9D4F7] transition-colors">
-          <div className="w-12 h-12 rounded-xl bg-[#E6F0FF] border border-[#B9D4F7] flex items-center justify-center text-finora-600 shrink-0">
+        <div className="bg-surface border border-line p-5 rounded-2xl flex items-center gap-4 hover:border-cyan-500/40 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
             <Settings size={24} />
           </div>
           <div>
@@ -368,12 +368,12 @@ export default function AuditHistoryClient() {
               onClick={() => setCategoryFilter(tab.id as any)}
               className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
                 categoryFilter === tab.id
-                  ? "bg-finora-600 text-white border border-[#B9D4F7]"
-                  : "bg-paper text-text-2 hover:text-text border border-line hover:border-line-strong hover:bg-[#EEF1F5]"
+                  ? "bg-finora-600 text-white border border-cyan-500/30"
+                  : "bg-paper text-text-2 hover:text-text border border-line hover:border-line-strong hover:bg-line-strong"
               }`}
             >
               <span>{tab.label}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${categoryFilter === tab.id ? "bg-[#EEF1F5] text-text" : "bg-[#EEF1F5] text-text-2"}`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${categoryFilter === tab.id ? "bg-surface text-text" : "bg-surface text-text-2"}`}>
                 {tab.count}
               </span>
             </button>
@@ -408,8 +408,8 @@ export default function AuditHistoryClient() {
           <div className="space-y-3">
             {filteredActivities.map((act) => {
               let icon = UserPlus;
-              let badgeStyle = "bg-[#E6F0FF] text-finora-600 border-[#B9D4F7]";
-              let iconBg = "bg-[#E6F0FF] text-finora-600 border-[#B9D4F7]";
+              let badgeStyle = "bg-cyan-500/15 text-cyan-400 border-cyan-500/30";
+              let iconBg = "bg-cyan-500/15 text-cyan-400 border-cyan-500/30";
 
               if (act.category === "DRAW") {
                 icon = Gift;
@@ -417,16 +417,16 @@ export default function AuditHistoryClient() {
                 iconBg = "bg-[#FFF3DC] text-[#8A4B00] border-[#F2D19B]";
               } else if (act.category === "CLAIM") {
                 icon = PackageCheck;
-                badgeStyle = "bg-[#E3F6EA] text-[#0F7A3D] border-[#B7E4C7]";
-                iconBg = "bg-[#E3F6EA] text-[#0F7A3D] border-[#B7E4C7]";
+                badgeStyle = "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+                iconBg = "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
               } else if (act.category === "ADMIN") {
                 icon = Settings;
-                badgeStyle = "bg-[#E6F0FF] text-finora-600 border-[#B9D4F7]";
-                iconBg = "bg-[#E6F0FF] text-finora-600 border-[#B9D4F7]";
+                badgeStyle = "bg-cyan-500/15 text-cyan-400 border-cyan-500/30";
+                iconBg = "bg-cyan-500/15 text-cyan-400 border-cyan-500/30";
               } else if (act.category === "BLOCK") {
                 icon = ShieldAlert;
-                badgeStyle = "bg-[#FDE8EC] text-[#A3112F] border-[#F5C2CD]";
-                iconBg = "bg-[#FDE8EC] text-[#A3112F] border-[#F5C2CD]";
+                badgeStyle = "bg-rose-500/15 text-rose-400 border-rose-500/30";
+                iconBg = "bg-rose-500/15 text-rose-400 border-rose-500/30";
               }
 
               const IconComp = icon;
@@ -434,7 +434,7 @@ export default function AuditHistoryClient() {
               return (
                 <article
                   key={act.id}
-                  className="bg-paper border border-line p-5 rounded-2xl hover:border-[#B9D4F7] transition-all flex flex-col md:flex-row md:items-center justify-between gap-5 group"
+                  className="bg-paper border border-line p-5 rounded-2xl hover:border-cyan-500/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-5 group"
                 >
                   <div className="flex items-start gap-4">
                     <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 transition-colors ${iconBg}`}>

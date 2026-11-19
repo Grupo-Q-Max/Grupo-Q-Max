@@ -247,7 +247,7 @@ export default function PrizeEditControl({
             </div>
 
             {/* SEÇÃO DE REGRAS INTELIGENTES DE CADÊNCIA (SMART PACING) */}
-            <div className="bg-paper border border-[#B9D4F7] rounded-2xl p-4 my-2">
+            <div className="bg-paper border border-cyan-500/30 rounded-2xl p-4 my-2">
               <div className="flex items-center gap-2 mb-3">
                 <Sliders size={16} className="text-finora-600" />
                 <strong className="text-xs text-text uppercase tracking-wider">
@@ -311,9 +311,9 @@ export default function PrizeEditControl({
             <div
               className={
                 projectedTotal === 100
-                  ? "mt-3.5 grid grid-cols-3 gap-2 rounded-xl border border-line bg-paper p-3 [&>div]:rounded-lg [&>div]:bg-surface [&>div]:p-2 [&_span]:block [&_span]:text-xs [&_span]:text-text-2 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-base [&>footer]:col-span-full [&>footer]:bg-[#E3F6EA] [&>footer]:text-[#0F7A3D]"
+                  ? "mt-3.5 grid grid-cols-3 gap-2 rounded-xl border border-line bg-paper p-3 [&>div]:rounded-lg [&>div]:bg-surface [&>div]:p-2 [&_span]:block [&_span]:text-xs [&_span]:text-text-2 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-base [&>footer]:col-span-full [&>footer]:bg-emerald-500/15 [&>footer]:text-emerald-400"
                   : projectedTotal > 100
-                  ? "mt-3.5 grid grid-cols-3 gap-2 rounded-xl border border-line bg-paper p-3 [&>div]:rounded-lg [&>div]:bg-surface [&>div]:p-2 [&_span]:block [&_span]:text-xs [&_span]:text-text-2 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-base [&>footer]:col-span-full [&>footer]:bg-[#FDE8EC] [&>footer]:text-[#A3112F]"
+                  ? "mt-3.5 grid grid-cols-3 gap-2 rounded-xl border border-line bg-paper p-3 [&>div]:rounded-lg [&>div]:bg-surface [&>div]:p-2 [&_span]:block [&_span]:text-xs [&_span]:text-text-2 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-base [&>footer]:col-span-full [&>footer]:bg-rose-500/15 [&>footer]:text-rose-400"
                   : "mt-3.5 grid grid-cols-3 gap-2 rounded-xl border border-line bg-paper p-3 [&>div]:rounded-lg [&>div]:bg-surface [&>div]:p-2 [&_span]:block [&_span]:text-xs [&_span]:text-text-2 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-base [&>footer]:col-span-full [&>footer]:bg-[#FFF3DC] [&>footer]:text-[#8A4B00]"
               }
             >
@@ -334,7 +334,7 @@ export default function PrizeEditControl({
             <div className="mt-4">
               <button
                 type="button"
-                className={`flex w-full items-center gap-2.5 rounded-xl border p-3 text-left text-sm font-semibold ${active ? "border-[#B7E4C7] bg-[#E3F6EA] text-[#0F7A3D]" : "border-line bg-paper text-text-2"}`}
+                className={`flex w-full items-center gap-2.5 rounded-xl border p-3 text-left text-sm font-semibold ${active ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-400" : "border-line bg-paper text-text-2"}`}
                 onClick={() => setActive(!active)}
               >
                 <Power size={16} />

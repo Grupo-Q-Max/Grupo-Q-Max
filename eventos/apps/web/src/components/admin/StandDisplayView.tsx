@@ -61,7 +61,7 @@ export default function StandDisplayView({ eventName, route }: Props) {
             <img src={assetUrl("/brands/finora-logo-horizontal.png")} alt="Finora" className="h-7 w-auto object-contain" />
           </div>
 
-          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E6F0FF] text-finora-600 text-xs font-black tracking-widest uppercase mb-3 border border-[#B9D4F7] shadow-xs">
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/15 text-cyan-400 text-xs font-black tracking-widest uppercase mb-3 border border-cyan-500/30 shadow-xs">
             <Sparkles size={14} className="text-[#8A4B00]" />
             FINORA EXPERIENCE • {eventName || "SUMMIT CLINICORP"}
           </div>
@@ -119,7 +119,7 @@ export default function StandDisplayView({ eventName, route }: Props) {
           </div>
 
           <div className="bg-[#F8FAFC] border border-line p-3.5 rounded-2xl">
-            <span className="text-xs font-black text-[#0F7A3D] block mb-1">03. GIRE & GANHE</span>
+            <span className="text-xs font-black text-emerald-400 block mb-1">03. GIRE & GANHE</span>
             <p className="text-xs font-medium text-text-2 leading-snug">
               Gire a roleta e retire seu brinde no balcão!
             </p>

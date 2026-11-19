@@ -128,7 +128,7 @@ export default function FraudRuleEditControl({ rule }: Props) {
     <>
       <button
         type="button"
-        className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-surface border border-line-strong text-text text-sm font-bold uppercase tracking-wider hover:bg-[#E6F0FF] hover:border-[#B9D4F7] hover:text-finora-600 transition-all"
+        className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-surface border border-line-strong text-text text-sm font-bold uppercase tracking-wider hover:bg-cyan-500/15 hover:border-cyan-500/40 hover:text-cyan-300 transition-all cursor-pointer shadow-sm active:scale-95"
         onClick={() => {
           resetForm();
           setOpen(true);

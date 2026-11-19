@@ -68,7 +68,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       title: "Totem de Cadastro do Participante",
       path: `/${activeSlug}/cadastro`,
       badge: "Público / Estande",
-      badgeColor: "bg-[#E6F0FF] text-finora-600 border-[#B9D4F7]",
+      badgeColor: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
       desc: "Formulário onde o visitante digita nome, CPF, WhatsApp, e-mail e porte da clínica (cadeiras). Possui validação matemática de CPF, suporte a modo offline e detecção automática de cartão VIP (?vip=...).",
       icon: Smartphone,
       isExternal: true,
@@ -96,7 +96,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       path: `/tv`,
       altPath: `/${activeSlug}/telao`,
       badge: "Smart TV / Telão",
-      badgeColor: "bg-[#E3F6EA] text-[#0F7A3D] border-[#B7E4C7]",
+      badgeColor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
       desc: "Exibição contínua para a Smart TV virada para o corredor. Toca acorde harmônico de aeroporto e aciona locutora em português chamando os doutores e VIPs pelo nome. Tecla [F] ativa tela cheia.",
       icon: Tv,
       isExternal: true,
@@ -105,7 +105,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       title: "Super Sorteio Geral de Palco",
       path: `/${activeSlug}/sorteio-geral`,
       badge: "Palco Principal",
-      badgeColor: "bg-[#FDE8EC] text-[#A3112F] border-[#F5C2CD]",
+      badgeColor: "bg-rose-500/15 text-rose-400 border-rose-500/30",
       desc: "Tela monumental para o momento de encerramento no palco. Roleta cinematográfica de participantes, efeito de suspense e chuva de confetes digitais.",
       icon: Trophy,
       isExternal: true,
@@ -134,7 +134,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       title: "Agenda Comercial & Reuniões VIP",
       path: "/admin/agenda",
       badge: "Consultores / SDR",
-      badgeColor: "bg-[#E6F0FF] text-finora-600 border-[#B9D4F7]",
+      badgeColor: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
       desc: "Grade horária com todos os doutores que têm consultoria agendada no estande. Botão Zap direto para confirmar a presença, marcação de concluída ou no-show e disparo automático do CSAT pós-reunião.",
       icon: Calendar,
     },
@@ -150,7 +150,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       title: "Balcão Rápido de Entrega de Brindes",
       path: "/admin/balcao",
       badge: "Operadores de Balcão",
-      badgeColor: "bg-[#E3F6EA] text-[#0F7A3D] border-[#B7E4C7]",
+      badgeColor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
       desc: "Entrega instantânea de brindes mediante digitação do PIN numérico de 4 dígitos ou leitura do QR Code do participante. Dá baixa no estoque automaticamente.",
       icon: Gift,
     },
@@ -166,7 +166,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       title: "Painel de Controle do Sorteio Geral",
       path: "/admin/sorteio-final",
       badge: "Mestre de Cerimônias",
-      badgeColor: "bg-[#FDE8EC] text-[#A3112F] border-[#F5C2CD]",
+      badgeColor: "bg-rose-500/15 text-rose-400 border-rose-500/30",
       desc: "Mesa de controle do sorteio de encerramento no palco. Permite filtrar elegíveis, disparar o sorteio por teclado ([Espaço] ou [Enter]) e registrar o ganhador oficial.",
       icon: Sparkles,
     },
@@ -177,7 +177,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       title: "Dashboard Geral em Tempo Real",
       path: "/admin/dashboard",
       badge: "Visão Executiva",
-      badgeColor: "bg-[#E6F0FF] text-finora-600 border-[#B9D4F7]",
+      badgeColor: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
       desc: "Indicadores em tempo real: total de giros, estoque disponível por brinde, pacing de consumo e taxa de conversão do estande.",
       icon: LayoutDashboard,
     },
@@ -201,7 +201,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       title: "Sistema Antifraude & Whitelist",
       path: "/admin/antifraude",
       badge: "Segurança",
-      badgeColor: "bg-[#FDE8EC] text-[#A3112F] border-[#F5C2CD]",
+      badgeColor: "bg-rose-500/15 text-rose-400 border-rose-500/30",
       desc: "Regras de bloqueio por CPF duplicado, telefone, dispositivo ou IP. Inclui Whitelist de números para testes ilimitados da equipe e diretoria.",
       icon: ShieldAlert,
     },
@@ -209,7 +209,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       title: "Comunicação & Disparos WhatsApp",
       path: "/admin/comunicacao",
       badge: "Marketing",
-      badgeColor: "bg-[#E3F6EA] text-[#0F7A3D] border-[#B7E4C7]",
+      badgeColor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
       desc: "Envio de transmissões e avisos em massa para todos os participantes do evento pelo WhatsApp.",
       icon: MessageSquare,
     },
@@ -233,7 +233,7 @@ export default function FieldGuideView({ route }: { route: string }) {
       title: "Relatórios & Métricas Consolidadas",
       path: "/admin/relatorios",
       badge: "Pós-Evento",
-      badgeColor: "bg-[#E6F0FF] text-finora-600 border-[#B9D4F7]",
+      badgeColor: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
       desc: "Auditoria completa de todos os giros, premiações entregues, horários de pico e logs de segurança.",
       icon: BarChart3,
     },
@@ -370,7 +370,7 @@ export default function FieldGuideView({ route }: { route: string }) {
             </div>
 
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-black px-3.5 py-1 rounded-full bg-[#E6F0FF] text-finora-600 border border-[#B9D4F7] uppercase tracking-wider flex items-center gap-1.5 shadow-2xs">
+              <span className="text-xs font-black px-3.5 py-1 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 uppercase tracking-wider flex items-center gap-1.5 shadow-2xs">
                 <Compass size={14} /> CENTRAL DE CONTROLE & MAPA DO EVENTO
               </span>
               <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-paper text-text-2 border border-line">
@@ -467,7 +467,7 @@ export default function FieldGuideView({ route }: { route: string }) {
           {/* Categoria 1: Telas do Estande & Participantes */}
           <div>
             <div className="flex items-center gap-2.5 mb-3.5">
-              <div className="grid size-7 place-items-center rounded-lg bg-[#E6F0FF] text-finora-600">
+              <div className="grid size-7 place-items-center rounded-lg bg-cyan-500/15 text-cyan-400">
                 <Smartphone size={16} />
               </div>
               <div>
@@ -509,7 +509,7 @@ export default function FieldGuideView({ route }: { route: string }) {
                         <Link
                           href={r.path}
                           target="_blank"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#E6F0FF] hover:bg-finora-600 text-finora-700 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-finora-600 text-finora-700 hover:text-white text-xs font-bold transition-all cursor-pointer"
                         >
                           <span>Abrir</span>
                           <ExternalLink size={12} />
@@ -614,7 +614,7 @@ export default function FieldGuideView({ route }: { route: string }) {
                       </span>
                       <Link
                         href={r.path}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#EEF1F5] hover:bg-line-strong text-text text-[11px] font-bold transition-all"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface hover:bg-line-strong text-text text-[11px] font-bold transition-all"
                       >
                         <span>Ir</span>
                         <ArrowRight size={11} />
@@ -640,7 +640,7 @@ export default function FieldGuideView({ route }: { route: string }) {
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-[#E6F0FF] text-finora-600 border border-[#B9D4F7] uppercase tracking-wider">
+                    <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 uppercase tracking-wider">
                       PASSO {s.step}
                     </span>
                     <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-paper text-text-2 border border-line uppercase tracking-wider">
@@ -655,7 +655,7 @@ export default function FieldGuideView({ route }: { route: string }) {
                   <ul className="mt-3 space-y-2 text-xs text-text">
                     {s.items.map((item, idx) => (
                       <li key={idx} className="flex items-start gap-2.5 leading-relaxed">
-                        <CheckCircle2 size={15} className="text-[#0F7A3D] shrink-0 mt-0.5" />
+                        <CheckCircle2 size={15} className="text-emerald-400 shrink-0 mt-0.5" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -665,7 +665,7 @@ export default function FieldGuideView({ route }: { route: string }) {
                 <div className="flex md:flex-col justify-end md:justify-center shrink-0">
                   <Link
                     href={s.href}
-                    className="flex items-center justify-center gap-2 py-2.5 px-5 rounded-full bg-finora-600 hover:bg-finora-700 text-white text-xs font-bold transition-all border border-[#B9D4F7] whitespace-nowrap shadow-xs"
+                    className="flex items-center justify-center gap-2 py-2.5 px-5 rounded-full bg-finora-600 hover:bg-finora-700 text-white text-xs font-bold transition-all border border-cyan-500/30 whitespace-nowrap shadow-xs"
                   >
                     <span>{s.btnText}</span>
                     <ArrowRight size={14} />
@@ -682,7 +682,7 @@ export default function FieldGuideView({ route }: { route: string }) {
         <div className="space-y-4 animate-in fade-in duration-200">
           <div className="bg-surface border border-line rounded-3xl p-6 md:p-8">
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="grid size-9 place-items-center rounded-xl bg-[#E6F0FF] text-finora-600">
+              <div className="grid size-9 place-items-center rounded-xl bg-cyan-500/15 text-cyan-400">
                 <Keyboard size={20} />
               </div>
               <div>

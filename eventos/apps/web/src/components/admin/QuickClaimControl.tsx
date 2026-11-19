@@ -403,23 +403,23 @@ export default function QuickClaimControl() {
       <div className="w-full bg-surface border border-line p-6 md:p-8 rounded-3xl backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#E3F6EA] border border-[#B7E4C7] flex items-center justify-center text-[#0F7A3D]">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <PackageCheck size={24} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#0F7A3D] uppercase tracking-wider">
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
                   Balcão de Atendimento
                 </span>
                 <span
                   className={`text-[10px] font-mono px-2 py-0.5 rounded-full border flex items-center gap-1 ${
                     isOnline
-                      ? "bg-[#E3F6EA] border-[#B7E4C7] text-[#0F7A3D]"
-                      : "bg-[#FDE8EC] border-[#F5C2CD] text-[#A3112F] animate-pulse"
+                      ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                      : "bg-rose-500/15 border-rose-500/30 text-rose-400 animate-pulse"
                   }`}
                   title={isOnline ? `Conexão Estável (${pingMs}ms)` : "Sem Conexão"}
                 >
-                  <Wifi size={10} className={isOnline ? "text-[#0F7A3D]" : "text-[#A3112F]"} />
+                  <Wifi size={10} className={isOnline ? "text-emerald-400" : "text-rose-400"} />
                   <span>{isOnline ? `${pingMs}ms` : "Offline"}</span>
                 </span>
                 {pendingClaims > 0 && (
@@ -439,17 +439,17 @@ export default function QuickClaimControl() {
             <button
               type="button"
               onClick={() => setShowShiftModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#EEF1F5] hover:bg-line-strong text-text border border-line-strong text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-surface hover:bg-line-strong text-text border border-line-strong text-xs font-bold transition-all"
               title="Resumo do Turno Atual"
             >
-              <ClipboardCheck size={16} className="text-[#0F7A3D]" />
+              <ClipboardCheck size={16} className="text-emerald-400" />
               <span>Turno ({sessionCount})</span>
             </button>
 
             <button
               type="button"
               onClick={isScanning ? stopScanner : startScanner}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#E6F0FF] hover:bg-[#D6E7FF] text-finora-600 border border-[#B9D4F7] text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-cyan-500/15 hover:bg-[#D6E7FF] text-cyan-400 border border-cyan-500/30 text-xs font-bold transition-all"
               title="Escanear QR Code com a Câmera"
             >
               <Camera size={16} />
@@ -460,10 +460,10 @@ export default function QuickClaimControl() {
 
         {/* Modal de Troca de Turno / Fechamento de Caixa */}
         {showShiftModal && (
-          <div className="mb-5 p-5 bg-paper border-2 border-[#B9D4F7] rounded-2xl flex flex-col gap-3 animate-in fade-in duration-200">
+          <div className="mb-5 p-5 bg-paper border-2 border-cyan-500/30 rounded-2xl flex flex-col gap-3 animate-in fade-in duration-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ClipboardCheck size={18} className="text-[#0F7A3D]" />
+                <ClipboardCheck size={18} className="text-emerald-400" />
                 <h3 className="text-sm font-bold text-text">Fechamento do Turno Atual</h3>
               </div>
               <button
@@ -482,7 +482,7 @@ export default function QuickClaimControl() {
               </div>
               <div className="bg-surface p-3 rounded-xl border border-line">
                 <span className="text-[10px] text-text-2 block uppercase">Entregas Realizadas</span>
-                <strong className="text-base font-mono text-[#0F7A3D]">{sessionCount} brindes</strong>
+                <strong className="text-base font-mono text-emerald-400">{sessionCount} brindes</strong>
               </div>
             </div>
 
@@ -494,7 +494,7 @@ export default function QuickClaimControl() {
                   setShowShiftModal(false);
                   toast.success("Contador do turno zerado para o próximo promotor!", "Turno Reiniciado");
                 }}
-                className="flex-1 py-2 px-3 rounded-full bg-[#EEF1F5] hover:bg-line-strong text-xs font-bold text-[#A3112F] border border-line-strong transition-all"
+                className="flex-1 py-2 px-3 rounded-full bg-surface hover:bg-line-strong text-xs font-bold text-rose-400 border border-line-strong transition-all"
               >
                 Zerar Contador (Novo Promotor)
               </button>
@@ -512,12 +512,12 @@ export default function QuickClaimControl() {
 
         {/* Modal de Scanner de Câmera */}
         {isScanning && (
-          <div className="relative mb-5 bg-paper border-2 border-[#B9D4F7] rounded-2xl overflow-hidden p-2 flex flex-col items-center">
+          <div className="relative mb-5 bg-paper border-2 border-cyan-500/30 rounded-2xl overflow-hidden p-2 flex flex-col items-center">
             <div className="absolute top-3 right-3 z-10">
               <button
                 type="button"
                 onClick={stopScanner}
-                className="p-1.5 rounded-full bg-surface text-text hover:bg-[#EEF1F5] transition-all"
+                className="p-1.5 rounded-full bg-surface text-text hover:bg-line-strong transition-all"
               >
                 <X size={16} />
               </button>
@@ -565,7 +565,7 @@ export default function QuickClaimControl() {
                   }
                 }}
                 placeholder="Ex: 0042"
-                className="w-full bg-surface border-2 border-line-strong focus:border-finora-600 rounded-2xl px-5 py-3.5 text-2xl font-mono font-bold tracking-widest text-center text-[#0F7A3D] outline-none transition-all"
+                className="w-full bg-surface border-2 border-line-strong focus:border-finora-600 rounded-2xl px-5 py-3.5 text-2xl font-mono font-bold tracking-widest text-center text-emerald-400 outline-none transition-all"
               />
             </div>
 
@@ -581,8 +581,8 @@ export default function QuickClaimControl() {
         </form>
 
         {error && (
-          <div className="mt-4 p-3 bg-[#FDE8EC] border border-[#F5C2CD] rounded-xl text-[#A3112F] text-xs flex items-center gap-2">
-            <AlertTriangle size={16} className="shrink-0 text-[#A3112F]" />
+          <div className="mt-4 p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-rose-400 text-xs flex items-center gap-2">
+            <AlertTriangle size={16} className="shrink-0 text-rose-400" />
             <span>{error}</span>
           </div>
         )}
@@ -611,12 +611,12 @@ export default function QuickClaimControl() {
           </div>
 
           {/* Destaque do Prêmio */}
-          <div className="bg-[#E3F6EA] border-2 border-[#B7E4C7] rounded-2xl p-5 mb-6 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#E3F6EA] border border-[#B7E4C7] flex items-center justify-center text-[#0F7A3D] shrink-0">
+          <div className="bg-emerald-500/15 border-2 border-emerald-500/30 rounded-2xl p-5 mb-6 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
               <Gift size={28} />
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0F7A3D] block">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">
                 Brinde a ser Entregue
               </span>
               <strong className="text-lg md:text-xl font-black text-text block mt-0.5">
@@ -631,7 +631,7 @@ export default function QuickClaimControl() {
           {/* Ações de Entrega */}
           {claimData.isDelivered ? (
             <div className="flex flex-col gap-3">
-              <div className="p-4 bg-[#E3F6EA] border border-[#B7E4C7] rounded-2xl text-[#0F7A3D] text-sm font-bold flex items-center justify-center gap-2">
+              <div className="p-4 bg-emerald-500/15 border border-emerald-500/30 rounded-2xl text-emerald-400 text-sm font-bold flex items-center justify-center gap-2">
                 <CheckCircle2 size={20} />
                 <span>Brinde entregue com sucesso!</span>
               </div>
@@ -668,7 +668,7 @@ export default function QuickClaimControl() {
                     }}
                     className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 ${
                       feedbackRating === "GREAT"
-                        ? "bg-[#E3F6EA] border-[#B7E4C7] text-[#0F7A3D]"
+                        ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
                         : "bg-surface border-line text-text hover:border-line-strong"
                     }`}
                   >
@@ -685,7 +685,7 @@ export default function QuickClaimControl() {
                     }}
                     className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 ${
                       feedbackRating === "GOOD"
-                        ? "bg-[#E6F0FF] border-[#B9D4F7] text-finora-600"
+                        ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-400"
                         : "bg-surface border-line text-text hover:border-line-strong"
                     }`}
                   >
@@ -703,7 +703,7 @@ export default function QuickClaimControl() {
                 <button
                   type="button"
                   onClick={handlePrintReceipt}
-                  className="flex-1 py-3 px-4 rounded-full bg-[#EEF1F5] hover:bg-line-strong text-finora-600 font-bold text-xs border border-line-strong transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3 px-4 rounded-full bg-surface hover:bg-line-strong text-finora-600 font-bold text-xs border border-line-strong transition-all flex items-center justify-center gap-2"
                 >
                   <Printer size={15} />
                   <span>Imprimir Cupom Térmico (POS)</span>
@@ -730,10 +730,10 @@ export default function QuickClaimControl() {
               )}
 
               {!claimData.hasMeeting && (
-                <div className="p-4 bg-[#FDE8EC] border border-[#F5C2CD] rounded-2xl text-[#A3112F] text-sm font-bold flex flex-col items-center justify-center gap-1 text-center">
+                <div className="p-4 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-400 text-sm font-bold flex flex-col items-center justify-center gap-1 text-center">
                   <AlertTriangle size={24} className="mb-1" />
                   <span>Agendamento Pendente!</span>
-                  <p className="text-xs font-normal text-[#A3112F] mt-1">
+                  <p className="text-xs font-normal text-rose-400 mt-1">
                     Para liberar este prêmio, o participante precisa estar agendado. Use o botão abaixo para auto-agendar o próximo horário.
                   </p>
                 </div>
@@ -746,7 +746,7 @@ export default function QuickClaimControl() {
                 className={`w-full py-4 px-6 rounded-2xl font-black text-base transition-all flex items-center justify-center gap-3 disabled:opacity-50 ${
                   claimData.hasMeeting
                     ? "bg-finora-600 hover:bg-finora-700 text-white hover:scale-[1.02] active:scale-[0.98]"
-                    : "bg-[#EEF1F5] text-text-2 border border-line-strong cursor-not-allowed"
+                    : "bg-surface text-text-2 border border-line-strong cursor-not-allowed"
                 }`}
               >
                 {claiming ? (
@@ -763,7 +763,7 @@ export default function QuickClaimControl() {
                 <button
                   type="button"
                   onClick={handleAutoBookVIP}
-                  className="w-full py-4 px-6 rounded-2xl bg-[#EEF1F5] hover:bg-line-strong text-finora-600 font-black text-sm transition-all flex items-center justify-center gap-2 border border-line-strong"
+                  className="w-full py-4 px-6 rounded-2xl bg-surface hover:bg-line-strong text-finora-600 font-black text-sm transition-all flex items-center justify-center gap-2 border border-line-strong"
                 >
                   <CalendarDays size={18} />
                   <span>Auto-Agendar Próximo Horário VIP Livre</span>

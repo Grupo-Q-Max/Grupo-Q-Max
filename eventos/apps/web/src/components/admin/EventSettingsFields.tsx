@@ -77,7 +77,7 @@ export default function EventSettingsFields({
               type="button"
               aria-pressed={value.experience === exp}
               onClick={() => set("experience", exp)}
-              className={`rounded-xl border px-4 py-3 text-sm font-bold ${value.experience === exp ? "border-finora-600 bg-[#E6F0FF] text-finora-700" : "border-line text-text-2"}`}
+              className={`rounded-xl border px-4 py-3 text-sm font-bold ${value.experience === exp ? "border-finora-600 bg-cyan-500/15 text-finora-700" : "border-line text-text-2"}`}
             >
               {exp === "ROLETA" ? "Roleta + agendamento" : "Cofre"}
             </button>

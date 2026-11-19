@@ -72,7 +72,7 @@ function ValidationLogic() {
         <Check size={14} strokeWidth={2.6} /> Validado
       </span>
     ) : status === "error" ? (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FDE8EC] px-3 py-1.5 text-[13px] font-bold text-[#A3112F]">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-3 py-1.5 text-[13px] font-bold text-rose-400">
         <X size={14} strokeWidth={2.6} /> Não validado
       </span>
     ) : (
