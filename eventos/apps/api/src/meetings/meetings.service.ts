@@ -34,8 +34,10 @@ export class MeetingsService {
     endDate.setDate(endDate.getDate() + 1);
 
     const hostProfile = resolveHost(host);
+    const profiles = getHostProfiles();
+    const isAle = hostProfile.key === 'ale';
 
-    // 1. Horários já ocupados no banco de dados por agendamentos do site para o anfitrião selecionado
+    // 1. Horários já ocupados no banco de dados por agendamentos do site
     const allDayMeetings = await this.prisma.meetings.findMany({
       where: {
         scheduled_at: {
@@ -46,14 +48,23 @@ export class MeetingsService {
       },
     });
 
-    const existingMeetings = allDayMeetings.filter((m: any) => {
-      const mHost = (m.host_email || 'hugo@grupoqmax.com.br').toLowerCase();
-      return mHost === hostProfile.email.toLowerCase();
+    const hugoSiteMeetings = allDayMeetings.filter((m: any) => {
+      const mHost = (m.host_email || profiles.hugo.email).toLowerCase();
+      return mHost === profiles.hugo.email.toLowerCase();
     });
 
-    // 2. Consulta 100% em tempo real na agenda do anfitrião (Hugo ou Ale) no Microsoft 365 (Graph API: calendarView + getSchedule)
-    // Traz todos os eventos existentes, bloqueando com sua duração exata e fazendo os horários ocupados sumirem da lista!
-    const hostBusyIntervals = await getHugoBusyIntervals(dateString, hostProfile.email);
+    const aleSiteMeetings = allDayMeetings.filter((m: any) => {
+      const mHost = (m.host_email || '').toLowerCase();
+      return mHost === profiles.ale.email.toLowerCase();
+    });
+
+    // 2. Consulta em tempo real no Microsoft 365
+    // Se for a agenda da Ale, precisamos tanto da agenda do Hugo (para saber onde o Hugo NÃO está livre)
+    // quanto da agenda da própria Ale (para garantir que a Ale está livre e travar/ocultar os ocupados dela).
+    const [hugoBusyIntervals, aleBusyIntervals] = await Promise.all([
+      getHugoBusyIntervals(dateString, profiles.hugo.email),
+      isAle ? getHugoBusyIntervals(dateString, profiles.ale.email) : Promise.resolve([]),
+    ]);
 
     const slots: Date[] = [];
     // Agenda aberta o dia todo das 08h às 19h (Horário de Brasília), com duração de 45 min
@@ -63,30 +74,56 @@ export class MeetingsService {
       slots.push(new Date(isoStr));
     }
 
+    const isHugoBusyAtSlot = (slotStart: number, slotEnd: number): boolean => {
+      const collidesSite = hugoSiteMeetings.some((m) => {
+        const mStart = m.scheduled_at.getTime();
+        const mEnd = mStart + 45 * 60 * 1000;
+        return slotStart < mEnd && slotEnd > mStart;
+      });
+      if (collidesSite) return true;
+
+      const collidesMs = hugoBusyIntervals.some((busy) => {
+        const busyStart = busy.start.getTime();
+        const busyEnd = busy.end.getTime();
+        return slotStart < busyEnd && slotEnd > busyStart;
+      });
+      return collidesMs;
+    };
+
+    const isAleBusyAtSlot = (slotStart: number, slotEnd: number): boolean => {
+      const collidesSite = aleSiteMeetings.some((m) => {
+        const mStart = m.scheduled_at.getTime();
+        const mEnd = mStart + 45 * 60 * 1000;
+        return slotStart < mEnd && slotEnd > mStart;
+      });
+      if (collidesSite) return true;
+
+      const collidesMs = aleBusyIntervals.some((busy) => {
+        const busyStart = busy.start.getTime();
+        const busyEnd = busy.end.getTime();
+        return slotStart < busyEnd && slotEnd > busyStart;
+      });
+      return collidesMs;
+    };
+
     const now = new Date();
     const availableSlots = slots.filter((slot) => {
       if (slot <= now) return false;
 
       const slotStart = slot.getTime();
       const slotEnd = slotStart + 45 * 60 * 1000;
+      const hugoBusy = isHugoBusyAtSlot(slotStart, slotEnd);
 
-      // 1. Bloqueia se colidir com qualquer agendamento do site para este sócio (intervalo de 45 minutos)
-      const collidesWithSiteMeeting = existingMeetings.some((m) => {
-        const mStart = m.scheduled_at.getTime();
-        const mEnd = mStart + 45 * 60 * 1000;
-        return slotStart < mEnd && slotEnd > mStart;
-      });
-      if (collidesWithSiteMeeting) return false;
+      if (!isAle) {
+        // Agenda do Hugo: disponível apenas quando o Hugo está livre
+        return !hugoBusy;
+      }
 
-      // 2. Bloqueia se houver conflito com qualquer evento na agenda do sócio no Microsoft 365 (puxando duração exata)
-      const collidesWithHostCalendar = hostBusyIntervals.some((busy) => {
-        const busyStart = busy.start.getTime();
-        const busyEnd = busy.end.getTime();
-        return slotStart < busyEnd && slotEnd > busyStart;
-      });
-      if (collidesWithHostCalendar) return false;
-
-      return true;
+      // Agenda da Ale: disponível APENAS nos horários em que o Hugo NÃO está livre,
+      // e desde que a própria Ale não esteja ocupada no site ou no Microsoft 365!
+      if (!hugoBusy) return false;
+      const aleBusy = isAleBusyAtSlot(slotStart, slotEnd);
+      return !aleBusy;
     });
 
     return availableSlots.map((s) => s.toISOString());

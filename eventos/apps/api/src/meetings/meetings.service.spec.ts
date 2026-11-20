@@ -147,6 +147,41 @@ describe('MeetingsService - Agendamento e Integração Teams / Hugo e Edvaldo', 
     );
   });
 
+  it('getAvailableSlots da Ale deve exibir apenas os horários em que o Hugo está ocupado e a Ale está livre', async () => {
+    prismaMock.meetings.findMany.mockResolvedValue([]);
+
+    // Simula Hugo ocupado das 14h às 15h e das 16h às 17h (fuso -03:00), e Ale ocupada apenas das 16h às 17h
+    jest.spyOn(msHelper, 'getHugoBusyIntervals').mockImplementation(async (_dateStr, email) => {
+      if (email === 'hugo@grupoqmax.com.br') {
+        return [
+          {
+            start: new Date('2026-11-25T14:00:00.000-03:00'),
+            end: new Date('2026-11-25T15:00:00.000-03:00'),
+          },
+          {
+            start: new Date('2026-11-25T16:00:00.000-03:00'),
+            end: new Date('2026-11-25T17:00:00.000-03:00'),
+          },
+        ];
+      }
+      if (email === 'alessandra@grupoqmax.com.br') {
+        return [
+          {
+            start: new Date('2026-11-25T16:00:00.000-03:00'),
+            end: new Date('2026-11-25T17:00:00.000-03:00'),
+          },
+        ];
+      }
+      return [];
+    });
+
+    const aleSlots = await service.getAvailableSlots(3, '2026-11-25', 'ale');
+
+    // A Ale só deve ter disponível o horário das 14:00 (-03:00 = 17:00Z),
+    // pois é o único horário em que o Hugo NÃO está livre e a Ale está livre!
+    expect(aleSlots).toEqual([new Date('2026-11-25T14:00:00.000-03:00').toISOString()]);
+  });
+
   it('deve formatar data para o fuso de Brasília (America/Sao_Paulo) sem descompasso de UTC', () => {
     // 14:00 UTC deve ser exatamente 11:00 em America/Sao_Paulo
     const utcDate = new Date('2026-11-19T14:00:00.000Z');
