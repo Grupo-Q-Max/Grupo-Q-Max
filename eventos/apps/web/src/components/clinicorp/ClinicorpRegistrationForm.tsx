@@ -1,22 +1,26 @@
 "use client";
 
-import { AlertCircle, ArrowRight, CalendarCheck, CheckCircle2, Clock, Crown, Gift, Globe, LoaderCircle, Sparkles, Ticket, Trophy, Users, X } from "lucide-react";
-import { getApiBaseUrl, fetchApi } from "@/lib/api-client";
+import {
+  ArrowRight,
+  CalendarCheck,
+  CheckCircle2,
+  Crown,
+  Globe,
+  LoaderCircle,
+  Sparkles,
+  Trophy,
+  UserPlus,
+  X,
+} from "lucide-react";
+import { getApiBaseUrl } from "@/lib/api-client";
 import Link from "next/link";
 import { StepBar } from "@/components/brand/Brand";
-import { Alert, Check, Field, PaperHeading, Segmented, StickyActions, primaryButton } from "@/components/form/Paper";
-
-import {
-  FormEvent,
-  useEffect,
-  useState,
-} from "react";
-
-import { useRouter } from "next/navigation";
+import { Alert, Check, Field, PaperHeading, StickyActions, primaryButton } from "@/components/form/Paper";
+import { FormEvent, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import { postRegistration } from "@/lib/offline-queue";
 import OfflineSaved from "@/components/form/OfflineSaved";
-import GoldenTicket from "@/components/brand/GoldenTicket";
 import VipScheduler from "@/components/VipScheduler";
 
 type Props = {
@@ -24,6 +28,17 @@ type Props = {
   eventName: string;
   initialVipCode?: string;
   route?: string;
+};
+
+type SavedDeviceRegistration = {
+  id: number;
+  participantId: number;
+  name: string;
+  email: string;
+  hasScheduledMeeting: boolean;
+  declinedMeeting?: boolean;
+  hasDrawn?: boolean;
+  drawnPrize?: string | null;
 };
 
 function onlyNumbers(value: string) {
@@ -81,7 +96,7 @@ function formatPhone(value: string) {
 function createDeviceId() {
   if (typeof window === "undefined") return "FINORA-SERVER";
   const existing = window.localStorage.getItem("finora-clinicorp-device-id");
-  if (existing) return existing;
+  if (existing && existing.length >= 8 && existing.length <= 180) return existing;
 
   const generated =
     typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -92,28 +107,22 @@ function createDeviceId() {
   return generated;
 }
 
-type ClinicPrefill = {
-  clinicName?: string;
-  chairsCount?: number | null;
-  croState?: string;
-};
+function getStorageKey(eventId: number) {
+  return `finora-device-registration-v2-${eventId}`;
+}
 
-// "Novo cadastro" depois de salvar offline: remonta o formulário zerado (sem navegar, a rede pode estar fora).
 export default function ClinicorpRegistrationForm(props: Props) {
   const [round, setRound] = useState(0);
-  const [prefill, setPrefill] = useState<ClinicPrefill | null>(null);
 
   return (
     <RegistrationForm
       key={round}
       {...props}
-      initialPrefill={prefill}
       onReset={() => {
-        setPrefill(null);
-        setRound((r) => r + 1);
-      }}
-      onResetWithClinic={(data) => {
-        setPrefill(data);
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(getStorageKey(props.eventId));
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
         setRound((r) => r + 1);
       }}
     />
@@ -122,19 +131,12 @@ export default function ClinicorpRegistrationForm(props: Props) {
 
 function RegistrationForm({
   onReset,
-  onResetWithClinic,
-  initialPrefill,
   eventId,
-  eventName: _eventName,
-  initialVipCode = "",
   route = "invictus",
 }: Props & {
   onReset: () => void;
-  onResetWithClinic: (data: ClinicPrefill) => void;
-  initialPrefill?: ClinicPrefill | null;
 }) {
-  const router = useRouter();
-
+  const [mounted, setMounted] = useState(false);
   const [deviceId, setDeviceId] = useState("");
   const [fullName, setFullName] = useState("");
   const [isForeigner, setIsForeigner] = useState(false);
@@ -143,163 +145,111 @@ function RegistrationForm({
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [clinicName, setClinicName] = useState(initialPrefill?.clinicName || "");
-  const [cro, setCro] = useState("");
-  const [croState, setCroState] = useState(initialPrefill?.croState || "SP");
-  const [chairsCount, setChairsCount] = useState<number | null>(initialPrefill?.chairsCount ?? null);
-  const [vipCode, setVipCode] = useState(initialVipCode.toUpperCase());
-  const [vipStatus, setVipStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
-  const [vipMessage, setVipMessage] = useState<string>("");
-
-  useEffect(() => {
-    const clean = vipCode.trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-    if (!clean) {
-      setVipStatus("idle");
-      setVipMessage("");
-      return;
-    }
-
-    if (clean.length < 4) {
-      setVipStatus("invalid");
-      setVipMessage("Código VIP incompleto.");
-      return;
-    }
-
-    let active = true;
-    setVipStatus("checking");
-
-    const timer = setTimeout(async () => {
-      try {
-        const apiUrl = getApiBaseUrl();
-        const res = await fetch(`${apiUrl}/vip-codes/event/${eventId}/validate/${encodeURIComponent(clean)}`, {
-          cache: "no-store",
-        });
-        if (!active) return;
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data.valid) {
-            setVipStatus("valid");
-            setVipMessage("Código VIP Validado com Sucesso!");
-          } else {
-            setVipStatus("invalid");
-            setVipMessage(data.message || "Código VIP não encontrado ou já utilizado.");
-          }
-        } else {
-          setVipStatus("invalid");
-          setVipMessage("Código VIP não encontrado para este evento.");
-        }
-      } catch {
-        if (!active) return;
-        setVipStatus("idle");
-      }
-    }, 350);
-
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [vipCode, eventId]);
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [acceptMarketing, setAcceptMarketing] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [offlineSaved, setOfflineSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   const [ceoModalOpen, setCeoModalOpen] = useState(false);
-  const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [schedulerModalOpen, setSchedulerModalOpen] = useState(false);
-  const [ceoNextSlot, setCeoNextSlot] = useState<string | null>(null);
-  const [bookingCeo, setBookingCeo] = useState(false);
-  const [pendingParticipationData, setPendingParticipationData] = useState<{
-    id: number;
-    participantId: number;
-    name: string;
-    isVip: boolean;
-    vipCode?: string;
-    alreadyRegistered: boolean;
-    hasDrawn: boolean;
-    drawnPrize: string | null;
-  } | null>(null);
+  const [registeredParticipation, setRegisteredParticipation] = useState<SavedDeviceRegistration | null>(null);
 
-  const [registeredParticipation, setRegisteredParticipation] = useState<{
-    id: number;
-    name: string;
-    autoBookedSlot?: string | null;
-    isVip?: boolean;
-    vipCode?: string;
-    alreadyRegistered?: boolean;
-    hasDrawn?: boolean;
-    drawnPrize?: string | null;
-  } | null>(null);
-
-  function handleAcceptCeoMeeting() {
-    setCeoModalOpen(false);
-    setSchedulerModalOpen(true);
-  }
-
-  async function handleQuickBookNextSlot() {
-    if (!pendingParticipationData || !ceoNextSlot) return;
-    setBookingCeo(true);
-    try {
-      await fetchApi(`/meetings/event/${eventId}/book`, {
-        method: "POST",
-        body: JSON.stringify({
-          participantId: pendingParticipationData.participantId,
-          scheduledAt: ceoNextSlot,
-          meetingEmail: email.trim(),
-        }),
-      });
-      handleMeetingBooked();
-    } catch {
-      // Se o horário rápido já tiver sido tomado, abre o seletor completo
-      setCeoModalOpen(false);
-      setSchedulerModalOpen(true);
-    } finally {
-      setBookingCeo(false);
+  // Rola sempre para o topo ao abrir modais ou concluir o cadastro para nunca ficar lá embaixo no celular
+  function scrollToTop() {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     }
   }
 
+  function saveDeviceRegistration(data: SavedDeviceRegistration) {
+    setRegisteredParticipation(data);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(getStorageKey(eventId), JSON.stringify(data));
+      } catch {}
+    }
+  }
+
+  // Ao abrir no dispositivo, verifica se já houve cadastro feito neste aparelho
+  useEffect(() => {
+    setMounted(true);
+    setDeviceId(createDeviceId());
+
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(getStorageKey(eventId));
+      if (!raw) return;
+      const saved: SavedDeviceRegistration = JSON.parse(raw);
+      if (saved && saved.id && saved.participantId) {
+        setRegisteredParticipation(saved);
+        if (saved.email) setEmail(saved.email);
+
+        // Consulta o status atualizado na API (caso tenha agendado reunião em outra aba/QR)
+        fetch(`${getApiBaseUrl()}/participants/${saved.id}/public`, { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((live) => {
+            if (!live) return;
+            const updated: SavedDeviceRegistration = {
+              ...saved,
+              name: live.participant?.fullName || saved.name,
+              hasScheduledMeeting: Boolean(live.hasScheduledMeeting || saved.hasScheduledMeeting),
+              hasDrawn: Boolean(live.draw || saved.hasDrawn),
+              drawnPrize: live.draw?.prizes?.name || saved.drawnPrize || null,
+            };
+            saveDeviceRegistration(updated);
+          })
+          .catch(() => {});
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId]);
+
+  // Trava o scroll do fundo quando qualquer modal estiver aberto no celular
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (ceoModalOpen || schedulerModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [ceoModalOpen, schedulerModalOpen]);
+
   function handleMeetingBooked() {
-    if (!pendingParticipationData) return;
+    if (!registeredParticipation) return;
     setCeoModalOpen(false);
     setSchedulerModalOpen(false);
+    scrollToTop();
     confetti({
-      particleCount: 120,
-      spread: 90,
-      origin: { y: 0.6 },
+      particleCount: 110,
+      spread: 85,
+      origin: { y: 0.5 },
       colors: ["#FFD700", "#FF9900", "#FFF9B8", "#FFFFFF"],
       disableForReducedMotion: true,
     });
-    setRegisteredParticipation({
-      ...pendingParticipationData,
-      isVip: true,
+    saveDeviceRegistration({
+      ...registeredParticipation,
+      hasScheduledMeeting: true,
+      declinedMeeting: false,
     });
-    setTicketModalOpen(false);
   }
 
-  function handleDeclineCeoMeeting() {
-    if (!pendingParticipationData) return;
+  function handleDeclineMeeting() {
+    if (!registeredParticipation) return;
     setCeoModalOpen(false);
     setSchedulerModalOpen(false);
-    confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ["#22C3DC", "#0077FF", "#4ADE80", "#FFFFFF"],
-      disableForReducedMotion: true,
+    scrollToTop();
+    saveDeviceRegistration({
+      ...registeredParticipation,
+      declinedMeeting: true,
     });
-    setRegisteredParticipation({
-      ...pendingParticipationData,
-      isVip: Boolean(pendingParticipationData.isVip),
-      autoBookedSlot: null,
-    });
-    setTicketModalOpen(false);
   }
-
-  useEffect(() => {
-    setDeviceId(createDeviceId());
-  }, []);
 
   const isCpfValid = validateCpfAlgorithmic(cpf);
 
@@ -310,9 +260,14 @@ function RegistrationForm({
     const cleanCpf = onlyNumbers(cpf);
     const cleanPhone = onlyNumbers(phone);
 
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setError("Por favor, digite seu nome completo.");
+      return;
+    }
+
     if (!isForeigner) {
       if (cleanCpf.length !== 11 || !isCpfValid) {
-        setError("Por favor, digite um CPF válido.");
+        setError("Por favor, digite um CPF válido com 11 dígitos.");
         return;
       }
 
@@ -323,23 +278,23 @@ function RegistrationForm({
     } else {
       const doc = foreignDoc.trim();
       if (!doc || doc.length < 2) {
-        setError("Por favor, informe seu passaporte ou documento de identificação (mínimo 2 caracteres).");
+        setError("Por favor, informe seu passaporte ou documento de identificação.");
         return;
       }
 
       if (cleanPhone.length < 7) {
-        setError("Por favor, informe um telefone/WhatsApp internacional válido (mínimo 7 dígitos).");
+        setError("Por favor, informe um telefone/WhatsApp internacional válido.");
         return;
       }
     }
 
-    if (!acceptTerms) {
-      setError("É necessário aceitar os termos para participar.");
+    if (!email.trim() || !email.includes("@")) {
+      setError("Por favor, informe um e-mail válido.");
       return;
     }
 
-    if (!email.trim() || !email.includes("@")) {
-      setError("Por favor, informe um E-mail válido.");
+    if (!acceptTerms) {
+      setError("É necessário aceitar os termos para participar.");
       return;
     }
 
@@ -355,18 +310,14 @@ function RegistrationForm({
         cpf: isForeigner ? foreignDoc.trim() : cleanCpf,
         phone: cleanPhone,
         email: email.trim(),
-        clinicName: clinicName.trim() || undefined,
-        croNumber: cro.trim() || undefined,
-        croState: isForeigner ? undefined : (croState.trim() || "SP"),
-        chairsCount: chairsCount || undefined,
-        deviceId,
+        deviceId: deviceId || createDeviceId(),
         marketingConsent: acceptMarketing,
         privacyConsent: acceptTerms,
-        vipCode: vipCode.trim() || undefined,
       });
 
       if (res === "queued") {
         setOfflineSaved(fullName.trim());
+        scrollToTop();
         return;
       }
 
@@ -378,54 +329,56 @@ function RegistrationForm({
 
       const participation = result.participation || result;
 
-      if (participation.status === "APPROVED" || participation.status === "PENDING" || result.alreadyRegistered) {
-        const isVipUser = Boolean(
-          result.vip ||
-            participation.vip ||
-            participation.vip_codes ||
-            result.participation?.vipCode ||
-            (vipStatus === "valid" && !result.error)
-        );
+      if (
+        participation.status === "APPROVED" ||
+        participation.status === "PENDING" ||
+        result.alreadyRegistered
+      ) {
+        const partId =
+          result.participant?.id ||
+          participation.participantId ||
+          participation.participant_id ||
+          participation.id;
 
-        const partData = {
+        // Consulta rápida para saber se este participante já tinha reunião agendada
+        let alreadyHasMeeting = false;
+        try {
+          const pubRes = await fetch(`${getApiBaseUrl()}/participants/${participation.id}/public`, {
+            cache: "no-store",
+          });
+          if (pubRes.ok) {
+            const pubData = await pubRes.json();
+            alreadyHasMeeting = Boolean(pubData.hasScheduledMeeting);
+          }
+        } catch {}
+
+        const savedData: SavedDeviceRegistration = {
           id: participation.id,
-          participantId: result.participant?.id || participation.participantId || participation.participant_id || participation.id,
+          participantId: partId,
           name: fullName.trim() || result.participant?.fullName || "Participante",
-          isVip: isVipUser,
-          vipCode: result.participation?.vipCode || participation.vipCode || (vipStatus === "valid" ? vipCode.trim() : undefined),
-          alreadyRegistered: Boolean(result.alreadyRegistered),
+          email: email.trim(),
+          hasScheduledMeeting: alreadyHasMeeting,
+          declinedMeeting: false,
           hasDrawn: Boolean(result.participation?.hasDrawn),
           drawnPrize: result.participation?.drawnPrize || null,
         };
 
+        scrollToTop();
+
         confetti({
-          particleCount: 90,
-          spread: 80,
-          origin: { y: 0.6 },
+          particleCount: 85,
+          spread: 75,
+          origin: { y: 0.5 },
           colors: ["#22C3DC", "#FFD700", "#0077FF", "#4ADE80", "#FFFFFF"],
           disableForReducedMotion: true,
         });
 
-        // Exibe imediatamente a tela de confirmação oficial com o PIN e bilhete!
-        setPendingParticipationData(partData);
-        setRegisteredParticipation({
-          ...partData,
-          autoBookedSlot: result.autoBookedSlot || null,
-        });
+        saveDeviceRegistration(savedData);
 
-        // Abre o popup convidando para o diagnóstico empresarial e liberando prêmio da Roleta VIP!
-        if (!partData.hasDrawn) {
+        // Se ainda não agendou reunião, abre o popup centralizado perguntando se deseja agendar!
+        if (!alreadyHasMeeting) {
           setCeoModalOpen(true);
-          fetch(`${getApiBaseUrl()}/meetings/event/${eventId}/next-slot`)
-            .then((r) => r.json())
-            .then((d) => {
-              if (d?.nextSlot) setCeoNextSlot(d.nextSlot);
-            })
-            .catch(() => {});
-        } else {
-          setCeoModalOpen(false);
         }
-        setTicketModalOpen(false);
         return;
       }
 
@@ -440,12 +393,12 @@ function RegistrationForm({
       if (participation.status === "BLOCKED") {
         setError(
           result?.blockedReason ||
-            "Esta participação atingiu o limite de giros para este CPF/evento. Procure nossa equipe.",
+            "Esta participação atingiu o limite para este CPF/evento. Procure nossa equipe no estande.",
         );
         return;
       }
 
-      setError(result?.blockedReason || "Não foi possível liberar a participação neste momento.");
+      setError(result?.blockedReason || "Não foi possível concluir o cadastro neste momento.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao realizar o cadastro.");
     } finally {
@@ -455,529 +408,340 @@ function RegistrationForm({
 
   if (offlineSaved) return <OfflineSaved name={offlineSaved} onNew={onReset} />;
 
-  // Passo 2: confirmação imediata (sem WhatsApp e com suporte a já cadastrado)
+  // ============================================================================
+  // TELA DE PÓS-CADASTRO / DISPOSITIVO JÁ CADASTRADO
+  // ============================================================================
   if (registeredParticipation) {
-    const isVip = Boolean(registeredParticipation.isVip);
-    const isAlready = Boolean(registeredParticipation.alreadyRegistered);
-    const hasDrawn = Boolean(registeredParticipation.hasDrawn);
-    const drawnPrize = registeredParticipation.drawnPrize;
     const safeName = String(registeredParticipation.name || "Participante").trim();
     const nameParts = safeName.split(/\s+/);
     const firstName =
-      (nameParts[0]?.toLowerCase().startsWith("dr") && nameParts.length > 1)
+      nameParts[0]?.toLowerCase().startsWith("dr") && nameParts.length > 1
         ? `${nameParts[0]} ${nameParts[1]}`
         : nameParts[0] || "Participante";
 
+    const hasMeeting = Boolean(registeredParticipation.hasScheduledMeeting);
+    const showThankYouOnly = hasMeeting || Boolean(registeredParticipation.declinedMeeting);
+
     return (
-      <div className="flex flex-1 flex-col pb-36 sm:pb-32 overscroll-y-contain">
-        <PaperHeading
-          eyebrow={
-            <>
-              <StepBar step={2} total={2} />
-              <span className="mt-2.5 block font-mono text-xs uppercase tracking-wider text-accent font-semibold">
-                {isAlready
-                  ? "CPF Já Cadastrado · Giro Confirmado"
-                  : isVip
-                    ? "Bilhete Dourado Emitido · VIP"
-                    : "Cadastro Concluído · Giro Liberado"}
-              </span>
-            </>
-          }
-          title={
-            isAlready
-              ? (hasDrawn ? "Participação Já Realizada" : "Você Já Possui Cadastro!")
-              : (isVip ? "Seu Bilhete Dourado de Mentorado" : "Cadastro Concluído com Sucesso!")
-          }
-        >
-          <p className="text-[17px] leading-[1.45] text-slate-300">
-            {isAlready ? (
-              hasDrawn ? (
-                <>
-                  Olá, <strong>{firstName}</strong>! Identificamos que este CPF já girou a roleta neste evento e conquistou o prêmio: <strong className="text-accent">{drawnPrize || "Brinde Especial"}</strong>.
-                </>
-              ) : (
-                <>
-                  Olá, <strong>{firstName}</strong>! Seu cadastro já consta em nossa base de participantes. Seu giro está <strong className="text-emerald-600">100% liberado</strong>! Apresente o código abaixo para nossa equipe no estande.
-                </>
-              )
-            ) : isVip ? (
-              `Parabéns, ${firstName}! Seu bilhete VIP exclusivo foi emitido com sucesso. Apresente no estande Finora para girar no Pool VIP e concorrer ao Grande Sorteio no Telão.`
-            ) : (
-              `Pronto, ${firstName}! Seu cadastro foi concluído com sucesso e seu giro já está liberado. Não é necessário confirmar por WhatsApp.`
-            )}
-          </p>
-        </PaperHeading>
-
-        <div className="flex flex-col gap-3 px-5">
-          {isVip ? (
-            <GoldenTicket
-              code={registeredParticipation.vipCode || `#${String(registeredParticipation.id || 0).padStart(4, "0")}`}
-              eventName={_eventName}
-              eventSlug={route}
-              participantName={safeName}
-              ticketNumber={registeredParticipation.id}
-              showPrintButton={false}
-              className="my-1"
-            />
-          ) : (
-            Boolean(registeredParticipation.id) && (
-              <div className="holographic-card flex items-center justify-between rounded-card bg-ink-950/90 px-6 py-5 text-ink-text shadow-[0_12px_40px_rgba(34,195,220,0.2)] border border-accent/40 animate-pop-burst">
-                <div className="flex flex-col">
-                  <span className="font-mono text-[11px] font-bold tracking-[0.08em] text-accent uppercase">INSCRIÇÃO CONFIRMADA</span>
-                  <span className="text-xs text-ink-text-2 mt-0.5">Identifique-se com Nome ou CPF no balcão</span>
+      <div className="flex flex-1 flex-col justify-between px-4 sm:px-6 pt-6 pb-8 overscroll-y-contain animate-fade-in">
+        <div className="flex flex-col gap-4">
+          {hasMeeting ? (
+            // CASO 1: Já cadastrou E já marcou a agenda -> Agradecimento completo!
+            <div className="flex flex-col gap-4 rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-950/40 via-slate-900/95 to-slate-950 p-5 sm:p-6 text-white shadow-2xl">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400">
+                  <CheckCircle2 size={26} />
                 </div>
-                <span className="font-mono text-[32px] font-black tracking-[0.05em] text-accent drop-shadow-[0_0_14px_rgba(var(--accent-rgb),0.6)]">
-                  #{String(registeredParticipation.id).padStart(4, "0")}
-                </span>
+                <div>
+                  <span className="font-mono text-[11px] font-black uppercase tracking-wider text-emerald-400 block">
+                    CADASTRO & REUNIÃO CONFIRMADOS
+                  </span>
+                  <h1 className="font-display text-2xl sm:text-3xl font-black text-white leading-tight">
+                    Muito obrigado, {firstName}!
+                  </h1>
+                </div>
               </div>
-            )
-          )}
 
-          {registeredParticipation.autoBookedSlot && (
-            <div className="flex items-start gap-3.5 rounded-2xl border border-line bg-surface p-4">
-              <CalendarCheck size={22} className="mt-0.5 flex-none text-accent-ink" />
-              <div className="flex flex-col gap-1">
-                <strong>
-                  Conversa VIP às{" "}
-                  {(() => {
-                    try {
-                      const d = new Date(registeredParticipation.autoBookedSlot);
-                      return !isNaN(d.getTime()) ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
-                    } catch {
-                      return "";
-                    }
-                  })()}
-                </strong>
-                <span className="text-sm leading-[1.4] text-text-2">Vá até o estande neste horário para falar com nossos especialistas.</span>
-              </div>
-            </div>
-          )}
-
-          {/* Convite Opcional: Agendar Consultoria com o CEO Hugo Werninghaus */}
-          {!hasDrawn && (
-            <div className="flex flex-col gap-2.5 rounded-2xl border-2 border-[#FFD700]/70 bg-gradient-to-br from-[#2A1B05] via-[#1B1203] to-[#2A1B05] p-4 text-white shadow-[0_0_25px_rgba(255,215,0,0.25)]">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#FFD700] flex items-center gap-1.5">
-                  <Crown size={14} className="text-[#FFD700]" />
-                  <span>CONSULTORIA VIP COM O CEO</span>
-                </span>
-                <span className="rounded-full bg-[#FFD700]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#FFE57F]">
-                  45 MINUTOS
-                </span>
-              </div>
-              <p className="text-xs sm:text-[13px] text-slate-200 leading-relaxed">
-                Deseja conversar pessoalmente com nosso sócio? Agende uma reunião estratégica individual com <strong>Hugo Werninghaus</strong> (CEO Grupo Q-Max).
+              <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
+                Seu cadastro e sua <strong>reunião estratégica</strong> já estão registrados com sucesso!
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setPendingParticipationData(registeredParticipation as any);
-                  setSchedulerModalOpen(true);
-                }}
-                className="mt-1 flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-2.5 px-4 font-display text-xs sm:text-sm font-black text-[#3E2723] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-md"
-              >
-                <CalendarCheck size={16} />
-                <span>Agendar Reunião com o Sócio ➔</span>
-              </button>
-            </div>
-          )}
 
-          {/* Confirmação do Grande Sorteio Geral */}
-          <div className="flex flex-col gap-2.5 rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-500/15 via-slate-900/90 to-amber-950/30 p-4 text-amber-200 shadow-md">
-            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
-              <Trophy size={18} className="text-amber-400 flex-none" />
-              <span>Inscrição Confirmada no Grande Sorteio Geral (19/11)!</span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-              Seu cupom está registrado e concorrendo oficialmente ao <strong>Fotopolimerizador Odontológico</strong> no sorteio geral do dia 19/11 no telão.
-            </p>
-            <div className="mt-1 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-200 font-semibold">
-              📍 <strong>Dias 20 e 21/11:</strong> Venha ao estande Finora informando seu Nome ou CPF para girar a Roleta VIP e retirar brindes exclusivos!
-            </div>
-          </div>
-
-          {!hasDrawn && (
-            <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 text-[14px]">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-2">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-                <span>Passo a Passo das Próximas Etapas</span>
-              </div>
-              <ol className="flex flex-col gap-2.5 text-text">
-                <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-accent/20 text-xs font-mono font-bold text-accent">1</span>
-                  <span>Dirija-se ao estande da Finora.</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-accent/20 text-xs font-mono font-bold text-accent">2</span>
-                  <span>Apresente seu código para o operador, gire a roleta e retire seu prêmio.</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-amber-400/30 text-xs font-mono font-bold text-amber-300">3</span>
-                  <span><strong>Dia 19/11:</strong> Acompanhe a apuração ao vivo do Grande Sorteio Geral!</span>
-                </li>
-              </ol>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 min-h-6" />
-
-        <StickyActions>
-          {!hasDrawn ? (
-            <>
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-accent/40 bg-accent/15 px-4 py-3.5 text-center shadow-[0_0_20px_rgba(var(--accent-rgb),0.2)] animate-pulse-glow">
-                <span className="font-display text-base font-extrabold text-white flex items-center justify-center gap-2">
-                  📍 Mostre esta tela no estande Finora
-                </span>
-                <span className="text-xs text-slate-300 mt-1 leading-relaxed">
-                  Apresente seu código para a nossa equipe liberar seu giro no tablet da roleta!
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setTicketModalOpen(true)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-button bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3 text-[14px] font-black text-[#3E2723] hover:brightness-110 transition-all cursor-pointer shadow-md active:scale-[0.98]"
-              >
-                <Ticket size={18} />
-                {isVip ? "Visualizar Bilhete VIP em Popup 🎫" : "Visualizar Cupom em Popup 🎫"}
-              </button>
-              {clinicName && (
-                <button
-                  type="button"
-                  onClick={() => onResetWithClinic({ clinicName, chairsCount, croState })}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-button bg-accent/15 border border-accent/40 py-2.5 text-[14px] font-bold text-accent hover:bg-accent/25 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-                >
-                  <Users size={16} />
-                  Cadastrar Colega da Clínica {clinicName}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={onReset}
-                className="inline-flex w-full items-center justify-center rounded-button py-2 text-[13px] font-medium text-text-2 hover:text-text transition-colors"
-              >
-                Cadastrar Outro Participante
-              </button>
-              <Link
-                href={`/${route}/roleta?pin=${registeredParticipation.id}${registeredParticipation.vipCode ? `&vip=${registeredParticipation.vipCode}` : ""}`}
-                className="text-[12px] font-mono text-center text-slate-400 hover:text-accent transition-colors pt-0.5"
-              >
-                Acesso equipe Finora: abrir roleta
-              </Link>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={onReset}
-              className={primaryButton}
-            >
-              Fazer Novo Cadastro
-            </button>
-          )}
-          <span className="text-center text-[13px] text-text-2">
-            {isVip ? "Bilhete VIP válido para o Pool VIP e Grande Sorteio." : "Você já concorre ao Grande Sorteio de encerramento."}
-          </span>
-        </StickyActions>
-
-        {/* Modal Popup: Bilhete / Cupom Oficial em Popup */}
-        {ticketModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
-            <div className="relative w-full max-w-2xl max-h-[94vh] overflow-y-auto rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-4 sm:p-7 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst my-auto">
-              <button
-                type="button"
-                onClick={() => setTicketModalOpen(false)}
-                aria-label="Fechar"
-                className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer z-10"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="text-center mb-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3.5 py-1 font-mono text-[11px] font-black uppercase tracking-wider text-[#FFDF73]">
-                  <Crown size={14} className="text-[#FFD700]" />
-                  {isVip ? "SEU PASSE VIP OFICIAL EMITIDO" : "SEU CUPOM DE PARTICIPAÇÃO"}
-                </span>
-                <h3 className="mt-2 font-display text-2xl sm:text-3xl font-black text-white leading-tight">
-                  {isVip ? "Bilhete Dourado do Mentorado" : "Cupom de Participação Finora"}
-                </h3>
-                <p className="mt-1 text-xs sm:text-sm text-[#C2CEE3]">
-                  {isVip
-                    ? "Apresente no estande Finora para girar a Roleta VIP e concorrer aos prêmios executivos!"
-                    : "Apresente seu código no estande Finora para girar a roleta e retirar seu brinde!"}
-                </p>
-              </div>
-
-              <div className="w-full flex justify-center py-2 overflow-x-auto">
-                <GoldenTicket
-                  code={registeredParticipation.vipCode || `#${String(registeredParticipation.id).padStart(4, "0")}`}
-                  eventName={_eventName}
-                  eventSlug={route}
-                  participantName={registeredParticipation.name}
-                  ticketNumber={registeredParticipation.id}
-                  showPrintButton={true}
-                  className="my-1 scale-[0.92] sm:scale-100 origin-center"
-                />
-              </div>
-
-              <div className="mt-4 flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-white/10 pt-4">
-                <div className="text-xs font-mono text-slate-400 text-center sm:text-left">
-                  Código: <strong className="text-white">#{String(registeredParticipation.id).padStart(4, "0")}</strong>
-                  {isVip && (
-                    <span className="ml-2 text-[#FFD700] font-bold">★ Roleta VIP Liberada</span>
-                  )}
+              <div className="rounded-2xl border-2 border-[#FFD700]/70 bg-gradient-to-r from-[#FFD700]/20 via-[#FF9900]/15 to-[#FFD700]/20 p-4 space-y-1.5 shadow-[0_0_25px_rgba(255,215,0,0.2)]">
+                <div className="flex items-center gap-2 text-[#FFD700] font-black text-sm uppercase tracking-wider">
+                  <Crown size={18} className="text-[#FFD700]" />
+                  <span>Dupla Roleta VIP Liberada no Estande!</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setTicketModalOpen(false)}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] font-bold text-xs uppercase tracking-wider text-[#3E2723] hover:brightness-110 transition-all cursor-pointer shadow-md"
-                >
-                  Concluir & Ir para o Estande 🚀
-                </button>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                  Dirija-se ao balcão da <strong>Finora</strong> e informe seu <strong>Nome ou CPF</strong> para girar a <strong>Roleta de Brindes</strong> e a <strong>Roleta VIP</strong>!
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex items-center gap-3 text-xs sm:text-sm text-slate-300">
+                <Trophy size={20} className="text-amber-400 flex-none" />
+                <span>
+                  Sua participação no <strong>Sorteio Geral</strong> também está 100% garantida!
+                </span>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Modal Popup: Convite de Reunião para Diagnóstico Empresarial & Prêmio da Roleta VIP */}
-        {ceoModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-            <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-6 sm:p-8 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst my-auto">
-              <button
-                type="button"
-                onClick={() => setCeoModalOpen(false)}
-                aria-label="Fechar"
-                className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer z-10"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] shadow-[0_0_25px_rgba(255,215,0,0.6)]">
-                <Crown size={32} className="text-[#3E2723]" />
+          ) : showThankYouOnly ? (
+            // CASO 2: Já cadastrou e optou por não agendar agora -> Agradecimento de cadastro + opção caso mude de ideia
+            <div className="flex flex-col gap-4 rounded-3xl border border-accent/40 bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900 p-5 sm:p-6 text-white shadow-2xl">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-accent/20 border border-accent/40 text-accent">
+                  <CheckCircle2 size={26} />
+                </div>
+                <div>
+                  <span className="font-mono text-[11px] font-black uppercase tracking-wider text-accent block">
+                    INSCRIÇÃO CONFIRMADA
+                  </span>
+                  <h1 className="font-display text-2xl sm:text-3xl font-black text-white leading-tight">
+                    Obrigado pelo cadastro, {firstName}!
+                  </h1>
+                </div>
               </div>
 
-              <div className="text-center mt-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3.5 py-1 font-mono text-[11px] font-black uppercase tracking-wider text-[#FFDF73]">
-                  ✨ OPORTUNIDADE EXCLUSIVA VIP
-                </span>
-                <h3 className="mt-2.5 font-display text-2xl sm:text-3xl font-black text-white leading-tight">
-                  Deseja agendar uma reunião para fazer um Diagnóstico Empresarial?
-                </h3>
-              </div>
+              <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
+                Seu giro na roleta de brindes e sua participação no <strong>Sorteio Geral</strong> já estão liberados. Basta informar seu <strong>Nome ou CPF</strong> no balcão da Finora!
+              </p>
 
-              <div className="my-4 rounded-2xl border-2 border-[#FFD700] bg-gradient-to-r from-[#FFD700]/25 via-[#FF9900]/20 to-[#FFD700]/25 p-4 text-center shadow-[0_0_25px_rgba(255,215,0,0.3)]">
-                <p className="font-display text-sm sm:text-[15px] font-black text-[#FFF9B8] uppercase leading-snug">
-                  🎁 Marcando e participando da reunião, você ganha o prêmio sorteado da Roleta VIP!
-                </p>
-                <p className="mt-1.5 text-xs text-slate-200 leading-relaxed">
-                  Bate-papo estratégico de <strong>45 minutos</strong> com <strong>Hugo Werninghaus</strong> (CEO Grupo Q-Max) para diagnóstico financeiro e tributário da sua clínica.
-                </p>
-              </div>
-
-              {ceoNextSlot && (
-                <div className="mb-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
-                  <CalendarCheck size={18} className="text-[#FFD700] flex-none" />
-                  <span>
-                    Próximo horário disponível:{" "}
-                    <strong className="text-white">
-                      {new Date(ceoNextSlot).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} às{" "}
-                      {new Date(ceoNextSlot).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                    </strong>
+              {/* Card caso queira agendar a reunião para destravar a Roleta VIP */}
+              <div className="rounded-2xl border-2 border-[#FFD700]/70 bg-gradient-to-br from-[#2A1B05] via-[#1B1203] to-[#2A1B05] p-4 text-white shadow-[0_0_25px_rgba(255,215,0,0.2)] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#FFD700] flex items-center gap-1.5">
+                    <Crown size={14} className="text-[#FFD700]" />
+                    <span>QUER LIBERAR A ROLETA VIP?</span>
+                  </span>
+                  <span className="rounded-full bg-[#FFD700]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#FFE57F]">
+                    45 MIN
                   </span>
                 </div>
-              )}
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                  Agende agora um bate-papo de <strong>Diagnóstico Empresarial</strong> com nosso sócio e ganhe o prêmio sorteado na <strong>Roleta VIP</strong>!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    scrollToTop();
+                    setSchedulerModalOpen(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3 px-4 font-display text-xs sm:text-sm font-black text-[#3E2723] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-md"
+                >
+                  <CalendarCheck size={17} />
+                  <span>Agendar Reunião & Liberar Roleta VIP ➔</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            // CASO 3: Já fez o cadastro no dispositivo mas ainda não agendou -> Pergunta diretamente se deseja agendar!
+            <div className="flex flex-col gap-4 rounded-3xl border-2 border-[#FFD700] bg-gradient-to-br from-[#1A1204] via-[#090E1C] to-[#1A1204] p-5 sm:p-6 text-white shadow-[0_15px_50px_rgba(255,215,0,0.25)]">
+              <div className="flex items-center gap-3">
+                <div className="flex h-13 w-13 flex-none items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] shadow-lg">
+                  <Crown size={28} />
+                </div>
+                <div>
+                  <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#FFD700] block">
+                    ✅ CADASTRO JÁ REALIZADO
+                  </span>
+                  <h1 className="font-display text-xl sm:text-2xl font-black text-white leading-tight">
+                    Olá, {firstName}! Deseja agendar uma reunião estratégica?
+                  </h1>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[#FFD700]/60 bg-[#FFD700]/15 p-4 space-y-1.5">
+                <p className="font-display text-sm sm:text-base font-black text-[#FFF9B8] leading-snug">
+                  🎁 Marcando e participando da reunião de Diagnóstico Empresarial, você ganha o prêmio sorteado da Roleta VIP!
+                </p>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                  Reunião online de <strong>45 minutos</strong> via Microsoft Teams com nossos sócios para diagnóstico financeiro e tributário.
+                </p>
+              </div>
 
               <div className="flex flex-col gap-2.5 pt-1">
                 <button
                   type="button"
                   onClick={() => {
+                    scrollToTop();
                     setCeoModalOpen(false);
                     setSchedulerModalOpen(true);
                   }}
-                  className="w-full flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-6 font-display text-sm sm:text-base font-black text-[#3E2723] shadow-[0_10px_30px_rgba(255,215,0,0.5)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-4 px-5 font-display text-sm sm:text-base font-black text-[#3E2723] shadow-[0_10px_25px_rgba(255,215,0,0.45)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
                 >
-                  <CalendarCheck size={18} />
-                  <span>Sim, Agendar Meu Diagnóstico & Liberar Roleta VIP 🌟</span>
+                  <CalendarCheck size={19} />
+                  <span>Sim, Quero Agendar Minha Reunião 🌟</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setCeoModalOpen(false)}
-                  className="w-full py-2.5 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  onClick={handleDeclineMeeting}
+                  className="w-full py-2.5 text-center text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
                 >
-                  Prefiro não agendar agora, concluir cadastro ➔
+                  Agora não, ver confirmação do meu cadastro ➔
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Modal Popup: Agendamento com o CEO em Popup Dedicado */}
-        {schedulerModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
-            <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-4 sm:p-6 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst my-auto">
-              <button
-                type="button"
-                onClick={() => setSchedulerModalOpen(false)}
-                aria-label="Fechar"
-                className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer z-10"
-              >
-                <X size={18} />
-              </button>
+        {/* Opção discreta para cadastrar outra pessoa no mesmo aparelho */}
+        <div className="mt-6 pt-4 border-t border-white/10 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
+          >
+            <UserPlus size={14} />
+            <span>Cadastrar outra pessoa neste aparelho</span>
+          </button>
+        </div>
 
-              <div className="text-center mb-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3.5 py-1 font-mono text-[11px] font-black uppercase tracking-wider text-[#FFDF73]">
-                  <Crown size={14} className="text-[#FFD700]" />
-                  AGENDAMENTO EXCLUSIVO COM O CEO
-                </span>
-                <h3 className="mt-2 font-display text-2xl sm:text-3xl font-black text-white leading-tight">
-                  Selecione o Dia e Horário
-                </h3>
-                <p className="mt-1 text-xs sm:text-sm text-[#C2CEE3]">
-                  Reunião estratégica de <strong>45 minutos</strong> com <strong>Hugo Werninghaus (CEO Grupo Q-Max)</strong> via Microsoft Teams.
-                </p>
-                <div className="mt-2.5 inline-flex items-center gap-2 rounded-xl bg-amber-400/10 border border-amber-400/30 px-3 py-1.5 text-[11.5px] text-amber-200">
-                  ⏰ Horários de hora em hora · Intervalo de almoço (12h às 14h) fechado.
+        {/* POPUP MODAL 1: Convite de Reunião (renderizado via Portal direto no body para ficar 100% centralizado na tela do celular) */}
+        {mounted &&
+          ceoModalOpen &&
+          createPortal(
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+              <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-5 sm:p-7 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst">
+                <button
+                  type="button"
+                  onClick={handleDeclineMeeting}
+                  aria-label="Fechar"
+                  className="absolute top-3.5 right-3.5 flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer z-10"
+                >
+                  <X size={18} />
+                </button>
+
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] shadow-[0_0_25px_rgba(255,215,0,0.6)]">
+                  <Crown size={28} className="text-[#3E2723]" />
+                </div>
+
+                <div className="text-center mt-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD700]/20 border border-[#FFD700]/50 px-3 py-1 font-mono text-[10.5px] font-black uppercase tracking-wider text-[#FFDF73]">
+                    ✨ CADASTRO CONCLUÍDO · ROLETA VIP
+                  </span>
+                  <h3 className="mt-2 font-display text-xl sm:text-2xl font-black text-white leading-tight">
+                    Deseja agendar uma reunião de Diagnóstico Empresarial?
+                  </h3>
+                </div>
+
+                <div className="my-4 rounded-2xl border-2 border-[#FFD700] bg-gradient-to-r from-[#FFD700]/25 via-[#FF9900]/20 to-[#FFD700]/25 p-3.5 text-center shadow-[0_0_20px_rgba(255,215,0,0.25)]">
+                  <p className="font-display text-xs sm:text-sm font-black text-[#FFF9B8] uppercase leading-snug">
+                    🎁 Marcando e participando da reunião, você ganha o prêmio sorteado da Roleta VIP!
+                  </p>
+                  <p className="mt-1.5 text-xs text-slate-200 leading-relaxed">
+                    Bate-papo estratégico de <strong>45 minutos</strong> com nosso sócio para diagnóstico financeiro e tributário.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCeoModalOpen(false);
+                      setSchedulerModalOpen(true);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] py-3.5 px-5 font-display text-sm sm:text-base font-black text-[#3E2723] shadow-[0_10px_25px_rgba(255,215,0,0.45)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
+                  >
+                    <CalendarCheck size={18} />
+                    <span>Sim, Escolher Dia e Horário 🌟</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDeclineMeeting}
+                    className="w-full py-2 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    Prefiro não agendar agora, concluir cadastro ➔
+                  </button>
                 </div>
               </div>
+            </div>,
+            document.body,
+          )}
 
-              <VipScheduler
-                participantId={
-                  pendingParticipationData?.participantId ||
-                  (registeredParticipation as any)?.participantId ||
-                  registeredParticipation?.id ||
-                  0
-                }
-                eventId={eventId}
-                meetingEmail={email.trim()}
-                onBooked={handleMeetingBooked}
-              />
-            </div>
-          </div>
-        )}
+        {/* POPUP MODAL 2: Calendário de Agendamento (renderizado via Portal direto no body, sem dia pré-selecionado) */}
+        {mounted &&
+          schedulerModalOpen &&
+          createPortal(
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2.5 sm:p-4 bg-black/90 backdrop-blur-md animate-fade-in">
+              <div className="relative w-full max-w-xl max-h-[92dvh] overflow-y-auto rounded-3xl border-2 border-[#FFD700] bg-[#090E1C] p-3.5 sm:p-5 text-white shadow-[0_25px_80px_rgba(255,215,0,0.5)] animate-pop-burst">
+                <button
+                  type="button"
+                  onClick={() => setSchedulerModalOpen(false)}
+                  aria-label="Fechar"
+                  className="sticky top-2 float-right flex size-9 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors cursor-pointer z-20"
+                >
+                  <X size={18} />
+                </button>
+
+                <VipScheduler
+                  participantId={registeredParticipation.participantId || registeredParticipation.id}
+                  eventId={eventId}
+                  meetingEmail={registeredParticipation.email || email.trim()}
+                  onBooked={handleMeetingBooked}
+                />
+              </div>
+            </div>,
+            document.body,
+          )}
       </div>
     );
   }
 
+  // ============================================================================
+  // PASSO 1: FORMULÁRIO DE CADASTRO RÁPIDO, LIMPO E 100% RESPONSIVO PARA CELULAR
+  // ============================================================================
   return (
     <form onSubmit={handleSubmit} className="flex flex-1 flex-col overscroll-y-contain">
       <PaperHeading
-        eyebrow={<><StepBar step={1} total={2} /><span className="mt-2.5 block">Passo 1 de 2 · leva 1 minuto</span></>}
+        eyebrow={
+          <>
+            <StepBar step={1} total={2} />
+            <span className="mt-2 block font-mono text-[11px]">Cadastro Rápido · Leva 30 segundos</span>
+          </>
+        }
         title="Cadastro · Roleta de Prêmios & Sorteio Geral"
       />
 
-      <div className="flex flex-1 flex-col gap-5 px-5 pt-2 pb-32 sm:pb-28">
+      <div className="flex flex-1 flex-col gap-4 px-4 sm:px-5 pt-1 pb-28 sm:pb-24">
         {error && <Alert>{error}</Alert>}
 
-        {/* Atalho VIP: Já fez o cadastro? Agende com o sócio */}
+        {/* Atalho VIP: Já fez o cadastro? Agende com nosso sócio */}
         <Link
           href={`/${route}/agendamento`}
-          className="group relative flex items-center justify-between gap-3 overflow-hidden rounded-2xl border-2 border-[#FFD700] bg-gradient-to-r from-[#2A1B05] via-[#1B1203] to-[#2A1B05] p-4 text-white shadow-[0_0_25px_rgba(255,215,0,0.25)] hover:border-[#FFE57F] hover:shadow-[0_0_35px_rgba(255,215,0,0.4)] transition-all cursor-pointer animate-pulse-glow"
+          className="group relative flex items-center justify-between gap-3 overflow-hidden rounded-2xl border-2 border-[#FFD700] bg-gradient-to-r from-[#2A1B05] via-[#1B1203] to-[#2A1B05] p-3.5 sm:p-4 text-white shadow-[0_0_25px_rgba(255,215,0,0.22)] hover:border-[#FFE57F] transition-all cursor-pointer"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] shadow-md group-hover:scale-105 transition-transform">
-              <CalendarCheck size={22} className="text-[#3E2723]" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] shadow-md">
+              <CalendarCheck size={20} className="text-[#3E2723]" />
             </div>
-            <div className="flex flex-col text-left">
-              <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#FFD700] flex items-center gap-1.5">
+            <div className="flex flex-col text-left min-w-0">
+              <span className="font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[#FFD700] flex items-center gap-1.5 flex-wrap">
                 <span>✦ JÁ FEZ O CADASTRO?</span>
-                <span className="rounded-full bg-[#FFD700]/20 px-2 py-0.5 text-[10px] text-[#FFE57F]">AGENDAMENTO VIP</span>
+                <span className="rounded-full bg-[#FFD700]/20 px-2 py-0.5 text-[9.5px] text-[#FFE57F]">
+                  ROLETA VIP
+                </span>
               </span>
-              <strong className="text-[14px] sm:text-[15px] font-extrabold text-white leading-tight mt-0.5">
+              <strong className="text-[13.5px] sm:text-[15px] font-extrabold text-white leading-tight mt-0.5">
                 Agende uma reunião aqui com nosso sócio
               </strong>
-              <span className="text-xs text-slate-300 mt-0.5">
-                Bate-papo VIP com Hugo Werninghaus · Clique para agendar ➔
+              <span className="text-[11.5px] text-slate-300 mt-0.5 truncate">
+                Libere seu giro na Roleta VIP · Clique para agendar ➔
               </span>
             </div>
           </div>
-          <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#FFD700]/20 text-[#FFD700] group-hover:bg-[#FFD700] group-hover:text-[#3E2723] transition-colors">
-            <ArrowRight size={18} />
+          <div className="flex h-8 w-8 sm:h-9 sm:w-9 flex-none items-center justify-center rounded-full bg-[#FFD700]/20 text-[#FFD700] group-hover:bg-[#FFD700] group-hover:text-[#3E2723] transition-colors">
+            <ArrowRight size={17} />
           </div>
         </Link>
 
-        {/* Banner Oficial Finora Experience - Sem imagem pesada, design luxuoso */}
-        <div className="flex flex-col gap-3.5 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-slate-900/95 via-slate-950 to-amber-950/20 p-4 sm:p-5 shadow-xl">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-accent border border-accent/30">
-              ✦ FINORA EXPERIENCE · INVICTUS 2026 ✦
+        {/* Banner Compacto & Elegante */}
+        <div className="flex flex-col gap-2.5 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-slate-900/95 via-slate-950 to-amber-950/20 p-3.5 sm:p-4 shadow-lg">
+          <div className="flex items-center justify-between flex-wrap gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-0.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-accent border border-accent/30">
+              ✦ FINORA EXPERIENCE · INVICTUS ✦
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-[11px] font-bold text-amber-300 border border-amber-400/40">
-              ✨ Roleta VIP & Sorteio Geral
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-300 border border-amber-400/40">
+              <Sparkles size={11} /> Roleta & Sorteio Geral
             </span>
           </div>
-
-          {/* Destaque Dia 19 e Visita Dias 20 e 21 */}
-          <div className="rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-amber-500/20 p-3.5 text-center shadow-xs">
-            <div className="flex items-center justify-center gap-2 text-amber-300 font-display text-sm font-black uppercase tracking-wide">
-              <span>🗓️</span>
-              <span>Cadastros Realizados no Dia 19/11</span>
-            </div>
-            <p className="mt-1.5 text-xs sm:text-[13px] text-slate-200 leading-relaxed">
-              Compareça ao estande da Finora nos <strong>dias 20 ou 21/11</strong> informando seu <strong>Nome ou CPF</strong> para girar a <strong>Roleta VIP</strong> e retirar seus prêmios exclusivos!
-            </p>
-          </div>
-
-          {/* 3 Passos Minimalistas e Elegantes */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-            <div className="flex items-center gap-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 p-2.5">
-              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent/20 text-xs font-mono font-black text-accent">
-                1
-              </span>
-              <div className="flex flex-col">
-                <strong className="text-xs font-bold text-white">Preencha os Dados</strong>
-                <span className="text-[11px] text-slate-400 leading-tight">Gere seu código oficial</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 p-2.5">
-              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-amber-400/20 text-xs font-mono font-black text-amber-300">
-                2
-              </span>
-              <div className="flex flex-col">
-                <strong className="text-xs font-bold text-amber-200">Cadastro Concluído</strong>
-                <span className="text-[11px] text-slate-400 leading-tight">Participação garantida</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5 rounded-xl border border-amber-400/30 bg-amber-950/20 p-2.5">
-              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-amber-400 text-slate-950 text-xs font-mono font-black">
-                3
-              </span>
-              <div className="flex flex-col">
-                <strong className="text-xs font-bold text-amber-200">Estande dias 20 e 21</strong>
-                <span className="text-[11px] text-amber-300/80 leading-tight">Gire a Roleta VIP</span>
-              </div>
-            </div>
-          </div>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Preencha seus dados abaixo para liberar seu giro na <strong>Roleta de Prêmios</strong> no estande e concorrer ao <strong>Grande Sorteio Geral</strong>!
+          </p>
         </div>
 
-        {initialVipCode && (
-          <div className="flex items-center gap-3 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-100/90 via-amber-50 to-amber-100/60 p-3.5 shadow-sm text-amber-950 animate-pop-burst">
-            <span className="text-2xl">👑</span>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-xs uppercase tracking-wider text-amber-900">
-                Passe VIP Identificado via QR Code
-              </span>
-              <span className="text-xs font-semibold text-amber-800">
-                Bilhete <strong className="font-mono font-black text-amber-950">#{vipCode}</strong> ativado! Seus prêmios exclusivos já estão liberados.
-              </span>
-            </div>
-          </div>
-        )}
+        {/* Nome Completo */}
+        <Field
+          id="c-nome"
+          label="Nome completo *"
+          autoComplete="name"
+          placeholder="Digite seu nome completo"
+          required
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+        />
 
-        {initialPrefill?.clinicName && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-accent/40 bg-accent/15 px-3.5 py-2.5 text-xs text-slate-200 animate-pop-burst">
-            <Users size={16} className="text-accent flex-none" />
-            <span>
-              Cadastrando colega de <strong>{initialPrefill.clinicName}</strong>. Dados da clínica pré-preenchidos!
-            </span>
-          </div>
-        )}
-
-        <Field id="c-nome" label="Nome completo" autoComplete="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-
-        {/* Seletor de Nacionalidade: Brasileiro x Estrangeiro */}
-        <div className="flex flex-col gap-1.5 pt-1">
+        {/* Seletor de Nacionalidade */}
+        <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-300">Nacionalidade / Documento</label>
           <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-white/5 border border-white/10">
             <button
@@ -986,7 +750,7 @@ function RegistrationForm({
                 setIsForeigner(false);
                 setError(null);
               }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer text-center leading-tight ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-center ${
                 !isForeigner
                   ? "bg-accent text-slate-950 shadow-md font-black"
                   : "text-slate-400 hover:text-white"
@@ -1000,13 +764,13 @@ function RegistrationForm({
                 setIsForeigner(true);
                 setError(null);
               }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer text-center leading-tight ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-center ${
                 isForeigner
                   ? "bg-amber-400 text-slate-950 shadow-md font-black"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <span>🌐 Estrangeiro (Passaporte)</span>
+              <span>🌐 Estrangeiro</span>
             </button>
           </div>
         </div>
@@ -1014,25 +778,25 @@ function RegistrationForm({
         {!isForeigner ? (
           <Field
             id="c-cpf"
-            label="CPF"
+            label="CPF *"
             inputMode="numeric"
             required
             maxLength={14}
             placeholder="000.000.000-00"
             value={cpf}
             onChange={(e) => setCpf(formatCpf(e.target.value))}
-            error={cpf.length === 14 && !isCpfValid ? "CPF inválido. Confira os números." : undefined}
+            error={cpf.length === 14 && !isCpfValid ? "CPF inválido. Confira os 11 dígitos." : undefined}
           />
         ) : (
-          <div className="flex flex-col gap-3 rounded-2xl border border-amber-400/30 bg-amber-950/20 p-4 animate-fade-in">
+          <div className="flex flex-col gap-3 rounded-2xl border border-amber-400/30 bg-amber-950/20 p-3.5 animate-fade-in">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300">
               <Globe size={15} />
-              <span>Visitante Internacional / Estrangeiro</span>
+              <span>Visitante Internacional</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="c-country" className="text-xs font-semibold text-slate-300">
-                País de Origem / Código do País *
+                País de Origem *
               </label>
               <select
                 id="c-country"
@@ -1055,31 +819,31 @@ function RegistrationForm({
                 <option value="+57">🇨🇴 Colômbia (+57)</option>
                 <option value="+51">🇵🇪 Peru (+51)</option>
                 <option value="+591">🇧🇴 Bolívia (+591)</option>
-                <option value="OUTRO">🌐 Outro País / Internacional</option>
+                <option value="OUTRO">🌐 Outro País</option>
               </select>
             </div>
 
             <Field
               id="c-passport"
-              label="Passaporte ou Documento de Identificação (DNI / ID) *"
+              label="Passaporte ou Documento (DNI / ID) *"
               required
               maxLength={30}
-              placeholder="Ex: Passaporte ou DNI do seu país"
+              placeholder="Número do documento"
               value={foreignDoc}
               onChange={(e) => setForeignDoc(e.target.value.toUpperCase())}
-              hint="Informe o número do seu documento oficial de identificação estrangeiro."
             />
           </div>
         )}
 
+        {/* WhatsApp */}
         <Field
           id="c-wpp"
-          label={isForeigner ? "WhatsApp / Telefone Internacional" : "WhatsApp"}
+          label={isForeigner ? "WhatsApp / Telefone Internacional *" : "WhatsApp com DDD *"}
           type="tel"
           inputMode="tel"
           required
           maxLength={isForeigner ? 25 : 15}
-          placeholder={isForeigner ? "+351 912 345 678" : "(00) 00000-0000"}
+          placeholder={isForeigner ? "+351 912 345 678" : "(11) 99999-9999"}
           value={phone}
           onChange={(e) => {
             if (isForeigner) {
@@ -1088,72 +852,27 @@ function RegistrationForm({
               setPhone(formatPhone(e.target.value));
             }
           }}
-          hint={isForeigner ? "Informe seu número com código do país (DDI)." : "Seu número de contato no evento."}
         />
-        <Field id="c-mail" label="E-mail" type="email" inputMode="email" required placeholder="voce@clinica.com.br" value={email} onChange={(e) => setEmail(e.target.value)} />
 
+        {/* E-mail */}
         <Field
-          id="c-vip"
-          label="Código do cartão VIP (opcional)"
-          autoCapitalize="characters"
-          autoComplete="off"
-          maxLength={16}
-          hint="Recebeu um cartão VIP? Digite o código para liberar a roleta VIP."
-          value={vipCode}
-          onChange={(e) => setVipCode(e.target.value.toUpperCase())}
+          id="c-mail"
+          label="E-mail *"
+          type="email"
+          inputMode="email"
+          required
+          placeholder="seuemail@exemplo.com.br"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
 
-        {vipStatus === "checking" && (
-          <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/40 p-2.5 text-xs text-slate-300">
-            <LoaderCircle size={14} className="animate-spin text-accent" />
-            <span>Verificando autenticidade do código VIP...</span>
-          </div>
-        )}
-
-        {vipStatus === "valid" && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/70 p-3 text-xs font-bold text-amber-900 shadow-xs animate-pop-burst">
-            <span className="text-xl">👑</span>
-            <div>
-              <p className="font-extrabold text-amber-900">
-                {initialVipCode ? `Bilhete VIP #${vipCode} Ativado via QR Code!` : `Bilhete VIP #${vipCode} Validado!`}
-              </p>
-              <p className="text-[11px] text-amber-800 font-medium">Seu cadastro terá acesso liberado ao Pool de Prêmios VIP exclusivos no estande.</p>
-            </div>
-          </div>
-        )}
-
-        {vipStatus === "invalid" && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-rose-400/40 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-            <AlertCircle size={15} className="text-rose-400 flex-none" />
-            <span>{vipMessage || "Código VIP não encontrado ou já utilizado. Deixe em branco caso não possua cartão VIP."}</span>
-          </div>
-        )}
-
-        <div className="my-1 h-px bg-line" />
-
-        <Field id="c-clin" label="Nome da clínica (opcional)" autoComplete="organization" value={clinicName} onChange={(e) => setClinicName(e.target.value)} />
-        <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-2.5">
-          <Field id="c-cro" label="CRO (opcional)" inputMode="numeric" value={cro} onChange={(e) => setCro(e.target.value)} />
-          <Field id="c-uf" label="UF" maxLength={2} value={croState} onChange={(e) => setCroState(e.target.value.toUpperCase())} />
-        </div>
-
-        <Segmented
-          label="Quantas cadeiras na clínica?"
-          value={chairsCount}
-          onChange={setChairsCount}
-          options={[
-            { value: 1, label: "1–2" },
-            { value: 4, label: "3–5" },
-            { value: 6, label: "6 ou mais" },
-          ]}
-        />
-
-        <div className="flex flex-col gap-3 pt-1">
+        {/* Termos */}
+        <div className="flex flex-col gap-2.5 pt-1">
           <Check checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}>
-            Aceito o regulamento e o uso dos meus dados para esta ativação e o sorteio.
+            Aceito o regulamento e o uso dos meus dados para participação na roleta e sorteio do evento.
           </Check>
           <Check checked={acceptMarketing} onChange={(e) => setAcceptMarketing(e.target.checked)}>
-            Quero receber novidades da Finora.
+            Quero receber conteúdos e novidades da Finora.
           </Check>
         </div>
       </div>
@@ -1163,22 +882,22 @@ function RegistrationForm({
           type="submit"
           disabled={
             loading ||
-            (!isForeigner && (cpf.length === 14 && !isCpfValid)) ||
-            (isForeigner && foreignDoc.trim().length < 2) ||
-            vipStatus === "checking" ||
-            vipStatus === "invalid"
+            (!isForeigner && cpf.length === 14 && !isCpfValid) ||
+            (isForeigner && foreignDoc.trim().length < 2)
           }
           className={primaryButton}
         >
           {loading ? (
-            <><LoaderCircle size={20} className="animate-spin" /> Liberando giro…</>
-          ) : vipStatus === "valid" ? (
-            "👑 Liberar Giro VIP na Roleta 🌟"
+            <>
+              <LoaderCircle size={20} className="animate-spin" /> Concluindo cadastro…
+            </>
           ) : (
-            "Liberar Meu Giro na Roleta 🎯"
+            "Concluir Cadastro & Liberar Roleta 🎯"
           )}
         </button>
-        <span className="text-center text-[13px] text-slate-400">Giro liberado no estande · Participação garantida no Grande Sorteio Geral dia 19/11</span>
+        <span className="text-center text-xs text-slate-400">
+          Giro liberado na hora · Informe apenas seu Nome ou CPF no estande
+        </span>
       </StickyActions>
     </form>
   );

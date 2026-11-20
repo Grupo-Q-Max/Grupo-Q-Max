@@ -120,7 +120,8 @@ export default function VipScheduler({
     return allDates.filter((d) => format(d, "yyyy-MM") === selectedMonth);
   }, [allDates, selectedMonth]);
 
-  const [date, setDate] = useState<Date>(allDates[0] || new Date(2026, 10, 22));
+  // Nenhum dia e nenhum horário vêm pré-selecionados: o usuário escolhe explicitamente!
+  const [date, setDate] = useState<Date | null>(null);
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState<string | null>(null);
   const durationMinutes = 45; // Duração fixa oficial de 45 minutos
@@ -130,7 +131,11 @@ export default function VipScheduler({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!date) return;
+    if (!date) {
+      setSlots([]);
+      setSlot(null);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -149,9 +154,8 @@ export default function VipScheduler({
         if (cancelled) return;
         const available = Array.isArray(data) ? data : [];
         setSlots(available);
-        if (available.length > 0) {
-          setSlot(available[0]);
-        }
+        // Não pré-seleciona o primeiro horário automaticamente; aguarda o clique do usuário
+        setSlot(null);
       })
       .catch((err) => !cancelled && setError(err instanceof Error ? err.message : "Erro ao carregar horários."))
       .finally(() => !cancelled && setLoading(false));
@@ -300,8 +304,8 @@ export default function VipScheduler({
                 type="button"
                 onClick={() => {
                   setSelectedMonth(m.key);
-                  const firstInMonth = allDates.find((d) => format(d, "yyyy-MM") === m.key);
-                  if (firstInMonth) setDate(firstInMonth);
+                  setDate(null);
+                  setSlot(null);
                 }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
                   isSelected
@@ -318,7 +322,7 @@ export default function VipScheduler({
         {/* Grade de Dias do Mês Selecionado */}
         <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-56 overflow-y-auto pr-1">
           {datesForMonth.map((d) => {
-            const on = format(d, "yyyy-MM-dd") === format(date, "yyyy-MM-dd");
+            const on = date ? format(d, "yyyy-MM-dd") === format(date, "yyyy-MM-dd") : false;
             const dayOfWeek = d.getDay();
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
@@ -350,7 +354,14 @@ export default function VipScheduler({
       {/* 2. Seleção de Horário Início e Horário Final */}
       <div className="flex flex-col gap-4 px-5 pt-6">
         {error && <Alert>{error}</Alert>}
-        {loading ? (
+        {!date ? (
+          <div className="rounded-2xl border border-dashed border-accent/40 bg-accent/5 p-5 text-center text-slate-300">
+            <p className="text-sm font-bold text-white">👆 Toque em um dia acima para consultar os horários</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Selecione primeiro a data desejada para carregar os horários disponíveis na agenda.
+            </p>
+          </div>
+        ) : loading ? (
           <span className="flex items-center gap-2 py-6 text-slate-400">
             <LoaderCircle size={18} className="animate-spin text-accent" /> Sincronizando agenda de {currentHost.name} em tempo real…
           </span>
@@ -502,6 +513,10 @@ export default function VipScheduler({
             <>
               <LoaderCircle size={20} className="animate-spin" /> Confirmando agendamento…
             </>
+          ) : !date ? (
+            "Selecione um Dia Acima para Começar 📅"
+          ) : !slot ? (
+            "Selecione um Horário para Confirmar ⏰"
           ) : (
             `Confirmar Reunião com ${currentHost.shortName} (${startTimeFormatted} às ${endTimeFormatted}) 📅`
           )}
