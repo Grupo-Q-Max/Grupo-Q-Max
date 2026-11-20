@@ -8,7 +8,7 @@ on:
 # One deploy at a time: db push and the Kudu zip deploy must not overlap; a newer push waits
 concurrency:
   group: deploy-production
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -106,17 +106,6 @@ jobs:
       - name: Robô de Testes Automatizados
         continue-on-error: true
         run: node test-db.js
-
-      - name: Cache Next.js build
-        uses: actions/cache@v4
-        with:
-          path: |
-            .qmax-next/cache
-            eventos/apps/web/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json', 'eventos/package-lock.json') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json', 'eventos/package-lock.json') }}-
-            ${{ runner.os }}-nextjs-
 
       - name: Build Next.js
         run: |
