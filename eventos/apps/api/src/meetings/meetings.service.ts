@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { notifyLive } from '../live/live';
 import { sendMeetingInvite } from './meeting-mail.helper';
+import { decryptCpf, formatCpf } from '../security/cpf-security';
 import {
   getHugoBusyIntervals,
   createMicrosoftCalendarEvent,
@@ -400,12 +401,26 @@ export class MeetingsService {
           select: {
             id: true,
             full_name: true,
+            cpf_encrypted: true,
+            cpf_last_digits: true,
             phone: true,
             email: true,
             clinic_name: true,
             cro_number: true,
             cro_state: true,
             chairs_count: true,
+            participations: {
+              where: { event_id: eventId },
+              include: {
+                draws: {
+                  include: {
+                    prizes: true,
+                  },
+                },
+                vip_codes: true,
+              },
+              orderBy: { id: 'desc' },
+            },
           },
         },
       },
@@ -431,6 +446,16 @@ export class MeetingsService {
     const formattedSiteMeetings = siteMeetings
       .map((m: any) => {
         const hostProfile = resolveHost(m.host_email || profiles.hugo.email);
+        const parts = m.participants?.participations || [];
+        const vipPart = parts.find((p: any) => p.draws?.prizes?.is_vip);
+        const normalPart = parts.find((p: any) => p.draws && !p.draws.prizes?.is_vip);
+        const decryptedCpf = m.participants?.cpf_encrypted ? decryptCpf(m.participants.cpf_encrypted) : '';
+        const formattedCpf = decryptedCpf
+          ? formatCpf(decryptedCpf)
+          : m.participants?.cpf_last_digits
+          ? `***.***.***-${m.participants.cpf_last_digits}`
+          : '';
+
         return {
           id: m.id,
           source: 'FINORA' as const,
@@ -440,7 +465,38 @@ export class MeetingsService {
           hostKey: hostProfile.key,
           hostName: hostProfile.name,
           hostEmail: hostProfile.email,
-          participants: m.participants,
+          vipPrize: vipPart?.draws?.prizes
+            ? {
+                drawId: vipPart.draws.id,
+                prizeId: vipPart.draws.prizes.id,
+                name: vipPart.draws.prizes.name,
+                description: vipPart.draws.prizes.description,
+                drawnAt: vipPart.draws.drawn_at,
+                claimedAt: vipPart.draws.claimed_at,
+              }
+            : null,
+          normalPrize: normalPart?.draws?.prizes
+            ? {
+                drawId: normalPart.draws.id,
+                prizeId: normalPart.draws.prizes.id,
+                name: normalPart.draws.prizes.name,
+                description: normalPart.draws.prizes.description,
+                drawnAt: normalPart.draws.drawn_at,
+                claimedAt: normalPart.draws.claimed_at,
+              }
+            : null,
+          participants: {
+            id: m.participants.id,
+            full_name: m.participants.full_name,
+            cpf: decryptedCpf,
+            cpf_formatted: formattedCpf,
+            phone: m.participants.phone,
+            email: m.participants.email,
+            clinic_name: m.participants.clinic_name,
+            cro_number: m.participants.cro_number,
+            cro_state: m.participants.cro_state,
+            chairs_count: m.participants.chairs_count,
+          },
         };
       })
       .filter((m) => {
@@ -612,5 +668,158 @@ export class MeetingsService {
       count: result.count,
       message: `${result.count} reunião(ões) agendada(s) pelo site excluída(s) com sucesso.`,
     };
+  }
+
+  /**
+   * Lista todas as pessoas que marcaram agenda (e também qualquer participante que ganhou recompensa na Roleta VIP)
+   * cruzando dados de contato, CPF, horário da reunião, sócio e recompensas conquistadas (Roleta VIP e Roleta Normal).
+   */
+  async getVipRewardsByEvent(eventId: number) {
+    const profiles = getHostProfiles();
+
+    const [meetings, vipParticipations] = await Promise.all([
+      this.prisma.meetings.findMany({
+        where: {
+          event_id: eventId,
+          status: { notIn: ['CANCELED'] },
+        },
+        include: {
+          participants: {
+            include: {
+              participations: {
+                where: { event_id: eventId },
+                include: {
+                  draws: {
+                    include: {
+                      prizes: true,
+                    },
+                  },
+                  vip_codes: true,
+                },
+                orderBy: { id: 'desc' },
+              },
+            },
+          },
+        },
+        orderBy: { scheduled_at: 'asc' },
+      }),
+      this.prisma.participations.findMany({
+        where: {
+          event_id: eventId,
+          OR: [
+            { draws: { is: { prizes: { is_vip: true } } } },
+            { vip_codes: { isNot: null } },
+          ],
+        },
+        include: {
+          participants: {
+            include: {
+              meetings: {
+                where: {
+                  event_id: eventId,
+                  status: { notIn: ['CANCELED'] },
+                },
+                orderBy: { scheduled_at: 'asc' },
+              },
+              participations: {
+                where: { event_id: eventId },
+                include: {
+                  draws: {
+                    include: {
+                      prizes: true,
+                    },
+                  },
+                  vip_codes: true,
+                },
+                orderBy: { id: 'desc' },
+              },
+            },
+          },
+        },
+        orderBy: { id: 'desc' },
+      }),
+    ]);
+
+    const itemsByParticipantId = new Map<number, any>();
+
+    const formatParticipantRow = (participant: any, meetingRecord: any | null) => {
+      const parts = participant.participations || [];
+      const vipPart = parts.find((p: any) => p.draws?.prizes?.is_vip);
+      const normalPart = parts.find((p: any) => p.draws && !p.draws.prizes?.is_vip);
+      const vipCodePart = parts.find((p: any) => p.vip_codes);
+      const decryptedCpf = participant.cpf_encrypted ? decryptCpf(participant.cpf_encrypted) : '';
+      const formattedCpf = decryptedCpf
+        ? formatCpf(decryptedCpf)
+        : participant.cpf_last_digits
+        ? `***.***.***-${participant.cpf_last_digits}`
+        : '';
+
+      const hostProfile = meetingRecord
+        ? resolveHost(meetingRecord.host_email || profiles.hugo.email)
+        : null;
+
+      return {
+        participantId: participant.id,
+        fullName: participant.full_name,
+        cpf: decryptedCpf,
+        cpfFormatted: formattedCpf,
+        phone: participant.phone,
+        email: participant.email?.includes('@visitante.') ? '' : participant.email || '',
+        clinicName: participant.clinic_name || 'Clínica não informada',
+        croNumber: participant.cro_number,
+        croState: participant.cro_state,
+        chairsCount: participant.chairs_count,
+        vipCode: vipCodePart?.vip_codes?.code || null,
+        hasMeeting: Boolean(meetingRecord),
+        meeting: meetingRecord
+          ? {
+              id: meetingRecord.id,
+              scheduledAt: meetingRecord.scheduled_at.toISOString(),
+              status: meetingRecord.status,
+              hostKey: hostProfile?.key || 'hugo',
+              hostName: hostProfile?.name || 'Hugo Werninghaus',
+              hostEmail: hostProfile?.email || 'hugo@grupoqmax.com.br',
+            }
+          : null,
+        vipPrize: vipPart?.draws?.prizes
+          ? {
+              drawId: vipPart.draws.id,
+              participationId: vipPart.id,
+              prizeId: vipPart.draws.prizes.id,
+              name: vipPart.draws.prizes.name,
+              description: vipPart.draws.prizes.description,
+              drawnAt: vipPart.draws.drawn_at,
+              claimedAt: vipPart.draws.claimed_at,
+              isDelivered: Boolean(vipPart.draws.claimed_at),
+            }
+          : null,
+        normalPrize: normalPart?.draws?.prizes
+          ? {
+              drawId: normalPart.draws.id,
+              participationId: normalPart.id,
+              prizeId: normalPart.draws.prizes.id,
+              name: normalPart.draws.prizes.name,
+              description: normalPart.draws.prizes.description,
+              drawnAt: normalPart.draws.drawn_at,
+              claimedAt: normalPart.draws.claimed_at,
+              isDelivered: Boolean(normalPart.draws.claimed_at),
+            }
+          : null,
+      };
+    };
+
+    for (const m of meetings) {
+      if (!m.participants) continue;
+      itemsByParticipantId.set(m.participant_id, formatParticipantRow(m.participants, m));
+    }
+
+    for (const vp of vipParticipations) {
+      if (!vp.participants) continue;
+      if (itemsByParticipantId.has(vp.participant_id)) continue;
+      const m = vp.participants.meetings?.[0] || null;
+      itemsByParticipantId.set(vp.participant_id, formatParticipantRow(vp.participants, m));
+    }
+
+    return Array.from(itemsByParticipantId.values());
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   LoaderCircle,
   CalendarClock,
@@ -21,6 +22,8 @@ import {
   Search,
   CheckCircle2,
   Trash2,
+  Crown,
+  Gift,
 } from "lucide-react";
 import { getAdminProxyUrl } from "@/lib/api-client";
 import { useToast } from "@/components/ui/Toast";
@@ -45,9 +48,27 @@ type AgendaMeeting = {
   hostKey?: "hugo" | "ale";
   hostName?: string;
   hostEmail?: string;
+  vipPrize?: {
+    drawId: number;
+    prizeId: number;
+    name: string;
+    description?: string | null;
+    drawnAt?: string | null;
+    claimedAt?: string | null;
+  } | null;
+  normalPrize?: {
+    drawId: number;
+    prizeId: number;
+    name: string;
+    description?: string | null;
+    drawnAt?: string | null;
+    claimedAt?: string | null;
+  } | null;
   participants: {
     id: number;
     full_name: string;
+    cpf?: string;
+    cpf_formatted?: string;
     phone: string;
     email: string;
     clinic_name: string;
@@ -254,6 +275,15 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                 className="w-full bg-surface border border-line-strong rounded-xl pl-9 pr-3.5 py-2 text-text text-xs font-medium focus:border-finora-500 focus:bg-surface focus:ring-2 focus:ring-finora-500/20 outline-none transition-all placeholder:text-text-2"
               />
             </div>
+
+            <Link
+              href={`/admin/recompensas-vip?event=${eventId}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] text-xs font-black transition-all shadow-md hover:brightness-110 shrink-0"
+              title="Ver todas as recompensas VIP conquistadas por quem marcou agenda"
+            >
+              <Crown size={14} />
+              <span>Recompensas VIP da Agenda</span>
+            </Link>
 
             <button
               type="button"
@@ -653,8 +683,35 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <strong className="text-base text-text block truncate">{meeting.participants.full_name}</strong>
-                                <span className="text-xs text-text-2">Participante ID #{meeting.participants.id} · Finora VIP</span>
+                                <span className="text-xs text-text-2">
+                                  Participante ID #{meeting.participants.id}
+                                  {meeting.participants.cpf_formatted ? ` · CPF ${meeting.participants.cpf_formatted}` : ""}
+                                </span>
                               </div>
+                            </div>
+
+                            {/* Recompensa da Roleta VIP desta pessoa */}
+                            <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2 flex flex-col gap-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1">
+                                  <Crown size={12} className="text-amber-400" />
+                                  <span>Recompensa VIP (Roleta 2)</span>
+                                </span>
+                                {meeting.normalPrize && (
+                                  <span className="text-[10px] font-mono text-text-2 flex items-center gap-1">
+                                    <Gift size={10} /> Brinde: {meeting.normalPrize.name}
+                                  </span>
+                                )}
+                              </div>
+                              {meeting.vipPrize ? (
+                                <strong className="text-xs sm:text-sm font-black text-amber-200">
+                                  🏆 {meeting.vipPrize.name}
+                                </strong>
+                              ) : (
+                                <span className="text-xs font-semibold text-slate-400">
+                                  ⏳ Aguardando giro na Roleta VIP
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-3">

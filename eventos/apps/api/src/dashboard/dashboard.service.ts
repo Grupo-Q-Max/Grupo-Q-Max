@@ -22,13 +22,19 @@ export class DashboardService {
       summary: {
         totalParticipations: dashboard.summary.totalParticipations,
         approved: dashboard.summary.approved,
+        drawsCount: dashboard.summary.deliveredPrizes,
+        deliveredPrizes: dashboard.summary.deliveredPrizes,
+        normalDrawsCount: dashboard.summary.normalDrawsCount,
+        vipDrawsCount: dashboard.summary.vipDrawsCount,
       },
       latestWinners: dashboard.latestWinners.map((winner) => ({
         drawId: winner.drawId,
         drawnAt: winner.drawnAt,
         prize: {
+          id: winner.prize.id,
           name: winner.prize.name,
           imageUrl: winner.prize.imageUrl,
+          isVip: winner.prize.isVip,
         },
         participant: {
           name: abbreviateName(winner.participant.name),
@@ -233,7 +239,7 @@ export class DashboardService {
           drawn_at: 'desc',
         },
 
-        take: 10,
+        take: 30,
 
         select: {
           id: true,
@@ -245,6 +251,7 @@ export class DashboardService {
               id: true,
               name: true,
               image_url: true,
+              is_vip: true,
             },
           },
 
@@ -475,6 +482,11 @@ export class DashboardService {
       };
     });
 
+    const vipDrawsCount = prizes
+      .filter((p) => p.is_vip)
+      .reduce((acc, p) => acc + p._count.draws, 0);
+    const normalDrawsCount = Math.max(0, deliveredPrizes - vipDrawsCount);
+
     return {
       event: {
         id: event.id,
@@ -508,6 +520,9 @@ export class DashboardService {
         activePrizes,
 
         deliveredPrizes,
+        drawsCount: deliveredPrizes,
+        normalDrawsCount,
+        vipDrawsCount,
 
         totalInitialStock,
 
@@ -580,6 +595,7 @@ export class DashboardService {
           name: draw.prizes.name,
 
           imageUrl: draw.prizes.image_url,
+          isVip: Boolean(draw.prizes.is_vip),
         },
 
         participant: {

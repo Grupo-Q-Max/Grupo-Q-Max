@@ -13,13 +13,20 @@ import { RARITY, getPrizeRarity } from "./rarity";
 type Winner = {
   drawId: number;
   drawnAt: string;
-  prize: { id: number; name: string; imageUrl?: string | null };
-  participant: { id: number; name: string; cpfLastDigits: string; clinicName?: string | null; city?: string | null };
+  prize: { id?: number; name: string; imageUrl?: string | null; isVip?: boolean };
+  participant: { id?: number; name: string; cpfLastDigits?: string; clinicName?: string | null; city?: string | null };
 };
 
 type DashboardData = {
   event: { id: number; name: string };
-  summary: { totalParticipations: number; approved: number; drawsCount: number };
+  summary: {
+    totalParticipations: number;
+    approved: number;
+    drawsCount?: number;
+    deliveredPrizes?: number;
+    normalDrawsCount?: number;
+    vipDrawsCount?: number;
+  };
   latestWinners: Winner[];
 };
 
@@ -92,7 +99,7 @@ export default function LiveScreen({ event, eventId }: { event: EventTheme; even
   useLiveEvent(eventId, () => fetchDashboard(eventId));
 
   const winners = data?.latestWinners || [];
-  const totalDraws = data?.summary?.drawsCount || winners.length;
+  const totalDraws = data?.summary?.drawsCount ?? data?.summary?.deliveredPrizes ?? winners.length;
 
   // Confete a cada 25 brindes entregues.
   useEffect(() => {

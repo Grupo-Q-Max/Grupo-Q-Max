@@ -36,6 +36,11 @@ export class MeetingsController {
     return this.meetingsService.getAgendaByEvent(eventId, dateString, host);
   }
 
+  @Get('event/:eventId/vip-rewards')
+  getVipRewards(@Param('eventId', ParseIntPipe) eventId: number) {
+    return this.meetingsService.getVipRewardsByEvent(eventId);
+  }
+
   @Post(':id/status')
   updateStatus(
     @Param('id', ParseIntPipe) meetingId: number,

@@ -29,6 +29,7 @@ import {
   X,
   Printer,
   Send,
+  Crown,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,6 +40,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "/admin/balcao": Gift,
   "/admin/fila": ListOrdered,
   "/admin/agenda": Calendar,
+  "/admin/recompensas-vip": Crown,
   "/admin/placa-stand": Printer,
   "/admin/antifraude": ShieldAlert,
   "/admin/comunicacao": MessageSquare,
@@ -65,6 +67,7 @@ const GROUPS: { title: string; items: MenuItem[] }[] = [
       { label: "Balcão de entrega", href: "/admin/balcao" },
       { label: "Fila de premiação", href: "/admin/fila" },
       { label: "Agenda comercial", href: "/admin/agenda" },
+      { label: "Recompensas VIP (Agenda)", href: "/admin/recompensas-vip" },
       { label: "Antifraude", href: "/admin/antifraude" },
     ],
   },
