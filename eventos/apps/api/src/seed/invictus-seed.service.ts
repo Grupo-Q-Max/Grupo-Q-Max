@@ -48,13 +48,14 @@ export class InvictusSeedService implements OnApplicationBootstrap {
     ];
 
     // Prêmios VIP (is_vip = true)
-    // Certificado | 50% de desconto no 1 honorário | 100% do primeiro honorário | Diagnóstico | Mentoria CEO - 2horas
+    // 50% de desconto com estoque 0 e prob 0 (aparece na roleta visualmente, mas nunca é sorteado)
+    // Os outros 4 prêmios dividem igualmente os 100% de probabilidade (25% cada)
     const vipPrizes = [
-      { name: 'Certificado', stock: 100, prob: 20.0000, description: 'Certificado oficial de mentorado' },
-      { name: '50% de desconto no 1 honorário', stock: 50, prob: 20.0000, description: '50% de desconto no primeiro honorário Finora' },
-      { name: '100% do primeiro honorário', stock: 20, prob: 20.0000, description: '100% de isenção no primeiro honorário Finora' },
-      { name: 'Diagnóstico', stock: 100, prob: 20.0000, description: 'Diagnóstico tributário e contábil completo' },
-      { name: 'Mentoria CEO - 2horas', stock: 10, prob: 20.0000, description: '2 horas de mentoria executiva direto com o CEO' },
+      { name: 'Certificado', stock: 100, prob: 25.0000, description: 'Certificado oficial de mentorado' },
+      { name: '50% de desconto no 1 honorário', stock: 0, prob: 0.0000, description: '50% de desconto no primeiro honorário Finora' },
+      { name: '100% do primeiro honorário', stock: 20, prob: 25.0000, description: '100% de isenção no primeiro honorário Finora' },
+      { name: 'Diagnóstico', stock: 100, prob: 25.0000, description: 'Diagnóstico tributário e contábil completo' },
+      { name: 'Mentoria CEO - 2horas', stock: 10, prob: 25.0000, description: '2 horas de mentoria executiva direto com o CEO' },
     ];
 
     const currentPrizes = await this.prisma.prizes.findMany({
@@ -136,6 +137,36 @@ export class InvictusSeedService implements OnApplicationBootstrap {
           data: { active: false },
         });
       }
+    }
+
+    // Garante que todo prêmio com "50%" tenha estoque 0 e probabilidade 0, mantendo active: true para visualização na roleta
+    await this.prisma.prizes.updateMany({
+      where: {
+        name: { contains: '50%' },
+      },
+      data: {
+        available_stock: 0,
+        initial_stock: 0,
+        probability: 0,
+        active: true,
+      },
+    });
+
+    // Limpa a fila: cancela qualquer prêmio de 50% que esteja aguardando entrega na fila
+    const cancelledQueue = await this.prisma.prize_queue.updateMany({
+      where: {
+        prizes: {
+          name: { contains: '50%' },
+        },
+        status: 'WAITING',
+      },
+      data: {
+        status: 'CANCELLED',
+      },
+    });
+
+    if (cancelledQueue.count > 0) {
+      this.logger.log(`Cancelados ${cancelledQueue.count} itens da fila para o prêmio de 50% de desconto.`);
     }
 
     this.logger.log(`Prêmios do evento Invictus sincronizados com sucesso.`);

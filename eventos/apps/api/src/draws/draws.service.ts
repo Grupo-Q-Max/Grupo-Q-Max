@@ -60,16 +60,21 @@ export class DrawsService {
   private chooseWeightedPrize<
     T extends {
       probability: unknown;
+      name?: string;
     },
   >(prizes: T[]): T {
-    if (prizes.length === 0) {
+    // Garante que prêmio de 50% de desconto nunca seja sorteado
+    const non50 = prizes.filter((p) => !p.name?.includes('50%'));
+    const targetPrizes = non50.length > 0 ? non50 : prizes;
+
+    if (targetPrizes.length === 0) {
       throw new BadRequestException('Nenhum prêmio disponível para sorteio.');
     }
 
     // Usar fator de escala para manter precisão de até 4 casas decimais
     const SCALE = 10000;
 
-    const weighted = prizes
+    const weighted = targetPrizes
       .map((prize) => ({
         prize,
         weight: Math.round(Number(prize.probability) * SCALE),
@@ -131,7 +136,8 @@ export class DrawsService {
       (item: any) =>
         item.prizes.active &&
         item.prizes.available_stock > 0 &&
-        item.prizes.is_vip === isVip,
+        item.prizes.is_vip === isVip &&
+        !item.prizes.name.includes('50%'),
     );
 
     let selectedPrize: any = null;
@@ -144,7 +150,7 @@ export class DrawsService {
       selectedPrize = eligibleQueueItem.prizes;
       source = 'QUEUE';
     } else {
-      // 2. Sorteio automático por peso no pool
+      // 2. Sorteio automático por peso no pool (exclui permanentemente 50% de desconto)
       const availablePrizes = await tx.prizes.findMany({
         where: {
           event_id: eventId,
@@ -155,6 +161,9 @@ export class DrawsService {
           },
           probability: {
             gt: 0,
+          },
+          NOT: {
+            name: { contains: '50%' },
           },
         },
         orderBy: {
@@ -215,8 +224,9 @@ export class DrawsService {
         eligibleByPacing.push(prize);
       }
 
-      const candidatePrizes =
-        eligibleByPacing.length > 0 ? eligibleByPacing : availablePrizes;
+      const candidatePrizes = (
+        eligibleByPacing.length > 0 ? eligibleByPacing : availablePrizes
+      ).filter((p: any) => !p.name.includes('50%'));
 
       selectedPrize = this.chooseWeightedPrize(candidatePrizes);
       probabilityUsed = Number(selectedPrize.probability);

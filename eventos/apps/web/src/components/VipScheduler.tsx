@@ -198,7 +198,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
 
         {/* Aviso de Validade Estendida do Prêmio VIP */}
         <div className="mt-1 rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 p-3 text-xs text-amber-200">
-          ⭐ <strong>Validade Estendida:</strong> O prêmio conquistado na <strong>Roleta VIP</strong> (descontos de 50% ou 100% no 1º honorário, mentorias e diagnósticos) <strong>valerá até depois da realização da sua reunião estratégica</strong>!
+          ⭐ <strong>Validade Estendida:</strong> O prêmio conquistado na <strong>Roleta VIP</strong> (isenção de 100% no 1º honorário, mentorias com o CEO e diagnósticos) <strong>valerá até depois da realização da sua reunião estratégica</strong>!
         </div>
       </div>
 

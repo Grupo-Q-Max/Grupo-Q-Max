@@ -289,9 +289,9 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   }, [prizes]);
 
   const vipPrizes = useMemo(() => {
-    const pool = prizes.filter((prize) => Boolean(prize.is_vip));
-    const eligible = pool.filter((prize) => prize.active && prize.available_stock > 0);
-    return eligible.length > 0 ? eligible : pool;
+    // Mantém todos os prêmios VIP ativos visíveis nas fatias da roleta (incluindo o de 50% de desconto)
+    const pool = prizes.filter((prize) => Boolean(prize.is_vip) && prize.active);
+    return pool.length > 0 ? pool : prizes.filter((prize) => Boolean(prize.is_vip));
   }, [prizes]);
 
   const wheelPrizes = normalPrizes;
@@ -753,7 +753,9 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
       let vipDrawResponse = storedDrawResponse;
       if (!vipDrawResponse?.vipPrize) {
         if (isDemoSpin || !participationId) {
-          const demoVip = vipPrizes[Math.floor(Math.random() * vipPrizes.length)] || vipPrizes[0];
+          const non50Vip = vipPrizes.filter((p) => !p.name.includes("50%"));
+          const poolDemo = non50Vip.length > 0 ? non50Vip : vipPrizes;
+          const demoVip = poolDemo[Math.floor(Math.random() * poolDemo.length)] || vipPrizes[0];
           vipDrawResponse = {
             success: true,
             vip: true,
