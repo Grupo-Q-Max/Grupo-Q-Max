@@ -50,12 +50,11 @@ async function main() {
     }
 
     const normalPrizes = [
-      { name: 'Caderno', stock: 183, prob: 15.9825, description: 'Caderno oficial Finora Experience' },
-      { name: 'Copo', stock: 203, prob: 17.7293, description: 'Copo exclusivo Finora' },
-      { name: 'Garrafa', stock: 62, prob: 5.4148, description: 'Garrafa térmica Finora' },
-      { name: 'Espelho', stock: 189, prob: 16.5066, description: 'Espelho de bolso Finora' },
-      { name: 'Chaveiro', stock: 194, prob: 16.9432, description: 'Chaveiro metálico Finora' },
-      { name: 'Pins', stock: 314, prob: 27.4236, description: 'Pin colecionável Finora' },
+      { name: 'Caderno', stock: 183, prob: 22.0217, description: 'Caderno oficial Finora Experience' },
+      { name: 'Copo', stock: 203, prob: 24.4284, description: 'Copo exclusivo Finora' },
+      { name: 'Garrafa', stock: 62, prob: 7.4609, description: 'Garrafa térmica Finora' },
+      { name: 'Espelho', stock: 189, prob: 22.7437, description: 'Espelho de bolso Finora' },
+      { name: 'Chaveiro', stock: 194, prob: 23.3453, description: 'Chaveiro metálico Finora' },
     ];
 
     const vipPrizes = [

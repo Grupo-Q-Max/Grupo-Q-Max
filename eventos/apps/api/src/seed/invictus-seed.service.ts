@@ -36,15 +36,14 @@ export class InvictusSeedService implements OnApplicationBootstrap {
     }
 
     // Prêmios Normais (is_vip = false)
-    // Caderno: 183 | Copo: 203 | Garrafa: 62 | Espelho: 189 | Chaveiro: 194 | Pins: 314
-    // Total: 1145
+    // Caderno: 183 | Copo: 203 | Garrafa: 62 | Espelho: 189 | Chaveiro: 194
+    // Total: 831 (Pin removido a pedido)
     const normalPrizes = [
-      { name: 'Caderno', stock: 183, prob: 15.9825, description: 'Caderno oficial Finora Experience' },
-      { name: 'Copo', stock: 203, prob: 17.7293, description: 'Copo exclusivo Finora' },
-      { name: 'Garrafa', stock: 62, prob: 5.4148, description: 'Garrafa térmica Finora' },
-      { name: 'Espelho', stock: 189, prob: 16.5066, description: 'Espelho de bolso Finora' },
-      { name: 'Chaveiro', stock: 194, prob: 16.9432, description: 'Chaveiro metálico Finora' },
-      { name: 'Pins', stock: 314, prob: 27.4236, description: 'Pin colecionável Finora' },
+      { name: 'Caderno', stock: 183, prob: 22.0217, description: 'Caderno oficial Finora Experience' },
+      { name: 'Copo', stock: 203, prob: 24.4284, description: 'Copo exclusivo Finora' },
+      { name: 'Garrafa', stock: 62, prob: 7.4609, description: 'Garrafa térmica Finora' },
+      { name: 'Espelho', stock: 189, prob: 22.7437, description: 'Espelho de bolso Finora' },
+      { name: 'Chaveiro', stock: 194, prob: 23.3453, description: 'Chaveiro metálico Finora' },
     ];
 
     // Prêmios VIP (is_vip = true)
@@ -172,6 +171,31 @@ export class InvictusSeedService implements OnApplicationBootstrap {
     if (cancelledQueue.count > 0) {
       this.logger.log(`Cancelados ${cancelledQueue.count} itens da fila para o prêmio de 50% de desconto.`);
     }
+
+    // Limpa a fila: remove qualquer item associado a "Pin" ou itens órfãos/removidos
+    await this.prisma.prize_queue.deleteMany({
+      where: {
+        OR: [
+          { prize_id: 20 },
+          { prize_id: 10 },
+          { prizes: { name: { contains: 'Pin' } } },
+          { prizes: { name: { contains: 'pin' } } },
+        ],
+      },
+    });
+
+    // Desativa qualquer prêmio de Pin que ainda possa existir
+    await this.prisma.prizes.updateMany({
+      where: {
+        name: { contains: 'Pin' },
+      },
+      data: {
+        active: false,
+        available_stock: 0,
+        initial_stock: 0,
+        probability: 0,
+      },
+    });
 
     // Renomeia "Garrafa Inox" / "Garrafa Térmica" para "Garrafa" e "Copo Exclusivo" para "Copo" em todos os prêmios normais
     const allNormalPrizes = await this.prisma.prizes.findMany({

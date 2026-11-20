@@ -56,9 +56,6 @@ export function formatWheelLabel(rawName: string) {
   if (lower.includes("chaveiro")) {
     return { title: "CHAVEIRO", subtitle: "Metal Finora" };
   }
-  if (lower.includes("pin")) {
-    return { title: "PIN EXCLUSIVO", subtitle: "Invictus" };
-  }
 
   // Divisão harmoniosa para outros prêmios longos
   const parts = rawName.split(" ");

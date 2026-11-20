@@ -291,7 +291,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   }, [isVipSpin, participationId, phase, soundEnabled]);
 
   const normalPrizes = useMemo(() => {
-    const pool = prizes.filter((prize) => !prize.is_vip);
+    const pool = prizes.filter((prize) => !prize.is_vip && !prize.name.toLowerCase().includes("pin"));
     const eligible = pool.filter((prize) => prize.active && prize.available_stock > 0);
     const target = eligible.length > 0 ? eligible : pool;
     return target.map((p) => ({ ...p, name: cleanPrizeName(p.name) }));
@@ -1089,13 +1089,13 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
             )}
           </div>
 
-          {/* Ficha com PIN de retirada */}
+          {/* Informações para retirada do prêmio */}
           <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-ink-line bg-ink-900/80 px-6 py-2.5 backdrop-blur shadow-md">
-            <span className="text-[11px] sm:text-xs font-medium text-ink-text-2 uppercase tracking-wider">Apresente no balcão o código PIN</span>
-            <span className="font-mono text-2xl sm:text-3xl font-black tracking-[0.08em] text-accent drop-shadow-[0_0_18px_rgba(var(--accent-rgb),0.6)]">
-              {code(selected?.participantId ?? result.participant.id)}
+            <span className="text-[11px] sm:text-xs font-bold text-accent uppercase tracking-wider">Retirada no Balcão de Prêmios</span>
+            <span className="text-sm sm:text-base font-semibold text-white">
+              Informe seu <span className="text-accent font-bold">Nome</span> ou <span className="text-accent font-bold">CPF</span> no balcão
             </span>
-            <span className="flex items-center gap-1.5 text-xs text-ink-text">
+            <span className="flex items-center gap-1.5 text-xs text-ink-text mt-0.5">
               <Check size={14} className="text-[#4ADE80]" />
               <span>{isDual ? "Retire seu brinde e ative seu benefício VIP com a equipe!" : "Cupom do Sorteio Geral garantido!"}</span>
             </span>
@@ -1405,7 +1405,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
               Quem vai girar?
             </h1>
             <p className="text-sm text-ink-text-2">
-              Digite o código PIN (#0045), nome ou CPF para localizar o participante.
+              Digite o nome ou CPF para localizar o participante.
             </p>
           </div>
 
@@ -1418,7 +1418,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="#0045, Ana, Clínica…"
+                placeholder="Nome, CPF ou clínica…"
                 className="min-w-0 flex-1 bg-transparent font-mono text-xl font-bold text-white outline-none placeholder:font-sans placeholder:text-base placeholder:font-medium placeholder:text-slate-500"
               />
               {searchQuery && (

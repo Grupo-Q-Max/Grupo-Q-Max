@@ -547,24 +547,23 @@ export default function QuickClaimControl() {
           className="flex flex-col gap-3"
         >
           <label className="text-xs text-text-2 font-medium">
-            Digite o PIN de 4 dígitos ou bipe com leitor de código:
+            Digite o ID ou CPF do participante ou bipe com o leitor:
           </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <input
                 ref={inputRef}
                 type="text"
-                inputMode="numeric"
-                maxLength={6}
                 value={pin}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, "");
+                  const val = e.target.value;
                   setPin(val);
-                  if (val.length >= 3) {
-                    handleSearch(val);
+                  const clean = val.replace(/\D/g, "");
+                  if (clean.length >= 3) {
+                    handleSearch(clean);
                   }
                 }}
-                placeholder="Ex: 0042"
+                placeholder="ID ou CPF…"
                 className="w-full bg-surface border-2 border-line-strong focus:border-finora-600 rounded-2xl px-5 py-3.5 text-2xl font-mono font-bold tracking-widest text-center text-emerald-400 outline-none transition-all"
               />
             </div>

@@ -523,8 +523,8 @@ function RegistrationForm({
             Boolean(registeredParticipation.id) && (
               <div className="holographic-card flex items-center justify-between rounded-card bg-ink-950/90 px-6 py-5 text-ink-text shadow-[0_12px_40px_rgba(34,195,220,0.2)] border border-accent/40 animate-pop-burst">
                 <div className="flex flex-col">
-                  <span className="font-mono text-[11px] font-bold tracking-[0.08em] text-accent uppercase">SEU CÓDIGO DE RETIRADA</span>
-                  <span className="text-xs text-ink-text-2 mt-0.5">Apresente no balcão Finora</span>
+                  <span className="font-mono text-[11px] font-bold tracking-[0.08em] text-accent uppercase">INSCRIÇÃO CONFIRMADA</span>
+                  <span className="text-xs text-ink-text-2 mt-0.5">Identifique-se com Nome ou CPF no balcão</span>
                 </div>
                 <span className="font-mono text-[32px] font-black tracking-[0.05em] text-accent drop-shadow-[0_0_14px_rgba(var(--accent-rgb),0.6)]">
                   #{String(registeredParticipation.id).padStart(4, "0")}
@@ -592,7 +592,7 @@ function RegistrationForm({
               Seu cupom está registrado e concorrendo oficialmente ao <strong>Fotopolimerizador Odontológico</strong> no sorteio geral do dia 19/11 no telão.
             </p>
             <div className="mt-1 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-200 font-semibold">
-              📍 <strong>Dias 20 e 21/11:</strong> Venha ao estande Finora com seu código PIN para girar a Roleta VIP e retirar brindes exclusivos!
+              📍 <strong>Dias 20 e 21/11:</strong> Venha ao estande Finora informando seu Nome ou CPF para girar a Roleta VIP e retirar brindes exclusivos!
             </div>
           </div>
 
@@ -804,7 +804,7 @@ function RegistrationForm({
                   onClick={() => setCeoModalOpen(false)}
                   className="w-full py-2.5 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
                 >
-                  Prefiro não agendar agora, ver meu código PIN ➔
+                  Prefiro não agendar agora, concluir cadastro ➔
                 </button>
               </div>
             </div>
@@ -913,7 +913,7 @@ function RegistrationForm({
               <span>Cadastros Realizados no Dia 19/11</span>
             </div>
             <p className="mt-1.5 text-xs sm:text-[13px] text-slate-200 leading-relaxed">
-              Compareça ao estande da Finora nos <strong>dias 20 ou 21/11</strong> com o seu <strong>código PIN</strong> para girar a <strong>Roleta VIP</strong> e retirar seus prêmios exclusivos!
+              Compareça ao estande da Finora nos <strong>dias 20 ou 21/11</strong> informando seu <strong>Nome ou CPF</strong> para girar a <strong>Roleta VIP</strong> e retirar seus prêmios exclusivos!
             </p>
           </div>
 
@@ -934,8 +934,8 @@ function RegistrationForm({
                 2
               </span>
               <div className="flex flex-col">
-                <strong className="text-xs font-bold text-amber-200">Guarde seu PIN</strong>
-                <span className="text-[11px] text-slate-400 leading-tight">Receba seu número único</span>
+                <strong className="text-xs font-bold text-amber-200">Cadastro Concluído</strong>
+                <span className="text-[11px] text-slate-400 leading-tight">Participação garantida</span>
               </div>
             </div>
 

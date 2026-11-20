@@ -63,9 +63,11 @@ export class DrawsService {
       name?: string;
     },
   >(prizes: T[]): T {
-    // Garante que prêmio de 50% de desconto nunca seja sorteado
-    const non50 = prizes.filter((p) => !p.name?.includes('50%'));
-    const targetPrizes = non50.length > 0 ? non50 : prizes;
+    // Garante que prêmio de 50% de desconto e PIN nunca sejam sorteados
+    const nonExcluded = prizes.filter(
+      (p) => !p.name?.includes('50%') && !p.name?.toLowerCase().includes('pin'),
+    );
+    const targetPrizes = nonExcluded.length > 0 ? nonExcluded : prizes;
 
     if (targetPrizes.length === 0) {
       throw new BadRequestException('Nenhum prêmio disponível para sorteio.');
@@ -134,10 +136,12 @@ export class DrawsService {
 
     const eligibleQueueItem = queue.find(
       (item: any) =>
+        item.prizes &&
         item.prizes.active &&
         item.prizes.available_stock > 0 &&
         item.prizes.is_vip === isVip &&
-        !item.prizes.name.includes('50%'),
+        !item.prizes.name.includes('50%') &&
+        !item.prizes.name.toLowerCase().includes('pin'),
     );
 
     let selectedPrize: any = null;
@@ -150,7 +154,7 @@ export class DrawsService {
       selectedPrize = eligibleQueueItem.prizes;
       source = 'QUEUE';
     } else {
-      // 2. Sorteio automático por peso no pool (exclui permanentemente 50% de desconto)
+      // 2. Sorteio automático por peso no pool (exclui permanentemente 50% de desconto e PIN)
       const availablePrizes = await tx.prizes.findMany({
         where: {
           event_id: eventId,
@@ -162,9 +166,12 @@ export class DrawsService {
           probability: {
             gt: 0,
           },
-          NOT: {
-            name: { contains: '50%' },
-          },
+          NOT: [
+            { name: { contains: '50%' } },
+            { name: { contains: 'Pin' } },
+            { name: { contains: 'PIN' } },
+            { name: { contains: 'pin' } },
+          ],
         },
         orderBy: {
           id: 'asc',
@@ -226,7 +233,10 @@ export class DrawsService {
 
       const candidatePrizes = (
         eligibleByPacing.length > 0 ? eligibleByPacing : availablePrizes
-      ).filter((p: any) => !p.name.includes('50%'));
+      ).filter(
+        (p: any) =>
+          !p.name.includes('50%') && !p.name.toLowerCase().includes('pin'),
+      );
 
       selectedPrize = this.chooseWeightedPrize(candidatePrizes);
       probabilityUsed = Number(selectedPrize.probability);
@@ -819,9 +829,9 @@ export class DrawsService {
         ? `\n\n👉 *Entre no nosso Canal VIP:*\n${channelLink}`
         : '';
 
-      // Mesmo link da validação: a página mostra o QR que o balcão lê.
+      // Mesmo link da validação: a página mostra o comprovante que o balcão confere.
       const pickupMsg = participation.whatsapp_token
-        ? `\n\n📲 *Retirada no balcão:* mostre o QR Code deste link (PIN ${pinCode}):\n${publicUrl(`/v/${participation.whatsapp_token}`)}`
+        ? `\n\n📲 *Retirada no balcão:* apresente seu Nome ou CPF no estande:\n${publicUrl(`/v/${participation.whatsapp_token}`)}`
         : '';
 
       const prizeTemplate = participation.events.whatsapp_prize_message?.trim() || 
@@ -1120,7 +1130,7 @@ export class DrawsService {
 
     if (!participation) {
       throw new NotFoundException(
-        'Código de participação (PIN) não encontrado.',
+        'Participante não encontrado.',
       );
     }
 
