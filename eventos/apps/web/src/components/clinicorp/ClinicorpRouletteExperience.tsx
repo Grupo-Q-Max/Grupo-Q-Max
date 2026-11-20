@@ -145,6 +145,14 @@ type ClinicorpRouletteExperienceProps = {
   event?: EventTheme;
 };
 
+function cleanPrizeName(name?: string | null): string {
+  if (!name) return "";
+  const lower = name.toLowerCase().trim();
+  if (lower.includes("garrafa")) return "Garrafa";
+  if (lower.includes("copo")) return "Copo";
+  return name;
+}
+
 export function ClinicorpRouletteExperience({ eventId: propEventId, event }: ClinicorpRouletteExperienceProps = {}) {
   const [activeEventId, setActiveEventId] = useState<number>(propEventId || 1);
 
@@ -285,7 +293,8 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
   const normalPrizes = useMemo(() => {
     const pool = prizes.filter((prize) => !prize.is_vip);
     const eligible = pool.filter((prize) => prize.active && prize.available_stock > 0);
-    return eligible.length > 0 ? eligible : pool;
+    const target = eligible.length > 0 ? eligible : pool;
+    return target.map((p) => ({ ...p, name: cleanPrizeName(p.name) }));
   }, [prizes]);
 
   const vipPrizes = useMemo(() => {
@@ -335,7 +344,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     if (p.pendingVipOnly && p.normalPrize) {
       setNormalWonPrize({
         id: p.normalPrize.id,
-        name: p.normalPrize.name,
+        name: cleanPrizeName(p.normalPrize.name),
         description: p.normalPrize.description || null,
         imageUrl: p.normalPrize.imageUrl || p.normalPrize.image_url || null,
       });
@@ -407,7 +416,12 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         const prizesRes = await fetch(`${apiUrl}/prizes/event/${activeEventId}`, { cache: "no-store" });
         if (prizesRes.ok) {
           const prizesData = await prizesRes.json();
-          setPrizes(Array.isArray(prizesData) ? prizesData : []);
+          setPrizes(
+            (Array.isArray(prizesData) ? prizesData : []).map((p: any) => ({
+              ...p,
+              name: cleanPrizeName(p.name),
+            }))
+          );
         }
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -435,13 +449,13 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
                     participant: { id: partData.participant.id, name: displayName },
                     prize: {
                       id: partData.draw.prizes.id,
-                      name: partData.draw.prizes.name,
+                      name: cleanPrizeName(partData.draw.prizes.name),
                       description: partData.draw.prizes.description,
                       imageUrl: partData.draw.prizes.image_url,
                     },
                     vipPrize: partData.vipDraw ? {
                       id: partData.vipDraw.prizes.id,
-                      name: partData.vipDraw.prizes.name,
+                      name: cleanPrizeName(partData.vipDraw.prizes.name),
                       description: partData.vipDraw.prizes.description,
                       imageUrl: partData.vipDraw.prizes.image_url,
                     } : undefined,
@@ -472,7 +486,7 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
                 });
                 setNormalWonPrize({
                   id: partData.draw.prizes.id,
-                  name: partData.draw.prizes.name,
+                  name: cleanPrizeName(partData.draw.prizes.name),
                   description: partData.draw.prizes.description,
                   imageUrl: partData.draw.prizes.image_url,
                 });
@@ -670,6 +684,13 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
         drawResponseData = data;
       }
 
+      if (drawResponseData?.prize) {
+        drawResponseData.prize.name = cleanPrizeName(drawResponseData.prize.name);
+      }
+      if (drawResponseData?.vipPrize) {
+        drawResponseData.vipPrize.name = cleanPrizeName(drawResponseData.vipPrize.name);
+      }
+
       setStoredDrawResponse(drawResponseData);
 
       // 1. Rotação da Roleta 1 (Normal / Brindes)
@@ -785,6 +806,12 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || "Erro ao realizar sorteio VIP.");
           vipDrawResponse = data;
+        }
+        if (vipDrawResponse?.prize) {
+          vipDrawResponse.prize.name = cleanPrizeName(vipDrawResponse.prize.name);
+        }
+        if (vipDrawResponse?.vipPrize) {
+          vipDrawResponse.vipPrize.name = cleanPrizeName(vipDrawResponse.vipPrize.name);
         }
         setStoredDrawResponse(vipDrawResponse);
         if (vipDrawResponse?.prize && !normalWonPrize) {

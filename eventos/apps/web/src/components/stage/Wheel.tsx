@@ -39,16 +39,16 @@ export function formatWheelLabel(rawName: string) {
     return { title: "CERTIFICADO", subtitle: "Finora" };
   }
   if (lower.includes("copo térmico") || lower.includes("copo termico")) {
-    return { title: "COPO TÉRMICO", subtitle: "Finora" };
+    return { title: "COPO", subtitle: "Finora" };
   }
   if (lower.includes("copo")) {
-    return { title: "COPO EXCLUSIVO", subtitle: "Finora" };
+    return { title: "COPO", subtitle: "Finora" };
   }
   if (lower.includes("caderno")) {
     return { title: "CADERNO", subtitle: "Finora" };
   }
   if (lower.includes("garrafa")) {
-    return { title: "GARRAFA INOX", subtitle: "Finora" };
+    return { title: "GARRAFA", subtitle: "Finora" };
   }
   if (lower.includes("espelho")) {
     return { title: "ESPELHO", subtitle: "Finora" };

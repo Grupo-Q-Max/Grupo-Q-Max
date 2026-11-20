@@ -64,7 +64,11 @@ export class InvictusSeedService implements OnApplicationBootstrap {
 
     for (const p of normalPrizes) {
       const match = currentPrizes.find(
-        (cp) => cp.name.trim().toLowerCase() === p.name.trim().toLowerCase() && !cp.is_vip,
+        (cp) =>
+          !cp.is_vip &&
+          (cp.name.trim().toLowerCase() === p.name.trim().toLowerCase() ||
+            (p.name === 'Garrafa' && cp.name.toLowerCase().includes('garrafa')) ||
+            (p.name === 'Copo' && cp.name.toLowerCase().includes('copo'))),
       );
       if (match) {
         await this.prisma.prizes.update({
@@ -167,6 +171,28 @@ export class InvictusSeedService implements OnApplicationBootstrap {
 
     if (cancelledQueue.count > 0) {
       this.logger.log(`Cancelados ${cancelledQueue.count} itens da fila para o prêmio de 50% de desconto.`);
+    }
+
+    // Renomeia "Garrafa Inox" / "Garrafa Térmica" para "Garrafa" e "Copo Exclusivo" para "Copo" em todos os prêmios normais
+    const allNormalPrizes = await this.prisma.prizes.findMany({
+      where: { is_vip: false },
+    });
+    for (const p of allNormalPrizes) {
+      const lower = p.name.toLowerCase().trim();
+      let targetName: string | null = null;
+      if (lower.includes('garrafa') && p.name !== 'Garrafa') {
+        targetName = 'Garrafa';
+      } else if (lower.includes('copo') && p.name !== 'Copo') {
+        targetName = 'Copo';
+      }
+
+      if (targetName) {
+        await this.prisma.prizes.update({
+          where: { id: p.id },
+          data: { name: targetName },
+        });
+        this.logger.log(`Prêmio ID ${p.id} renomeado de "${p.name}" para "${targetName}".`);
+      }
     }
 
     this.logger.log(`Prêmios do evento Invictus sincronizados com sucesso.`);
