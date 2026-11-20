@@ -197,6 +197,17 @@ export class InvictusSeedService implements OnApplicationBootstrap {
       },
     });
 
+    // Garante que qualquer participante cadastrado que ainda não girou a roleta esteja com status APPROVED para aparecer na lista
+    await this.prisma.participations.updateMany({
+      where: {
+        draws: null,
+        status: { notIn: ['APPROVED'] },
+      },
+      data: {
+        status: 'APPROVED',
+      },
+    });
+
     // Renomeia "Garrafa Inox" / "Garrafa Térmica" para "Garrafa" e "Copo Exclusivo" para "Copo" em todos os prêmios normais
     const allNormalPrizes = await this.prisma.prizes.findMany({
       where: { is_vip: false },

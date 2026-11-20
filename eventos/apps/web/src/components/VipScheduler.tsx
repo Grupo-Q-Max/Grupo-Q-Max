@@ -2,11 +2,48 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Calendar, CircleCheck, Clock, Crown, LoaderCircle, Sparkles } from "lucide-react";
+import { Calendar, CircleCheck, Clock, Crown, LoaderCircle, Sparkles, UserCheck, Users } from "lucide-react";
 import { addMinutes, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { fetchApi } from "@/lib/api-client";
 import { Alert, StickyActions, primaryButton } from "@/components/form/Paper";
+
+export type HostOption = {
+  key: "hugo" | "ale";
+  name: string;
+  shortName: string;
+  role: string;
+  email: string;
+  avatar: string;
+  accentBorder: string;
+  accentBg: string;
+  accentText: string;
+};
+
+export const HOSTS: Record<"hugo" | "ale", HostOption> = {
+  hugo: {
+    key: "hugo",
+    name: "Hugo Werninghaus",
+    shortName: "Hugo",
+    role: "CEO Grupo Q-Max · Sócio",
+    email: "hugo@grupoqmax.com.br",
+    avatar: "🤵",
+    accentBorder: "border-[#FFD700]",
+    accentBg: "bg-[#FFD700]/20",
+    accentText: "text-[#FFD700]",
+  },
+  ale: {
+    key: "ale",
+    name: "Alessandra (Ale)",
+    shortName: "Ale",
+    role: "Sócia · Diretoria Grupo Q-Max",
+    email: "alessandra@grupoqmax.com.br",
+    avatar: "👩‍💼",
+    accentBorder: "border-fuchsia-400",
+    accentBg: "bg-fuchsia-500/20",
+    accentText: "text-fuchsia-300",
+  },
+};
 
 type Props = {
   eventId: number;
@@ -16,9 +53,21 @@ type Props = {
   skipHref?: string;
   inviteText?: string;
   meetingEmail?: string;
+  initialHost?: "hugo" | "ale";
 };
 
-export default function VipScheduler({ eventId, participantId, onBooked, skipHref, inviteText, meetingEmail }: Props) {
+export default function VipScheduler({
+  eventId,
+  participantId,
+  onBooked,
+  skipHref,
+  inviteText,
+  meetingEmail,
+  initialHost = "hugo",
+}: Props) {
+  const [selectedHostKey, setSelectedHostKey] = useState<"hugo" | "ale">(initialHost);
+  const currentHost = HOSTS[selectedHostKey];
+
   // Gera todos os dias disponíveis de 22/11/2026 até 28/02/2027 (incluindo fins de semana)
   const allDates = useMemo(() => {
     const list: Date[] = [];
@@ -95,7 +144,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
       dateStr = format(new Date(), "yyyy-MM-dd");
     }
 
-    fetchApi<string[]>(`/meetings/event/${eventId}/available-slots?date=${dateStr}`)
+    fetchApi<string[]>(`/meetings/event/${eventId}/available-slots?date=${dateStr}&host=${selectedHostKey}`)
       .then((data) => {
         if (cancelled) return;
         const available = Array.isArray(data) ? data : [];
@@ -109,7 +158,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
     return () => {
       cancelled = true;
     };
-  }, [date, eventId]);
+  }, [date, eventId, selectedHostKey]);
 
   const startTimeFormatted = useMemo(() => {
     if (!slot) return "";
@@ -136,7 +185,12 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
     try {
       await fetchApi(`/meetings/event/${eventId}/book`, {
         method: "POST",
-        body: JSON.stringify({ participantId, scheduledAt: slot, meetingEmail }),
+        body: JSON.stringify({
+          participantId,
+          scheduledAt: slot,
+          meetingEmail,
+          host: selectedHostKey,
+        }),
       });
       if (onBooked) onBooked();
       else setDone(true);
@@ -153,7 +207,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
           <CircleCheck size={16} /> Reunião Confirmada com Sucesso!
         </span>
         <h1 className="font-display text-[30px] sm:text-[34px] font-extrabold leading-[1.05] tracking-[-0.03em] text-white">
-          Reunião VIP Agendada com Hugo Werninghaus
+          Reunião VIP Agendada com {currentHost.name}
         </h1>
         <p className="text-[16px] leading-relaxed text-slate-300">
           📅 <strong>{format(parseISO(slot), "EEEE, dd/MM", { locale: ptBR })}</strong> das{" "}
@@ -176,7 +230,10 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
 
         <div className="w-full rounded-xl border border-white/10 bg-white/[0.03] p-4 text-xs text-slate-300 space-y-1.5 mt-2">
           <p className="text-white font-semibold">Detalhes do Convite:</p>
-          <p>O convite oficial do Microsoft Teams foi enviado para o seu e-mail e adicionado à agenda do Hugo Werninghaus (CEO Grupo Q-Max).</p>
+          <p>
+            O convite oficial do Microsoft Teams foi enviado para o seu e-mail e adicionado à agenda de{" "}
+            <strong>{currentHost.name}</strong> ({currentHost.email}).
+          </p>
         </div>
       </div>
     );
@@ -185,20 +242,63 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
   return (
     <div className="flex flex-1 flex-col pb-6">
       {/* Cabeçalho */}
-      <div className="m-5 flex flex-col gap-2 rounded-2xl border border-white/10 bg-ink-950/90 p-5.5 text-ink-text shadow-xl">
+      <div className="m-5 flex flex-col gap-3 rounded-2xl border border-white/10 bg-ink-950/90 p-5.5 text-ink-text shadow-xl">
         <span className="font-mono text-xs font-bold tracking-[0.1em] text-accent uppercase flex items-center gap-1.5">
           <Sparkles size={14} className="text-accent" /> CONSULTORIA EXECUTIVA VIP · MICROSOFT TEAMS
         </span>
-        <h1 className="font-display text-[26px] sm:text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em] text-white">
-          Bate-papo VIP com Hugo Werninghaus
+        <h1 className="font-display text-[25px] sm:text-[29px] font-extrabold leading-[1.05] tracking-[-0.03em] text-white">
+          Bate-papo VIP com {currentHost.name}
         </h1>
-        <p className="text-[14px] leading-relaxed text-slate-300">
+        <p className="text-[13.5px] leading-relaxed text-slate-300">
           {inviteText || "Reunião executiva de diagnóstico financeiro e planejamento tributário para sua clínica. Ao confirmar, você destrava automaticamente a Roleta VIP!"}
         </p>
 
+        {/* Filtro / Seleção de Agenda (Hugo ou Ale) */}
+        <div className="mt-1 flex flex-col gap-2 rounded-xl border border-white/15 bg-white/[0.03] p-3">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <Users size={13} className="text-accent" />
+            <span>Selecione a Agenda do Sócio / Especialista:</span>
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {(Object.values(HOSTS) as HostOption[]).map((h) => {
+              const isSelected = selectedHostKey === h.key;
+              return (
+                <button
+                  key={h.key}
+                  type="button"
+                  onClick={() => setSelectedHostKey(h.key)}
+                  className={`flex items-center justify-between gap-2.5 rounded-xl border-2 p-3 text-left transition-all cursor-pointer ${
+                    isSelected
+                      ? `${h.accentBorder} ${h.accentBg} text-white shadow-lg scale-[1.01]`
+                      : "border-white/10 bg-black/30 text-slate-300 hover:border-white/25 hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white/10 text-xl">
+                      {h.avatar}
+                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-display text-sm font-black text-white truncate">
+                        {h.name}
+                      </span>
+                      <span className="text-[11px] text-slate-300 truncate">{h.role}</span>
+                      <span className="text-[10px] font-mono text-slate-400 truncate">{h.email}</span>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-emerald-500 text-slate-950">
+                      <UserCheck size={14} />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Aviso de Validade Estendida do Prêmio VIP */}
-        <div className="mt-1 rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 p-3 text-xs text-amber-200">
-          ⭐ <strong>Validade Estendida:</strong> O prêmio conquistado na <strong>Roleta VIP</strong> (isenção de 100% no 1º honorário, mentorias com o CEO e diagnósticos) <strong>valerá até depois da realização da sua reunião estratégica</strong>!
+        <div className="mt-0.5 rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 p-3 text-xs text-amber-200">
+          ⭐ <strong>Validade Estendida:</strong> O prêmio conquistado na <strong>Roleta VIP</strong> (isenção de 100% no 1º honorário, mentorias e diagnósticos) <strong>valerá até depois da realização da sua reunião estratégica</strong>!
         </div>
       </div>
 
@@ -207,7 +307,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
         <div className="flex items-center justify-between flex-wrap gap-2">
           <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
             <Calendar size={14} className="text-accent" />
-            <span>1. Escolha a Data da Reunião (Disponível até Final de Fev)</span>
+            <span>1. Escolha a Data na Agenda de {currentHost.shortName} (Até Final de Fev)</span>
           </span>
           <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
             Segunda a Domingo · 08h às 19h
@@ -276,20 +376,33 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
         {error && <Alert>{error}</Alert>}
         {loading ? (
           <span className="flex items-center gap-2 py-6 text-slate-400">
-            <LoaderCircle size={18} className="animate-spin text-accent" /> Buscando horários disponíveis…
+            <LoaderCircle size={18} className="animate-spin text-accent" /> Sincronizando agenda de {currentHost.name} em tempo real…
           </span>
         ) : slots.length === 0 ? (
           <span className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-center text-slate-400">
-            Nenhum horário livre neste dia. Por favor, escolha outro dia acima.
+            Nenhum horário livre na agenda de <strong>{currentHost.name}</strong> neste dia. Escolha outro dia ou alterne para a agenda de{" "}
+            <button
+              type="button"
+              onClick={() => setSelectedHostKey(selectedHostKey === "hugo" ? "ale" : "hugo")}
+              className="text-accent font-bold underline cursor-pointer"
+            >
+              {selectedHostKey === "hugo" ? "Alessandra (Ale)" : "Hugo Werninghaus"}
+            </button>
+            .
           </span>
         ) : (
           <div className="flex flex-col gap-4">
             {/* Horário de Início */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Clock size={14} className="text-accent" />
-                <span>2. Selecione o Horário de Início</span>
-              </span>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock size={14} className="text-accent" />
+                  <span>2. Horários Disponíveis ({slots.length} livres · ocupados ocultados automaticamente)</span>
+                </span>
+                <span className="text-[11px] font-mono text-slate-400">
+                  {currentHost.email}
+                </span>
+              </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto pr-1">
                 {slots.map((s) => {
                   const on = s === slot;
@@ -329,7 +442,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
                   </span>
                 </div>
                 <span className="text-xs text-slate-300 mt-0.5">
-                  💻 Plataforma: <strong>Microsoft Teams</strong> · com <strong>Hugo Werninghaus (CEO)</strong>
+                  💻 Plataforma: <strong>Microsoft Teams</strong> · com <strong>{currentHost.name}</strong> ({currentHost.email})
                 </span>
               </div>
             )}
@@ -344,7 +457,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
             <span className="capitalize font-semibold text-white">
               {format(parseISO(slot), "dd/MM")} das {startTimeFormatted} às {endTimeFormatted}
             </span>
-            <span className="font-mono text-accent">Teams · CEO Hugo</span>
+            <span className="font-mono text-accent">Teams · {currentHost.shortName}</span>
           </div>
         )}
         <button type="button" onClick={book} disabled={!slot || submitting} className={primaryButton}>
@@ -353,7 +466,7 @@ export default function VipScheduler({ eventId, participantId, onBooked, skipHre
               <LoaderCircle size={20} className="animate-spin" /> Confirmando agendamento…
             </>
           ) : (
-            `Confirmar Reunião das ${startTimeFormatted} às ${endTimeFormatted} 📅`
+            `Confirmar Reunião com ${currentHost.shortName} (${startTimeFormatted} às ${endTimeFormatted}) 📅`
           )}
         </button>
         {skipHref && (

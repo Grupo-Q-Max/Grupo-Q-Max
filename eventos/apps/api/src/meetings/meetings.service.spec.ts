@@ -94,6 +94,59 @@ describe('MeetingsService - Agendamento e Integração Teams / Hugo e Edvaldo', 
     );
   });
 
+  it('deve agendar reunião com a agenda da Alessandra (alessandra@grupoqmax.com.br) puxando conflitos em tempo real', async () => {
+    const scheduledDate = new Date('2026-11-24T15:00:00.000-03:00');
+
+    prismaMock.meetings.findFirst.mockResolvedValue(null);
+    prismaMock.meetings.findMany.mockResolvedValue([]);
+    prismaMock.participants.update.mockResolvedValue({ id: 51 });
+
+    const meetingMock = {
+      id: 100,
+      event_id: 3,
+      participant_id: 51,
+      scheduled_at: scheduledDate,
+      host_email: 'alessandra@grupoqmax.com.br',
+      participants: {
+        id: 51,
+        full_name: 'Dr. Bruno Silva',
+        phone: '11988887777',
+        email: 'bruno@odonto.com.br',
+        clinic_name: 'Odonto Silva',
+        chairs_count: 3,
+        cro_number: '54321',
+        cro_state: 'SP',
+      },
+      events: {
+        id: 3,
+        whatsapp_vip_message: null,
+      },
+    };
+
+    prismaMock.meetings.create.mockResolvedValue(meetingMock);
+    prismaMock.message_queue.create.mockResolvedValue({ id: 2 });
+
+    const busySpy = jest.spyOn(msHelper, 'getHugoBusyIntervals').mockResolvedValue([]);
+    const msEventSpy = jest.spyOn(msHelper, 'createMicrosoftCalendarEvent').mockResolvedValue('ms-teams-event-ale-456');
+    const mailSpy = jest.spyOn(mailHelper, 'sendMeetingInvite').mockResolvedValue(true);
+
+    const result = await service.bookMeeting(3, 51, scheduledDate.toISOString(), 'bruno@odonto.com.br', 'ale');
+
+    expect(result).toBeDefined();
+    expect(busySpy).toHaveBeenCalledWith('2026-11-24', 'alessandra@grupoqmax.com.br');
+    expect(msEventSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bossEmail: 'alessandra@grupoqmax.com.br',
+        participantName: 'Dr. Bruno Silva',
+      }),
+    );
+    expect(mailSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bossEmail: 'alessandra@grupoqmax.com.br',
+      }),
+    );
+  });
+
   it('deve formatar data para o fuso de Brasília (America/Sao_Paulo) sem descompasso de UTC', () => {
     // 14:00 UTC deve ser exatamente 11:00 em America/Sao_Paulo
     const utcDate = new Date('2026-11-19T14:00:00.000Z');

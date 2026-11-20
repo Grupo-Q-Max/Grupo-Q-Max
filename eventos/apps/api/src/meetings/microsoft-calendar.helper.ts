@@ -56,6 +56,44 @@ export type BusySlot = {
   end: Date;
 };
 
+export type HostKey = 'hugo' | 'ale';
+
+export type HostProfile = {
+  key: HostKey;
+  name: string;
+  shortName: string;
+  role: string;
+  email: string;
+};
+
+export function getHostProfiles(): Record<HostKey, HostProfile> {
+  return {
+    hugo: {
+      key: 'hugo',
+      name: 'Hugo Werninghaus',
+      shortName: 'Hugo',
+      role: 'CEO Grupo Q-Max · Sócio',
+      email: env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br',
+    },
+    ale: {
+      key: 'ale',
+      name: 'Alessandra (Ale)',
+      shortName: 'Ale',
+      role: 'Sócia · Diretoria Grupo Q-Max',
+      email: env('ALE_MEETING_EMAIL') || 'alessandra@grupoqmax.com.br',
+    },
+  };
+}
+
+export function resolveHost(hostParam?: string | null): HostProfile {
+  const profiles = getHostProfiles();
+  const norm = (hostParam || '').trim().toLowerCase();
+  if (norm.includes('ale') || norm.includes('alessandra')) {
+    return profiles.ale;
+  }
+  return profiles.hugo;
+}
+
 export function parseGraphDateTime(dtStr: string): Date {
   if (!dtStr) return new Date(NaN);
   if (dtStr.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dtStr)) {
@@ -209,11 +247,14 @@ export type MicrosoftCalendarDetailedEvent = {
   organizerEmail?: string;
   response: string;
   showAs: string;
+  hostKey?: HostKey;
+  hostName?: string;
+  hostEmail?: string;
 };
 
 /**
- * Retorna todos os eventos detalhados da agenda do Hugo para exibição na tela do Admin.
- * Por padrão busca de hoje até 31 de Janeiro de 2027 (ou no período customizado).
+ * Retorna todos os eventos detalhados da agenda do Hugo ou da Ale para exibição na tela do Admin.
+ * Por padrão busca de hoje até 28 de Fevereiro de 2027 (ou no período customizado).
  */
 export async function getHugoDetailedEvents(
   startDateString?: string,
@@ -222,6 +263,7 @@ export async function getHugoDetailedEvents(
 ): Promise<MicrosoftCalendarDetailedEvent[]> {
   const token = await getMicrosoftGraphAppToken();
   if (!token) return [];
+  const hostProfile = resolveHost(userEmail);
 
   try {
     const startDateTime = startDateString
@@ -229,7 +271,7 @@ export async function getHugoDetailedEvents(
       : '2026-11-18T00:00:00-03:00';
     const endDateTime = endDateString
       ? (endDateString.includes('T') ? endDateString : `${endDateString}T23:59:59-03:00`)
-      : '2027-01-31T23:59:59-03:00';
+      : '2027-02-28T23:59:59-03:00';
 
     const viewUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/calendarView?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}&$select=id,subject,start,end,location,webLink,onlineMeeting,organizer,responseStatus,showAs,isCancelled&$top=999`;
     const viewRes = await fetch(viewUrl, {
@@ -264,6 +306,9 @@ export async function getHugoDetailedEvents(
         organizerEmail: evt.organizer?.emailAddress?.address || undefined,
         response: evt.responseStatus?.response || 'accepted',
         showAs: evt.showAs || 'busy',
+        hostKey: hostProfile.key,
+        hostName: hostProfile.name,
+        hostEmail: hostProfile.email,
       });
     }
 
@@ -275,7 +320,7 @@ export async function getHugoDetailedEvents(
 }
 
 /**
- * Cria o evento diretamente no Microsoft Calendar de hugo@grupoqmax.com.br
+ * Cria o evento diretamente no Microsoft Calendar de hugo@grupoqmax.com.br ou alessandra@grupoqmax.com.br
  * com link do Teams e convite para rodrigo@grupoqmax.com.br e participante.
  */
 export async function createMicrosoftCalendarEvent(payload: {
@@ -297,6 +342,7 @@ export async function createMicrosoftCalendarEvent(payload: {
 
   try {
     const bossEmail = payload.bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
+    const hostProfile = resolveHost(bossEmail);
     const secondEmail = payload.secondEmail || env('SECOND_MEETING_EMAIL') || 'rodrigo@grupoqmax.com.br';
     const thirdEmail = payload.thirdEmail || env('THIRD_MEETING_EMAIL') || 'edvaldo.borges@grupoqmax.com.br';
     const {
@@ -336,12 +382,13 @@ export async function createMicrosoftCalendarEvent(payload: {
     }
 
     const eventBody = {
-      subject: `[Reunião Estratégica] Hugo Werninghaus & ${participantName} (${clinicName || 'Clínica'})`,
+      subject: `[Reunião Estratégica] ${hostProfile.name} & ${participantName} (${clinicName || 'Clínica'})`,
       body: {
         contentType: 'HTML',
         content: `
           <div style="font-family: Arial, sans-serif; color: #1e293b;">
             <h2>Reunião Estratégica Executiva · Invictus 2026</h2>
+            <p><strong>Sócio / Especialista:</strong> ${hostProfile.name} (${bossEmail})</p>
             <p><strong>Participante:</strong> ${participantName}</p>
             <p><strong>Clínica:</strong> ${clinicName || 'Não informada'}</p>
             <p><strong>Cadeiras:</strong> ${chairsCount || 'Não informado'}</p>

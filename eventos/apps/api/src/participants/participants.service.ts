@@ -1769,12 +1769,11 @@ export class ParticipantsService implements OnModuleInit {
   }
 
   /**
-   * Retorna os participantes que se cadastraram com sucesso e ainda não giraram a roleta
+   * Retorna TODOS os participantes que se cadastraram e ainda não giraram a roleta normal ou a Roleta VIP
    */
   async findPendingDraws(eventId: number, search?: string) {
     const where: any = {
       event_id: eventId,
-      status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
     };
 
     if (search && search.trim()) {
@@ -1788,86 +1787,92 @@ export class ParticipantsService implements OnModuleInit {
       };
     }
 
-    const participations = await this.prisma.participations.findMany({
-      where: {
-        event_id: eventId,
-        ...(where.participants ? { participants: where.participants } : {}),
-        OR: [
-          // 1. Participações que ainda não realizaram seu primeiro giro
-          {
-            status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
-            draws: null,
-          },
-          // 2. Participações que já realizaram o giro normal (status COMPLETED ou outro),
-          // mas agendaram reunião com o CEO ou têm código VIP e têm direito à Roleta VIP!
-          {
-            draws: { isNot: null },
-            participants: {
+    const [participations, vipDrawRows] = await Promise.all([
+      this.prisma.participations.findMany({
+        where: {
+          event_id: eventId,
+          ...(where.participants ? { participants: where.participants } : {}),
+          OR: [
+            // 1. Todas as participações que ainda não realizaram giro na roleta
+            {
+              status: { in: ['PENDING', 'APPROVED', 'REVIEW'] },
+              draws: null,
+            },
+            // 2. Participações que já realizaram o giro normal,
+            // mas agendaram reunião ou têm código VIP e ainda têm direito à Roleta VIP!
+            {
+              draws: { isNot: null },
+              participants: {
+                meetings: {
+                  some: {
+                    event_id: eventId,
+                    status: { in: ['SCHEDULED', 'COMPLETED'] },
+                  },
+                },
+              },
+            },
+            {
+              draws: { isNot: null },
+              vip_codes: { isNot: null },
+            },
+          ],
+        },
+        include: {
+          participants: {
+            include: {
               meetings: {
-                some: {
+                where: {
                   event_id: eventId,
                   status: { in: ['SCHEDULED', 'COMPLETED'] },
+                },
+                take: 1,
+              },
+            },
+          },
+          vip_codes: { select: { id: true } },
+          draws: {
+            include: {
+              prizes: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  image_url: true,
+                  is_vip: true,
                 },
               },
             },
           },
-          {
-            draws: { isNot: null },
-            vip_codes: { isNot: null },
-          },
-        ],
-      },
-      include: {
-        participants: {
-          include: {
-            meetings: {
-              where: {
-                event_id: eventId,
-                status: { in: ['SCHEDULED', 'COMPLETED'] },
-              },
-              take: 1,
-            },
-          },
         },
-        vip_codes: { select: { id: true } },
-        draws: {
-          include: {
-            prizes: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                image_url: true,
-                is_vip: true,
-              },
-            },
-          },
+        orderBy: { id: 'desc' },
+      }),
+      this.prisma.participations.findMany({
+        where: {
+          event_id: eventId,
+          draws: { is: { prizes: { is_vip: true } } },
         },
-      },
-      orderBy: { id: 'desc' },
-      take: 40,
-    });
+        select: { id: true, participant_id: true },
+      }),
+    ]);
+
+    const participantsWithVipDraw = new Set<number>();
+    for (const v of vipDrawRows) {
+      participantsWithVipDraw.add(v.participant_id);
+    }
 
     const resultList: any[] = [];
+    const seenParticipantsWithoutDraw = new Set<number>();
+
     for (const p of participations) {
       const hasMeeting = Boolean(p.participants.meetings && p.participants.meetings.length > 0);
       const isVip = Boolean(p.vip_codes) || hasMeeting;
+      const decryptedCpf = p.participants.cpf_encrypted ? decryptCpf(p.participants.cpf_encrypted) : '';
+      const formattedCpf = decryptedCpf ? formatCpf(decryptedCpf) : '';
 
       if (p.draws) {
         if (!isVip) continue;
         if (p.draws.prizes?.is_vip) continue;
-
-        const hasSecondaryVipDraw = await this.prisma.participations.findFirst({
-          where: {
-            event_id: eventId,
-            participant_id: p.participant_id,
-            id: { not: p.id },
-            draws: { is: { prizes: { is_vip: true } } },
-          },
-          select: { id: true },
-        });
-
-        if (hasSecondaryVipDraw) continue;
+        if (participantsWithVipDraw.has(p.participant_id)) continue;
 
         resultList.push({
           participationId: p.id,
@@ -1878,6 +1883,8 @@ export class ParticipantsService implements OnModuleInit {
           normalPrize: p.draws.prizes,
           participantId: p.participant_id,
           fullName: p.participants.full_name,
+          cpf: decryptedCpf,
+          cpfFormatted: formattedCpf,
           cpfLastDigits: p.participants.cpf_last_digits,
           phone: maskPhone(p.participants.phone_normalized),
           clinicName: p.participants.clinic_name,
@@ -1888,6 +1895,10 @@ export class ParticipantsService implements OnModuleInit {
           createdAt: p.created_at,
         });
       } else {
+        // Evita duplicar a mesma pessoa se ela tentou se cadastrar múltiplas vezes sem girar
+        if (seenParticipantsWithoutDraw.has(p.participant_id)) continue;
+        seenParticipantsWithoutDraw.add(p.participant_id);
+
         resultList.push({
           participationId: p.id,
           vip: isVip,
@@ -1896,6 +1907,8 @@ export class ParticipantsService implements OnModuleInit {
           pendingVipOnly: false,
           participantId: p.participant_id,
           fullName: p.participants.full_name,
+          cpf: decryptedCpf,
+          cpfFormatted: formattedCpf,
           cpfLastDigits: p.participants.cpf_last_digits,
           phone: maskPhone(p.participants.phone_normalized),
           clinicName: p.participants.clinic_name,
@@ -1908,7 +1921,7 @@ export class ParticipantsService implements OnModuleInit {
       }
     }
 
-    return resultList.slice(0, 30);
+    return resultList;
   }
 
   async findByCpfAndEvent(eventId: number, rawCpf: string) {

@@ -42,6 +42,9 @@ type AgendaMeeting = {
   organizerEmail?: string;
   msResponse?: string;
   msShowAs?: string;
+  hostKey?: "hugo" | "ale";
+  hostName?: string;
+  hostEmail?: string;
   participants: {
     id: number;
     full_name: string;
@@ -60,6 +63,7 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filterSource, setFilterSource] = useState<"ALL" | "FINORA" | "MICROSOFT">("ALL");
+  const [filterHost, setFilterHost] = useState<"ALL" | "hugo" | "ale">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
   async function fetchAgenda(isManual = false) {
@@ -164,14 +168,19 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
   const totalItems = meetings.length;
   const finoraMeetings = meetings.filter((m) => m.source !== "MICROSOFT_365");
   const microsoftMeetings = meetings.filter((m) => m.source === "MICROSOFT_365");
+  const hugoMeetings = meetings.filter((m) => (m.hostKey || "hugo") === "hugo");
+  const aleMeetings = meetings.filter((m) => m.hostKey === "ale" || m.hostEmail?.toLowerCase().includes("alessandra"));
   const completedCount = finoraMeetings.filter((m) => m.status === "COMPLETED").length;
   const noShowCount = finoraMeetings.filter((m) => m.status === "NO_SHOW").length;
   const waitingCount = finoraMeetings.filter((m) => m.status === "SCHEDULED").length;
 
-  // Filtragem ativa por fonte e busca
+  // Filtragem ativa por sócio (Hugo / Ale), fonte e busca
   const filteredMeetings = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return meetings.filter((m) => {
+      const mHostKey = m.hostKey || (m.hostEmail?.toLowerCase().includes("alessandra") ? "ale" : "hugo");
+      if (filterHost !== "ALL" && mHostKey !== filterHost) return false;
+
       if (filterSource === "FINORA" && m.source === "MICROSOFT_365") return false;
       if (filterSource === "MICROSOFT" && m.source !== "MICROSOFT_365") return false;
 
@@ -180,9 +189,10 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
       const matchClinic = m.participants.clinic_name?.toLowerCase().includes(q);
       const matchSubject = m.subject?.toLowerCase().includes(q);
       const matchPhone = m.participants.phone?.includes(q);
-      return matchName || matchClinic || matchSubject || matchPhone;
+      const matchHost = (m.hostName || "").toLowerCase().includes(q) || (m.hostEmail || "").toLowerCase().includes(q);
+      return matchName || matchClinic || matchSubject || matchPhone || matchHost;
     });
-  }, [meetings, filterSource, searchQuery]);
+  }, [meetings, filterHost, filterSource, searchQuery]);
 
   // Agrupamento por Data (separadas por dia cronologicamente)
   const groupedMeetings = useMemo(() => {
@@ -295,9 +305,53 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
           </div>
         </div>
 
-        {/* Abas de Filtro de Origem */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line">
-          <div className="flex items-center gap-2">
+        {/* Abas de Filtro por Agenda (Hugo / Ale) e Origem */}
+        <div className="flex flex-col gap-3 pt-3 border-t border-line">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-mono font-bold uppercase text-text-2 mr-1">Agenda:</span>
+              <button
+                type="button"
+                onClick={() => setFilterHost("ALL")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  filterHost === "ALL"
+                    ? "bg-finora-600 text-white shadow-md"
+                    : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
+                }`}
+              >
+                Todas as Agendas ({totalItems})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterHost("hugo")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filterHost === "hugo"
+                    ? "bg-amber-500 text-slate-950 shadow-md"
+                    : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
+                }`}
+              >
+                <span>🤵 Hugo Werninghaus ({hugoMeetings.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterHost("ale")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filterHost === "ale"
+                    ? "bg-fuchsia-500 text-white shadow-md"
+                    : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
+                }`}
+              >
+                <span>👩‍💼 Alessandra / Ale ({aleMeetings.length})</span>
+              </button>
+            </div>
+
+            <span className="text-xs text-text-2 font-medium">
+              Exibindo {filteredMeetings.length} de {totalItems}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-mono font-bold uppercase text-text-2 mr-1">Tipo:</span>
             <button
               type="button"
               onClick={() => setFilterSource("ALL")}
@@ -331,13 +385,9 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
               }`}
             >
               <Calendar size={12} />
-              <span>Microsoft 365 / Hugo ({microsoftMeetings.length})</span>
+              <span>Microsoft 365 · Hugo & Ale ({microsoftMeetings.length})</span>
             </button>
           </div>
-
-          <span className="text-xs text-text-2 font-medium">
-            Exibindo {filteredMeetings.length} de {totalItems}
-          </span>
         </div>
       </div>
 
@@ -437,10 +487,16 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                             {/* Assunto e Detalhes */}
                             <div className="space-y-2.5">
                               <div>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
-                                  Agenda Hugo Werninghaus
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                                    item.hostKey === "ale"
+                                      ? "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30"
+                                      : "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                                  }`}
+                                >
+                                  <span>{item.hostKey === "ale" ? "👩‍💼 Agenda Alessandra (Ale)" : "🤵 Agenda Hugo Werninghaus"}</span>
                                 </span>
-                                <h4 className="text-base font-bold text-text leading-snug mt-0.5" title={item.subject}>
+                                <h4 className="text-base font-bold text-text leading-snug mt-1" title={item.subject}>
                                   {item.subject || "Reunião no Calendário Microsoft"}
                                 </h4>
                               </div>
@@ -576,6 +632,21 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
 
                           {/* Body: Lead Details */}
                           <div className="space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                                  meeting.hostKey === "ale"
+                                    ? "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30"
+                                    : "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                                }`}
+                              >
+                                <span>{meeting.hostKey === "ale" ? "👩‍💼 Com Alessandra (Ale)" : "🤵 Com Hugo Werninghaus"}</span>
+                              </span>
+                              <span className="text-[10px] font-mono text-text-2">
+                                {meeting.hostEmail || "hugo@grupoqmax.com.br"}
+                              </span>
+                            </div>
+
                             <div className="flex items-start gap-3">
                               <div className="w-8 h-8 rounded-full bg-finora-500/15 text-finora-400 flex items-center justify-center shrink-0 mt-0.5">
                                 <UserRound size={16} />

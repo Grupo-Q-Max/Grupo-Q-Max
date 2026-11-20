@@ -118,9 +118,13 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
 
   const teamsLink = `https://teams.microsoft.com/l/meetup-join/qmax-invictus-${meetingId}`;
 
-  const summary = `Reunião Estratégica: Hugo Werninghaus & ${participantName}`;
+  const isAle = bossEmail.toLowerCase().includes('alessandra');
+  const hostShortName = isAle ? 'Alessandra (Ale)' : 'Hugo Werninghaus';
+  const hostFullName = isAle ? 'Alessandra (Grupo Q-Max)' : 'Hugo Ludwig Werninghaus (Grupo Q-Max)';
+  const summary = `Reunião Estratégica: ${hostShortName} & ${participantName}`;
   const description =
     `Consultoria Estratégica agendada no evento Invictus 2026.\\n\\n` +
+    `👔 Especialista / Sócio: ${hostShortName} (${bossEmail})\\n` +
     `👤 Participante: ${participantName}\\n` +
     `🏥 Clínica: ${clinic}\\n` +
     `🪑 Cadeiras: ${chairs}\\n` +
@@ -153,8 +157,8 @@ export async function sendMeetingInvite(payload: MeetingInvitePayload): Promise<
     `SUMMARY:${summary}`,
     `DESCRIPTION:${description}`,
     'LOCATION:Microsoft Teams (Online)',
-    `ORGANIZER;CN="Hugo Ludwig Werninghaus (Grupo Q-Max)":mailto:${bossEmail}`,
-    `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Hugo Ludwig Werninghaus":mailto:${bossEmail}`,
+    `ORGANIZER;CN="${hostFullName}":mailto:${bossEmail}`,
+    `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="${hostShortName}":mailto:${bossEmail}`,
     `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Rodrigo (Diretoria Q-Max)":mailto:${secondEmail}`,
     `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Edvaldo Borges":mailto:${thirdEmail}`,
   ];

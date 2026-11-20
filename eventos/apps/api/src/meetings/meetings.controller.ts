@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { MeetingsService } from './meetings.service';
-import { IsDateString, IsEmail, IsInt, IsOptional } from 'class-validator';
+import { IsDateString, IsEmail, IsInt, IsOptional, IsString } from 'class-validator';
 
 export class BookMeetingDto {
   @IsInt()
@@ -13,6 +13,10 @@ export class BookMeetingDto {
   @IsOptional()
   @IsEmail()
   meetingEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  host?: string;
 }
 
 export class UpdateStatusDto {
@@ -27,8 +31,9 @@ export class MeetingsController {
   getAgenda(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Query('date') dateString?: string,
+    @Query('host') host?: string,
   ) {
-    return this.meetingsService.getAgendaByEvent(eventId, dateString);
+    return this.meetingsService.getAgendaByEvent(eventId, dateString, host);
   }
 
   @Post(':id/status')
@@ -53,13 +58,17 @@ export class MeetingsController {
   getAvailableSlots(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Query('date') dateString: string, // YYYY-MM-DD
+    @Query('host') host?: string,
   ) {
-    return this.meetingsService.getAvailableSlots(eventId, dateString);
+    return this.meetingsService.getAvailableSlots(eventId, dateString, host);
   }
 
   @Get('event/:eventId/next-slot')
-  async getNextSlot(@Param('eventId', ParseIntPipe) eventId: number) {
-    const nextSlot = await this.meetingsService.getNextAvailableSlot(eventId, 7);
+  async getNextSlot(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Query('host') host?: string,
+  ) {
+    const nextSlot = await this.meetingsService.getNextAvailableSlot(eventId, 7, host);
     return { nextSlot };
   }
 
@@ -69,6 +78,12 @@ export class MeetingsController {
     @Param('eventId', ParseIntPipe) eventId: number,
     @Body() dto: BookMeetingDto,
   ) {
-    return this.meetingsService.bookMeeting(eventId, dto.participantId, dto.scheduledAt, dto.meetingEmail);
+    return this.meetingsService.bookMeeting(
+      eventId,
+      dto.participantId,
+      dto.scheduledAt,
+      dto.meetingEmail,
+      dto.host,
+    );
   }
 }

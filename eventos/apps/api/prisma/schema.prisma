@@ -409,13 +409,14 @@ model meetings {
   participant_id Int             @db.UnsignedInt
   scheduled_at   DateTime        @db.DateTime(0)
   status         meetings_status @default(SCHEDULED)
+  host_email     String?         @default("hugo@grupoqmax.com.br") @db.VarChar(191)
   created_at     DateTime        @default(now()) @db.DateTime(0)
   updated_at     DateTime        @default(now()) @db.DateTime(0)
 
   events       events       @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "fk_meetings_event")
   participants participants @relation(fields: [participant_id], references: [id], onDelete: Cascade, map: "fk_meetings_participant")
 
-  @@unique([event_id, scheduled_at], map: "uq_meetings_event_scheduled_at")
+  @@unique([event_id, scheduled_at, host_email], map: "uq_meetings_event_scheduled_at_host")
   @@index([event_id], map: "idx_meetings_event")
   @@index([participant_id], map: "idx_meetings_participant")
 }

@@ -900,12 +900,15 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
 
   const filteredPending = useMemo(() => {
     const q = searchQuery.trim().toLowerCase().replace(/^#/, "");
+    const qDigits = q.replace(/\D/g, "");
     let list = pendingList;
     if (q) {
       list = pendingList.filter(
-        (p) =>
+        (p: any) =>
           p.fullName.toLowerCase().includes(q) ||
           p.phone.includes(q) ||
+          (p.cpf && p.cpf.includes(qDigits && qDigits.length > 0 ? qDigits : q)) ||
+          (p.cpfFormatted && p.cpfFormatted.toLowerCase().includes(q)) ||
           p.cpfLastDigits.includes(q) ||
           String(p.participantId).padStart(4, "0").includes(q) ||
           String(p.participationId).includes(q) ||
@@ -1494,8 +1497,8 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
                 <p className="text-xs text-slate-500 mt-1">Os novos cadastros aparecem aqui em tempo real.</p>
               </div>
             ) : (
-              <ul className="max-h-[50dvh] overflow-y-auto divide-y divide-ink-line/40 rounded-xl border border-ink-line/60 bg-ink-900/40">
-                {filteredPending.slice(0, 30).map((p, idx) => {
+              <ul className="max-h-[55dvh] overflow-y-auto divide-y divide-ink-line/40 rounded-xl border border-ink-line/60 bg-ink-900/40">
+                {filteredPending.map((p, idx) => {
                   const on = selected?.participationId === p.participationId;
                   const shortcutKey = idx < 9 ? idx + 1 : null;
                   return (

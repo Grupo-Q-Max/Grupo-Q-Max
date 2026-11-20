@@ -175,7 +175,7 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
         eventId={eventId}
         participantId={participant.participantId}
         meetingEmail={effectiveEmail || undefined}
-        inviteText="Ao confirmar sua reunião de 45 minutos com o CEO Hugo Werninghaus, sua Roleta VIP estará liberada no telão/estande Finora!"
+        inviteText="Escolha abaixo a agenda do sócio (Hugo Werninghaus ou Alessandra) e confirme sua reunião de 45 minutos para liberar sua Roleta VIP!"
       />
     );
   }
@@ -186,19 +186,19 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
       <div className="flex flex-col gap-2 rounded-2xl border-2 border-amber-400/50 bg-gradient-to-br from-slate-900/95 via-[#080d1a] to-amber-950/30 p-5.5 text-white shadow-2xl animate-fade-in">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <span className="font-mono text-xs font-black tracking-widest text-amber-300 uppercase flex items-center gap-1.5">
-            <Crown size={15} className="text-amber-400" /> REUNIÃO COM O CEO · ROLETA VIP
+            <Crown size={15} className="text-amber-400" /> REUNIÃO COM NOSSOS SÓCIOS · ROLETA VIP
           </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 border border-amber-400/30">
             Até 28 de Fevereiro
           </span>
         </div>
 
-        <h1 className="font-display text-[26px] sm:text-[30px] font-black leading-tight text-white mt-1">
-          Bate-papo VIP com Hugo Werninghaus
+        <h1 className="font-display text-[25px] sm:text-[29px] font-black leading-tight text-white mt-1">
+          Bate-papo VIP · Hugo Werninghaus & Alessandra (Ale)
         </h1>
 
         <p className="text-[13.5px] leading-relaxed text-slate-300">
-          Agende sua consultoria de 45 minutos de diagnóstico financeiro e planejamento tributário exclusivo. Ao marcar, você destrava automaticamente a sua vaga na{" "}
+          Agende sua consultoria de 45 minutos de diagnóstico financeiro e planejamento tributário exclusivo com nossos sócios. Ao marcar, você destrava automaticamente a sua vaga na{" "}
           <strong className="text-amber-300 font-extrabold">Roleta VIP</strong> do estande Finora!
         </p>
 
