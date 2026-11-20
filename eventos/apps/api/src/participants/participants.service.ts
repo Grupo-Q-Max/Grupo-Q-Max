@@ -1925,92 +1925,126 @@ export class ParticipantsService implements OnModuleInit {
   }
 
   async findByCpfAndEvent(eventId: number, rawCpf: string) {
-    const cleanCpf = (rawCpf || '').replace(/\D/g, '');
-    if (cleanCpf.length < 10 || cleanCpf.length > 11) {
+    const rawTrimmed = String(rawCpf || '').trim();
+    const cleanCpf = rawTrimmed.replace(/\D/g, '');
+    if (cleanCpf.length < 4 && rawTrimmed.length < 3) {
       return { found: false, message: 'CPF ou documento inválido.' };
     }
 
-    const cpfHash = hashCpf(cleanCpf);
-    let participant = await this.prisma.participants.findFirst({
-      where: { cpf_hash: cpfHash },
-      include: {
-        participations: {
-          where: { event_id: eventId },
-          include: {
-            draws: {
-              include: {
-                prizes: true,
-              },
+    const includeRelations = {
+      participations: {
+        where: { event_id: eventId },
+        include: {
+          draws: {
+            include: {
+              prizes: true,
             },
-            vip_codes: true,
           },
-          orderBy: { id: 'desc' },
+          vip_codes: true,
         },
-        meetings: {
-          where: { status: { notIn: ['CANCELED'] } },
-          orderBy: { id: 'desc' },
-        },
+        orderBy: { id: 'desc' as const },
       },
+      meetings: {
+        where: { status: { notIn: ['CANCELED' as const] } },
+        orderBy: { id: 'desc' as const },
+      },
+    };
+
+    const formattedWithDots =
+      cleanCpf.length === 11
+        ? `${cleanCpf.slice(0, 3)}.${cleanCpf.slice(3, 6)}.${cleanCpf.slice(6, 9)}-${cleanCpf.slice(9)}`
+        : rawTrimmed;
+
+    const hashClean = cleanCpf ? hashCpf(cleanCpf) : '';
+    // Caso algum registro tenha sido salvo com pontuação no hash
+    const hashFormatted = crypto
+      .createHmac(
+        'sha256',
+        process.env.CPF_HASH_SECRET
+          ? Buffer.from(process.env.CPF_HASH_SECRET, 'base64').length > 0
+            ? Buffer.from(process.env.CPF_HASH_SECRET, 'base64')
+            : Buffer.from(process.env.CPF_HASH_SECRET, 'utf8')
+          : Buffer.from('default'),
+      )
+      .update(formattedWithDots)
+      .digest('hex');
+
+    let participant = await this.prisma.participants.findFirst({
+      where: {
+        OR: [
+          ...(hashClean ? [{ cpf_hash: hashClean }] : []),
+          ...(hashFormatted ? [{ cpf_hash: hashFormatted }] : []),
+        ],
+      },
+      include: includeRelations,
     });
 
-    // Fallback 1: Se não encontrou por hash exato, busca pelos últimos 4 dígitos e valida via decryptCpf
-    if (!participant && cleanCpf.length === 11) {
+    // Fallback 1: Busca pelos últimos 4 dígitos do CPF e valida via decryptCpf (ignorando pontos, traços e espaços)
+    if (!participant && cleanCpf.length >= 4) {
+      const last4 = cleanCpf.slice(-4);
       const candidates = await this.prisma.participants.findMany({
         where: {
-          cpf_last_digits: cleanCpf.slice(-4),
+          cpf_last_digits: last4,
         },
-        include: {
-          participations: {
-            where: { event_id: eventId },
-            include: {
-              draws: { include: { prizes: true } },
-              vip_codes: true,
-            },
-            orderBy: { id: 'desc' },
-          },
-          meetings: {
-            where: { status: { notIn: ['CANCELED'] } },
-            orderBy: { id: 'desc' },
-          },
-        },
+        include: includeRelations,
+        orderBy: { id: 'desc' },
       });
 
       for (const cand of candidates) {
         const decrypted = cand.cpf_encrypted ? decryptCpf(cand.cpf_encrypted) : '';
-        if (decrypted && normalizeCpf(decrypted) === cleanCpf) {
+        const normDecrypted = normalizeCpf(decrypted);
+        if (normDecrypted && normDecrypted === cleanCpf) {
+          participant = cand;
+          break;
+        }
+      }
+
+      // Se houver exatamente 1 candidato com os mesmos 4 últimos dígitos (ou se o CPF de 11 dígitos bateu os últimos 4 e a chave de criptografia mudou)
+      if (!participant && candidates.length === 1 && cleanCpf.length === 11) {
+        participant = candidates[0];
+      }
+    }
+
+    // Fallback 2: Varredura completa descriptografando todos os participantes cadastrados (ultra-rápido para ~200 registros)
+    if (!participant && cleanCpf.length === 11) {
+      const allParticipants = await this.prisma.participants.findMany({
+        include: includeRelations,
+        orderBy: { id: 'desc' },
+        take: 1000,
+      });
+
+      for (const cand of allParticipants) {
+        const decrypted = cand.cpf_encrypted ? decryptCpf(cand.cpf_encrypted) : '';
+        const normDecrypted = normalizeCpf(decrypted);
+        if (normDecrypted && normDecrypted === cleanCpf) {
           participant = cand;
           break;
         }
       }
     }
 
-    // Fallback 2: Caso o usuário tenha digitado o celular no campo de CPF
+    // Fallback 3: Caso o usuário tenha digitado o celular ou nome
     if (!participant) {
-      const phoneCandidates = await this.prisma.participants.findMany({
+      const phoneOrNameCandidates = await this.prisma.participants.findMany({
         where: {
           OR: [
-            { phone_normalized: cleanCpf },
-            { phone: cleanCpf },
+            ...(cleanCpf.length >= 8
+              ? [
+                  { phone_normalized: cleanCpf },
+                  { phone: { contains: cleanCpf } },
+                ]
+              : []),
+            ...(rawTrimmed.length >= 3 && /[a-zA-Z]/.test(rawTrimmed)
+              ? [{ full_name: { contains: rawTrimmed } }]
+              : []),
           ],
         },
-        include: {
-          participations: {
-            where: { event_id: eventId },
-            include: {
-              draws: { include: { prizes: true } },
-              vip_codes: true,
-            },
-            orderBy: { id: 'desc' },
-          },
-          meetings: {
-            where: { status: { notIn: ['CANCELED'] } },
-            orderBy: { id: 'desc' },
-          },
-        },
+        include: includeRelations,
+        orderBy: { id: 'desc' },
       });
 
-      if (phoneCandidates.length > 0) {
-        participant = phoneCandidates[0];
+      if (phoneOrNameCandidates.length > 0) {
+        participant = phoneOrNameCandidates[0];
       }
     }
 

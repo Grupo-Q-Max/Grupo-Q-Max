@@ -13,6 +13,8 @@ import type { Request } from 'express';
 const PUBLIC_ROUTES: Array<[method: string, pattern: RegExp]> = [
   ['GET', /^\/api\/v1\/health\/?$/],
   ['POST', /^\/api\/v1\/participants\/register\/?$/],
+  ['POST', /^\/api\/v1\/participants\/lookup-by-cpf\/?$/],
+  ['GET', /^\/api\/v1\/participants\/lookup-by-cpf\/?$/],
   ['POST', /^\/api\/v1\/participants\/validate-whatsapp\/?$/],
   ['GET', /^\/api\/v1\/participants\/\d+\/public\/?$/],
   ['POST', /^\/api\/v1\/draws\/participation\/\d+\/?$/],
@@ -20,6 +22,7 @@ const PUBLIC_ROUTES: Array<[method: string, pattern: RegExp]> = [
   ['GET', /^\/api\/v1\/events\/?$/],
   ['POST', /^\/api\/v1\/admin-users\/login\/?$/],
   ['GET', /^\/api\/v1\/meetings\/event\/\d+\/available-slots\/?$/],
+  ['GET', /^\/api\/v1\/meetings\/event\/\d+\/next-slot\/?$/],
   ['POST', /^\/api\/v1\/meetings\/event\/\d+\/book\/?$/],
   ['GET', /^\/api\/v1\/whatsapp\/status\/?$/],
   ['GET', /^\/api\/v1\/whatsapp\/queue-stats\/?$/],

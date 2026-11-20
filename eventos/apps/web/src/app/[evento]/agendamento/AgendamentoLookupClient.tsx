@@ -70,12 +70,12 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
   const [readyToSchedule, setReadyToSchedule] = useState(false);
 
   const cleanCpf = cpf.replace(/\D/g, "");
-  const isCpfValid = validateCpfAlgorithmic(cleanCpf);
+  const isCpfValid = cleanCpf.length === 11;
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault();
-    if (!isCpfValid) {
-      setError("Por favor, digite um CPF válido com 11 dígitos.");
+    if (cleanCpf.length < 11) {
+      setError("Por favor, digite os 11 números do seu CPF.");
       return;
     }
 
@@ -91,7 +91,7 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
         body: JSON.stringify({ eventId, cpf: cleanCpf }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok && data.found) {
         setParticipant(data);
         if (data.email && !data.email.includes("@visitante.")) {
@@ -99,9 +99,11 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
         } else {
           setEmailOption("custom");
         }
-      } else {
-        // CPF não encontrado: abre cadastro rápido
+      } else if (res.ok && data.found === false) {
+        // CPF genuinamente não encontrado no banco: abre cadastro rápido
         setIsNewUser(true);
+      } else {
+        setError(data.message || "Não foi possível consultar seu CPF neste momento. Tente novamente.");
       }
     } catch {
       setError("Não foi possível consultar seu CPF neste momento. Tente novamente.");

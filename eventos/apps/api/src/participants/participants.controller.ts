@@ -126,13 +126,22 @@ export class ParticipantsController {
     return this.participantsService.validateWhatsapp(token);
   }
 
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Post('lookup-by-cpf')
   lookupByCpf(
-    @Body('eventId') eventId: number,
-    @Body('cpf') cpf: string,
+    @Body('eventId') eventId?: number | string,
+    @Body('cpf') cpf?: string,
   ) {
-    return this.participantsService.findByCpfAndEvent(Number(eventId), cpf);
+    return this.participantsService.findByCpfAndEvent(Number(eventId || 3), String(cpf || ''));
+  }
+
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Get('lookup-by-cpf')
+  lookupByCpfGet(
+    @Query('eventId') eventId?: string,
+    @Query('cpf') cpf?: string,
+  ) {
+    return this.participantsService.findByCpfAndEvent(Number(eventId || 3), String(cpf || ''));
   }
 
   @Post('admin/delete-participant')

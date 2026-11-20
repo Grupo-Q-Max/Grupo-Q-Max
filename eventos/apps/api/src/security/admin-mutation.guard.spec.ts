@@ -24,6 +24,7 @@ describe('AdminMutationGuard', () => {
   it('libera só rotas públicas ancoradas, pelo path e método', () => {
     expect(isPublicRoute('GET', '/api/v1/health')).toBe(true);
     expect(isPublicRoute('POST', '/api/v1/participants/register')).toBe(true);
+    expect(isPublicRoute('POST', '/api/v1/participants/lookup-by-cpf')).toBe(true);
     expect(isPublicRoute('GET', '/api/v1/participants/5/public')).toBe(true);
     expect(isPublicRoute('POST', '/api/v1/draws/participation/5')).toBe(true);
     expect(isPublicRoute('OPTIONS', '/api/v1/admin-users')).toBe(true);
