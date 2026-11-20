@@ -121,7 +121,7 @@ export class PrizesService {
       throw new NotFoundException('Evento não encontrado.');
     }
 
-    return this.prisma.prizes.findMany({
+    const prizes = await this.prisma.prizes.findMany({
       where: {
         event_id: eventId,
       },
@@ -145,6 +145,28 @@ export class PrizesService {
         },
       },
     });
+
+    const seenKeys = new Set<string>();
+    const deduplicated: typeof prizes = [];
+    for (const p of prizes) {
+      const normName = (p.name || '').trim().toLowerCase();
+      const key = `${p.is_vip ? 'vip' : 'normal'}:${normName}`;
+      if (seenKeys.has(key)) {
+        if (p.active) {
+          this.prisma.prizes
+            .update({
+              where: { id: p.id },
+              data: { active: false, available_stock: 0, probability: 0 },
+            })
+            .catch(() => {});
+        }
+        continue;
+      }
+      seenKeys.add(key);
+      deduplicated.push(p);
+    }
+
+    return deduplicated;
   }
 
   async findOne(id: number) {

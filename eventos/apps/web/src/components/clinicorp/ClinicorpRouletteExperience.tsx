@@ -294,13 +294,31 @@ export function ClinicorpRouletteExperience({ eventId: propEventId, event }: Cli
     const pool = prizes.filter((prize) => !prize.is_vip && !prize.name.toLowerCase().includes("pin"));
     const eligible = pool.filter((prize) => prize.active && prize.available_stock > 0);
     const target = eligible.length > 0 ? eligible : pool;
-    return target.map((p) => ({ ...p, name: cleanPrizeName(p.name) }));
+    const seen = new Set<string>();
+    const unique: typeof target = [];
+    for (const p of target) {
+      const cleanedName = cleanPrizeName(p.name);
+      const normKey = cleanedName.trim().toLowerCase();
+      if (seen.has(normKey)) continue;
+      seen.add(normKey);
+      unique.push({ ...p, name: cleanedName });
+    }
+    return unique;
   }, [prizes]);
 
   const vipPrizes = useMemo(() => {
     // Mantém todos os prêmios VIP ativos visíveis nas fatias da roleta (incluindo o de 50% de desconto)
     const pool = prizes.filter((prize) => Boolean(prize.is_vip) && prize.active);
-    return pool.length > 0 ? pool : prizes.filter((prize) => Boolean(prize.is_vip));
+    const target = pool.length > 0 ? pool : prizes.filter((prize) => Boolean(prize.is_vip));
+    const seen = new Set<string>();
+    const unique: typeof target = [];
+    for (const p of target) {
+      const normKey = p.name.trim().toLowerCase();
+      if (seen.has(normKey)) continue;
+      seen.add(normKey);
+      unique.push(p);
+    }
+    return unique;
   }, [prizes]);
 
   const wheelPrizes = normalPrizes;

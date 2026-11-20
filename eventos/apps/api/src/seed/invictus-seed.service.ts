@@ -59,17 +59,22 @@ export class InvictusSeedService implements OnApplicationBootstrap {
 
     const currentPrizes = await this.prisma.prizes.findMany({
       where: { event_id: event.id },
+      orderBy: [{ active: 'desc' }, { id: 'desc' }],
     });
+
+    const matchedIds = new Set<number>();
 
     for (const p of normalPrizes) {
       const match = currentPrizes.find(
         (cp) =>
+          !matchedIds.has(cp.id) &&
           !cp.is_vip &&
           (cp.name.trim().toLowerCase() === p.name.trim().toLowerCase() ||
             (p.name === 'Garrafa' && cp.name.toLowerCase().includes('garrafa')) ||
             (p.name === 'Copo' && cp.name.toLowerCase().includes('copo'))),
       );
       if (match) {
+        matchedIds.add(match.id);
         await this.prisma.prizes.update({
           where: { id: match.id },
           data: {
@@ -83,7 +88,7 @@ export class InvictusSeedService implements OnApplicationBootstrap {
           },
         });
       } else {
-        await this.prisma.prizes.create({
+        const created = await this.prisma.prizes.create({
           data: {
             event_id: event.id,
             name: p.name,
@@ -95,14 +100,19 @@ export class InvictusSeedService implements OnApplicationBootstrap {
             active: true,
           },
         });
+        matchedIds.add(created.id);
       }
     }
 
     for (const p of vipPrizes) {
       const match = currentPrizes.find(
-        (cp) => cp.name.trim().toLowerCase() === p.name.trim().toLowerCase() && cp.is_vip,
+        (cp) =>
+          !matchedIds.has(cp.id) &&
+          cp.name.trim().toLowerCase() === p.name.trim().toLowerCase() &&
+          cp.is_vip,
       );
       if (match) {
+        matchedIds.add(match.id);
         await this.prisma.prizes.update({
           where: { id: match.id },
           data: {
@@ -116,7 +126,7 @@ export class InvictusSeedService implements OnApplicationBootstrap {
           },
         });
       } else {
-        await this.prisma.prizes.create({
+        const created = await this.prisma.prizes.create({
           data: {
             event_id: event.id,
             name: p.name,
@@ -128,16 +138,20 @@ export class InvictusSeedService implements OnApplicationBootstrap {
             active: true,
           },
         });
+        matchedIds.add(created.id);
       }
     }
 
-    // Desativar prêmios que não estão em nenhuma das listas
-    const validNames = [...normalPrizes, ...vipPrizes].map((p) => p.name.toLowerCase());
+    // Desativar todos os prêmios duplicados ou antigos que não foram o único selecionado de cada item
     for (const cp of currentPrizes) {
-      if (!validNames.includes(cp.name.trim().toLowerCase())) {
+      if (!matchedIds.has(cp.id)) {
         await this.prisma.prizes.update({
           where: { id: cp.id },
-          data: { active: false },
+          data: {
+            active: false,
+            available_stock: 0,
+            probability: 0,
+          },
         });
       }
     }
