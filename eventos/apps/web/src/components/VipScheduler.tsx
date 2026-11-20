@@ -516,9 +516,9 @@ export default function VipScheduler({
           ) : !date ? (
             "Selecione um Dia Acima para Começar 📅"
           ) : !slot ? (
-            "Selecione um Horário para Confirmar ⏰"
+            `Selecione um Horário do Dia ${format(date, "dd/MM")} ⏰`
           ) : (
-            `Confirmar Reunião com ${currentHost.shortName} (${startTimeFormatted} às ${endTimeFormatted}) 📅`
+            `Agendar Reunião com ${currentHost.shortName} · Dia ${format(parseISO(slot), "dd/MM")} (${startTimeFormatted} às ${endTimeFormatted}) 📅`
           )}
         </button>
         {skipHref && (
