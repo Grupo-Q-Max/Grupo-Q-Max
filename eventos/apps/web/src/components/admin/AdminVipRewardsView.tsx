@@ -482,6 +482,43 @@ export default function AdminVipRewardsView({ eventId }: { eventId: number }) {
             </button>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-mono font-bold uppercase text-text-2 mr-1">Agenda:</span>
+            <button
+              type="button"
+              onClick={() => setFilterHost("ALL")}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterHost === "ALL"
+                  ? "bg-amber-500 text-slate-950"
+                  : "bg-surface border border-line text-text-2 hover:text-text"
+              }`}
+            >
+              Todas (Hugo + Ale)
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterHost("hugo")}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterHost === "hugo"
+                  ? "bg-amber-500 text-slate-950"
+                  : "bg-surface border border-line text-text-2 hover:text-text"
+              }`}
+            >
+              🤵 Com Hugo ({rows.filter((r) => r.meeting?.hostKey === "hugo").length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterHost("ale")}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterHost === "ale"
+                  ? "bg-fuchsia-500 text-white"
+                  : "bg-surface border border-line text-text-2 hover:text-text"
+              }`}
+            >
+              👩‍💼 Com Ale ({rows.filter((r) => r.meeting?.hostKey === "ale").length})
+            </button>
+          </div>
+
           {distinctVipPrizes.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-mono font-bold uppercase text-text-2 mr-1">Prêmio VIP:</span>

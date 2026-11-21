@@ -85,8 +85,12 @@ export function getHostProfiles(): Record<HostKey, HostProfile> {
   };
 }
 
-export function resolveHost(_hostParam?: string | null): HostProfile {
+export function resolveHost(hostParam?: string | null): HostProfile {
   const profiles = getHostProfiles();
+  const norm = (hostParam || '').trim().toLowerCase();
+  if (norm === 'ale' || norm.includes('alessandra')) {
+    return profiles.ale;
+  }
   return profiles.hugo;
 }
 

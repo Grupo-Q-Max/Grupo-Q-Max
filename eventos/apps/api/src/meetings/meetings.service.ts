@@ -136,7 +136,8 @@ export class MeetingsService {
       throw new BadRequestException('Horário fora do expediente da agenda (08h às 19h).');
     }
 
-    const hostProfile = resolveHost(host);
+    // Novos agendamentos pelo site são permitidos exclusivamente na agenda do Hugo
+    const hostProfile = getHostProfiles().hugo;
 
     // Se o participante já possui uma reunião ativa neste evento, reagenda a reunião existente (e atualiza no Microsoft 365) em vez de duplicar
     const existingForParticipant = await this.prisma.meetings.findFirst({
@@ -401,66 +402,79 @@ export class MeetingsService {
     });
 
     const profiles = getHostProfiles();
+    const filterNorm = (hostFilter || '').trim().toLowerCase();
+    const wantHugo = !filterNorm || filterNorm === 'all' || filterNorm === 'hugo';
+    const wantAle = !filterNorm || filterNorm === 'all' || filterNorm === 'ale' || filterNorm.includes('alessandra');
 
-    // 2. Compromissos e reuniões do Hugo puxados 100% em tempo real do Microsoft 365 (Teams / Outlook)
-    const msEvents = await getHugoDetailedEvents(msStartDate, msEndDate, profiles.hugo.email);
+    // 2. Compromissos e reuniões do Hugo e da Ale puxados 100% em tempo real do Microsoft 365 (Teams / Outlook)
+    const [hugoMsEvents, aleMsEvents] = await Promise.all([
+      wantHugo ? getHugoDetailedEvents(msStartDate, msEndDate, profiles.hugo.email) : Promise.resolve([]),
+      wantAle ? getHugoDetailedEvents(msStartDate, msEndDate, profiles.ale.email) : Promise.resolve([]),
+    ]);
+    const msEvents = [...hugoMsEvents, ...aleMsEvents];
 
-    // Formata os agendamentos do site
-    const formattedSiteMeetings = siteMeetings.map((m: any) => {
-      const hostProfile = profiles.hugo;
-      const parts = m.participants?.participations || [];
-      const vipPart = parts.find((p: any) => p.draws?.prizes?.is_vip);
-      const normalPart = parts.find((p: any) => p.draws && !p.draws.prizes?.is_vip);
-      const decryptedCpf = m.participants?.cpf_encrypted ? decryptCpf(m.participants.cpf_encrypted) : '';
-      const formattedCpf = decryptedCpf
-        ? formatCpf(decryptedCpf)
-        : m.participants?.cpf_last_digits
-        ? `***.***.***-${m.participants.cpf_last_digits}`
-        : '';
+    // Formata os agendamentos do site (incluindo os agendados anteriormente na agenda da Ale)
+    const formattedSiteMeetings = siteMeetings
+      .map((m: any) => {
+        const hostProfile = resolveHost(m.host_email);
+        const parts = m.participants?.participations || [];
+        const vipPart = parts.find((p: any) => p.draws?.prizes?.is_vip);
+        const normalPart = parts.find((p: any) => p.draws && !p.draws.prizes?.is_vip);
+        const decryptedCpf = m.participants?.cpf_encrypted ? decryptCpf(m.participants.cpf_encrypted) : '';
+        const formattedCpf = decryptedCpf
+          ? formatCpf(decryptedCpf)
+          : m.participants?.cpf_last_digits
+          ? `***.***.***-${m.participants.cpf_last_digits}`
+          : '';
 
-      return {
-        id: m.id,
-        source: 'FINORA' as const,
-        isMicrosoft: false,
-        scheduled_at: m.scheduled_at.toISOString(),
-        status: m.status,
-        hostKey: hostProfile.key,
-        hostName: hostProfile.name,
-        hostEmail: hostProfile.email,
-        vipPrize: vipPart?.draws?.prizes
-          ? {
-              drawId: vipPart.draws.id,
-              prizeId: vipPart.draws.prizes.id,
-              name: vipPart.draws.prizes.name,
-              description: vipPart.draws.prizes.description,
-              drawnAt: vipPart.draws.drawn_at,
-              claimedAt: vipPart.draws.claimed_at,
-            }
-          : null,
-        normalPrize: normalPart?.draws?.prizes
-          ? {
-              drawId: normalPart.draws.id,
-              prizeId: normalPart.draws.prizes.id,
-              name: normalPart.draws.prizes.name,
-              description: normalPart.draws.prizes.description,
-              drawnAt: normalPart.draws.drawn_at,
-              claimedAt: normalPart.draws.claimed_at,
-            }
-          : null,
-        participants: {
-          id: m.participants.id,
-          full_name: m.participants.full_name,
-          cpf: decryptedCpf,
-          cpf_formatted: formattedCpf,
-          phone: m.participants.phone,
-          email: m.participants.email,
-          clinic_name: m.participants.clinic_name,
-          cro_number: m.participants.cro_number,
-          cro_state: m.participants.cro_state,
-          chairs_count: m.participants.chairs_count,
-        },
-      };
-    });
+        return {
+          id: m.id,
+          source: 'FINORA' as const,
+          isMicrosoft: false,
+          scheduled_at: m.scheduled_at.toISOString(),
+          status: m.status,
+          hostKey: hostProfile.key,
+          hostName: hostProfile.name,
+          hostEmail: hostProfile.email,
+          vipPrize: vipPart?.draws?.prizes
+            ? {
+                drawId: vipPart.draws.id,
+                prizeId: vipPart.draws.prizes.id,
+                name: vipPart.draws.prizes.name,
+                description: vipPart.draws.prizes.description,
+                drawnAt: vipPart.draws.drawn_at,
+                claimedAt: vipPart.draws.claimed_at,
+              }
+            : null,
+          normalPrize: normalPart?.draws?.prizes
+            ? {
+                drawId: normalPart.draws.id,
+                prizeId: normalPart.draws.prizes.id,
+                name: normalPart.draws.prizes.name,
+                description: normalPart.draws.prizes.description,
+                drawnAt: normalPart.draws.drawn_at,
+                claimedAt: normalPart.draws.claimed_at,
+              }
+            : null,
+          participants: {
+            id: m.participants.id,
+            full_name: m.participants.full_name,
+            cpf: decryptedCpf,
+            cpf_formatted: formattedCpf,
+            phone: m.participants.phone,
+            email: m.participants.email,
+            clinic_name: m.participants.clinic_name,
+            cro_number: m.participants.cro_number,
+            cro_state: m.participants.cro_state,
+            chairs_count: m.participants.chairs_count,
+          },
+        };
+      })
+      .filter((m: any) => {
+        if (m.hostKey === 'hugo' && !wantHugo) return false;
+        if (m.hostKey === 'ale' && !wantAle) return false;
+        return true;
+      });
 
     // Formata e adiciona os eventos do Microsoft 365 (evitando duplicar reuniões que o site acabou de criar para o mesmo sócio)
     const formattedMsEvents = msEvents
@@ -787,26 +801,30 @@ export class MeetingsService {
       throw new BadRequestException('Horário inválido.');
     }
     const profiles = getHostProfiles();
-    const ok = await updateMicrosoftCalendarEventById(msEventId, scheduledAt, 45, profiles.hugo.email);
+    const isAle = /^ms-ale-/i.test(msEventId || '');
+    const targetEmail = isAle ? profiles.ale.email : profiles.hugo.email;
+    const ok = await updateMicrosoftCalendarEventById(msEventId, scheduledAt, 45, targetEmail);
     if (!ok) {
       throw new BadRequestException('Não foi possível reagendar este compromisso diretamente no Microsoft 365.');
     }
     return {
       success: true,
       scheduled_at: scheduledAt.toISOString(),
-      message: 'Compromisso reagendado com sucesso na agenda Microsoft do Hugo!',
+      message: 'Compromisso reagendado com sucesso na agenda Microsoft!',
     };
   }
 
   async deleteMicrosoftEventDirect(msEventId: string) {
     const profiles = getHostProfiles();
-    const ok = await deleteMicrosoftCalendarEvent(msEventId, profiles.hugo.email);
+    const isAle = /^ms-ale-/i.test(msEventId || '');
+    const targetEmail = isAle ? profiles.ale.email : profiles.hugo.email;
+    const ok = await deleteMicrosoftCalendarEvent(msEventId, targetEmail);
     if (!ok) {
       throw new BadRequestException('Não foi possível cancelar este compromisso no Microsoft 365.');
     }
     return {
       success: true,
-      message: 'Compromisso cancelado com sucesso na agenda Microsoft do Hugo!',
+      message: 'Compromisso cancelado com sucesso na agenda Microsoft!',
     };
   }
 

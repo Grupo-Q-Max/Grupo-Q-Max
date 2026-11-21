@@ -466,49 +466,88 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
           </div>
         </div>
 
-        {/* Abas de Filtro de Origem */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-line">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setFilterSource("ALL")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                filterSource === "ALL"
-                  ? "bg-finora-600 text-white shadow-md"
-                  : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
-              }`}
-            >
-              Todos os Compromissos ({totalItems})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterSource("FINORA")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                filterSource === "FINORA"
-                  ? "bg-finora-600 text-white shadow-md"
-                  : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
-              }`}
-            >
-              <Sparkles size={12} />
-              <span>Consultorias Finora VIP ({finoraMeetings.length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterSource("MICROSOFT")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                filterSource === "MICROSOFT"
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
-              }`}
-            >
-              <Calendar size={12} />
-              <span>Microsoft 365 · Hugo ({microsoftMeetings.length})</span>
-            </button>
+        {/* Abas de Filtro de Origem e Sócio */}
+        <div className="flex flex-col gap-2.5 pt-3 border-t border-line">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setFilterSource("ALL")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  filterSource === "ALL"
+                    ? "bg-finora-600 text-white shadow-md"
+                    : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
+                }`}
+              >
+                Todos os Compromissos ({totalItems})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterSource("FINORA")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filterSource === "FINORA"
+                    ? "bg-finora-600 text-white shadow-md"
+                    : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
+                }`}
+              >
+                <Sparkles size={12} />
+                <span>Consultorias Finora VIP ({finoraMeetings.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterSource("MICROSOFT")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filterSource === "MICROSOFT"
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "bg-surface border border-line text-text-2 hover:text-text hover:bg-line/40"
+                }`}
+              >
+                <Calendar size={12} />
+                <span>Microsoft 365 ({microsoftMeetings.length})</span>
+              </button>
+            </div>
+
+            <span className="text-xs text-text-2 font-medium">
+              Exibindo {filteredMeetings.length} de {totalItems}
+            </span>
           </div>
 
-          <span className="text-xs text-text-2 font-medium">
-            Exibindo {filteredMeetings.length} de {totalItems}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-mono font-bold uppercase text-text-2 mr-1">Agenda:</span>
+            <button
+              type="button"
+              onClick={() => setFilterHost("ALL")}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterHost === "ALL"
+                  ? "bg-amber-500 text-slate-950 shadow-sm"
+                  : "bg-surface border border-line text-text-2 hover:text-text"
+              }`}
+            >
+              Todas as Agendas ({totalItems})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterHost("hugo")}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterHost === "hugo"
+                  ? "bg-amber-500 text-slate-950 shadow-sm"
+                  : "bg-surface border border-line text-text-2 hover:text-text"
+              }`}
+            >
+              🤵 Agenda Hugo ({hugoMeetings.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterHost("ale")}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterHost === "ale"
+                  ? "bg-fuchsia-500 text-white shadow-sm"
+                  : "bg-surface border border-line text-text-2 hover:text-text"
+              }`}
+            >
+              👩‍💼 Agenda Ale ({aleMeetings.length})
+            </button>
+          </div>
         </div>
       </div>
 
