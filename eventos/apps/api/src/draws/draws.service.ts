@@ -1927,4 +1927,112 @@ export class DrawsService {
     notifyLive(eventId);
     return result;
   }
+
+  /**
+   * Apaga todos os giros (draws) e o histórico de auditoria de um participante específico no evento,
+   * devolvendo o estoque dos brindes sorteados como se o giro nunca tivesse acontecido.
+   */
+  async resetParticipantDraws(eventId: number, participantId: number) {
+    const participant = await this.prisma.participants.findUnique({
+      where: { id: participantId },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('Participante não encontrado.');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const userParts = await tx.participations.findMany({
+        where: {
+          event_id: eventId,
+          participant_id: participantId,
+        },
+        include: {
+          draws: true,
+        },
+        orderBy: { id: 'asc' },
+      });
+
+      const drawIds: string[] = [];
+      const partIds: string[] = [];
+
+      for (const p of userParts) {
+        partIds.push(String(p.id));
+        if (p.draws) {
+          drawIds.push(String(p.draws.id));
+          await tx.prizes
+            .update({
+              where: { id: p.draws.prize_id },
+              data: { available_stock: { increment: 1 } },
+            })
+            .catch(() => {});
+
+          const lastMov = await tx.prize_stock_movements.findFirst({
+            where: {
+              event_id: eventId,
+              prize_id: p.draws.prize_id,
+              type: 'DRAW',
+            },
+            orderBy: { id: 'desc' },
+          });
+          if (lastMov) {
+            await tx.prize_stock_movements.delete({ where: { id: lastMov.id } }).catch(() => {});
+          }
+
+          await tx.draws.delete({
+            where: { id: p.draws.id },
+          });
+        }
+      }
+
+      // Mantém a primeira participação aprovada (pronta para girar se necessário) e remove participações extras de giro duplo
+      if (userParts.length > 0) {
+        const primary = userParts[0];
+        await tx.participations.update({
+          where: { id: primary.id },
+          data: {
+            status: 'APPROVED',
+            completed_at: null,
+          },
+        });
+        if (userParts.length > 1) {
+          const extraIds = userParts.slice(1).map((x) => x.id);
+          await tx.participations.deleteMany({
+            where: { id: { in: extraIds } },
+          });
+        }
+      }
+
+      // Apaga registros do histórico (audit_logs) referentes aos giros desse participante
+      const orConds: any[] = [
+        {
+          event_id: eventId,
+          action: { in: ['DRAW_COMPLETED', 'CLAIM_PRIZE', 'MANUAL_PRIZE_ASSIGNED'] },
+          description: { contains: participant.full_name },
+        },
+      ];
+      if (drawIds.length > 0) {
+        orConds.push({
+          entity_type: 'DRAW',
+          entity_id: { in: drawIds },
+        });
+      }
+      if (partIds.length > 0) {
+        orConds.push({
+          action: 'CLAIM_PRIZE',
+          entity_id: { in: partIds },
+        });
+      }
+
+      await tx.audit_logs.deleteMany({
+        where: { OR: orConds },
+      });
+    });
+
+    notifyLive(eventId);
+    return {
+      success: true,
+      message: `Giros e histórico de ${participant.full_name} apagados com sucesso!`,
+    };
+  }
 }

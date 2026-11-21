@@ -233,6 +233,16 @@ export default function AuditHistoryClient() {
         return;
       }
 
+      const rawDesc = (log.description || "").toLowerCase();
+      if (
+        rawDesc.includes("sorteio concluído. teste ") ||
+        rawDesc.includes("sorteio concluído. teste.") ||
+        rawDesc.includes("participante teste ") ||
+        rawDesc.includes("rodrigo dante")
+      ) {
+        return;
+      }
+
       const actorName = log.admin_users?.name || (log.actor_type === "ADMIN" ? "Administrador" : log.actor_type);
 
       let actionDesc = log.description || log.action;

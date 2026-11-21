@@ -24,6 +24,7 @@ import {
   X,
   Check,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { getAdminProxyUrl } from "@/lib/api-client";
 import { useToast } from "@/components/ui/Toast";
@@ -295,6 +296,32 @@ export default function AdminPremiacoesView({ eventId }: { eventId: number }) {
       toast.error(err.message || "Erro ao salvar premiação.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleResetDrawsAndHistory(item: PremiacaoItem) {
+    if (
+      !confirm(
+        `Tem certeza que deseja apagar os giros e o histórico de premiação de "${item.fullName}"? O estoque dos brindes será devolvido como se nada tivesse sido girado.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const proxyUrl = getAdminProxyUrl();
+      const res = await fetch(
+        `${proxyUrl}/draws/event/${eventId}/participant/${item.participantId}/reset`,
+        {
+          method: "DELETE",
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Falha ao apagar giro e histórico");
+      toast.success(data.message || "Giro e histórico apagados com sucesso!");
+      fetchPremiacoes(true);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao apagar giro e histórico.");
     }
   }
 
@@ -704,28 +731,42 @@ export default function AdminPremiacoesView({ eventId }: { eventId: number }) {
                 </div>
 
                 {/* Ações do Card: Botão Principal para Adicionar / Editar o que Ganhou */}
-                <div className="pt-3 border-t border-line space-y-2.5">
-                  <button
-                    type="button"
-                    onClick={() => openAssignModal(item)}
-                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm ${
-                      hasAnyPrize
-                        ? "bg-finora-600 hover:bg-finora-700 text-white"
-                        : "bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] hover:brightness-110"
-                    }`}
-                  >
-                    {hasAnyPrize ? (
-                      <>
-                        <Edit3 size={14} />
-                        <span>Editar / Adicionar Prêmios Ganhos</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={15} />
-                        <span>Adicionar o que esta Pessoa Ganhou</span>
-                      </>
+                <div className="pt-3 border-t border-line space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openAssignModal(item)}
+                      className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm ${
+                        hasAnyPrize
+                          ? "bg-finora-600 hover:bg-finora-700 text-white"
+                          : "bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] hover:brightness-110"
+                      }`}
+                    >
+                      {hasAnyPrize ? (
+                        <>
+                          <Edit3 size={14} />
+                          <span>Editar Prêmios</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={15} />
+                          <span>Adicionar o que Ganhou</span>
+                        </>
+                      )}
+                    </button>
+
+                    {hasAnyPrize && (
+                      <button
+                        type="button"
+                        onClick={() => handleResetDrawsAndHistory(item)}
+                        className="py-2.5 px-3 rounded-xl border border-rose-500/35 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                        title="Apagar giro e histórico deste participante (devolve o estoque como se não tivesse girado)"
+                      >
+                        <Trash2 size={14} />
+                        <span>Apagar Giro</span>
+                      </button>
                     )}
-                  </button>
+                  </div>
 
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 text-xs font-mono text-text-2">

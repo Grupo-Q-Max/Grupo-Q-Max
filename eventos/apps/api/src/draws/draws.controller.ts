@@ -63,6 +63,14 @@ export class DrawsController {
     );
   }
 
+  @Delete('event/:eventId/participant/:participantId/reset')
+  resetParticipantDraws(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Param('participantId', ParseIntPipe) participantId: number,
+  ) {
+    return this.drawsService.resetParticipantDraws(eventId, participantId);
+  }
+
   @Get('event/:eventId')
   findByEvent(
     @Param('eventId', ParseIntPipe)

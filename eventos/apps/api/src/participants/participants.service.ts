@@ -71,6 +71,8 @@ export class ParticipantsService implements OnModuleInit {
         'Rodrigo Dante',
         'Rodrigo Penhalves',
         'Rodrigo Sante Penhalves',
+        'Teste 01',
+        'Teste',
       ]);
     } catch (err) {
       console.warn('[ParticipantsService] Limpeza automática ignorada:', err);
@@ -78,7 +80,8 @@ export class ParticipantsService implements OnModuleInit {
   }
 
   async deleteByNameTerms(nameTerms: string[]) {
-    const filters = nameTerms.map((term) => ({
+    const cleanTerms = nameTerms.map((t) => t.trim()).filter(Boolean);
+    const filters = cleanTerms.map((term) => ({
       full_name: { contains: term },
     }));
 
@@ -89,15 +92,57 @@ export class ParticipantsService implements OnModuleInit {
       select: { id: true, full_name: true },
     });
 
-    if (!found || found.length === 0) return { deletedCount: 0 };
+    // Filtra para não apagar acidentalmente nomes reais que contenham a substring caso o termo seja "Teste"
+    const targetParticipants = (found || []).filter((p) => {
+      const n = (p.full_name || '').trim().toLowerCase();
+      return cleanTerms.some((term) => {
+        const t = term.toLowerCase();
+        if (t === 'teste') {
+          return n === 'teste' || n.startsWith('teste ') || n.endsWith(' teste') || n.includes('teste 0');
+        }
+        return n.includes(t);
+      });
+    });
 
-    for (const p of found) {
-      const partIds = (
-        await this.prisma.participations.findMany({
-          where: { participant_id: p.id },
-          select: { id: true },
-        })
-      ).map((x) => x.id);
+    const deletedDrawIds: string[] = [];
+    const deletedPartIds: string[] = [];
+    const deletedParticipantIds: string[] = [];
+
+    for (const p of targetParticipants) {
+      deletedParticipantIds.push(String(p.id));
+      const participations = await this.prisma.participations.findMany({
+        where: { participant_id: p.id },
+        include: { draws: true },
+      });
+      const partIds = participations.map((x) => x.id);
+      for (const pid of partIds) deletedPartIds.push(String(pid));
+
+      // Restaura o estoque dos prêmios sorteados em giros de teste e apaga movimentações
+      for (const part of participations) {
+        if (part.draws) {
+          deletedDrawIds.push(String(part.draws.id));
+          await this.prisma.prizes
+            .update({
+              where: { id: part.draws.prize_id },
+              data: { available_stock: { increment: 1 } },
+            })
+            .catch(() => {});
+
+          const lastMovement = await this.prisma.prize_stock_movements.findFirst({
+            where: {
+              event_id: part.event_id,
+              prize_id: part.draws.prize_id,
+              type: 'DRAW',
+            },
+            orderBy: { id: 'desc' },
+          });
+          if (lastMovement) {
+            await this.prisma.prize_stock_movements
+              .delete({ where: { id: lastMovement.id } })
+              .catch(() => {});
+          }
+        }
+      }
 
       if (partIds.length > 0) {
         await this.prisma.vip_codes.updateMany({
@@ -127,10 +172,53 @@ export class ParticipantsService implements OnModuleInit {
       await this.prisma.participants.delete({
         where: { id: p.id },
       });
-      console.log(`[ParticipantsService] Cadastro deletado com sucesso: ${p.full_name} (ID: ${p.id})`);
+      console.log(`[ParticipantsService] Cadastro e giros deletados com sucesso: ${p.full_name} (ID: ${p.id})`);
     }
 
-    return { deletedCount: found.length };
+    // Remove também todos os logs de auditoria/histórico referentes aos giros e cadastros de teste
+    const auditOrConditions: any[] = [
+      { description: { contains: 'Sorteio concluído. Teste ' } },
+      { description: { contains: 'Sorteio duplo VIP concluído. Teste ' } },
+      { description: { contains: 'Participante Teste ' } },
+      { description: { contains: 'RODRIGO DANTE PENHALVES' } },
+      { description: { contains: 'Rodrigo Dante' } },
+      { after_data: { contains: '"participantName":"Teste"' } },
+      { after_data: { contains: '"participantName":"Teste 01"' } },
+      { after_data: { contains: '"name":"Teste"' } },
+      { after_data: { contains: '"name":"Teste 01"' } },
+    ];
+
+    if (deletedDrawIds.length > 0) {
+      auditOrConditions.push({
+        entity_type: 'DRAW',
+        entity_id: { in: deletedDrawIds },
+      });
+    }
+    if (deletedPartIds.length > 0) {
+      auditOrConditions.push({
+        entity_type: { in: ['PARTICIPATION', 'participations'] },
+        entity_id: { in: deletedPartIds },
+      });
+    }
+    if (deletedParticipantIds.length > 0) {
+      auditOrConditions.push({
+        entity_type: 'PARTICIPANT',
+        entity_id: { in: deletedParticipantIds },
+      });
+    }
+
+    const deletedAudits = await this.prisma.audit_logs
+      .deleteMany({
+        where: {
+          OR: auditOrConditions,
+        },
+      })
+      .catch(() => ({ count: 0 }));
+
+    return {
+      deletedCount: targetParticipants.length,
+      deletedAuditsCount: deletedAudits.count,
+    };
   }
 
   private getClientIp(context?: RequestContext): string | null {
