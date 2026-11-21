@@ -30,6 +30,7 @@ import {
   Printer,
   Send,
   Crown,
+  Trophy,
   type LucideIcon,
 } from "lucide-react";
 
@@ -38,6 +39,7 @@ type MenuItem = { label: string; href: string; icon?: LucideIcon };
 const ICON_MAP: Record<string, LucideIcon> = {
   "/admin/dashboard": LayoutDashboard,
   "/admin/balcao": Gift,
+  "/admin/premiacoes": Trophy,
   "/admin/fila": ListOrdered,
   "/admin/agenda": Calendar,
   "/admin/recompensas-vip": Crown,
@@ -65,6 +67,7 @@ const GROUPS: { title: string; items: MenuItem[] }[] = [
       { label: "Dashboard", href: "/admin/dashboard" },
       { label: "Placa do Stand (A4)", href: "/admin/placa-stand" },
       { label: "Balcão de entrega", href: "/admin/balcao" },
+      { label: "Premiações (Ganhadores)", href: "/admin/premiacoes" },
       { label: "Fila de premiação", href: "/admin/fila" },
       { label: "Agenda comercial", href: "/admin/agenda" },
       { label: "Recompensas VIP (Agenda)", href: "/admin/recompensas-vip" },

@@ -36,6 +36,33 @@ export class DrawsController {
     });
   }
 
+  @Get('event/:eventId/premiacoes')
+  getEventPremiacoes(@Param('eventId', ParseIntPipe) eventId: number) {
+    return this.drawsService.getEventPremiacoes(eventId);
+  }
+
+  @Post('event/:eventId/participant/:participantId/assign')
+  assignParticipantPrizes(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Param('participantId', ParseIntPipe) participantId: number,
+    @Body()
+    body: {
+      normalPrizeId?: number | null;
+      vipPrizeId?: number | null;
+      customNormalPrizeName?: string;
+      customVipPrizeName?: string;
+      markDelivered?: boolean;
+    },
+    @AdminUserId() adminUserId: number | null,
+  ) {
+    return this.drawsService.assignParticipantPrizes(
+      eventId,
+      participantId,
+      body,
+      adminUserId,
+    );
+  }
+
   @Get('event/:eventId')
   findByEvent(
     @Param('eventId', ParseIntPipe)

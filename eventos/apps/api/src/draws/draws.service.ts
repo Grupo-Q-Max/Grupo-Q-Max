@@ -13,6 +13,8 @@ import { notifyLive } from '../live/live';
 import { publicUrl } from '../common/public-url';
 import { leadEvents } from '../common/domain-events';
 import { StockAlertsService } from '../stock-alerts/stock-alerts.service';
+import { decryptCpf, formatCpf } from '../security/cpf-security';
+import { resolveHost, getHostProfiles } from '../meetings/microsoft-calendar.helper';
 
 type RequestContext = {
   ipAddress?: string | null;
@@ -1513,5 +1515,416 @@ export class DrawsService {
       deletedCount: deleted.count,
       message: 'Histórico do Grande Sorteio Geral zerado com sucesso.',
     };
+  }
+
+  /**
+   * Lista consolidada de todas as premiações (Roleta 1 Normal + Roleta 2 VIP) de todos os participantes do evento,
+   * permitindo visualizar quem ganhou o quê e lançar/editar manualmente prêmios que não tenham sido salvos.
+   */
+  async getEventPremiacoes(eventId: number) {
+    const profiles = getHostProfiles();
+
+    const [allPrizes, participations, meetings] = await Promise.all([
+      this.prisma.prizes.findMany({
+        where: { event_id: eventId },
+        orderBy: [{ is_vip: 'asc' }, { name: 'asc' }],
+      }),
+      this.prisma.participations.findMany({
+        where: { event_id: eventId },
+        include: {
+          participants: true,
+          draws: {
+            include: {
+              prizes: true,
+            },
+          },
+          vip_codes: true,
+        },
+        orderBy: { id: 'desc' },
+      }),
+      this.prisma.meetings.findMany({
+        where: {
+          event_id: eventId,
+          status: { notIn: ['CANCELED'] },
+        },
+        include: {
+          participants: true,
+        },
+        orderBy: { scheduled_at: 'asc' },
+      }),
+    ]);
+
+    const cleanPrizes = allPrizes.filter(
+      (p) => !p.name.includes('50%') && !p.name.toLowerCase().includes('pin'),
+    );
+
+    const normalPrizes = cleanPrizes
+      .filter((p) => !p.is_vip)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        isVip: false,
+        availableStock: p.available_stock,
+      }));
+
+    const vipPrizes = cleanPrizes
+      .filter((p) => p.is_vip)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        isVip: true,
+        availableStock: p.available_stock,
+      }));
+
+    const meetingsByParticipant = new Map<number, any>();
+    for (const m of meetings) {
+      if (!meetingsByParticipant.has(m.participant_id)) {
+        meetingsByParticipant.set(m.participant_id, m);
+      }
+    }
+
+    const partsByParticipant = new Map<number, any[]>();
+    const participantRecordMap = new Map<number, any>();
+
+    for (const p of participations) {
+      if (!p.participants) continue;
+      participantRecordMap.set(p.participant_id, p.participants);
+      const list = partsByParticipant.get(p.participant_id) || [];
+      list.push(p);
+      partsByParticipant.set(p.participant_id, list);
+    }
+
+    for (const m of meetings) {
+      if (m.participants && !participantRecordMap.has(m.participant_id)) {
+        participantRecordMap.set(m.participant_id, m.participants);
+        partsByParticipant.set(m.participant_id, []);
+      }
+    }
+
+    const items: any[] = [];
+
+    for (const [participantId, participant] of participantRecordMap.entries()) {
+      const userParts = partsByParticipant.get(participantId) || [];
+      const vipPart = userParts.find((p: any) => p.draws?.prizes?.is_vip);
+      const normalPart = userParts.find((p: any) => p.draws && !p.draws.prizes?.is_vip);
+      const vipCodePart = userParts.find((p: any) => p.vip_codes);
+      const primaryPart = userParts[userParts.length - 1] || userParts[0] || null;
+      const meetingRecord = meetingsByParticipant.get(participantId) || null;
+
+      const decryptedCpf = participant.cpf_encrypted ? decryptCpf(participant.cpf_encrypted) : '';
+      const formattedCpf = decryptedCpf
+        ? formatCpf(decryptedCpf)
+        : participant.cpf_last_digits
+        ? `***.***.***-${participant.cpf_last_digits}`
+        : '';
+
+      const hostProfile = meetingRecord
+        ? resolveHost(meetingRecord.host_email || profiles.hugo.email)
+        : null;
+
+      const isVip = Boolean(meetingRecord) || Boolean(vipCodePart?.vip_codes) || Boolean(vipPart?.draws);
+
+      items.push({
+        participantId: participant.id,
+        primaryParticipationId: primaryPart?.id || null,
+        fullName: participant.full_name,
+        cpf: decryptedCpf,
+        cpfFormatted: formattedCpf,
+        phone: participant.phone,
+        email: participant.email?.includes('@visitante.') ? '' : participant.email || '',
+        clinicName: participant.clinic_name || 'Clínica não informada',
+        chairsCount: participant.chairs_count,
+        registeredAt: primaryPart?.created_at || participant.created_at,
+        isVip,
+        vipCode: vipCodePart?.vip_codes?.code || null,
+        hasMeeting: Boolean(meetingRecord),
+        meeting: meetingRecord
+          ? {
+              id: meetingRecord.id,
+              scheduledAt: meetingRecord.scheduled_at.toISOString(),
+              status: meetingRecord.status,
+              hostKey: hostProfile?.key || 'hugo',
+              hostName: hostProfile?.name || 'Hugo Werninghaus',
+            }
+          : null,
+        normalPrize: normalPart?.draws?.prizes
+          ? {
+              drawId: normalPart.draws.id,
+              participationId: normalPart.id,
+              prizeId: normalPart.draws.prizes.id,
+              name: normalPart.draws.prizes.name,
+              description: normalPart.draws.prizes.description,
+              drawnAt: normalPart.draws.drawn_at,
+              claimedAt: normalPart.draws.claimed_at,
+              isDelivered: Boolean(normalPart.draws.claimed_at),
+              source: normalPart.draws.source,
+            }
+          : null,
+        vipPrize: vipPart?.draws?.prizes
+          ? {
+              drawId: vipPart.draws.id,
+              participationId: vipPart.id,
+              prizeId: vipPart.draws.prizes.id,
+              name: vipPart.draws.prizes.name,
+              description: vipPart.draws.prizes.description,
+              drawnAt: vipPart.draws.drawn_at,
+              claimedAt: vipPart.draws.claimed_at,
+              isDelivered: Boolean(vipPart.draws.claimed_at),
+              source: vipPart.draws.source,
+            }
+          : null,
+      });
+    }
+
+    return {
+      eventId,
+      normalPrizes,
+      vipPrizes,
+      items,
+    };
+  }
+
+  /**
+   * Lança, edita ou remove manualmente o Brinde Normal (Roleta 1) e/ou Recompensa VIP (Roleta 2)
+   * de um participante específico.
+   */
+  async assignParticipantPrizes(
+    eventId: number,
+    participantId: number,
+    payload: {
+      normalPrizeId?: number | null;
+      vipPrizeId?: number | null;
+      customNormalPrizeName?: string;
+      customVipPrizeName?: string;
+      markDelivered?: boolean;
+    },
+    adminUserId?: number | null,
+  ) {
+    const participant = await this.prisma.participants.findUnique({
+      where: { id: participantId },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('Participante não encontrado.');
+    }
+
+    const markDelivered = payload.markDelivered !== false;
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      let targetNormalPrizeId = payload.normalPrizeId;
+      let targetVipPrizeId = payload.vipPrizeId;
+
+      // Se o admin digitou um nome customizado de brinde normal, busca ou cria
+      if (payload.customNormalPrizeName && payload.customNormalPrizeName.trim()) {
+        const customName = payload.customNormalPrizeName.trim();
+        let existingPrize = await tx.prizes.findFirst({
+          where: { event_id: eventId, is_vip: false, name: customName },
+        });
+        if (!existingPrize) {
+          existingPrize = await tx.prizes.create({
+            data: {
+              event_id: eventId,
+              name: customName,
+              description: 'Prêmio lançado manualmente pela equipe',
+              initial_stock: 100,
+              available_stock: 100,
+              probability: 0,
+              active: true,
+              is_vip: false,
+            },
+          });
+        }
+        targetNormalPrizeId = existingPrize.id;
+      }
+
+      // Se o admin digitou um nome customizado de recompensa VIP, busca ou cria
+      if (payload.customVipPrizeName && payload.customVipPrizeName.trim()) {
+        const customVipName = payload.customVipPrizeName.trim();
+        let existingVipPrize = await tx.prizes.findFirst({
+          where: { event_id: eventId, is_vip: true, name: customVipName },
+        });
+        if (!existingVipPrize) {
+          existingVipPrize = await tx.prizes.create({
+            data: {
+              event_id: eventId,
+              name: customVipName,
+              description: 'Recompensa VIP lançada manualmente pela equipe',
+              initial_stock: 100,
+              available_stock: 100,
+              probability: 0,
+              active: true,
+              is_vip: true,
+            },
+          });
+        }
+        targetVipPrizeId = existingVipPrize.id;
+      }
+
+      const userParts = await tx.participations.findMany({
+        where: {
+          event_id: eventId,
+          participant_id: participantId,
+        },
+        include: {
+          draws: {
+            include: {
+              prizes: true,
+            },
+          },
+        },
+        orderBy: { id: 'asc' },
+      });
+
+      const existingNormalPart = userParts.find((p) => p.draws && !p.draws.prizes?.is_vip);
+      const existingVipPart = userParts.find((p) => p.draws && p.draws.prizes?.is_vip);
+
+      // 1. Atualiza / Cria / Remove Prêmio da Roleta 1 (Normal)
+      if (targetNormalPrizeId !== undefined) {
+        if (targetNormalPrizeId === null || targetNormalPrizeId === 0) {
+          if (existingNormalPart?.draws) {
+            await tx.draws.delete({
+              where: { id: existingNormalPart.draws.id },
+            });
+          }
+        } else {
+          if (existingNormalPart?.draws) {
+            await tx.draws.update({
+              where: { id: existingNormalPart.draws.id },
+              data: {
+                prize_id: targetNormalPrizeId,
+                source: 'FORCED',
+                forced_by_admin_id: adminUserId ?? null,
+                claimed_at: markDelivered
+                  ? existingNormalPart.draws.claimed_at || new Date()
+                  : null,
+              },
+            });
+          } else {
+            let freePart = userParts.find((p) => !p.draws && p.id !== existingVipPart?.id);
+            if (!freePart) {
+              freePart = await tx.participations.create({
+                data: {
+                  event_id: eventId,
+                  participant_id: participantId,
+                  status: 'COMPLETED',
+                  completed_at: new Date(),
+                },
+                include: {
+                  draws: { include: { prizes: true } },
+                },
+              });
+              userParts.push(freePart);
+            } else {
+              await tx.participations.update({
+                where: { id: freePart.id },
+                data: {
+                  status: 'COMPLETED',
+                  completed_at: freePart.completed_at || new Date(),
+                },
+              });
+            }
+
+            const createdDraw = await tx.draws.create({
+              data: {
+                participation_id: freePart.id,
+                prize_id: targetNormalPrizeId,
+                source: 'FORCED',
+                forced_by_admin_id: adminUserId ?? null,
+                claimed_at: markDelivered ? new Date() : null,
+              },
+              include: { prizes: true },
+            });
+            (freePart as any).draws = createdDraw;
+          }
+        }
+      }
+
+      // 2. Atualiza / Cria / Remove Recompensa da Roleta 2 (VIP)
+      if (targetVipPrizeId !== undefined) {
+        if (targetVipPrizeId === null || targetVipPrizeId === 0) {
+          if (existingVipPart?.draws) {
+            await tx.draws.delete({
+              where: { id: existingVipPart.draws.id },
+            });
+          }
+        } else {
+          if (existingVipPart?.draws) {
+            await tx.draws.update({
+              where: { id: existingVipPart.draws.id },
+              data: {
+                prize_id: targetVipPrizeId,
+                source: 'FORCED',
+                forced_by_admin_id: adminUserId ?? null,
+                claimed_at: markDelivered
+                  ? existingVipPart.draws.claimed_at || new Date()
+                  : null,
+              },
+            });
+          } else {
+            let freeVipPart = userParts.find((p) => !p.draws);
+            if (!freeVipPart) {
+              freeVipPart = await tx.participations.create({
+                data: {
+                  event_id: eventId,
+                  participant_id: participantId,
+                  status: 'COMPLETED',
+                  completed_at: new Date(),
+                },
+                include: {
+                  draws: { include: { prizes: true } },
+                },
+              });
+            } else {
+              await tx.participations.update({
+                where: { id: freeVipPart.id },
+                data: {
+                  status: 'COMPLETED',
+                  completed_at: freeVipPart.completed_at || new Date(),
+                },
+              });
+            }
+
+            await tx.draws.create({
+              data: {
+                participation_id: freeVipPart.id,
+                prize_id: targetVipPrizeId,
+                source: 'FORCED',
+                forced_by_admin_id: adminUserId ?? null,
+                claimed_at: markDelivered ? new Date() : null,
+              },
+            });
+          }
+        }
+      }
+
+      await tx.audit_logs.create({
+        data: {
+          event_id: eventId,
+          admin_user_id: adminUserId ?? null,
+          actor_type: 'ADMIN',
+          action: 'MANUAL_PRIZE_ASSIGNED',
+          entity_type: 'PARTICIPANT',
+          entity_id: String(participantId),
+          description: `Premiação manual atualizada para ${participant.full_name}.`,
+          metadata: JSON.stringify({
+            participantId,
+            normalPrizeId: targetNormalPrizeId,
+            vipPrizeId: targetVipPrizeId,
+            markDelivered,
+          }),
+        },
+      });
+
+      return {
+        success: true,
+        participantId,
+        message: `Premiação de ${participant.full_name} salva com sucesso!`,
+      };
+    });
+
+    notifyLive(eventId);
+    return result;
   }
 }

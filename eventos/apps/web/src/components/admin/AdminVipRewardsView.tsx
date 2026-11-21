@@ -406,6 +406,14 @@ export default function AdminVipRewardsView({ eventId }: { eventId: number }) {
             </button>
 
             <Link
+              href={`/admin/premiacoes?event=${eventId}`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FFE57F] via-[#FFD700] to-[#FF9900] text-[#3E2723] text-xs font-black transition-all shadow-md hover:brightness-110 shrink-0"
+            >
+              <Gift size={14} />
+              <span>Central de Premiações (Adicionar Prêmios)</span>
+            </Link>
+
+            <Link
               href={`/admin/agenda?event=${eventId}`}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface hover:bg-line/50 text-text-2 hover:text-text border border-line text-xs font-bold transition-all shrink-0"
             >
