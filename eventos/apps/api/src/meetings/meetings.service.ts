@@ -9,6 +9,9 @@ import {
   createMicrosoftCalendarEvent,
   getHugoDetailedEvents,
   deleteMicrosoftEventsMatching,
+  deleteMicrosoftCalendarEvent,
+  updateMicrosoftCalendarEventById,
+  rescheduleMicrosoftCalendarEvent,
   resolveHost,
   getHostProfiles,
 } from './microsoft-calendar.helper';
@@ -134,6 +137,18 @@ export class MeetingsService {
     }
 
     const hostProfile = resolveHost(host);
+
+    // Se o participante já possui uma reunião ativa neste evento, reagenda a reunião existente (e atualiza no Microsoft 365) em vez de duplicar
+    const existingForParticipant = await this.prisma.meetings.findFirst({
+      where: {
+        event_id: eventId,
+        participant_id: participantId,
+        status: 'SCHEDULED',
+      },
+    });
+    if (existingForParticipant) {
+      return this.rescheduleMeeting(existingForParticipant.id, scheduledAtIso, meetingEmail);
+    }
 
     // 1. Bloqueio rigoroso: verifica se já existe agendamento ativo no banco de dados para esse horário e esse sócio
     const slotStart = scheduledAt.getTime();
@@ -323,6 +338,7 @@ export class MeetingsService {
   async getAgendaByEvent(eventId: number, dateString?: string, hostFilter?: string) {
     let siteMeetingsWhere: any = {
       event_id: eventId,
+      status: { notIn: ['CANCELED'] },
     };
 
     let msStartDate = '2026-11-18';
@@ -462,6 +478,7 @@ export class MeetingsService {
         const hostProfile = resolveHost(evt.hostEmail || evt.organizerEmail);
         return {
           id: `ms-${hostProfile.key}-${evt.id || idx}`,
+          msEventId: evt.id || '',
           source: 'MICROSOFT_365' as const,
           isMicrosoft: true,
           scheduled_at: evt.scheduled_at,
@@ -498,6 +515,11 @@ export class MeetingsService {
   }
 
   async updateMeetingStatus(meetingId: number, status: 'COMPLETED' | 'NO_SHOW' | 'CANCELED') {
+    if (status === 'CANCELED') {
+      await this.deleteMeeting(meetingId);
+      return { id: meetingId, status: 'CANCELED' };
+    }
+
     const meeting = await this.prisma.meetings.update({
       where: { id: meetingId },
       data: { status },
@@ -526,7 +548,195 @@ export class MeetingsService {
       );
     }
 
+    notifyLive(meeting.event_id);
     return meeting;
+  }
+
+  async rescheduleMeeting(meetingId: number, scheduledAtIso: string, meetingEmail?: string) {
+    const existing = await this.prisma.meetings.findUnique({
+      where: { id: meetingId },
+      include: {
+        participants: true,
+        events: true,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Reunião não encontrada.');
+    }
+
+    const scheduledAt = new Date(scheduledAtIso);
+    if (isNaN(scheduledAt.getTime())) {
+      throw new BadRequestException('Horário inválido.');
+    }
+
+    if (scheduledAt <= new Date()) {
+      throw new BadRequestException('Não é possível reagendar para uma data ou horário no passado.');
+    }
+
+    const dateSp = scheduledAt.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    if (dateSp < '2026-11-22' || dateSp > '2027-02-28') {
+      throw new BadRequestException('A agenda está aberta de 22/11/2026 até 28/02/2027.');
+    }
+
+    const hourSp = Number(
+      scheduledAt.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false }),
+    );
+    if (hourSp < 8 || hourSp > 19) {
+      throw new BadRequestException('Horário fora do expediente da agenda (08h às 19h).');
+    }
+
+    const hostProfile = resolveHost((existing as any).host_email);
+    const slotStart = scheduledAt.getTime();
+    const slotEnd = slotStart + 45 * 60 * 1000;
+    const prevStart = existing.scheduled_at.getTime();
+    const prevEnd = prevStart + 45 * 60 * 1000;
+
+    // 1. Verifica colisão no banco de dados (ignorando a própria reunião que está sendo reagendada)
+    const existingWindowMeetings = await this.prisma.meetings.findMany({
+      where: {
+        id: { not: meetingId },
+        scheduled_at: {
+          gte: new Date(slotStart - 44 * 60 * 1000),
+          lte: new Date(slotStart + 44 * 60 * 1000),
+        },
+        status: { notIn: ['CANCELED'] },
+      },
+    });
+    if ((existingWindowMeetings || []).length > 0) {
+      throw new ConflictException('Este novo horário já está reservado por outra reunião no site.');
+    }
+
+    // 2. Verifica colisão na agenda Microsoft 365 do Hugo (ignorando o intervalo antigo da própria reunião)
+    const busyIntervals = await getHugoBusyIntervals(dateSp, hostProfile.email);
+    const collidesWithHost = busyIntervals.some((busy) => {
+      const bStart = busy.start.getTime();
+      const bEnd = busy.end.getTime();
+      const isOwnOldSlot = Math.abs(bStart - prevStart) < 3 * 60 * 1000 && Math.abs(bEnd - prevEnd) < 20 * 60 * 1000;
+      if (isOwnOldSlot) return false;
+      return slotStart < bEnd && slotEnd > bStart;
+    });
+    if (collidesWithHost) {
+      throw new ConflictException('Este horário já está ocupado na agenda executiva do Hugo no Microsoft 365.');
+    }
+
+    const cleanMeetingEmail = meetingEmail?.trim();
+    if (cleanMeetingEmail) {
+      await this.prisma.participants.update({
+        where: { id: existing.participant_id },
+        data: { email: cleanMeetingEmail, email_normalized: cleanMeetingEmail.toLowerCase() },
+      }).catch(() => {});
+    }
+
+    const previousScheduledAt = existing.scheduled_at;
+
+    // 3. Atualiza no banco de dados
+    const updated = await this.prisma.meetings.update({
+      where: { id: meetingId },
+      data: {
+        scheduled_at: scheduledAt,
+        status: 'SCHEDULED',
+        host_email: hostProfile.email,
+        updated_at: new Date(),
+      },
+      include: {
+        participants: true,
+        events: true,
+      },
+    });
+
+    // 4. Reagenda os lembretes pendentes do WhatsApp
+    await this.prisma.message_queue.deleteMany({
+      where: {
+        event_id: updated.event_id,
+        participant_id: updated.participant_id,
+        status: 'PENDING',
+      },
+    }).catch(() => {});
+
+    const phone = updated.participants.phone;
+    const firstName = updated.participants.full_name.split(' ')[0];
+    const dateFormatted = scheduledAt.toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+
+    await this.queueMessage(
+      updated.event_id,
+      updated.participant_id,
+      phone,
+      `{Olá|Oi} ${firstName}! Sua consultoria VIP com *${hostProfile.name}* foi reagendada com sucesso para *${dateFormatted}*! {📅|🚀} Te esperamos lá!`,
+      new Date(),
+    );
+
+    const reminder24h = new Date(scheduledAt.getTime() - 24 * 60 * 60 * 1000);
+    if (reminder24h > new Date()) {
+      await this.queueMessage(
+        updated.event_id,
+        updated.participant_id,
+        phone,
+        `{Passando para lembrar que|Oi ${firstName}, só pra avisar que} nossa consultoria financeira VIP com *${hostProfile.name}* é amanhã, ${dateFormatted}! {🚀|💼}`,
+        reminder24h,
+      );
+    }
+
+    const reminder1h = new Date(scheduledAt.getTime() - 60 * 60 * 1000);
+    if (reminder1h > new Date()) {
+      await this.queueMessage(
+        updated.event_id,
+        updated.participant_id,
+        phone,
+        `{Falta apenas|Falta só} 1 hora para o nosso papo com *${hostProfile.name}* às ${dateFormatted}! {⏳|⏰}`,
+        reminder1h,
+      );
+    }
+
+    // 5. Atualiza o evento correspondente na agenda do Hugo no Microsoft 365 (Teams / Outlook) de forma síncrona
+    try {
+      await rescheduleMicrosoftCalendarEvent({
+        bossEmail: hostProfile.email,
+        secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
+        thirdEmail: process.env.THIRD_MEETING_EMAIL || 'edvaldo.borges@grupoqmax.com.br',
+        participantName: updated.participants.full_name,
+        participantEmail: cleanMeetingEmail || updated.participants.email,
+        phone: updated.participants.phone,
+        clinicName: updated.participants.clinic_name,
+        chairsCount: updated.participants.chairs_count,
+        croNumber: updated.participants.cro_number,
+        croState: updated.participants.cro_state,
+        previousScheduledAt,
+        newScheduledAt: scheduledAt,
+        durationMinutes: 45,
+      });
+    } catch (err: any) {
+      console.warn('[MeetingsService] Falha ao reagendar evento no Microsoft Graph:', err.message);
+    }
+
+    // 6. Envia convite atualizado (.ics) por e-mail
+    try {
+      await sendMeetingInvite({
+        meetingId: updated.id,
+        scheduledAt,
+        participant: {
+          fullName: updated.participants.full_name,
+          email: cleanMeetingEmail || updated.participants.email,
+          phone: updated.participants.phone,
+          clinicName: updated.participants.clinic_name,
+          croNumber: updated.participants.cro_number,
+          croState: updated.participants.cro_state,
+          chairsCount: updated.participants.chairs_count,
+        },
+        bossEmail: hostProfile.email,
+        secondEmail: process.env.SECOND_MEETING_EMAIL || 'rodrigo@grupoqmax.com.br',
+        thirdEmail: process.env.THIRD_MEETING_EMAIL || 'edvaldo.borges@grupoqmax.com.br',
+      });
+    } catch (err: any) {
+      console.warn('[MeetingsService] Falha ao enviar convite atualizado por e-mail:', err.message);
+    }
+
+    notifyLive(updated.event_id);
+    return updated;
   }
 
   async deleteMeeting(meetingId: number) {
@@ -555,16 +765,49 @@ export class MeetingsService {
       where: { id: meetingId },
     });
 
-    // 3. Remove evento correspondente da agenda do sócio (Hugo ou Ale) no Microsoft Teams/Outlook (assíncrono)
-    if (meeting.participants?.full_name) {
-      const targetEmail = (meeting as any).host_email || 'hugo@grupoqmax.com.br';
-      deleteMicrosoftEventsMatching({
+    // 3. Remove de forma síncrona o evento correspondente da agenda do Hugo no Microsoft Teams/Outlook
+    const targetEmail = (meeting as any).host_email || 'hugo@grupoqmax.com.br';
+    try {
+      await deleteMicrosoftEventsMatching({
         bossEmail: targetEmail,
-        searchTerm: meeting.participants.full_name,
-      }).catch((err) => console.warn('[MeetingsService] Falha ao deletar evento Teams:', err.message));
+        searchTerm: meeting.participants?.full_name || '[Reunião Estratégica]',
+        scheduledAt: meeting.scheduled_at,
+      });
+    } catch (err: any) {
+      console.warn('[MeetingsService] Falha ao deletar evento Teams:', err.message);
     }
 
-    return { success: true, message: 'Reunião excluída com sucesso.' };
+    notifyLive(meeting.event_id);
+    return { success: true, message: 'Reunião cancelada e removida da agenda Microsoft com sucesso.' };
+  }
+
+  async rescheduleMicrosoftEventDirect(msEventId: string, scheduledAtIso: string) {
+    const scheduledAt = new Date(scheduledAtIso);
+    if (isNaN(scheduledAt.getTime())) {
+      throw new BadRequestException('Horário inválido.');
+    }
+    const profiles = getHostProfiles();
+    const ok = await updateMicrosoftCalendarEventById(msEventId, scheduledAt, 45, profiles.hugo.email);
+    if (!ok) {
+      throw new BadRequestException('Não foi possível reagendar este compromisso diretamente no Microsoft 365.');
+    }
+    return {
+      success: true,
+      scheduled_at: scheduledAt.toISOString(),
+      message: 'Compromisso reagendado com sucesso na agenda Microsoft do Hugo!',
+    };
+  }
+
+  async deleteMicrosoftEventDirect(msEventId: string) {
+    const profiles = getHostProfiles();
+    const ok = await deleteMicrosoftCalendarEvent(msEventId, profiles.hugo.email);
+    if (!ok) {
+      throw new BadRequestException('Não foi possível cancelar este compromisso no Microsoft 365.');
+    }
+    return {
+      success: true,
+      message: 'Compromisso cancelado com sucesso na agenda Microsoft do Hugo!',
+    };
   }
 
   async deleteAllSiteMeetings(eventId: number) {

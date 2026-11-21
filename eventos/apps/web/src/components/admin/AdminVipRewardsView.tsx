@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   Crown,
   Gift,
   Calendar,
+  CalendarClock,
   Search,
   RefreshCw,
   Download,
@@ -19,10 +21,12 @@ import {
   LoaderCircle,
   Sparkles,
   ArrowLeft,
+  Trash2,
+  X,
 } from "lucide-react";
-import { getAdminProxyUrl } from "@/lib/api-client";
+import { getAdminProxyUrl, fetchApi } from "@/lib/api-client";
 import { useToast } from "@/components/ui/Toast";
-import { format } from "date-fns";
+import { addMinutes, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type VipRewardRow = {
@@ -77,6 +81,136 @@ export default function AdminVipRewardsView({ eventId }: { eventId: number }) {
   const [filterScope, setFilterScope] = useState<"MEETINGS_ONLY" | "ALL_VIP" | "PENDING_SPIN">("MEETINGS_ONLY");
   const [filterHost, setFilterHost] = useState<"ALL" | "hugo" | "ale">("ALL");
   const [filterPrize, setFilterPrize] = useState<string>("ALL");
+
+  // Modal de Reagendamento
+  const [mounted, setMounted] = useState(false);
+  const [rescheduleRow, setRescheduleRow] = useState<VipRewardRow | null>(null);
+  const [rescheduleDateStr, setRescheduleDateStr] = useState<string>("");
+  const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([]);
+  const [rescheduleSlot, setRescheduleSlot] = useState<string | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [savingReschedule, setSavingReschedule] = useState(false);
+  const [selectedRescheduleMonth, setSelectedRescheduleMonth] = useState<string>("2026-11");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const availableDays = useMemo(() => {
+    const list: { dateStr: string; label: string; monthKey: string; monthLabel: string }[] = [];
+    const minDate = new Date(2026, 10, 22, 0, 0, 0, 0);
+    const limitDate = new Date(2027, 1, 28, 23, 59, 59);
+    const now = new Date();
+    const cur = new Date(now.getTime() < minDate.getTime() ? minDate : now);
+    cur.setHours(0, 0, 0, 0);
+    while (cur <= limitDate) {
+      const dStr = format(cur, "yyyy-MM-dd");
+      const mKey = format(cur, "yyyy-MM");
+      list.push({
+        dateStr: dStr,
+        label: format(cur, "EEE, dd/MM", { locale: ptBR }),
+        monthKey: mKey,
+        monthLabel: format(cur, "MMM 'de' yyyy", { locale: ptBR }),
+      });
+      cur.setDate(cur.getDate() + 1);
+    }
+    return list;
+  }, []);
+
+  const rescheduleMonths = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const d of availableDays) {
+      if (!map.has(d.monthKey)) map.set(d.monthKey, d.monthLabel);
+    }
+    return Array.from(map.entries()).map(([key, label]) => ({ key, label }));
+  }, [availableDays]);
+
+  const daysInSelectedMonth = useMemo(
+    () => availableDays.filter((d) => d.monthKey === selectedRescheduleMonth),
+    [availableDays, selectedRescheduleMonth],
+  );
+
+  function openRescheduleModal(row: VipRewardRow) {
+    setRescheduleRow(row);
+    setRescheduleDateStr("");
+    setRescheduleSlots([]);
+    setRescheduleSlot(null);
+    if (row.meeting?.scheduledAt) {
+      try {
+        const mKey = format(new Date(row.meeting.scheduledAt), "yyyy-MM");
+        if (rescheduleMonths.some((m) => m.key === mKey)) {
+          setSelectedRescheduleMonth(mKey);
+          return;
+        }
+      } catch {}
+    }
+    if (rescheduleMonths[0]) setSelectedRescheduleMonth(rescheduleMonths[0].key);
+  }
+
+  useEffect(() => {
+    if (!rescheduleRow || !rescheduleDateStr) {
+      setRescheduleSlots([]);
+      setRescheduleSlot(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingSlots(true);
+    setRescheduleSlots([]);
+    setRescheduleSlot(null);
+
+    fetchApi<string[]>(`/meetings/event/${eventId}/available-slots?date=${rescheduleDateStr}&host=hugo`)
+      .then((data) => {
+        if (!cancelled) setRescheduleSlots(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setRescheduleSlots([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSlots(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rescheduleRow, rescheduleDateStr, eventId]);
+
+  async function confirmReschedule() {
+    if (!rescheduleRow?.meeting || !rescheduleSlot) return;
+    setSavingReschedule(true);
+    try {
+      const proxyUrl = getAdminProxyUrl();
+      const res = await fetch(`${proxyUrl}/meetings/${rescheduleRow.meeting.id}/reschedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduledAt: rescheduleSlot }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Falha ao reagendar reunião");
+      toast.success("Reunião reagendada com sucesso no site e na agenda Microsoft do Hugo!");
+      setRescheduleRow(null);
+      fetchRewards(true);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao reagendar reunião.");
+    } finally {
+      setSavingReschedule(false);
+    }
+  }
+
+  async function cancelMeeting(meetingId: number) {
+    if (!confirm("Tem certeza que deseja cancelar esta reunião? Isso também removerá o compromisso do calendário Microsoft Teams/Outlook do Hugo.")) {
+      return;
+    }
+    try {
+      const proxyUrl = getAdminProxyUrl();
+      const res = await fetch(`${proxyUrl}/meetings/${meetingId}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Falha ao cancelar reunião");
+      toast.success("Reunião cancelada com sucesso no site e na agenda Microsoft do Hugo!");
+      fetchRewards(true);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao cancelar reunião.");
+    }
+  }
 
   async function fetchRewards(isManual = false) {
     if (isManual) setRefreshing(true);
@@ -510,6 +644,24 @@ export default function AdminVipRewardsView({ eventId }: { eventId: number }) {
                           {format(new Date(row.meeting.scheduledAt), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         </span>
                       </div>
+                      <div className="flex items-center gap-2 pt-1.5 border-t border-finora-500/20">
+                        <button
+                          type="button"
+                          onClick={() => openRescheduleModal(row)}
+                          className="flex-1 py-1.5 px-2.5 rounded-lg bg-finora-600/20 hover:bg-finora-600/35 border border-finora-500/40 text-finora-300 text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <CalendarClock size={12} />
+                          <span>Reagendar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => cancelMeeting(row.meeting!.id)}
+                          className="flex-1 py-1.5 px-2.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-300 text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 size={12} />
+                          <span>Cancelar</span>
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="rounded-xl border border-line bg-paper/40 px-3 py-2 text-xs text-text-2">
@@ -556,6 +708,157 @@ export default function AdminVipRewardsView({ eventId }: { eventId: number }) {
           })}
         </div>
       )}
+
+      {/* Modal de Reagendamento (Portal no document.body) */}
+      {mounted &&
+        rescheduleRow &&
+        rescheduleRow.meeting &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="w-full max-w-xl rounded-3xl border border-line-strong bg-surface p-6 text-text shadow-2xl space-y-5 my-auto">
+              <div className="flex items-start justify-between gap-3 pb-3 border-b border-line">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-finora-500/15 border border-finora-500/30 text-finora-400 flex items-center justify-center shrink-0">
+                    <CalendarClock size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-text">Reagendar Reunião · Agenda Hugo</h3>
+                    <p className="text-xs text-text-2">
+                      {rescheduleRow.fullName} · Horário atual:{" "}
+                      <strong className="text-text">
+                        {format(new Date(rescheduleRow.meeting.scheduledAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </strong>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRescheduleRow(null)}
+                  className="p-1.5 rounded-xl bg-surface border border-line text-text-2 hover:text-text cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-text-2 block">
+                  1. Escolha a Nova Data:
+                </span>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                  {rescheduleMonths.map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedRescheduleMonth(m.key);
+                        setRescheduleDateStr("");
+                        setRescheduleSlot(null);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
+                        selectedRescheduleMonth === m.key
+                          ? "bg-finora-600 text-white shadow-sm"
+                          : "bg-paper border border-line text-text-2 hover:text-text"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-44 overflow-y-auto pr-1">
+                  {daysInSelectedMonth.map((d) => {
+                    const isSelected = rescheduleDateStr === d.dateStr;
+                    return (
+                      <button
+                        key={d.dateStr}
+                        type="button"
+                        onClick={() => setRescheduleDateStr(d.dateStr)}
+                        className={`py-2 px-2 rounded-xl border text-xs font-bold capitalize transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-finora-500 bg-finora-600 text-white shadow-md"
+                            : "border-line bg-paper/70 text-text-2 hover:text-text hover:border-line-strong"
+                        }`}
+                      >
+                        {d.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-text-2 block">
+                  2. Escolha o Novo Horário Livre na Agenda do Hugo:
+                </span>
+                {!rescheduleDateStr ? (
+                  <div className="rounded-2xl border border-dashed border-line-strong bg-paper/40 p-4 text-center text-xs text-text-2">
+                    👆 Selecione um dia acima para consultar os horários livres na agenda Microsoft do Hugo.
+                  </div>
+                ) : loadingSlots ? (
+                  <div className="flex items-center justify-center gap-2 py-6 text-xs text-text-2">
+                    <LoaderCircle size={16} className="animate-spin text-finora-500" />
+                    <span>Consultando disponibilidade real no Microsoft 365...</span>
+                  </div>
+                ) : rescheduleSlots.length === 0 ? (
+                  <div className="rounded-2xl border border-line bg-paper/40 p-4 text-center text-xs text-text-2">
+                    Nenhum horário livre neste dia. Escolha outra data acima.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto pr-1">
+                    {rescheduleSlots.map((s) => {
+                      const on = rescheduleSlot === s;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setRescheduleSlot(s)}
+                          className={`py-2.5 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer ${
+                            on
+                              ? "border-finora-500 bg-finora-600 text-white shadow-md"
+                              : "border-line bg-paper/70 text-text hover:border-finora-500/50"
+                          }`}
+                        >
+                          {format(parseISO(s), "HH:mm")}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-3 border-t border-line">
+                <button
+                  type="button"
+                  onClick={() => setRescheduleRow(null)}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-line text-xs font-bold text-text-2 hover:text-text cursor-pointer"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button"
+                  disabled={!rescheduleSlot || savingReschedule}
+                  onClick={confirmReschedule}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-finora-600 hover:bg-finora-700 disabled:opacity-50 text-white text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  {savingReschedule ? (
+                    <>
+                      <LoaderCircle size={15} className="animate-spin" />
+                      <span>Atualizando no site e Microsoft 365...</span>
+                    </>
+                  ) : rescheduleSlot ? (
+                    <span>
+                      Confirmar Reagendamento · Dia {format(parseISO(rescheduleSlot), "dd/MM")} ({format(parseISO(rescheduleSlot), "HH:mm")} às{" "}
+                      {format(addMinutes(parseISO(rescheduleSlot), 45), "HH:mm")}) 📅
+                    </span>
+                  ) : (
+                    <span>Selecione a Nova Data e Horário</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

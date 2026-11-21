@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, Clock, Crown, IdCard, LoaderCircle, Mail, Sparkles, UserCheck, X } from "lucide-react";
+import { ArrowRight, CalendarClock, CheckCircle2, Clock, Crown, IdCard, LoaderCircle, Mail, Sparkles, Trash2, UserCheck, X } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import VipScheduler from "@/components/VipScheduler";
 import { getApiBaseUrl } from "@/lib/api-client";
 import { validateCpfAlgorithmic } from "@/components/clinicorp/ClinicorpRegistrationForm";
@@ -29,6 +31,11 @@ type FoundParticipant = {
   isVip?: boolean;
   hasDrawn?: boolean;
   hasScheduledMeeting?: boolean;
+  scheduledMeeting?: {
+    id: number;
+    scheduled_at: string;
+    status: string;
+  } | null;
   drawnPrize?: string | null;
 };
 
@@ -68,6 +75,37 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
 
   // Controle de avanço para a escolha de horário
   const [readyToSchedule, setReadyToSchedule] = useState(false);
+  const [cancelingMeeting, setCancelingMeeting] = useState(false);
+  const [cancelNotice, setCancelNotice] = useState<string | null>(null);
+
+  async function handleCancelExistingMeeting() {
+    if (!participant?.scheduledMeeting?.id) return;
+    if (!confirm("Tem certeza que deseja cancelar a sua reunião agendada com o Hugo? O compromisso também será cancelado na agenda Microsoft Teams/Outlook.")) {
+      return;
+    }
+    setCancelingMeeting(true);
+    setError(null);
+    setCancelNotice(null);
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/meetings/${participant.scheduledMeeting.id}/cancel`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Falha ao cancelar reunião.");
+      }
+      setParticipant({
+        ...participant,
+        hasScheduledMeeting: false,
+        scheduledMeeting: null,
+      });
+      setCancelNotice("Sua reunião foi cancelada com sucesso e removida da agenda Microsoft do Hugo.");
+    } catch (err: any) {
+      setError(err.message || "Não foi possível cancelar a reunião neste momento.");
+    } finally {
+      setCancelingMeeting(false);
+    }
+  }
 
   const cleanCpf = cpf.replace(/\D/g, "");
   const isCpfValid = cleanCpf.length === 11;
@@ -177,7 +215,12 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
         eventId={eventId}
         participantId={participant.participantId}
         meetingEmail={effectiveEmail || undefined}
-        inviteText="Ao confirmar sua reunião de 45 minutos, sua Roleta VIP estará liberada no telão/estande Finora!"
+        existingMeetingId={participant.scheduledMeeting?.id || null}
+        inviteText={
+          participant.scheduledMeeting
+            ? "Escolha abaixo a nova data e horário para reagendar sua reunião com o Hugo (a alteração será refletida automaticamente no Microsoft Teams/Outlook)."
+            : "Ao confirmar sua reunião de 45 minutos, sua Roleta VIP estará liberada no telão/estande Finora!"
+        }
       />
     );
   }
@@ -282,6 +325,55 @@ export default function AgendamentoLookupClient({ eventId, eventSlug }: Props) {
               </div>
             )}
           </div>
+
+          {cancelNotice && (
+            <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/15 p-4 text-xs font-bold text-emerald-200">
+              ✅ {cancelNotice}
+            </div>
+          )}
+
+          {/* Se o participante já possui reunião marcada: exibe detalhes + botões de Reagendar ou Cancelar */}
+          {participant.hasScheduledMeeting && participant.scheduledMeeting && (
+            <div className="rounded-2xl border-2 border-amber-400/60 bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 p-4.5 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                  <CalendarClock size={16} className="text-amber-400" />
+                  <span>Você já possui uma reunião agendada!</span>
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300">
+                  Confirmada no Teams
+                </span>
+              </div>
+              <p className="text-sm font-bold text-white capitalize">
+                📅{" "}
+                {format(
+                  new Date(participant.scheduledMeeting.scheduled_at),
+                  "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm",
+                  { locale: ptBR },
+                )}{" "}
+                com Hugo Werninghaus
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setReadyToSchedule(true)}
+                  className="flex-1 py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  <CalendarClock size={16} />
+                  <span>Reagendar Data / Horário</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={cancelingMeeting}
+                  onClick={handleCancelExistingMeeting}
+                  className="flex-1 py-3 px-4 rounded-xl border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {cancelingMeeting ? <LoaderCircle size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                  <span>Cancelar Reunião</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Pergunta do E-mail da Reunião */}
           <div className="rounded-2xl border border-white/10 bg-slate-900/90 p-4.5 flex flex-col gap-3 shadow-md">

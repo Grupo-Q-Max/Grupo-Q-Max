@@ -438,53 +438,219 @@ export async function createMicrosoftCalendarEvent(payload: {
   }
 }
 
+export function stripMsPrefix(eventId: string): string {
+  return (eventId || '').replace(/^ms-(hugo|ale)-/i, '').trim();
+}
+
 export async function deleteMicrosoftCalendarEvent(eventId: string, bossEmail?: string): Promise<boolean> {
   const token = await getMicrosoftGraphAppToken();
-  if (!token || !eventId) return false;
+  const cleanId = stripMsPrefix(eventId);
+  if (!token || !cleanId) return false;
   const email = bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
   try {
-    const res = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(email)}/events/${encodeURIComponent(eventId)}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.status === 204 || res.status === 404;
+    // Tenta enviar o cancelamento formal do Teams/Outlook para notificar participantes
+    await fetch(
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(email)}/events/${encodeURIComponent(cleanId)}/cancel`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          comment: 'Reunião cancelada/reagendada pelo sistema Finora Experience.',
+        }),
+      },
+    ).catch(() => {});
+
+    // Garante a remoção definitiva do evento do calendário
+    const res = await fetch(
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(email)}/events/${encodeURIComponent(cleanId)}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    return res.status === 204 || res.status === 404 || res.ok;
   } catch (err: any) {
     console.warn('[MicrosoftCalendar] Erro ao deletar evento:', err.message);
     return false;
   }
 }
 
+export async function updateMicrosoftCalendarEventById(
+  eventId: string,
+  newScheduledAt: Date,
+  durationMinutes: number = 45,
+  bossEmail?: string,
+): Promise<boolean> {
+  const token = await getMicrosoftGraphAppToken();
+  const cleanId = stripMsPrefix(eventId);
+  if (!token || !cleanId) return false;
+  const email = bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
+  const startTime = newScheduledAt;
+  const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+
+  try {
+    const res = await fetch(
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(email)}/events/${encodeURIComponent(cleanId)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          start: {
+            dateTime: formatToSaoPauloIsoNoZ(startTime),
+            timeZone: 'America/Sao_Paulo',
+          },
+          end: {
+            dateTime: formatToSaoPauloIsoNoZ(endTime),
+            timeZone: 'America/Sao_Paulo',
+          },
+        }),
+      },
+    );
+    return res.ok;
+  } catch (err: any) {
+    console.warn('[MicrosoftCalendar] Erro ao reagendar evento por ID no Graph:', err.message);
+    return false;
+  }
+}
+
+export async function findMatchingMicrosoftEvents(params: {
+  bossEmail?: string;
+  searchTerm?: string;
+  scheduledAt?: Date | string | null;
+  startDateTime?: string;
+  endDateTime?: string;
+}): Promise<any[]> {
+  const token = await getMicrosoftGraphAppToken();
+  if (!token) return [];
+  const bossEmail = params.bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
+  const term = (params.searchTerm || '').trim().toLowerCase();
+  const targetTime = params.scheduledAt ? new Date(params.scheduledAt).getTime() : NaN;
+
+  const queryWindow = async (startIso: string, endIso: string) => {
+    const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(bossEmail)}/calendarView?startDateTime=${encodeURIComponent(startIso)}&endDateTime=${encodeURIComponent(endIso)}&$select=id,subject,start,end,isCancelled&$top=999`;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Prefer: 'outlook.timezone="America/Sao_Paulo"',
+      },
+    });
+    if (!res.ok) return [];
+    const data = await res.json().catch(() => ({}));
+    return (data.value || []).filter((e: any) => {
+      if (e.isCancelled === true) return false;
+      const subject = (e.subject || '').toLowerCase();
+      const evtStart = parseGraphDateTime(e.start?.dateTime).getTime();
+      const timeMatches = !isNaN(targetTime) && !isNaN(evtStart) && Math.abs(evtStart - targetTime) < 3 * 60 * 1000;
+      const nameMatches = Boolean(term) && subject.includes(term);
+      const strategicAtSameTime = timeMatches && (subject.includes('[reunião estratégica]') || subject.includes('finora'));
+      return nameMatches || strategicAtSameTime;
+    });
+  };
+
+  try {
+    // 1. Se soubermos o horário da reunião, busca primeiro na janela de ±36h para precisão instantânea
+    if (!isNaN(targetTime) && !params.startDateTime && !params.endDateTime) {
+      const wStart = new Date(targetTime - 36 * 60 * 60 * 1000).toISOString();
+      const wEnd = new Date(targetTime + 36 * 60 * 60 * 1000).toISOString();
+      const narrowMatches = await queryWindow(wStart, wEnd);
+      if (narrowMatches.length > 0) {
+        return narrowMatches;
+      }
+    }
+
+    // 2. Busca no período completo da agenda (até Março de 2027)
+    const start = params.startDateTime || '2026-11-01T00:00:00Z';
+    const end = params.endDateTime || '2027-03-05T23:59:59Z';
+    return await queryWindow(start, end);
+  } catch (err: any) {
+    console.warn('[MicrosoftCalendar] Erro ao buscar eventos correspondentes:', err.message);
+    return [];
+  }
+}
+
 export async function deleteMicrosoftEventsMatching(params: {
   bossEmail?: string;
   searchTerm: string;
+  scheduledAt?: Date | string | null;
   startDateTime?: string;
   endDateTime?: string;
 }): Promise<number> {
-  const token = await getMicrosoftGraphAppToken();
-  if (!token) return 0;
+  const events = await findMatchingMicrosoftEvents(params);
   const bossEmail = params.bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
-  const start = params.startDateTime || '2026-11-01T00:00:00Z';
-  const end = params.endDateTime || '2027-02-01T23:59:59Z';
-  try {
-    const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(bossEmail)}/calendarView?startDateTime=${start}&endDateTime=${end}&$top=200`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) return 0;
-    const data = await res.json();
-    const events = (data.value || []).filter((e: any) => {
-      const subject = (e.subject || '').toLowerCase();
-      const term = params.searchTerm.toLowerCase();
-      return subject.includes(term);
-    });
-    let count = 0;
-    for (const e of events) {
-      const del = await deleteMicrosoftCalendarEvent(e.id, bossEmail);
-      if (del) count++;
-    }
-    return count;
-  } catch (err: any) {
-    console.warn('[MicrosoftCalendar] Erro ao buscar e deletar eventos matching:', err.message);
-    return 0;
+  let count = 0;
+  for (const e of events) {
+    const del = await deleteMicrosoftCalendarEvent(e.id, bossEmail);
+    if (del) count++;
   }
+  return count;
+}
+
+export async function rescheduleMicrosoftCalendarEvent(payload: {
+  bossEmail?: string;
+  secondEmail?: string;
+  thirdEmail?: string;
+  participantName: string;
+  participantEmail?: string | null;
+  phone: string;
+  clinicName?: string | null;
+  chairsCount?: number | null;
+  croNumber?: string | null;
+  croState?: string | null;
+  previousScheduledAt?: Date | string | null;
+  newScheduledAt: Date;
+  durationMinutes?: number;
+}): Promise<string | null> {
+  const bossEmail = payload.bossEmail || env('BOSS_MEETING_EMAIL') || 'hugo@grupoqmax.com.br';
+  const durationMinutes = payload.durationMinutes || 45;
+
+  const matched = await findMatchingMicrosoftEvents({
+    bossEmail,
+    searchTerm: payload.participantName,
+    scheduledAt: payload.previousScheduledAt,
+  });
+
+  if (matched.length > 0) {
+    const primary = matched[0];
+    // Remove eventuais duplicatas antigas
+    for (const extra of matched.slice(1)) {
+      await deleteMicrosoftCalendarEvent(extra.id, bossEmail);
+    }
+
+    const updated = await updateMicrosoftCalendarEventById(
+      primary.id,
+      payload.newScheduledAt,
+      durationMinutes,
+      bossEmail,
+    );
+    if (updated) {
+      console.log('[MicrosoftCalendar] Evento reagendado com sucesso no Microsoft 365! ID:', primary.id);
+      return primary.id;
+    }
+
+    // Fallback: caso PATCH falhe, remove o antigo e recria no novo horário
+    await deleteMicrosoftCalendarEvent(primary.id, bossEmail);
+  }
+
+  return createMicrosoftCalendarEvent({
+    bossEmail,
+    secondEmail: payload.secondEmail,
+    thirdEmail: payload.thirdEmail,
+    participantName: payload.participantName,
+    participantEmail: payload.participantEmail,
+    phone: payload.phone,
+    clinicName: payload.clinicName,
+    chairsCount: payload.chairsCount,
+    croNumber: payload.croNumber,
+    croState: payload.croState,
+    scheduledAt: payload.newScheduledAt,
+    durationMinutes,
+  });
 }
 
 

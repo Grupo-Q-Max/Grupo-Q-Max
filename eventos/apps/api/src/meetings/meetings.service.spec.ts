@@ -129,5 +129,96 @@ describe('MeetingsService - Agendamento e Integração Teams / Hugo e Edvaldo', 
     const d2 = msHelper.parseGraphDateTime('2026-11-19T14:00:00Z');
     expect(d2.toISOString()).toBe('2026-11-19T14:00:00.000Z');
   });
+
+  it('deve reagendar reunião existente e sincronizar a alteração na agenda da Microsoft', async () => {
+    const oldDate = new Date('2026-11-24T10:00:00.000-03:00');
+    const newDate = new Date('2026-11-26T15:00:00.000-03:00');
+
+    const existingMeeting = {
+      id: 77,
+      event_id: 3,
+      participant_id: 50,
+      scheduled_at: oldDate,
+      host_email: 'hugo@grupoqmax.com.br',
+      participants: {
+        id: 50,
+        full_name: 'Dr. Marcos Silva',
+        phone: '11988887777',
+        email: 'marcos@clinica.com.br',
+        clinic_name: 'Clínica Silva',
+        chairs_count: 4,
+        cro_number: '54321',
+        cro_state: 'SP',
+      },
+      events: {
+        id: 3,
+        whatsapp_vip_message: null,
+      },
+    };
+
+    prismaMock.meetings.findUnique.mockResolvedValue(existingMeeting);
+    prismaMock.meetings.findMany.mockResolvedValue([]);
+    prismaMock.meetings.update.mockResolvedValue({
+      ...existingMeeting,
+      scheduled_at: newDate,
+      status: 'SCHEDULED',
+    });
+    prismaMock.message_queue.deleteMany.mockResolvedValue({ count: 2 });
+    prismaMock.message_queue.create.mockResolvedValue({ id: 10 });
+
+    jest.spyOn(msHelper, 'getHugoBusyIntervals').mockResolvedValue([]);
+    const rescheduleMsSpy = jest
+      .spyOn(msHelper, 'rescheduleMicrosoftCalendarEvent')
+      .mockResolvedValue('ms-event-updated-77');
+    jest.spyOn(mailHelper, 'sendMeetingInvite').mockResolvedValue(true);
+
+    const updated = await service.rescheduleMeeting(77, newDate.toISOString());
+
+    expect(updated.scheduled_at).toEqual(newDate);
+    expect(prismaMock.meetings.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 77 },
+      }),
+    );
+    expect(rescheduleMsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bossEmail: 'hugo@grupoqmax.com.br',
+        participantName: 'Dr. Marcos Silva',
+        previousScheduledAt: oldDate,
+        newScheduledAt: newDate,
+      }),
+    );
+  });
+
+  it('deve cancelar reunião e remover da agenda da Microsoft de forma síncrona', async () => {
+    const meetingDate = new Date('2026-11-25T11:00:00.000-03:00');
+    prismaMock.meetings.findUnique.mockResolvedValue({
+      id: 88,
+      event_id: 3,
+      participant_id: 60,
+      scheduled_at: meetingDate,
+      host_email: 'hugo@grupoqmax.com.br',
+      participants: {
+        id: 60,
+        full_name: 'Dra. Juliana Mendes',
+      },
+    });
+    prismaMock.message_queue.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.meetings.delete.mockResolvedValue({ id: 88 });
+
+    const deleteMsSpy = jest.spyOn(msHelper, 'deleteMicrosoftEventsMatching').mockResolvedValue(1);
+
+    const res = await service.deleteMeeting(88);
+
+    expect(res.success).toBe(true);
+    expect(prismaMock.meetings.delete).toHaveBeenCalledWith({ where: { id: 88 } });
+    expect(deleteMsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bossEmail: 'hugo@grupoqmax.com.br',
+        searchTerm: 'Dra. Juliana Mendes',
+        scheduledAt: meetingDate,
+      }),
+    );
+  });
 });
 

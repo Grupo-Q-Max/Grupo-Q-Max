@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Calendar, CircleCheck, Clock, Crown, LoaderCircle, Sparkles, UserCheck, Users } from "lucide-react";
+import { Calendar, CalendarClock, CircleCheck, Clock, Crown, LoaderCircle, Sparkles, Trash2, UserCheck, Users } from "lucide-react";
 import { addMinutes, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { fetchApi } from "@/lib/api-client";
@@ -54,6 +54,7 @@ type Props = {
   inviteText?: string;
   meetingEmail?: string;
   initialHost?: "hugo" | "ale";
+  existingMeetingId?: number | null;
 };
 
 export default function VipScheduler({
@@ -64,9 +65,13 @@ export default function VipScheduler({
   inviteText,
   meetingEmail,
   initialHost = "hugo",
+  existingMeetingId = null,
 }: Props) {
   const [selectedHostKey, setSelectedHostKey] = useState<"hugo" | "ale">(initialHost);
   const currentHost = HOSTS[selectedHostKey];
+  const [activeMeetingId, setActiveMeetingId] = useState<number | null>(existingMeetingId);
+  const [canceledSuccess, setCanceledSuccess] = useState(false);
+  const [canceling, setCanceling] = useState(false);
 
   // Gera todos os dias disponíveis de 22/11/2026 até 28/02/2027 (incluindo fins de semana)
   const allDates = useMemo(() => {
@@ -186,27 +191,64 @@ export default function VipScheduler({
     if (!slot) return;
     setSubmitting(true);
     setError(null);
+    setCanceledSuccess(false);
     try {
-      await fetchApi(`/meetings/event/${eventId}/book`, {
-        method: "POST",
-        body: JSON.stringify({
-          participantId,
-          scheduledAt: slot,
-          meetingEmail,
-          host: selectedHostKey,
-        }),
-      });
+      if (activeMeetingId) {
+        const updated = await fetchApi<{ id?: number }>(`/meetings/${activeMeetingId}/reschedule`, {
+          method: "POST",
+          body: JSON.stringify({
+            scheduledAt: slot,
+            meetingEmail,
+          }),
+        });
+        if (updated?.id) setActiveMeetingId(updated.id);
+      } else {
+        const created = await fetchApi<{ id?: number }>(`/meetings/event/${eventId}/book`, {
+          method: "POST",
+          body: JSON.stringify({
+            participantId,
+            scheduledAt: slot,
+            meetingEmail,
+            host: selectedHostKey,
+          }),
+        });
+        if (created?.id) setActiveMeetingId(created.id);
+      }
       if (onBooked) onBooked();
       else setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao agendar. Tente novamente.");
+    } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function cancelCurrentMeeting() {
+    if (!activeMeetingId) return;
+    if (!confirm("Tem certeza que deseja cancelar a sua reunião agendada? O horário também será liberado na agenda Microsoft do Hugo.")) {
+      return;
+    }
+    setCanceling(true);
+    setError(null);
+    try {
+      await fetchApi(`/meetings/${activeMeetingId}/cancel`, {
+        method: "POST",
+      });
+      setActiveMeetingId(null);
+      setDone(false);
+      setDate(null);
+      setSlot(null);
+      setCanceledSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível cancelar a reunião.");
+    } finally {
+      setCanceling(false);
     }
   }
 
   if (done && slot) {
     return (
-      <div className="flex flex-1 flex-col items-start gap-4 px-5 pt-8 animate-pop-burst">
+      <div className="flex flex-1 flex-col items-start gap-4 px-5 pt-8 pb-8 animate-pop-burst">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-1.5 text-xs font-bold text-emerald-300">
           <CircleCheck size={16} /> Reunião Confirmada com Sucesso!
         </span>
@@ -238,6 +280,33 @@ export default function VipScheduler({
             O convite oficial do Microsoft Teams foi enviado para o seu e-mail e adicionado à agenda de{" "}
             <strong>{currentHost.name}</strong> ({currentHost.email}).
           </p>
+        </div>
+
+        {/* Opções de Reagendar ou Cancelar a reunião recém-confirmada */}
+        <div className="w-full flex flex-col sm:flex-row gap-2.5 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              setDone(false);
+              setDate(null);
+              setSlot(null);
+            }}
+            className="flex-1 py-3 px-4 rounded-xl border border-accent/40 bg-accent/15 hover:bg-accent/25 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <CalendarClock size={16} />
+            <span>Reagendar Data ou Horário</span>
+          </button>
+          {activeMeetingId && (
+            <button
+              type="button"
+              disabled={canceling}
+              onClick={cancelCurrentMeeting}
+              className="flex-1 py-3 px-4 rounded-xl border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {canceling ? <LoaderCircle size={16} className="animate-spin" /> : <Trash2 size={16} />}
+              <span>Cancelar Reunião</span>
+            </button>
+          )}
         </div>
       </div>
     );
@@ -334,6 +403,11 @@ export default function VipScheduler({
 
       {/* 2. Seleção de Horário Início e Horário Final */}
       <div className="flex flex-col gap-4 px-5 pt-6">
+        {canceledSuccess && (
+          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/15 p-3.5 text-xs font-bold text-emerald-200">
+            ✅ Sua reunião anterior foi cancelada com sucesso e removida da agenda Microsoft do Hugo. Se desejar, escolha um novo dia e horário acima.
+          </div>
+        )}
         {error && <Alert>{error}</Alert>}
         {!date ? (
           <div className="rounded-2xl border border-dashed border-accent/40 bg-accent/5 p-5 text-center text-slate-300">

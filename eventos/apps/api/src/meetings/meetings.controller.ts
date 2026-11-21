@@ -23,6 +23,15 @@ export class UpdateStatusDto {
   status: 'COMPLETED' | 'NO_SHOW' | 'CANCELED';
 }
 
+export class RescheduleMeetingDto {
+  @IsDateString()
+  scheduledAt: string;
+
+  @IsOptional()
+  @IsEmail()
+  meetingEmail?: string;
+}
+
 @Controller('meetings')
 export class MeetingsController {
   constructor(private readonly meetingsService: MeetingsService) {}
@@ -49,9 +58,37 @@ export class MeetingsController {
     return this.meetingsService.updateMeetingStatus(meetingId, dto.status);
   }
 
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Post(':id/reschedule')
+  rescheduleMeeting(
+    @Param('id', ParseIntPipe) meetingId: number,
+    @Body() dto: RescheduleMeetingDto,
+  ) {
+    return this.meetingsService.rescheduleMeeting(meetingId, dto.scheduledAt, dto.meetingEmail);
+  }
+
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Post(':id/cancel')
+  cancelMeeting(@Param('id', ParseIntPipe) meetingId: number) {
+    return this.meetingsService.deleteMeeting(meetingId);
+  }
+
   @Delete(':id')
   deleteMeeting(@Param('id', ParseIntPipe) meetingId: number) {
     return this.meetingsService.deleteMeeting(meetingId);
+  }
+
+  @Post('microsoft/:msEventId/reschedule')
+  rescheduleMicrosoftMeeting(
+    @Param('msEventId') msEventId: string,
+    @Body() dto: RescheduleMeetingDto,
+  ) {
+    return this.meetingsService.rescheduleMicrosoftEventDirect(msEventId, dto.scheduledAt);
+  }
+
+  @Delete('microsoft/:msEventId')
+  deleteMicrosoftMeeting(@Param('msEventId') msEventId: string) {
+    return this.meetingsService.deleteMicrosoftEventDirect(msEventId);
   }
 
   @Delete('event/:eventId/all')

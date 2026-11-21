@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   LoaderCircle,
@@ -20,18 +21,19 @@ import {
   Calendar,
   Clock,
   Search,
-  CheckCircle2,
   Trash2,
   Crown,
   Gift,
+  X,
 } from "lucide-react";
-import { getAdminProxyUrl } from "@/lib/api-client";
+import { getAdminProxyUrl, fetchApi } from "@/lib/api-client";
 import { useToast } from "@/components/ui/Toast";
-import { format, isToday } from "date-fns";
+import { addMinutes, format, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type AgendaMeeting = {
   id: number | string;
+  msEventId?: string;
   source?: "FINORA" | "MICROSOFT_365";
   isMicrosoft?: boolean;
   scheduled_at: string;
@@ -87,6 +89,130 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
   const [filterHost, setFilterHost] = useState<"ALL" | "hugo" | "ale">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Estado do Modal de Reagendamento
+  const [mounted, setMounted] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState<AgendaMeeting | null>(null);
+  const [rescheduleDateStr, setRescheduleDateStr] = useState<string>("");
+  const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([]);
+  const [rescheduleSlot, setRescheduleSlot] = useState<string | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [savingReschedule, setSavingReschedule] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lista de dias disponíveis para reagendamento (22/11/2026 até 28/02/2027)
+  const availableDays = useMemo(() => {
+    const list: { dateStr: string; label: string; monthKey: string; monthLabel: string }[] = [];
+    const minDate = new Date(2026, 10, 22, 0, 0, 0, 0);
+    const limitDate = new Date(2027, 1, 28, 23, 59, 59);
+    const now = new Date();
+    const cur = new Date(now.getTime() < minDate.getTime() ? minDate : now);
+    cur.setHours(0, 0, 0, 0);
+    while (cur <= limitDate) {
+      const dStr = format(cur, "yyyy-MM-dd");
+      const mKey = format(cur, "yyyy-MM");
+      list.push({
+        dateStr: dStr,
+        label: format(cur, "EEE, dd/MM", { locale: ptBR }),
+        monthKey: mKey,
+        monthLabel: format(cur, "MMM 'de' yyyy", { locale: ptBR }),
+      });
+      cur.setDate(cur.getDate() + 1);
+    }
+    return list;
+  }, []);
+
+  const [selectedRescheduleMonth, setSelectedRescheduleMonth] = useState<string>("2026-11");
+
+  const rescheduleMonths = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const d of availableDays) {
+      if (!map.has(d.monthKey)) map.set(d.monthKey, d.monthLabel);
+    }
+    return Array.from(map.entries()).map(([key, label]) => ({ key, label }));
+  }, [availableDays]);
+
+  const daysInSelectedMonth = useMemo(
+    () => availableDays.filter((d) => d.monthKey === selectedRescheduleMonth),
+    [availableDays, selectedRescheduleMonth],
+  );
+
+  function openRescheduleModal(meeting: AgendaMeeting) {
+    setRescheduleTarget(meeting);
+    setRescheduleDateStr("");
+    setRescheduleSlots([]);
+    setRescheduleSlot(null);
+    try {
+      const mKey = format(new Date(meeting.scheduled_at), "yyyy-MM");
+      if (rescheduleMonths.some((m) => m.key === mKey)) {
+        setSelectedRescheduleMonth(mKey);
+      } else if (rescheduleMonths[0]) {
+        setSelectedRescheduleMonth(rescheduleMonths[0].key);
+      }
+    } catch {
+      if (rescheduleMonths[0]) setSelectedRescheduleMonth(rescheduleMonths[0].key);
+    }
+  }
+
+  useEffect(() => {
+    if (!rescheduleTarget || !rescheduleDateStr) {
+      setRescheduleSlots([]);
+      setRescheduleSlot(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingSlots(true);
+    setRescheduleSlots([]);
+    setRescheduleSlot(null);
+
+    fetchApi<string[]>(`/meetings/event/${eventId}/available-slots?date=${rescheduleDateStr}&host=hugo`)
+      .then((data) => {
+        if (cancelled) return;
+        setRescheduleSlots(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setRescheduleSlots([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSlots(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rescheduleTarget, rescheduleDateStr, eventId]);
+
+  async function confirmReschedule() {
+    if (!rescheduleTarget || !rescheduleSlot) return;
+    setSavingReschedule(true);
+    try {
+      const proxyUrl = getAdminProxyUrl();
+      const isMs = rescheduleTarget.source === "MICROSOFT_365" || (typeof rescheduleTarget.id === "string" && rescheduleTarget.id.startsWith("ms-"));
+      const endpoint = isMs
+        ? `${proxyUrl}/meetings/microsoft/${encodeURIComponent(String(rescheduleTarget.msEventId || rescheduleTarget.id))}/reschedule`
+        : `${proxyUrl}/meetings/${rescheduleTarget.id}/reschedule`;
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduledAt: rescheduleSlot }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Falha ao reagendar reunião");
+      }
+      toast.success("Reunião reagendada com sucesso no site e na agenda Microsoft do Hugo!");
+      setRescheduleTarget(null);
+      fetchAgenda(true);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao reagendar a reunião.");
+    } finally {
+      setSavingReschedule(false);
+    }
+  }
+
   async function fetchAgenda(isManual = false) {
     if (isManual) setRefreshing(true);
     else setLoading(true);
@@ -140,29 +266,34 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
     }
   }
 
-  async function deleteMeeting(meetingId: number | string) {
-    if (typeof meetingId === "string" && meetingId.startsWith("ms-")) {
-      toast.error("Compromissos externos da Microsoft devem ser cancelados pelo Outlook / Teams.");
-      return;
-    }
+  async function deleteMeeting(meeting: AgendaMeeting | number | string) {
+    const meetingId = typeof meeting === "object" ? meeting.id : meeting;
+    const isMs =
+      (typeof meeting === "object" && meeting.source === "MICROSOFT_365") ||
+      (typeof meetingId === "string" && meetingId.startsWith("ms-"));
 
-    if (!confirm("Tem certeza que deseja excluir esta reunião agendada pelo site? Isso também cancelará o compromisso no calendário do Teams/Outlook do Hugo.")) {
+    if (!confirm("Tem certeza que deseja cancelar esta reunião? Isso também removerá o compromisso do calendário Microsoft Teams/Outlook do Hugo.")) {
       return;
     }
 
     try {
       const proxyUrl = getAdminProxyUrl();
-      const res = await fetch(`${proxyUrl}/meetings/${meetingId}`, {
+      const targetMsId = typeof meeting === "object" ? meeting.msEventId || meeting.id : meetingId;
+      const endpoint = isMs
+        ? `${proxyUrl}/meetings/microsoft/${encodeURIComponent(String(targetMsId))}`
+        : `${proxyUrl}/meetings/${meetingId}`;
+
+      const res = await fetch(endpoint, {
         method: "DELETE",
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || "Falha ao excluir reunião");
+        throw new Error(errData.message || "Falha ao cancelar reunião");
       }
-      toast.success("Reunião excluída com sucesso do site e do calendário!");
+      toast.success("Reunião cancelada com sucesso no site e na agenda Microsoft do Hugo!");
       fetchAgenda(true);
     } catch (err: any) {
-      toast.error(err.message || "Erro ao excluir a reunião.");
+      toast.error(err.message || "Erro ao cancelar a reunião.");
     }
   }
 
@@ -532,8 +663,8 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                             </div>
                           </div>
 
-                          {/* Ações / Link do Teams */}
-                          <div className="mt-5 pt-3 border-t border-line flex items-center justify-between gap-2">
+                          {/* Ações / Link do Teams + Reagendar / Cancelar */}
+                          <div className="mt-5 pt-3 border-t border-line flex flex-col gap-2">
                             {item.teamsUrl ? (
                               <a
                                 href={item.teamsUrl}
@@ -550,6 +681,27 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                                 Compromisso Bloqueado no Site 🔒
                               </div>
                             )}
+
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openRescheduleModal(item)}
+                                className="flex-1 py-2 rounded-xl bg-finora-500/15 hover:bg-finora-500/25 border border-finora-500/30 text-finora-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                title="Reagendar compromisso na agenda Microsoft do Hugo"
+                              >
+                                <CalendarClock size={14} />
+                                <span>Reagendar</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteMeeting(item)}
+                                className="flex-1 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                title="Cancelar compromisso na agenda Microsoft do Hugo"
+                              >
+                                <Trash2 size={14} />
+                                <span>Cancelar</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -729,38 +881,53 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
                         </div>
 
                         {/* Actions */}
-                        {meeting.status === "SCHEDULED" ? (
-                          <div className="mt-5 pt-3 border-t border-line flex gap-2">
+                        <div className="mt-5 pt-3 border-t border-line flex flex-col gap-2">
+                          <div className="flex gap-2">
                             <button
                               type="button"
-                              onClick={() => updateStatus(meeting.id, "COMPLETED")}
-                              className="flex-1 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                              onClick={() => openRescheduleModal(meeting)}
+                              className="flex-1 py-2.5 rounded-xl bg-finora-600/20 hover:bg-finora-600/30 border border-finora-500/40 text-finora-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                              title="Escolher nova data e horário (atualiza no site e no Microsoft Teams/Outlook)"
                             >
-                              <UserCheck size={16} />
-                              <span>Concluída</span>
+                              <CalendarClock size={15} />
+                              <span>Reagendar</span>
                             </button>
                             <button
                               type="button"
-                              onClick={() => updateStatus(meeting.id, "NO_SHOW")}
-                              className="flex-1 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                              onClick={() => deleteMeeting(meeting)}
+                              className="flex-1 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                              title="Cancelar reunião (remove do site e da agenda Microsoft do Hugo)"
                             >
-                              <UserX size={16} />
-                              <span>Faltou</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="mt-5 pt-3 border-t border-line flex items-center justify-between text-xs text-text-2 font-medium">
-                            <span>Atendimento registrado</span>
-                            <button
-                              type="button"
-                              onClick={() => deleteMeeting(meeting.id)}
-                              className="inline-flex items-center gap-1 text-[11px] text-rose-400 hover:text-rose-300 hover:underline cursor-pointer"
-                            >
-                              <Trash2 size={11} />
-                              <span>Excluir</span>
+                              <Trash2 size={15} />
+                              <span>Cancelar Reunião</span>
                             </button>
                           </div>
-                        )}
+
+                          {meeting.status === "SCHEDULED" ? (
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => updateStatus(meeting.id, "COMPLETED")}
+                                className="flex-1 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                              >
+                                <UserCheck size={14} />
+                                <span>Marcar Concluída</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => updateStatus(meeting.id, "NO_SHOW")}
+                                className="flex-1 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                              >
+                                <UserX size={14} />
+                                <span>Marcar Faltou</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between text-xs text-text-2 font-medium pt-1">
+                              <span>Atendimento registrado</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -770,6 +937,159 @@ export default function AdminAgendaView({ eventId }: { eventId: number }) {
           })}
         </div>
       )}
+
+      {/* Modal de Reagendamento (Portal no document.body) */}
+      {mounted &&
+        rescheduleTarget &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="w-full max-w-xl rounded-3xl border border-line-strong bg-surface p-6 text-text shadow-2xl space-y-5 my-auto">
+              <div className="flex items-start justify-between gap-3 pb-3 border-b border-line">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-finora-500/15 border border-finora-500/30 text-finora-400 flex items-center justify-center shrink-0">
+                    <CalendarClock size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-text">Reagendar Reunião · Agenda Hugo</h3>
+                    <p className="text-xs text-text-2">
+                      {rescheduleTarget.participants?.full_name || rescheduleTarget.subject} · Horário atual:{" "}
+                      <strong className="text-text">
+                        {format(new Date(rescheduleTarget.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </strong>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRescheduleTarget(null)}
+                  className="p-1.5 rounded-xl bg-surface border border-line text-text-2 hover:text-text cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* 1. Escolha do Mês e Dia */}
+              <div className="space-y-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-text-2 block">
+                  1. Escolha a Nova Data:
+                </span>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                  {rescheduleMonths.map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedRescheduleMonth(m.key);
+                        setRescheduleDateStr("");
+                        setRescheduleSlot(null);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
+                        selectedRescheduleMonth === m.key
+                          ? "bg-finora-600 text-white shadow-sm"
+                          : "bg-paper border border-line text-text-2 hover:text-text"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-44 overflow-y-auto pr-1">
+                  {daysInSelectedMonth.map((d) => {
+                    const isSelected = rescheduleDateStr === d.dateStr;
+                    return (
+                      <button
+                        key={d.dateStr}
+                        type="button"
+                        onClick={() => setRescheduleDateStr(d.dateStr)}
+                        className={`py-2 px-2 rounded-xl border text-xs font-bold capitalize transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-finora-500 bg-finora-600 text-white shadow-md"
+                            : "border-line bg-paper/70 text-text-2 hover:text-text hover:border-line-strong"
+                        }`}
+                      >
+                        {d.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Escolha do Horário Livre */}
+              <div className="space-y-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-text-2 block">
+                  2. Escolha o Novo Horário Livre na Agenda do Hugo:
+                </span>
+                {!rescheduleDateStr ? (
+                  <div className="rounded-2xl border border-dashed border-line-strong bg-paper/40 p-4 text-center text-xs text-text-2">
+                    👆 Selecione um dia acima para consultar os horários livres na agenda Microsoft do Hugo.
+                  </div>
+                ) : loadingSlots ? (
+                  <div className="flex items-center justify-center gap-2 py-6 text-xs text-text-2">
+                    <LoaderCircle size={16} className="animate-spin text-finora-500" />
+                    <span>Consultando disponibilidade real no Microsoft 365...</span>
+                  </div>
+                ) : rescheduleSlots.length === 0 ? (
+                  <div className="rounded-2xl border border-line bg-paper/40 p-4 text-center text-xs text-text-2">
+                    Nenhum horário livre neste dia. Escolha outra data acima.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto pr-1">
+                    {rescheduleSlots.map((s) => {
+                      const on = rescheduleSlot === s;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setRescheduleSlot(s)}
+                          className={`py-2.5 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer ${
+                            on
+                              ? "border-finora-500 bg-finora-600 text-white shadow-md"
+                              : "border-line bg-paper/70 text-text hover:border-finora-500/50"
+                          }`}
+                        >
+                          {format(parseISO(s), "HH:mm")}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Ações do Modal */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-3 border-t border-line">
+                <button
+                  type="button"
+                  onClick={() => setRescheduleTarget(null)}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-line text-xs font-bold text-text-2 hover:text-text cursor-pointer"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button"
+                  disabled={!rescheduleSlot || savingReschedule}
+                  onClick={confirmReschedule}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-finora-600 hover:bg-finora-700 disabled:opacity-50 text-white text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  {savingReschedule ? (
+                    <>
+                      <LoaderCircle size={15} className="animate-spin" />
+                      <span>Atualizando no site e Microsoft 365...</span>
+                    </>
+                  ) : rescheduleSlot ? (
+                    <span>
+                      Confirmar Reagendamento · Dia {format(parseISO(rescheduleSlot), "dd/MM")} ({format(parseISO(rescheduleSlot), "HH:mm")} às{" "}
+                      {format(addMinutes(parseISO(rescheduleSlot), 45), "HH:mm")}) 📅
+                    </span>
+                  ) : (
+                    <span>Selecione a Nova Data e Horário</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

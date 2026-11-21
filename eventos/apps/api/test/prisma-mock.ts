@@ -49,6 +49,7 @@ export const createPrismaMock = () => ({
     findMany: jest.fn().mockResolvedValue([]),
     findFirst: jest.fn(),
     update: jest.fn(),
+    deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
   },
   prize_stock_movements: {
     create: jest.fn(),
@@ -70,6 +71,8 @@ export const createPrismaMock = () => ({
     findMany: jest.fn().mockResolvedValue([]),
     create: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
+    deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     count: jest.fn().mockResolvedValue(0),
   },
   audit_logs: {
