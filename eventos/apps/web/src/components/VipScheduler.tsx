@@ -251,30 +251,11 @@ export default function VipScheduler({
           <Sparkles size={14} className="text-accent" /> CONSULTORIA EXECUTIVA VIP · MICROSOFT TEAMS
         </span>
         <h1 className="font-display text-[25px] sm:text-[29px] font-extrabold leading-[1.05] tracking-[-0.03em] text-white">
-          Bate-papo VIP com {currentHost.name}
+          Bate-papo VIP com Hugo Werninghaus
         </h1>
         <p className="text-[13.5px] leading-relaxed text-slate-300">
           {inviteText || "Reunião executiva de diagnóstico financeiro e planejamento tributário para sua clínica. Ao confirmar, você destrava automaticamente a Roleta VIP!"}
         </p>
-
-        {selectedHostKey === "ale" && (
-          <div className="mt-1 flex items-center justify-between flex-wrap gap-2 rounded-xl border border-fuchsia-400/50 bg-fuchsia-500/15 px-3.5 py-2.5 text-xs text-fuchsia-200">
-            <div className="flex items-center gap-2">
-              <span className="text-base">👩‍💼</span>
-              <div>
-                <strong className="text-white block">Agenda Extra · Alessandra (Ale)</strong>
-                <span>Exibindo os horários extras em que o Hugo já está em reunião e a Ale está livre.</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedHostKey("hugo")}
-              className="rounded-lg bg-white/10 hover:bg-white/20 px-3 py-1.5 font-bold text-white transition-colors cursor-pointer"
-            >
-              ← Voltar para agenda do Hugo
-            </button>
-          </div>
-        )}
 
         {/* Aviso de Validade Estendida do Prêmio VIP */}
         <div className="mt-0.5 rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 p-3 text-xs text-amber-200">
@@ -363,37 +344,13 @@ export default function VipScheduler({
           </div>
         ) : loading ? (
           <span className="flex items-center gap-2 py-6 text-slate-400">
-            <LoaderCircle size={18} className="animate-spin text-accent" /> Sincronizando agenda de {currentHost.name} em tempo real…
+            <LoaderCircle size={18} className="animate-spin text-accent" /> Sincronizando agenda de Hugo Werninghaus em tempo real…
           </span>
         ) : slots.length === 0 ? (
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-center text-slate-300 space-y-3">
-            {selectedHostKey === "hugo" ? (
-              <>
-                <p className="text-sm font-semibold text-white">
-                  Todos os horários do Hugo neste dia já estão ocupados.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setSelectedHostKey("ale")}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-fuchsia-400 bg-fuchsia-500/20 hover:bg-fuchsia-500/30 px-5 py-3 text-sm font-black text-white shadow-[0_0_20px_rgba(232,121,249,0.3)] transition-all cursor-pointer"
-                >
-                  <span>👩‍💼 Não achou horário? Ver agenda da Ale (Sócia)</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-slate-300">
-                  Neste dia o Hugo está com todos os horários livres na agenda dele (ou a Ale também está em reunião nos horários ocupados do Hugo).
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setSelectedHostKey("hugo")}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-400/50 bg-amber-400/20 hover:bg-amber-400/30 px-4 py-2.5 text-xs font-bold text-amber-200 transition-all cursor-pointer"
-                >
-                  <span>← Voltar e ver os horários livres do Hugo neste dia</span>
-                </button>
-              </>
-            )}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-center text-slate-300">
+            <p className="text-sm font-semibold text-white">
+              Todos os horários do Hugo neste dia já estão ocupados. Por favor, escolha outro dia acima.
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -402,14 +359,10 @@ export default function VipScheduler({
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                   <Clock size={14} className="text-accent" />
-                  <span>
-                    {selectedHostKey === "hugo"
-                      ? `2. Horários Disponíveis com Hugo (${slots.length} livres)`
-                      : `2. Horários Extras Disponíveis com a Ale (${slots.length} horários onde o Hugo está ocupado)`}
-                  </span>
+                  <span>2. Horários Disponíveis com Hugo ({slots.length} livres)</span>
                 </span>
                 <span className="text-[11px] font-mono text-slate-400">
-                  {currentHost.email}
+                  hugo@grupoqmax.com.br
                 </span>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto pr-1">
@@ -433,45 +386,6 @@ export default function VipScheduler({
                 })}
               </div>
             </div>
-
-            {/* Botão "Não achou horário?" para abrir a agenda da Ale nos horários em que o Hugo está ocupado */}
-            {selectedHostKey === "hugo" ? (
-              <div className="rounded-2xl border border-fuchsia-400/40 bg-gradient-to-r from-fuchsia-950/40 via-slate-900/90 to-fuchsia-950/40 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
-                <div className="flex items-center gap-2.5 text-center sm:text-left">
-                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-fuchsia-500/20 border border-fuchsia-400/40 text-lg">
-                    👩‍💼
-                  </span>
-                  <div className="flex flex-col">
-                    <strong className="text-xs sm:text-sm font-extrabold text-white">
-                      Não achou horário?
-                    </strong>
-                    <span className="text-[11.5px] text-slate-300">
-                      Veja os horários extras disponíveis na agenda da nossa sócia <strong className="text-fuchsia-300">Alessandra (Ale)</strong>!
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedHostKey("ale")}
-                  className="w-full sm:w-auto flex-none rounded-xl border border-fuchsia-400 bg-fuchsia-500/25 hover:bg-fuchsia-500/40 px-4 py-2 text-xs font-black text-white shadow-[0_0_15px_rgba(232,121,249,0.25)] transition-all cursor-pointer whitespace-nowrap"
-                >
-                  Ver agenda da Ale ➔
-                </button>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-amber-400/40 bg-amber-950/20 p-3 flex items-center justify-between gap-3">
-                <span className="text-xs text-amber-200">
-                   Mostrando apenas os horários em que o Hugo está ocupado e a <strong>Ale</strong> está livre.
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedHostKey("hugo")}
-                  className="rounded-lg bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/40 px-3 py-1.5 text-xs font-bold text-amber-200 transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  ← Voltar para agenda do Hugo
-                </button>
-              </div>
-            )}
 
             {/* Resumo Nobre do Agendamento Selecionado */}
             {slot && (

@@ -34,12 +34,10 @@ export class MeetingsService {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 1);
 
-    const hostProfile = resolveHost(host);
     const profiles = getHostProfiles();
-    const isAle = hostProfile.key === 'ale';
 
     // 1. Horários já ocupados no banco de dados por agendamentos do site
-    const allDayMeetings = await this.prisma.meetings.findMany({
+    const existingMeetings = await this.prisma.meetings.findMany({
       where: {
         scheduled_at: {
           gte: startDate,
@@ -49,23 +47,8 @@ export class MeetingsService {
       },
     });
 
-    const hugoSiteMeetings = allDayMeetings.filter((m: any) => {
-      const mHost = (m.host_email || profiles.hugo.email).toLowerCase();
-      return mHost === profiles.hugo.email.toLowerCase();
-    });
-
-    const aleSiteMeetings = allDayMeetings.filter((m: any) => {
-      const mHost = (m.host_email || '').toLowerCase();
-      return mHost === profiles.ale.email.toLowerCase();
-    });
-
-    // 2. Consulta em tempo real no Microsoft 365
-    // Se for a agenda da Ale, precisamos tanto da agenda do Hugo (para saber onde o Hugo NÃO está livre)
-    // quanto da agenda da própria Ale (para garantir que a Ale está livre e travar/ocultar os ocupados dela).
-    const [hugoBusyIntervals, aleBusyIntervals] = await Promise.all([
-      getHugoBusyIntervals(dateString, profiles.hugo.email),
-      isAle ? getHugoBusyIntervals(dateString, profiles.ale.email) : Promise.resolve([]),
-    ]);
+    // 2. Consulta em tempo real na agenda do Hugo no Microsoft 365
+    const hugoBusyIntervals = await getHugoBusyIntervals(dateString, profiles.hugo.email);
 
     const slots: Date[] = [];
     // Agenda aberta o dia todo das 08h às 19h (Horário de Brasília), com duração de 45 min
@@ -75,56 +58,28 @@ export class MeetingsService {
       slots.push(new Date(isoStr));
     }
 
-    const isHugoBusyAtSlot = (slotStart: number, slotEnd: number): boolean => {
-      const collidesSite = hugoSiteMeetings.some((m) => {
-        const mStart = m.scheduled_at.getTime();
-        const mEnd = mStart + 45 * 60 * 1000;
-        return slotStart < mEnd && slotEnd > mStart;
-      });
-      if (collidesSite) return true;
-
-      const collidesMs = hugoBusyIntervals.some((busy) => {
-        const busyStart = busy.start.getTime();
-        const busyEnd = busy.end.getTime();
-        return slotStart < busyEnd && slotEnd > busyStart;
-      });
-      return collidesMs;
-    };
-
-    const isAleBusyAtSlot = (slotStart: number, slotEnd: number): boolean => {
-      const collidesSite = aleSiteMeetings.some((m) => {
-        const mStart = m.scheduled_at.getTime();
-        const mEnd = mStart + 45 * 60 * 1000;
-        return slotStart < mEnd && slotEnd > mStart;
-      });
-      if (collidesSite) return true;
-
-      const collidesMs = aleBusyIntervals.some((busy) => {
-        const busyStart = busy.start.getTime();
-        const busyEnd = busy.end.getTime();
-        return slotStart < busyEnd && slotEnd > busyStart;
-      });
-      return collidesMs;
-    };
-
     const now = new Date();
     const availableSlots = slots.filter((slot) => {
       if (slot <= now) return false;
 
       const slotStart = slot.getTime();
       const slotEnd = slotStart + 45 * 60 * 1000;
-      const hugoBusy = isHugoBusyAtSlot(slotStart, slotEnd);
 
-      if (!isAle) {
-        // Agenda do Hugo: disponível apenas quando o Hugo está livre
-        return !hugoBusy;
-      }
+      const collidesSite = existingMeetings.some((m) => {
+        const mStart = m.scheduled_at.getTime();
+        const mEnd = mStart + 45 * 60 * 1000;
+        return slotStart < mEnd && slotEnd > mStart;
+      });
+      if (collidesSite) return false;
 
-      // Agenda da Ale: disponível APENAS nos horários em que o Hugo NÃO está livre,
-      // e desde que a própria Ale não esteja ocupada no site ou no Microsoft 365!
-      if (!hugoBusy) return false;
-      const aleBusy = isAleBusyAtSlot(slotStart, slotEnd);
-      return !aleBusy;
+      const collidesMs = hugoBusyIntervals.some((busy) => {
+        const busyStart = busy.start.getTime();
+        const busyEnd = busy.end.getTime();
+        return slotStart < busyEnd && slotEnd > busyStart;
+      });
+      if (collidesMs) return false;
+
+      return true;
     });
 
     return availableSlots.map((s) => s.toISOString());
@@ -430,80 +385,66 @@ export class MeetingsService {
     });
 
     const profiles = getHostProfiles();
-    const filterNorm = (hostFilter || '').trim().toLowerCase();
-    const wantHugo = !filterNorm || filterNorm === 'all' || filterNorm.includes('hugo');
-    const wantAle = !filterNorm || filterNorm === 'all' || filterNorm.includes('ale');
 
-    // 2. Compromissos e reuniões do Hugo e da Ale puxados 100% em tempo real do Microsoft 365 (Teams / Outlook)
-    const [hugoMsEvents, aleMsEvents] = await Promise.all([
-      wantHugo ? getHugoDetailedEvents(msStartDate, msEndDate, profiles.hugo.email) : Promise.resolve([]),
-      wantAle ? getHugoDetailedEvents(msStartDate, msEndDate, profiles.ale.email) : Promise.resolve([]),
-    ]);
-
-    const msEvents = [...hugoMsEvents, ...aleMsEvents];
+    // 2. Compromissos e reuniões do Hugo puxados 100% em tempo real do Microsoft 365 (Teams / Outlook)
+    const msEvents = await getHugoDetailedEvents(msStartDate, msEndDate, profiles.hugo.email);
 
     // Formata os agendamentos do site
-    const formattedSiteMeetings = siteMeetings
-      .map((m: any) => {
-        const hostProfile = resolveHost(m.host_email || profiles.hugo.email);
-        const parts = m.participants?.participations || [];
-        const vipPart = parts.find((p: any) => p.draws?.prizes?.is_vip);
-        const normalPart = parts.find((p: any) => p.draws && !p.draws.prizes?.is_vip);
-        const decryptedCpf = m.participants?.cpf_encrypted ? decryptCpf(m.participants.cpf_encrypted) : '';
-        const formattedCpf = decryptedCpf
-          ? formatCpf(decryptedCpf)
-          : m.participants?.cpf_last_digits
-          ? `***.***.***-${m.participants.cpf_last_digits}`
-          : '';
+    const formattedSiteMeetings = siteMeetings.map((m: any) => {
+      const hostProfile = profiles.hugo;
+      const parts = m.participants?.participations || [];
+      const vipPart = parts.find((p: any) => p.draws?.prizes?.is_vip);
+      const normalPart = parts.find((p: any) => p.draws && !p.draws.prizes?.is_vip);
+      const decryptedCpf = m.participants?.cpf_encrypted ? decryptCpf(m.participants.cpf_encrypted) : '';
+      const formattedCpf = decryptedCpf
+        ? formatCpf(decryptedCpf)
+        : m.participants?.cpf_last_digits
+        ? `***.***.***-${m.participants.cpf_last_digits}`
+        : '';
 
-        return {
-          id: m.id,
-          source: 'FINORA' as const,
-          isMicrosoft: false,
-          scheduled_at: m.scheduled_at.toISOString(),
-          status: m.status,
-          hostKey: hostProfile.key,
-          hostName: hostProfile.name,
-          hostEmail: hostProfile.email,
-          vipPrize: vipPart?.draws?.prizes
-            ? {
-                drawId: vipPart.draws.id,
-                prizeId: vipPart.draws.prizes.id,
-                name: vipPart.draws.prizes.name,
-                description: vipPart.draws.prizes.description,
-                drawnAt: vipPart.draws.drawn_at,
-                claimedAt: vipPart.draws.claimed_at,
-              }
-            : null,
-          normalPrize: normalPart?.draws?.prizes
-            ? {
-                drawId: normalPart.draws.id,
-                prizeId: normalPart.draws.prizes.id,
-                name: normalPart.draws.prizes.name,
-                description: normalPart.draws.prizes.description,
-                drawnAt: normalPart.draws.drawn_at,
-                claimedAt: normalPart.draws.claimed_at,
-              }
-            : null,
-          participants: {
-            id: m.participants.id,
-            full_name: m.participants.full_name,
-            cpf: decryptedCpf,
-            cpf_formatted: formattedCpf,
-            phone: m.participants.phone,
-            email: m.participants.email,
-            clinic_name: m.participants.clinic_name,
-            cro_number: m.participants.cro_number,
-            cro_state: m.participants.cro_state,
-            chairs_count: m.participants.chairs_count,
-          },
-        };
-      })
-      .filter((m) => {
-        if (!wantHugo && m.hostKey === 'hugo') return false;
-        if (!wantAle && m.hostKey === 'ale') return false;
-        return true;
-      });
+      return {
+        id: m.id,
+        source: 'FINORA' as const,
+        isMicrosoft: false,
+        scheduled_at: m.scheduled_at.toISOString(),
+        status: m.status,
+        hostKey: hostProfile.key,
+        hostName: hostProfile.name,
+        hostEmail: hostProfile.email,
+        vipPrize: vipPart?.draws?.prizes
+          ? {
+              drawId: vipPart.draws.id,
+              prizeId: vipPart.draws.prizes.id,
+              name: vipPart.draws.prizes.name,
+              description: vipPart.draws.prizes.description,
+              drawnAt: vipPart.draws.drawn_at,
+              claimedAt: vipPart.draws.claimed_at,
+            }
+          : null,
+        normalPrize: normalPart?.draws?.prizes
+          ? {
+              drawId: normalPart.draws.id,
+              prizeId: normalPart.draws.prizes.id,
+              name: normalPart.draws.prizes.name,
+              description: normalPart.draws.prizes.description,
+              drawnAt: normalPart.draws.drawn_at,
+              claimedAt: normalPart.draws.claimed_at,
+            }
+          : null,
+        participants: {
+          id: m.participants.id,
+          full_name: m.participants.full_name,
+          cpf: decryptedCpf,
+          cpf_formatted: formattedCpf,
+          phone: m.participants.phone,
+          email: m.participants.email,
+          clinic_name: m.participants.clinic_name,
+          cro_number: m.participants.cro_number,
+          cro_state: m.participants.cro_state,
+          chairs_count: m.participants.chairs_count,
+        },
+      };
+    });
 
     // Formata e adiciona os eventos do Microsoft 365 (evitando duplicar reuniões que o site acabou de criar para o mesmo sócio)
     const formattedMsEvents = msEvents
